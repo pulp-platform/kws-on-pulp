@@ -32,6 +32,7 @@ from collections import Counter, OrderedDict
 
 import soundfile as sf
 import numpy as np
+import tensorflow as tf
 
 
 MAX_NUM_WAVS_PER_CLASS = 2**27 - 1  # ~134M
