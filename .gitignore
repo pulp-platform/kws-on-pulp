@@ -1,0 +1,7 @@
+dory/
+nemo/
+quantization/*.txt
+quantization/*.onnx
+application/BUILD/
+application/BUILD_MFCC/
+application/DORY_network/
