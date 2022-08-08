@@ -20,21 +20,21 @@
 
 
 # Set up constants
-export GAP_SDK_DIR=path/to/gap_sdk/
-export AUDIO_SAMPLE=path/to/audiosample.wav
+export GAP_SDK_DIR=/usr/scratch/wetterhorn/cioflanc/tools/gap_sdk/
+export AUDIO_SAMPLE=dataset/train/right/aa48c94a_nohash_2.wav
 export SDK=$1
 export NETWORD_DIR=DSCNN
 export CUR_DIR=$PWD
 
 if [[ $SDK == "pulp_sdk" ]]
 then
-  export PULP_RISCV_GCC_TOOLCHAIN=path/to/toolchain
+  export PULP_RISCV_GCC_TOOLCHAIN=/usr/scratch/wetterhorn/cioflanc/tools/pulp_riscv_toolchain/v1.0.16-pulp-riscv-gcc-centos-7/
   # Select target
-  source path/to/pulp-sdk/configs/pulp-open.sh
+  source /usr/scratch/wetterhorn/cioflanc/tools/pulp-sdk/configs/pulp-open.sh
 else
-  export GAP_RISCV_GCC_TOOLCHAIN=path/to/toolchain
+  export GAP_RISCV_GCC_TOOLCHAIN=/usr/scratch/wetterhorn/cioflanc/tools/gap_riscv_toolchain_ubuntu_18/
   # Select target
-  source path/to/gap_sdk/sourceme.sh
+  source /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk/sourceme.sh
 fi
 
 # Copy model and it's activations to Dory
