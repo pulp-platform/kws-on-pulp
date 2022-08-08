@@ -1,8 +1,0 @@
-# ignore all logs
-*.log
-logs
-__pycache__
-application/BUILD
-application
-.DS_Store
-*DS_Store
