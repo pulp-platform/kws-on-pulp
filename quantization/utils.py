@@ -44,7 +44,7 @@ def npy_to_txt(layer_number, activations):
     else:
         tmp = activations.reshape(-1)
         f = open('out_layer' + str(layer_number) + '.txt', "a")
-        f.write('layers.0.relu1 (shape [1, 25, 5, 64]),\\\n')  # Hardcoded, should be adapted for better understanding.
+        f.write('# layers.0.relu1 (shape [1, 25, 5, 64]),\\\n')  # Hardcoded, should be adapted for better understanding.
         for elem in tmp:
             if (elem < 0):
                 f.write (str(256+elem) + ",\\\n")
