@@ -56,11 +56,22 @@ APP_SRCS+=DORY_network/src/pulp_nn_pointwise_Co_parallel.c
 APP_SRCS+=DORY_network/src/pulp_nn_pointwise_Ho_parallel.c
 APP_SRCS+=DORY_network/src/pulp_nn_pointwise_HoWo_parallel.c
 APP_SRCS+=DORY_network/src/pulp_nn_utils.c
-APP_SRCS+=DORY_network/src/layerConvBNRelu0.c
-APP_SRCS+=DORY_network/src/layerConvDWBNRelu1.c
-APP_SRCS+=DORY_network/src/layerConvBNRelu2.c
-APP_SRCS+=DORY_network/src/layerAveragePoolRelu9.c
-APP_SRCS+=DORY_network/src/layerGemm10_last.c
+# APP_SRCS+=DORY_network/src/layerConvBNRelu0.c
+# APP_SRCS+=DORY_network/src/layerConvDWBNRelu1.c
+# APP_SRCS+=DORY_network/src/layerConvBNRelu2.c
+# APP_SRCS+=DORY_network/src/layerAveragePoolRelu9.c
+# APP_SRCS+=DORY_network/src/layerGemm10_last.c
+APP_SRCS+=DORY_network/src/BNReluConvolution0.c
+APP_SRCS+=DORY_network/src/BNReluConvolution1.c
+APP_SRCS+=DORY_network/src/BNReluConvolution2.c
+APP_SRCS+=DORY_network/src/BNReluConvolution3.c
+APP_SRCS+=DORY_network/src/BNReluConvolution4.c
+APP_SRCS+=DORY_network/src/BNReluConvolution5.c
+APP_SRCS+=DORY_network/src/BNReluConvolution6.c
+APP_SRCS+=DORY_network/src/BNReluConvolution7.c
+APP_SRCS+=DORY_network/src/BNReluConvolution8.c
+APP_SRCS+=DORY_network/src/ReluPooling9.c
+APP_SRCS+=DORY_network/src/FullyConnected10.c
 APP_SRCS+=DORY_network/src/network.c
 
 
@@ -81,7 +92,7 @@ ifeq ($(USE_HIGH_PREC), 1)
 	APP_CFLAGS += -DHIGH_PREC_FFT
 endif
 
-APP_CFLAGS      += -DAT_WAV=$(WAV_FILE) -DSDK=$(SDK) -DPERF -DPRINT_INOUT -DPRINTDEB 
+APP_CFLAGS      += -DAT_WAV=$(WAV_FILE) -DSDK=$(SDK)# -DPERF -DPRINT_INOUT -DPRINTDEB 
 APP_CFLAGS      += -I. -I$(MFCCBUILD_DIR) -I$(DSP_DIR) -I$(DSP_LUT_DIR) -I$(AUTOTILER_DIR) -I$(WAVIO_DIR) 
 
 PULP_SDK_STR = pulp_sdk
@@ -97,16 +108,26 @@ APP_LDFLAGS += -lm -flto
 CONFIG_HYPERRAM = 1
 CONFIG_HYPERFLASH = 1
 
-FLASH_FILES = DORY_network/ConvBNRelu0_weights.hex
-FLASH_FILES += DORY_network/ConvDWBNRelu1_weights.hex
-FLASH_FILES += DORY_network/ConvBNRelu2_weights.hex
-FLASH_FILES += DORY_network/ConvDWBNRelu3_weights.hex
-FLASH_FILES += DORY_network/ConvBNRelu4_weights.hex
-FLASH_FILES += DORY_network/ConvDWBNRelu5_weights.hex
-FLASH_FILES += DORY_network/ConvBNRelu6_weights.hex
-FLASH_FILES += DORY_network/ConvDWBNRelu7_weights.hex
-FLASH_FILES += DORY_network/ConvBNRelu8_weights.hex
-FLASH_FILES += DORY_network/Gemm10_weights.hex
+# FLASH_FILES = DORY_network/ConvBNRelu0_weights.hex
+# FLASH_FILES += DORY_network/ConvDWBNRelu1_weights.hex
+# FLASH_FILES += DORY_network/ConvBNRelu2_weights.hex
+# FLASH_FILES += DORY_network/ConvDWBNRelu3_weights.hex
+# FLASH_FILES += DORY_network/ConvBNRelu4_weights.hex
+# FLASH_FILES += DORY_network/ConvDWBNRelu5_weights.hex
+# FLASH_FILES += DORY_network/ConvBNRelu6_weights.hex
+# FLASH_FILES += DORY_network/ConvDWBNRelu7_weights.hex
+# FLASH_FILES += DORY_network/ConvBNRelu8_weights.hex
+# FLASH_FILES += DORY_network/Gemm10_weights.hex
+FLASH_FILES = DORY_network/BNReluConvolution0_weights.hex
+FLASH_FILES += DORY_network/BNReluConvolution1_weights.hex
+FLASH_FILES += DORY_network/BNReluConvolution2_weights.hex
+FLASH_FILES += DORY_network/BNReluConvolution3_weights.hex
+FLASH_FILES += DORY_network/BNReluConvolution4_weights.hex
+FLASH_FILES += DORY_network/BNReluConvolution5_weights.hex
+FLASH_FILES += DORY_network/BNReluConvolution6_weights.hex
+FLASH_FILES += DORY_network/BNReluConvolution7_weights.hex
+FLASH_FILES += DORY_network/BNReluConvolution8_weights.hex
+FLASH_FILES += DORY_network/FullyConnected10_weights.hexx
 FLASH_FILES += DORY_network/inputs.hex
 READFS_FILES := $(FLASH_FILES)
 PLPBRIDGE_FLAGS += -f
