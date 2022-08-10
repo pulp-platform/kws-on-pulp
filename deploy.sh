@@ -57,7 +57,8 @@ cp $CUR_DIR/quantization/out_layer*.txt $NETWORD_DIR/
 
 # Generate source code and weights for model inference
 # We use 64 bits for the BatchNorm and ReLU
-python network_generate.py NEMO GAP8.GAP8_gvsoc ../config_NEMO_DSCNN.json --app_dir $NETWORD_DIR/ --perf_layer Yes
+# python network_generate.py NEMO GAP8.GAP8_gvsoc ../config_NEMO_DSCNN.json --app_dir $NETWORD_DIR/ --perf_layer Yes
+python network_generate.py NEMO GAP8.GAP8_board_L2 ../config_NEMO_DSCNN.json --app_dir $NETWORD_DIR/ --perf_layer Yes
 
 # Copy the files into our directory, preparing the MFCC integration
 # mkdir -p $CUR_DIR/application/ && cp -r $NETWORD_DIR/DORY_network/ "$_"

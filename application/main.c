@@ -178,11 +178,6 @@ void * test_kickoff(void *arg)
     inWav    = (short int *) pi_l2_malloc(BUF_SIZE * sizeof(short));   
     MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(BUF_SIZE * sizeof(MFCC_IN_TYPE));   
 
-    // feat_char = (char*) AT_L2_ALLOC(0, N_FRAME * N_MFCC * sizeof(char));    
-    // out_feat = (OUT_TYPE *) AT_L2_ALLOC(0, N_FRAME * frame_size * sizeof(OUT_TYPE));    
-    // inWav    = (short int *) AT_L2_ALLOC(0, BUF_SIZE * sizeof(short));   
-    // MfccInSig = (MFCC_IN_TYPE *) AT_L2_ALLOC(0, BUF_SIZE * sizeof(MFCC_IN_TYPE));   
-
     if (inWav==NULL){
         printf("Error allocating inWav\n");
         pmsis_exit(1);
@@ -217,8 +212,9 @@ void * test_kickoff(void *arg)
     if (strcmp(PULPSDK, "pulp_sdk") == 0) {
         // PULP
         struct pi_cluster_task cluster_task = {0};
-        // pi_cluster_task(&cluster_task, pulp_parallel, NULL); // How to replace pulp_parallel???
-        pi_cluster_task(&cluster_task, pi_cl_team_fork, NULL);
+        // pi_cluster_task(&cluster_task, pulp_parallel, NULL);
+        // Preplace pulp_parallel with pi_cl_team_fork - is NUM_CORE included?
+        pi_cluster_task(&cluster_task, pi_cl_team_fork, NULL); 
         cluster_task.stack_size = STACK_SIZE;
         cluster_task.slave_stack_size = STACK_SIZE;
         cluster_task.entry = RunMFCC;
@@ -257,26 +253,7 @@ void * test_kickoff(void *arg)
 }
 
 #ifndef __EMUL__
-// int main()
-// {
-//     #define __XSTR(__s) __STR(__s)
-//     #define __STR(__s) #__s
-//     FileName = __XSTR(AT_WAV);
-//     PULPSDK = __XSTR(SDK);
 
-//     // Compute MFCCs
-//     test_kickoff(NULL); 
-
-//     // for (int i = 0; i < 490; i++){
-//     //     printf("%i\n", feat_char[i]);
-//     // }
-    
-//     // Model inference
-//     network_setup(feat_char, 490, 1);
-//     network_run_FabricController(); 
-// }
-
-// New Main - new structure
 int main () {
 
 
@@ -391,6 +368,7 @@ int main () {
 
 
 #else
+//TODO: Update
 int main(int argc, char *argv[])
 {
         if (argc < 2) {
