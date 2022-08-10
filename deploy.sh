@@ -53,6 +53,8 @@ cp $CUR_DIR/quantization/input.txt $NETWORD_DIR/
 cp $CUR_DIR/quantization/model.onnx  $NETWORD_DIR/
 cp $CUR_DIR/quantization/out_layer*.txt $NETWORD_DIR/
 
+# TODO: Fix target's SDK (e.g., dory/dory/Hardware_targets/GAP8/GAP8_gvsoc/HW_description.json)
+
 # Generate source code and weights for model inference
 # We use 64 bits for the BatchNorm and ReLU
 python network_generate.py NEMO GAP8.GAP8_gvsoc ../config_NEMO_DSCNN.json --app_dir $NETWORD_DIR/ --perf_layer Yes

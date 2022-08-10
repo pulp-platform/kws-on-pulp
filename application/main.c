@@ -38,7 +38,7 @@
 #include "LUT.def"
 #include "MFCC_FB.def"
 
-#define  L2_BUFFER_SIZE 380000
+#define  L2_BUFFER_SIZE 80000  // ORIGINAL: 380000. TODO: Why it works???
 #define  BUF_SIZE       16500 
 #define  STACK_SIZE     2048
 #define  NORM           6
@@ -148,6 +148,9 @@ static void RunMFCC()
 void * test_kickoff(void *arg)
 {
     #ifndef __EMUL__
+
+        printf ("Test kickoff - init \n");
+
         struct pi_device cluster_dev;
         struct pi_cluster_conf cl_conf;
         cl_conf.id = 0;
@@ -170,10 +173,15 @@ void * test_kickoff(void *arg)
     if (N_DCT > 0) frame_size = N_DCT;
     else           frame_size = MFCC_BANK_CNT;
 
-    feat_char = (char*) AT_L2_ALLOC(0, 490 * sizeof(char));    
-    out_feat = (OUT_TYPE *) AT_L2_ALLOC(0, N_FRAME * frame_size * sizeof(OUT_TYPE));    
-    inWav    = (short int *) AT_L2_ALLOC(0, BUF_SIZE * sizeof(short));   
-    MfccInSig = (MFCC_IN_TYPE *) AT_L2_ALLOC(0, BUF_SIZE * sizeof(MFCC_IN_TYPE));   
+    feat_char = (char*) pi_l2_malloc(N_FRAME * N_MFCC * sizeof(char));
+    out_feat = (OUT_TYPE *) pi_l2_malloc(N_FRAME * frame_size * sizeof(OUT_TYPE));    
+    inWav    = (short int *) pi_l2_malloc(BUF_SIZE * sizeof(short));   
+    MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(BUF_SIZE * sizeof(MFCC_IN_TYPE));   
+
+    // feat_char = (char*) AT_L2_ALLOC(0, N_FRAME * N_MFCC * sizeof(char));    
+    // out_feat = (OUT_TYPE *) AT_L2_ALLOC(0, N_FRAME * frame_size * sizeof(OUT_TYPE));    
+    // inWav    = (short int *) AT_L2_ALLOC(0, BUF_SIZE * sizeof(short));   
+    // MfccInSig = (MFCC_IN_TYPE *) AT_L2_ALLOC(0, BUF_SIZE * sizeof(MFCC_IN_TYPE));   
 
     if (inWav==NULL){
         printf("Error allocating inWav\n");
@@ -209,7 +217,8 @@ void * test_kickoff(void *arg)
     if (strcmp(PULPSDK, "pulp_sdk") == 0) {
         // PULP
         struct pi_cluster_task cluster_task = {0};
-        // pi_cluster_task(&cluster_task, pulp_parallel, NULL);
+        // pi_cluster_task(&cluster_task, pulp_parallel, NULL); // How to replace pulp_parallel???
+        pi_cluster_task(&cluster_task, pi_cl_team_fork, NULL);
         cluster_task.stack_size = STACK_SIZE;
         cluster_task.slave_stack_size = STACK_SIZE;
         cluster_task.entry = RunMFCC;
@@ -238,6 +247,13 @@ void * test_kickoff(void *arg)
         }
         k++;
     }
+
+
+    pi_l2_free(out_feat, (uint32_t) N_FRAME * frame_size * sizeof(OUT_TYPE));
+    pi_l2_free(inWav, (uint32_t) BUF_SIZE * sizeof(short));
+    pi_l2_free(MfccInSig, (uint32_t) BUF_SIZE * sizeof(MFCC_IN_TYPE));
+
+   
 }
 
 #ifndef __EMUL__
@@ -267,10 +283,19 @@ int main () {
     FileName = __XSTR(AT_WAV);
     PULPSDK = __XSTR(SDK);
 
+
+    // Compute MFCCs
+    test_kickoff(NULL); 
+
+    for (int i = 0; i < 490; i++){
+        printf("%i\n", feat_char[i]);
+    }
+
+    
     char* L2_memory_buffer;
     char* L2_input;
     if (strcmp(PULPSDK, "gap_sdk") == 0){
-        PMU_set_voltage(1000, 0);
+        // PMU_set_voltage(1000, 0);
     }
     pi_time_wait_us(10000);
     pi_freq_set(PI_FREQ_DOMAIN_FC, FREQ_FC);
@@ -284,12 +309,13 @@ int main () {
         #endif
     }
 
-/*
-        Opening of Filesystem and Ram
-*/
+
+    // Opening of Filesystem and Ram
+
     struct pi_device fs;
     struct pi_device flash;
     open_filesystem_and_ram(&flash, &fs);
+    // pi_ram_alloc(&ram, &activations_input, (uint32_t) 500000);
     pi_ram_alloc(&ram, &activations_input, (uint32_t) 500000);
     pi_fs_file_t *file;
     file = pi_fs_open(&fs, "inputs.hex", 0);
@@ -298,9 +324,9 @@ int main () {
         printf("file open failed\n");
         return -1;
     }
-/*
-        Copying the input file from flash to ram
-*/
+
+
+    // Copying the input file from flash to ram
     int flashBuffSize = FLASH_BUFF_SIZE * sizeof(char);
     int rdDone = 0;
     // loop on chunk in file
@@ -313,9 +339,9 @@ int main () {
         pi_ram_write(&ram, activations_input+rdDone, flashBuffer, (uint32_t) size);
         rdDone += size / sizeof(char);
     }
-/*
-        Allocating space for input and copying it
-*/
+
+    // Allocating space for input and copying it
+
     // L2_memory_buffer = pi_l2_malloc((uint32_t) ${l2_buffer_size});
     L2_memory_buffer = pi_l2_malloc((uint32_t) L2_BUFFER_SIZE);
     int begin_end = 1;
@@ -325,15 +351,15 @@ int main () {
 #ifdef VERBOSE
     printf("\nL2 Buffer alloc initial\t@ 0x%08x:\t%s\n", (unsigned int)L2_memory_buffer, L2_memory_buffer?"Ok":"Failed");
 #endif
-/*
-    Allocation
-*/
+
+    // Allocation
+
     // pi_ram_read(&ram, activations_input, L2_input, ${int(DORY_HW_graph[0].tiling_dimensions["L2"]["input_activation_memory"])});
     pi_ram_read(&ram, activations_input, L2_input, N_FRAME * N_MFCC);
     network_alloc(fs, ram);    
-/*
-    Running of the network
-*/
+
+    // Running of the network - Failing on GAP SDK
+
     // network_run(L2_memory_buffer, ${l2_buffer_size}, L2_output, begin_end, ram);
     network_run(L2_memory_buffer, L2_BUFFER_SIZE, L2_output, begin_end, ram);
 #ifdef VERBOSE
@@ -345,9 +371,9 @@ int main () {
     }
     printf("\n");
 #endif
-/*
-    Deallocation
-*/
+
+    // Deallocation
+
     pi_ram_free(&ram, activations_input, 500000);
     network_free(ram);    
     // pi_l2_free(L2_memory_buffer, (uint32_t) ${l2_buffer_size});
