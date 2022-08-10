@@ -361,8 +361,12 @@ int main () {
         // network_run(L2_memory_buffer, L2_BUFFER_SIZE, L2_output, begin_end, ram); # TODO: Use IFDEF
     }
     else {
+
+        int use_precomputed_features = 1;
+        int input_size = N_MFCC * N_FRAME;
+
         network_alloc();  
-        network_run(L2_memory_buffer, L2_BUFFER_SIZE, L2_output, begin_end);
+        network_run(L2_memory_buffer, L2_BUFFER_SIZE, L2_output, begin_end, feat_char, input_size, use_precomputed_features);
 
     }
 #ifdef VERBOSE
