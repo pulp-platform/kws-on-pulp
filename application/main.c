@@ -362,7 +362,7 @@ int main () {
     }
     else {
 
-        int use_precomputed_features = 1;
+        int use_precomputed_features = 0; // 0 - use now-computed, 1 - use pre-computed
         int input_size = N_MFCC * N_FRAME;
 
         network_alloc();  
