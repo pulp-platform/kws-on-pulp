@@ -309,35 +309,44 @@ int main () {
         #endif
     }
 
+    int use_mfcc = 1;
+    int rdDone = 0;
+
 
     // Opening of Filesystem and Ram
 
     struct pi_device fs;
     struct pi_device flash;
     open_filesystem_and_ram(&flash, &fs);
-    // pi_ram_alloc(&ram, &activations_input, (uint32_t) 500000);
     pi_ram_alloc(&ram, &activations_input, (uint32_t) 500000);
-    pi_fs_file_t *file;
-    file = pi_fs_open(&fs, "inputs.hex", 0);
-    if (file == NULL)
-    {
-        printf("file open failed\n");
-        return -1;
+    
+    if (use_mfcc == 0) {
+
+        pi_fs_file_t *file;
+        file = pi_fs_open(&fs, "inputs.hex", 0);
+        if (file == NULL)
+        {
+            printf("file open failed\n");
+            return -1;
+        }
+
+
+        // Copying the input file from flash to ram
+        int flashBuffSize = FLASH_BUFF_SIZE * sizeof(char);
+        // loop on chunk in file
+        // while(rdDone < (${int(DORY_HW_graph[0].tiling_dimensions["L2"]["input_activation_memory"])} / sizeof(char)))
+        while(rdDone < ( N_FRAME * N_MFCC / sizeof(char)))
+        {
+            // read from HyperFlash
+            int size = pi_fs_read(file, flashBuffer, flashBuffSize);
+            // write to HyperRam
+            pi_ram_write(&ram, activations_input+rdDone, flashBuffer, (uint32_t) size);
+            rdDone += size / sizeof(char);
+        }
     }
-
-
-    // Copying the input file from flash to ram
-    int flashBuffSize = FLASH_BUFF_SIZE * sizeof(char);
-    int rdDone = 0;
-    // loop on chunk in file
-    // while(rdDone < (${int(DORY_HW_graph[0].tiling_dimensions["L2"]["input_activation_memory"])} / sizeof(char)))
-    while(rdDone < ( N_FRAME * N_MFCC / sizeof(char)))
-    {
-        // read from HyperFlash
-        int size = pi_fs_read(file, flashBuffer, flashBuffSize);
-        // write to HyperRam
-        pi_ram_write(&ram, activations_input+rdDone, flashBuffer, (uint32_t) size);
-        rdDone += size / sizeof(char);
+    else {
+        int input_size = 8 * N_FRAME * N_MFCC;
+        pi_ram_write(&ram, activations_input+rdDone, feat_char, (uint32_t) input_size);
     }
 
     // Allocating space for input and copying it
