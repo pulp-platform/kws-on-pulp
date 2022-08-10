@@ -20,8 +20,11 @@
 
 
 # Set up constants
+
+LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/scratch/wetterhorn/cioflanc/miniconda3/pkgs/mpfr-4.0.2-hb69a4c5_1/lib/
+
 export GAP_SDK_DIR=/usr/scratch/wetterhorn/cioflanc/tools/gap_sdk/
-export AUDIO_SAMPLE=dataset/train/right/aa48c94a_nohash_2.wav
+export AUDIO_SAMPLE=/usr/scratch/wetterhorn/cioflanc/kws-on-pulp/kws-on-pulp/dataset/train/right/aa48c94a_nohash_2.wav
 export SDK=$1
 export NETWORD_DIR=DSCNN
 export CUR_DIR=$PWD
@@ -32,13 +35,13 @@ then
   # Select target
   source /usr/scratch/wetterhorn/cioflanc/tools/pulp-sdk/configs/pulp-open.sh
 else
-  export GAP_RISCV_GCC_TOOLCHAIN=/usr/scratch/wetterhorn/cioflanc/tools/gap_riscv_toolchain_ubuntu_18/
+  export GAP_RISCV_GCC_TOOLCHAIN=/usr/scratch/wetterhorn/cioflanc/tools/gap_riscv_toolchain/
   # Select target
   source /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk/sourceme.sh
 fi
 
 # Copy model and it's activations to Dory
-cd dory/dory_examples
+cd dory/
 mkdir -p $NETWORD_DIR
 rm $NETWORD_DIR/model.onnx
 rm $NETWORD_DIR/out_layer*.txt
@@ -49,10 +52,11 @@ cp $CUR_DIR/quantization/out_layer*.txt $NETWORD_DIR/
 
 # Generate source code and weights for model inference
 # We use 64 bits for the BatchNorm and ReLU
-python network_generate.py --network_dir $NETWORD_DIR/ --Bn_Relu_Bits 64 --sdk $SDK --perf_layer Yes --l2_buffer_size 300000
+python network_generate.py NEMO GAP8.GAP8_gvsoc ../config_NEMO_DSCNN.json  --app_dir $NETWORD_DIR/ --perf_layer Yes
 
 # Copy the files into our directory, preparing the MFCC integration
-mkdir -p $CUR_DIR/application/ && cp -r application/DORY_network/ "$_"
+# mkdir -p $CUR_DIR/application/ && cp -r $NETWORD_DIR/DORY_network/ "$_"
+mkdir -p $CUR_DIR/application/ && cp -r $NETWORD_DIR/DORY_network/ $CUR_DIR/application/
 cd $CUR_DIR/application/
 
 # Run end-to-end KWS on selected 8-core platform (e.g., PULP-OPEN) using the selected SDK (e.g., pulp_sdk)
