@@ -29,6 +29,7 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/scratch/wetterhorn/cioflanc/minicon
 export GAP_SDK_DIR=/usr/scratch/wetterhorn/cioflanc/tools/gap_sdk/
 export AUDIO_SAMPLE=/usr/scratch/wetterhorn/cioflanc/kws-on-pulp/kws-on-pulp/dataset/train/right/aa48c94a_nohash_2.wav
 export SDK=$1
+export MEMORY=L2
 export NETWORD_DIR=DSCNN
 export CUR_DIR=$PWD
 
@@ -68,5 +69,5 @@ cd $CUR_DIR/application/
 # Run end-to-end KWS on selected 8-core platform (e.g., PULP-OPEN) using the selected SDK (e.g., pulp_sdk)
 # Compute MFCC for selected audio sample and perform inference using the MFCCs on GVSOC
 # Dory will compare the intermediate features agains the ones generated in Python (quantization/main.py)
-make VERBOSE=1 clean all run sample=$AUDIO_SAMPLE sdk=$SDK CORE=8 platform=gvsoc
+make VERBOSE=1 clean all run sample=$AUDIO_SAMPLE sdk=$SDK memory=$MEMORY CORE=8 platform=gvsoc
 

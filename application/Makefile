@@ -32,6 +32,8 @@ endif
 
 WAV_FILE = $(sample)
 SDK      = $(sdk)
+PULP_SDK_STR = pulp_sdk
+L2_STR = L2
 
 include $(CURDIR)/MfccModel.mk
 clean:: clean_mfcc_code
@@ -90,7 +92,6 @@ endif
 APP_CFLAGS      += -DAT_WAV=$(WAV_FILE) -DSDK=$(SDK)# -DPERF -DPRINT_INOUT -DPRINTDEB 
 APP_CFLAGS      += -I. -I$(MFCCBUILD_DIR) -I$(DSP_DIR) -I$(DSP_LUT_DIR) -I$(AUTOTILER_DIR) -I$(WAVIO_DIR) 
 
-PULP_SDK_STR = pulp_sdk
 ifeq ($(SDK), $(PULP_SDK_STR))
 	APP_CFLAGS += -DNUM_CORES=$(CORE) -DPULP_SDK=1 -IDORY_network/inc -O3 -w -fno-tree-loop-distribute-patterns -flto
 	APP_CFLAGS += -I$(GAP_SDK_DIR)tools/autotiler_v3/Emulation 
@@ -100,21 +101,25 @@ endif
 
 APP_LDFLAGS += -lm -flto
 
-CONFIG_HYPERRAM = 1
-CONFIG_HYPERFLASH = 1
 
-FLASH_FILES = DORY_network/BNReluConvolution0_weights.hex
-FLASH_FILES += DORY_network/BNReluConvolution1_weights.hex
-FLASH_FILES += DORY_network/BNReluConvolution2_weights.hex
-FLASH_FILES += DORY_network/BNReluConvolution3_weights.hex
-FLASH_FILES += DORY_network/BNReluConvolution4_weights.hex
-FLASH_FILES += DORY_network/BNReluConvolution5_weights.hex
-FLASH_FILES += DORY_network/BNReluConvolution6_weights.hex
-FLASH_FILES += DORY_network/BNReluConvolution7_weights.hex
-FLASH_FILES += DORY_network/BNReluConvolution8_weights.hex
-FLASH_FILES += DORY_network/FullyConnected10_weights.hex
-FLASH_FILES += DORY_network/inputs.hex
-READFS_FILES := $(FLASH_FILES)
+ifeq ($(MEMORY), $(L2_STR))
+	CONFIG_HYPERRAM = 1
+	CONFIG_HYPERFLASH = 1
+
+	FLASH_FILES = DORY_network/BNReluConvolution0_weights.hex
+	FLASH_FILES += DORY_network/BNReluConvolution1_weights.hex
+	FLASH_FILES += DORY_network/BNReluConvolution2_weights.hex
+	FLASH_FILES += DORY_network/BNReluConvolution3_weights.hex
+	FLASH_FILES += DORY_network/BNReluConvolution4_weights.hex
+	FLASH_FILES += DORY_network/BNReluConvolution5_weights.hex
+	FLASH_FILES += DORY_network/BNReluConvolution6_weights.hex
+	FLASH_FILES += DORY_network/BNReluConvolution7_weights.hex
+	FLASH_FILES += DORY_network/BNReluConvolution8_weights.hex
+	FLASH_FILES += DORY_network/FullyConnected10_weights.hex
+	FLASH_FILES += DORY_network/inputs.hex
+	READFS_FILES := $(FLASH_FILES)
+endif
+	
 PLPBRIDGE_FLAGS += -f
 
 include $(RULES_DIR)/pmsis_rules.mk

@@ -287,43 +287,53 @@ int main () {
     }
 
     int use_mfcc = 1;
-    int rdDone = 0;
+    int use_l3 = 0;
 
 
-    // Opening of Filesystem and Ram
+    int rdDone;
+    if (use_l3 == 1) {
+        rdDone = 0;
+    }
+    else {
+        rdDone = N_FRAME * N_MFCC;
+    }
 
     struct pi_device fs;
     struct pi_device flash;
-    open_filesystem_and_ram(&flash, &fs);
-    pi_ram_alloc(&ram, &activations_input, (uint32_t) 500000);
-    
-    if (use_mfcc == 0) {
+    // Opening of Filesystem and Ram
+    if (use_l3 == 1) {
 
-        pi_fs_file_t *file;
-        file = pi_fs_open(&fs, "inputs.hex", 0);
-        if (file == NULL)
-        {
-            printf("file open failed\n");
-            return -1;
+        open_filesystem_and_ram(&flash, &fs);
+        pi_ram_alloc(&ram, &activations_input, (uint32_t) 500000);
+        
+        if (use_mfcc == 0) {
+
+            pi_fs_file_t *file;
+            file = pi_fs_open(&fs, "inputs.hex", 0);
+            if (file == NULL)
+            {
+                printf("file open failed\n");
+                return -1;
+            }
+
+
+            // Copying the input file from flash to ram
+            int flashBuffSize = FLASH_BUFF_SIZE * sizeof(char);
+            // loop on chunk in file
+            // while(rdDone < (${int(DORY_HW_graph[0].tiling_dimensions["L2"]["input_activation_memory"])} / sizeof(char)))
+            while(rdDone < ( N_FRAME * N_MFCC / sizeof(char)))
+            {
+                // read from HyperFlash
+                int size = pi_fs_read(file, flashBuffer, flashBuffSize);
+                // write to HyperRam
+                pi_ram_write(&ram, activations_input+rdDone, flashBuffer, (uint32_t) size);
+                rdDone += size / sizeof(char);
+            }
         }
-
-
-        // Copying the input file from flash to ram
-        int flashBuffSize = FLASH_BUFF_SIZE * sizeof(char);
-        // loop on chunk in file
-        // while(rdDone < (${int(DORY_HW_graph[0].tiling_dimensions["L2"]["input_activation_memory"])} / sizeof(char)))
-        while(rdDone < ( N_FRAME * N_MFCC / sizeof(char)))
-        {
-            // read from HyperFlash
-            int size = pi_fs_read(file, flashBuffer, flashBuffSize);
-            // write to HyperRam
-            pi_ram_write(&ram, activations_input+rdDone, flashBuffer, (uint32_t) size);
-            rdDone += size / sizeof(char);
+        else {
+            int input_size = 8 * N_FRAME * N_MFCC;
+            pi_ram_write(&ram, activations_input+rdDone, feat_char, (uint32_t) input_size);
         }
-    }
-    else {
-        int input_size = 8 * N_FRAME * N_MFCC;
-        pi_ram_write(&ram, activations_input+rdDone, feat_char, (uint32_t) input_size);
     }
 
     // Allocating space for input and copying it
@@ -340,14 +350,21 @@ int main () {
 
     // Allocation
 
-    // pi_ram_read(&ram, activations_input, L2_input, ${int(DORY_HW_graph[0].tiling_dimensions["L2"]["input_activation_memory"])});
-    pi_ram_read(&ram, activations_input, L2_input, N_FRAME * N_MFCC);
-    network_alloc(fs, ram);    
+    if (use_l3 == 1) {
+        // pi_ram_read(&ram, activations_input, L2_input, ${int(DORY_HW_graph[0].tiling_dimensions["L2"]["input_activation_memory"])});
+        pi_ram_read(&ram, activations_input, L2_input, N_FRAME * N_MFCC);
+        network_alloc(fs, ram);    
 
-    // Running of the network - Failing on GAP SDK
+        // Running of the network
 
-    // network_run(L2_memory_buffer, ${l2_buffer_size}, L2_output, begin_end, ram);
-    network_run(L2_memory_buffer, L2_BUFFER_SIZE, L2_output, begin_end, ram);
+        // network_run(L2_memory_buffer, ${l2_buffer_size}, L2_output, begin_end, ram);
+        // network_run(L2_memory_buffer, L2_BUFFER_SIZE, L2_output, begin_end, ram); # TODO: Use IFDEF
+    }
+    else {
+        network_alloc();  
+        network_run(L2_memory_buffer, L2_BUFFER_SIZE, L2_output, begin_end);
+
+    }
 #ifdef VERBOSE
     printf("Network Output: ");
     // for(int i = 0; i < ${int(DORY_HW_graph[-1].tiling_dimensions["L2"]["output_activation_memory"] * (1 + int(DORY_HW_graph[-1].tiling_dimensions["L3"]["output_dimensions"] != DORY_HW_graph[-1].tiling_dimensions["L2"]["output_dimensions"]))) }; i+=4)
@@ -359,11 +376,16 @@ int main () {
 #endif
 
     // Deallocation
-
-    pi_ram_free(&ram, activations_input, 500000);
-    network_free(ram);    
-    // pi_l2_free(L2_memory_buffer, (uint32_t) ${l2_buffer_size});
-    pi_l2_free(L2_memory_buffer, (uint32_t) L2_BUFFER_SIZE);
+    if (use_l3 == 1) {
+        pi_ram_free(&ram, activations_input, 500000);
+        network_free(ram);    
+        // pi_l2_free(L2_memory_buffer, (uint32_t) ${l2_buffer_size});
+        pi_l2_free(L2_memory_buffer, (uint32_t) L2_BUFFER_SIZE);
+    }
+    else{
+        network_free();  
+        pi_l2_free(L2_memory_buffer, (uint32_t) L2_BUFFER_SIZE);
+    }
 }
 
 
