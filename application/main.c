@@ -49,6 +49,9 @@
 #define  FREQ_FC (10000000)
 #define  FREQ_CL (10000000)
 
+#define __XSTR(__s) __STR(__s)
+#define __STR(__s) #__s
+
 // ADDED NOW
 #define FLASH_BUFF_SIZE 128
 #define VERBOSE 1
@@ -260,9 +263,15 @@ void * test_kickoff(void *arg)
 // New Main - new structure
 int main () {
 
+
+    FileName = __XSTR(AT_WAV);
+    PULPSDK = __XSTR(SDK);
+
     char* L2_memory_buffer;
     char* L2_input;
-    PMU_set_voltage(1000, 0);
+    if (strcmp(PULPSDK, "gap_sdk") == 0){
+        PMU_set_voltage(1000, 0);
+    }
     pi_time_wait_us(10000);
     pi_freq_set(PI_FREQ_DOMAIN_FC, FREQ_FC);
     pi_time_wait_us(10000);
