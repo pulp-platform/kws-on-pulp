@@ -16,6 +16,7 @@
 //
 // Author: Cristian Cioflan, ETH (cioflanc@iis.ee.ethz.ch)
 
+#define __PLATFORM__ ARCHI_PLATFORM_FPGA
 
 #ifndef __EMUL__
     #include "pmsis.h"
@@ -256,17 +257,25 @@ void * test_kickoff(void *arg)
 
 int main () {
 
-
-    FileName = __XSTR(AT_WAV);
-    PULPSDK = __XSTR(SDK);
+    // printf ("Begin program");
 
 
-    // Compute MFCCs
-    test_kickoff(NULL); 
+    // FileName = __XSTR(AT_WAV);
+    // PULPSDK = __XSTR(SDK);
 
-    for (int i = 0; i < 490; i++){
-        printf("%i\n", feat_char[i]);
-    }
+    // printf("Start MFCC computation");
+
+
+    // // Compute MFCCs
+    // test_kickoff(NULL); 
+
+    // printf("Printing MFCC");
+
+    // for (int i = 0; i < 490; i++){
+    //     printf("%i\n", feat_char[i]);
+    // }
+
+    printf("Performing inference");
 
     
     char* L2_memory_buffer;
@@ -282,11 +291,11 @@ int main () {
 
     if (strcmp(PULPSDK, "pulp_sdk") == 0){
         #if __PLATFORM__ == ARCHI_PLATFORM_FPGA
-            *(int*)(ICACHE_PREFETCH) = 0xFFFF;
+            // *(int*)(ICACHE_PREFETCH) = 0xFFFF;
         #endif
     }
 
-    int use_mfcc = 1;
+    int use_mfcc = 0;
     int use_l3 = 0;
 
 
@@ -351,6 +360,10 @@ int main () {
     // Allocation
 
     if (use_l3 == 1) {
+
+        int use_precomputed_features = 1;
+
+
         // pi_ram_read(&ram, activations_input, L2_input, ${int(DORY_HW_graph[0].tiling_dimensions["L2"]["input_activation_memory"])});
         pi_ram_read(&ram, activations_input, L2_input, N_FRAME * N_MFCC);
         network_alloc(fs, ram);    
@@ -358,15 +371,17 @@ int main () {
         // Running of the network
 
         // network_run(L2_memory_buffer, ${l2_buffer_size}, L2_output, begin_end, ram);
-        // network_run(L2_memory_buffer, L2_BUFFER_SIZE, L2_output, begin_end, ram); # TODO: Use IFDEF
+        // network_run(L2_memory_buffer, L2_BUFFER_SIZE, L2_output, begin_end, ram, feat_char, use_precomputed_features); // # TODO: Use IFDEF
     }
     else {
 
-        int use_precomputed_features = 0; // 0 - use now-computed, 1 - use pre-computed
-        int input_size = N_MFCC * N_FRAME;
+        int use_precomputed_features = 1; // 0 - use now-computed, 1 - use pre-computed
 
         network_alloc();  
-        network_run(L2_memory_buffer, L2_BUFFER_SIZE, L2_output, begin_end, feat_char, input_size, use_precomputed_features);
+        network_run(L2_memory_buffer, L2_BUFFER_SIZE, L2_output, begin_end, feat_char, use_precomputed_features);
+
+        // network_alloc(fs, ram);    
+        // network_run(L2_memory_buffer, L2_BUFFER_SIZE, L2_output, begin_end, ram, feat_char, use_precomputed_features);// # TODO: Use IFDEF
 
     }
 #ifdef VERBOSE
@@ -387,7 +402,8 @@ int main () {
         pi_l2_free(L2_memory_buffer, (uint32_t) L2_BUFFER_SIZE);
     }
     else{
-        network_free();  
+        network_free(ram);
+        // network_free();  
         pi_l2_free(L2_memory_buffer, (uint32_t) L2_BUFFER_SIZE);
     }
 }

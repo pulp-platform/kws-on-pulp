@@ -29,6 +29,7 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/scratch/wetterhorn/cioflanc/minicon
 export GAP_SDK_DIR=/usr/scratch/wetterhorn/cioflanc/tools/gap_sdk/
 export AUDIO_SAMPLE=/usr/scratch/wetterhorn/cioflanc/kws-on-pulp/kws-on-pulp/dataset/train/right/aa48c94a_nohash_2.wav
 export SDK=$1
+export PLATFORM=$2
 export MEMORY=L2
 export NETWORD_DIR=DSCNN
 export CUR_DIR=$PWD
@@ -37,7 +38,13 @@ if [[ $SDK == "pulp_sdk" ]]
 then
   export PULP_RISCV_GCC_TOOLCHAIN=/usr/scratch/wetterhorn/cioflanc/tools/pulp_riscv_toolchain/v1.0.16-pulp-riscv-gcc-centos-7/
   # Select target
-  source /usr/scratch/wetterhorn/cioflanc/tools/pulp-sdk/configs/pulp-open.sh
+  if [[ $PLATFORM == "gvsoc" ]]
+  then
+    source /usr/scratch/wetterhorn/cioflanc/tools/pulp-sdk/configs/pulp-open.sh
+  elif [[ $PLATFORM == "fpga" ]]
+  then
+    source /usr/scratch/wetterhorn/cioflanc/tools/pulp_sdk_fpga/pulp-sdk/configs/pulp-open.sh
+  fi
 else
   export GAP_RISCV_GCC_TOOLCHAIN=/usr/scratch/wetterhorn/cioflanc/tools/gap_riscv_toolchain/
   # Select target
@@ -58,8 +65,12 @@ cp $CUR_DIR/quantization/out_layer*.txt $NETWORD_DIR/
 
 # Generate source code and weights for model inference
 # We use 64 bits for the BatchNorm and ReLU
-# python network_generate.py NEMO GAP8.GAP8_gvsoc ../config_NEMO_DSCNN.json --app_dir $NETWORD_DIR/ --perf_layer Yes
-python network_generate.py NEMO GAP8.GAP8_board_L2 ../config_NEMO_DSCNN.json --app_dir $NETWORD_DIR/ --perf_layer Yes
+if [[ $MEMORY == "L3" ]]
+then
+  python network_generate.py NEMO GAP8.GAP8_gvsoc ../config_NEMO_DSCNN.json --app_dir $NETWORD_DIR/ --perf_layer Yes
+else
+  python network_generate.py NEMO GAP8.GAP8_board_L2 ../config_NEMO_DSCNN.json --app_dir $NETWORD_DIR/ --perf_layer Yes
+fi
 
 # Copy the files into our directory, preparing the MFCC integration
 # mkdir -p $CUR_DIR/application/ && cp -r $NETWORD_DIR/DORY_network/ "$_"
@@ -69,5 +80,5 @@ cd $CUR_DIR/application/
 # Run end-to-end KWS on selected 8-core platform (e.g., PULP-OPEN) using the selected SDK (e.g., pulp_sdk)
 # Compute MFCC for selected audio sample and perform inference using the MFCCs on GVSOC
 # Dory will compare the intermediate features agains the ones generated in Python (quantization/main.py)
-make VERBOSE=1 clean all run sample=$AUDIO_SAMPLE sdk=$SDK memory=$MEMORY CORE=8 platform=gvsoc
+make VERBOSE=1 clean all run sample=$AUDIO_SAMPLE sdk=$SDK memory=$MEMORY CORE=8 platform=$PLATFORM
 
