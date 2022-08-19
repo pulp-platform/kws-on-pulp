@@ -257,13 +257,13 @@ void * test_kickoff(void *arg)
 
 int main () {
 
-    // printf ("Begin program");
+    printf ("Begin program");
 
 
-    // FileName = __XSTR(AT_WAV);
-    // PULPSDK = __XSTR(SDK);
+    FileName = __XSTR(AT_WAV);
+    PULPSDK = __XSTR(SDK);
 
-    // printf("Start MFCC computation");
+    printf("Start MFCC computation");
 
 
     // // Compute MFCCs
@@ -275,7 +275,7 @@ int main () {
     //     printf("%i\n", feat_char[i]);
     // }
 
-    printf("Performing inference");
+    // printf("Performing inference");
 
     
     char* L2_memory_buffer;
