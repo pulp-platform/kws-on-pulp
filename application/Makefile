@@ -91,10 +91,12 @@ ifeq ($(USE_HIGH_PREC), 1)
 endif
 
 APP_CFLAGS      += -DAT_WAV=$(WAV_FILE) -DSDK=$(SDK) # -DPERF -DPRINT_INOUT -DPRINTDEB 
-APP_CFLAGS      += -I. -I$(MFCCBUILD_DIR) -I$(DSP_DIR) -I$(DSP_LUT_DIR) -I$(AUTOTILER_DIR) -I$(WAVIO_DIR)#-mno-fdiv -mabi=ilp32
+APP_CFLAGS      += -I. -I$(MFCCBUILD_DIR) -I$(DSP_DIR) -I$(DSP_LUT_DIR) -I$(AUTOTILER_DIR) -I$(WAVIO_DIR) #-mno-fdiv -mabi=ilp32
+# APP_CFLAGS      += -I$(BSP_DIR)
+
 
 ifeq ($(SDK), $(PULP_SDK_STR))
-	APP_CFLAGS += -DNUM_CORES=$(CORE) -DPULP_SDK=1 -IDORY_network/inc -O3 -w -fno-tree-loop-distribute-patterns -flto# -mno-fdiv -mabi=ilp32 
+	APP_CFLAGS += -DNUM_CORES=$(CORE) -DPULP_SDK=1 -IDORY_network/inc -O3 -w -fno-tree-loop-distribute-patterns -flto #-mno-fdiv -mabi=ilp32 
 	APP_CFLAGS += -I$(GAP_SDK_DIR)tools/autotiler_v3/Emulation 
 else
 	APP_CFLAGS += -DNUM_CORES=$(CORE) -DGAP_SDK=1 -IDORY_network/inc -O3 -w -fno-tree-loop-distribute-patterns -flto 

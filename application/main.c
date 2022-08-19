@@ -39,6 +39,7 @@
 #include "LUT.def"
 #include "MFCC_FB.def"
 
+
 #define  L2_BUFFER_SIZE 80000  // ORIGINAL: 380000. TODO: Why it works???
 #define  BUF_SIZE       16500 
 #define  STACK_SIZE     2048
@@ -192,12 +193,15 @@ void * test_kickoff(void *arg)
         pmsis_exit(1);
     }
 
-    header_struct header_info;
-    if (ReadWavFromFile(FileName, inWav, BUF_SIZE*sizeof(short), &header_info)){
-        printf("Error reading wav file\n");
-        pmsis_exit(1);
-    }
-    num_samples = header_info.DataSize * 8 / (header_info.NumChannels * header_info.BitsPerSample);
+
+    // TODO: Move onto L2
+    // header_struct header_info;
+    // if (ReadWavFromFile(FileName, inWav, BUF_SIZE*sizeof(short), &header_info)){
+    //     printf("Error reading wav file\n");
+    //     pmsis_exit(1);
+    // }
+    // num_samples = header_info.DataSize * 8 / (header_info.NumChannels * header_info.BitsPerSample);
+    num_samples = 16000;
 
     #if (DATA_TYPE==2) || (DATA_TYPE==3)
         for (int i=0; i<num_samples; i++) {
@@ -230,6 +234,7 @@ void * test_kickoff(void *arg)
         pi_cluster_send_task_to_cl(&cluster_dev, &task);
 
     }
+
     // Closing the cluster once the task is finished
     pi_cluster_close(&cluster_dev);
 
@@ -266,16 +271,16 @@ int main () {
     printf("Start MFCC computation");
 
 
-    // // Compute MFCCs
-    // test_kickoff(NULL); 
+    // Compute MFCCs
+    test_kickoff(NULL); 
 
-    // printf("Printing MFCC");
+    printf("Printing MFCC");
 
-    // for (int i = 0; i < 490; i++){
-    //     printf("%i\n", feat_char[i]);
-    // }
+    for (int i = 0; i < 490; i++){
+        printf("%i\n", feat_char[i]);
+    }
 
-    // printf("Performing inference");
+    printf("Performing inference");
 
     
     char* L2_memory_buffer;
