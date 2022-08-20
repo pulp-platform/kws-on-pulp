@@ -51,6 +51,12 @@ else
   source /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk/sourceme.sh
 fi
 
+# Save .WAV as .h for L2
+if [[ $MEMORY == "L2" ]]
+then
+  python wav_to_header.py --file $AUDIO_SAMPLE --sdk $SDK
+fi
+
 # Copy model and it's activations to Dory
 cd dory/
 mkdir -p $NETWORD_DIR
@@ -75,6 +81,10 @@ fi
 # Copy the files into our directory, preparing the MFCC integration
 # mkdir -p $CUR_DIR/application/ && cp -r $NETWORD_DIR/DORY_network/ "$_"
 mkdir -p $CUR_DIR/application/ && cp -r $NETWORD_DIR/DORY_network/ $CUR_DIR/application/
+if [[ $MEMORY == "L2" ]]
+then
+  cp $CUR_DIR/wav.h $CUR_DIR/application
+fi
 cd $CUR_DIR/application/
 
 # Run end-to-end KWS on selected 8-core platform (e.g., PULP-OPEN) using the selected SDK (e.g., pulp_sdk)

@@ -39,6 +39,7 @@
 #include "LUT.def"
 #include "MFCC_FB.def"
 
+#import "wav.h"
 
 #define  L2_BUFFER_SIZE 80000  // ORIGINAL: 380000. TODO: Why it works???
 #define  BUF_SIZE       16500 
@@ -195,13 +196,15 @@ void * test_kickoff(void *arg)
 
 
     // TODO: Move onto L2
-    // header_struct header_info;
+    header_struct header_info;
     // if (ReadWavFromFile(FileName, inWav, BUF_SIZE*sizeof(short), &header_info)){
     //     printf("Error reading wav file\n");
     //     pmsis_exit(1);
     // }
     // num_samples = header_info.DataSize * 8 / (header_info.NumChannels * header_info.BitsPerSample);
+
     num_samples = 16000;
+    inWav = L2_wav_input;
 
     #if (DATA_TYPE==2) || (DATA_TYPE==3)
         for (int i=0; i<num_samples; i++) {
