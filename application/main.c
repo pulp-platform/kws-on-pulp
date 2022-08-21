@@ -87,6 +87,7 @@ short int *inWav;
 int num_samples;
 volatile char *FileName;
 volatile char *PULPSDK;
+volatile char *Memory;
 char * feat_char;
 
 // filesystem management functions
@@ -270,7 +271,10 @@ int main () {
 
     FileName = __XSTR(AT_WAV);
     PULPSDK = __XSTR(SDK);
+    Memory = __XSTR(MEMORY);
 
+
+    printf ("%s\n", Memory);
     printf("Start MFCC computation");
 
 
@@ -304,21 +308,25 @@ int main () {
     }
 
     int use_mfcc = 0;
-    int use_l3 = 0;
 
 
     int rdDone;
-    if (use_l3 == 1) {
+#if MEMORY == 3
+    // if (strcmp(Memory, "3") == 0){
         rdDone = 0;
-    }
-    else {
+    // }
+#endif
+#if MEMORY == 2
+    // else {
         rdDone = N_FRAME * N_MFCC;
-    }
+    // }
+#endif
 
     struct pi_device fs;
     struct pi_device flash;
-    // Opening of Filesystem and Ram
-    if (use_l3 == 1) {
+    // Opening of Filesystem and 
+#if MEMORY == 3
+    // if (strcmp(Memory, "3") == 0){
 
         open_filesystem_and_ram(&flash, &fs);
         pi_ram_alloc(&ram, &activations_input, (uint32_t) 500000);
@@ -351,7 +359,8 @@ int main () {
             int input_size = 8 * N_FRAME * N_MFCC;
             pi_ram_write(&ram, activations_input+rdDone, feat_char, (uint32_t) input_size);
         }
-    }
+    // }
+#endif
 
     // Allocating space for input and copying it
 
@@ -367,7 +376,9 @@ int main () {
 
     // Allocation
 
-    if (use_l3 == 1) {
+
+#if MEMORY == 3
+    // if (strcmp(Memory, "L3") == 0){
 
         int use_precomputed_features = 1;
 
@@ -379,9 +390,11 @@ int main () {
         // Running of the network
 
         // network_run(L2_memory_buffer, ${l2_buffer_size}, L2_output, begin_end, ram);
-        // network_run(L2_memory_buffer, L2_BUFFER_SIZE, L2_output, begin_end, ram, feat_char, use_precomputed_features); // # TODO: Use IFDEF
-    }
-    else {
+        network_run(L2_memory_buffer, L2_BUFFER_SIZE, L2_output, begin_end, ram, feat_char, use_precomputed_features); // # TODO: Use IFDEF
+    // }
+#endif
+#if MEMORY == 2
+    // else {
 
         int use_precomputed_features = 1; // 0 - use now-computed, 1 - use pre-computed
 
@@ -391,7 +404,8 @@ int main () {
         // network_alloc(fs, ram);    
         // network_run(L2_memory_buffer, L2_BUFFER_SIZE, L2_output, begin_end, ram, feat_char, use_precomputed_features);// # TODO: Use IFDEF
 
-    }
+    // }
+#endif
 #ifdef VERBOSE
     printf("Network Output: ");
     // for(int i = 0; i < ${int(DORY_HW_graph[-1].tiling_dimensions["L2"]["output_activation_memory"] * (1 + int(DORY_HW_graph[-1].tiling_dimensions["L3"]["output_dimensions"] != DORY_HW_graph[-1].tiling_dimensions["L2"]["output_dimensions"]))) }; i+=4)
@@ -402,18 +416,23 @@ int main () {
     printf("\n");
 #endif
 
+
+#if MEMORY == 3
     // Deallocation
-    if (use_l3 == 1) {
+    // if (strcmp(Memory, "L3") == 0){
         pi_ram_free(&ram, activations_input, 500000);
         network_free(ram);    
         // pi_l2_free(L2_memory_buffer, (uint32_t) ${l2_buffer_size});
         pi_l2_free(L2_memory_buffer, (uint32_t) L2_BUFFER_SIZE);
-    }
-    else{
-        network_free(ram);
-        // network_free();  
+    // }
+#endif
+#if MEMORY == 2
+    // else{
+        // network_free(ram);
+        network_free();  
         pi_l2_free(L2_memory_buffer, (uint32_t) L2_BUFFER_SIZE);
-    }
+    // }
+#endif
 }
 
 

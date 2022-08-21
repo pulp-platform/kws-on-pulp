@@ -34,7 +34,7 @@ WAV_FILE = $(sample)
 SDK      = $(sdk)
 MEMORY   = $(memory)
 PULP_SDK_STR = pulp_sdk
-L3_STR = L3
+L3_STR = 3
 
 include $(CURDIR)/MfccModel.mk
 clean:: clean_mfcc_code
@@ -90,19 +90,19 @@ ifeq ($(USE_HIGH_PREC), 1)
 	APP_CFLAGS += -DHIGH_PREC_FFT
 endif
 
-APP_CFLAGS      += -DAT_WAV=$(WAV_FILE) -DSDK=$(SDK) # -DPERF -DPRINT_INOUT -DPRINTDEB 
-APP_CFLAGS      += -I. -I$(MFCCBUILD_DIR) -I$(DSP_DIR) -I$(DSP_LUT_DIR) -I$(AUTOTILER_DIR) -I$(WAVIO_DIR) #-mno-fdiv -mabi=ilp32
+APP_CFLAGS      += -DAT_WAV=$(WAV_FILE) -DSDK=$(SDK) -DMEMORY=$(MEMORY) # -DPERF -DPRINT_INOUT -DPRINTDEB 
+APP_CFLAGS      += -I. -I$(MFCCBUILD_DIR) -I$(DSP_DIR) -I$(DSP_LUT_DIR) -I$(AUTOTILER_DIR) -I$(WAVIO_DIR) # -mno-fdiv -mabi=ilp32
 # APP_CFLAGS      += -I$(BSP_DIR)
 
 
 ifeq ($(SDK), $(PULP_SDK_STR))
-	APP_CFLAGS += -DNUM_CORES=$(CORE) -DPULP_SDK=1 -IDORY_network/inc -O3 -w -fno-tree-loop-distribute-patterns -flto #-mno-fdiv -mabi=ilp32 
+	APP_CFLAGS += -DNUM_CORES=$(CORE) -DPULP_SDK=1 -IDORY_network/inc -O3 -w -fno-tree-loop-distribute-patterns -flto # -mno-fdiv -mabi=ilp32 
 	APP_CFLAGS += -I$(GAP_SDK_DIR)tools/autotiler_v3/Emulation 
 else
 	APP_CFLAGS += -DNUM_CORES=$(CORE) -DGAP_SDK=1 -IDORY_network/inc -O3 -w -fno-tree-loop-distribute-patterns -flto 
 endif
 
-APP_LDFLAGS += -lm -flto #-mno-fdiv -mabi=ilp32
+APP_LDFLAGS += -lm -flto # -mno-fdiv -mabi=ilp32
 
 
 ifeq ($(MEMORY), $(L3_STR))

@@ -52,7 +52,7 @@ else
 fi
 
 # Save .WAV as .h for L2
-if [[ $MEMORY == "L2" ]]
+if [[ $MEMORY == "2" ]]
 then
   python wav_to_header.py --file $AUDIO_SAMPLE --sdk $SDK
 fi
@@ -71,7 +71,7 @@ cp $CUR_DIR/quantization/out_layer*.txt $NETWORD_DIR/
 
 # Generate source code and weights for model inference
 # We use 64 bits for the BatchNorm and ReLU
-if [[ $MEMORY == "L3" ]]
+if [[ $MEMORY == "3" ]]
 then
   python network_generate.py NEMO GAP8.GAP8_gvsoc ../config_NEMO_DSCNN.json --app_dir $NETWORD_DIR/ --perf_layer Yes
 else
@@ -81,7 +81,7 @@ fi
 # Copy the files into our directory, preparing the MFCC integration
 # mkdir -p $CUR_DIR/application/ && cp -r $NETWORD_DIR/DORY_network/ "$_"
 mkdir -p $CUR_DIR/application/ && cp -r $NETWORD_DIR/DORY_network/ $CUR_DIR/application/
-if [[ $MEMORY == "L2" ]]
+if [[ $MEMORY == "2" ]]
 then
   cp $CUR_DIR/wav.h $CUR_DIR/application
 fi
