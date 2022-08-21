@@ -7,3 +7,4 @@ quantization/*.onnx
 application/BUILD/
 application/BUILD_MFCC/
 application/DORY_network/
+*.pth
