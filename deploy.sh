@@ -31,6 +31,7 @@ export AUDIO_SAMPLE=/usr/scratch/wetterhorn/cioflanc/kws-on-pulp/kws-on-pulp/dat
 export SDK=$1
 export MEMORY=$2
 export PLATFORM=$3
+export MFCC=$4
 export NETWORD_DIR=DSCNN
 export CUR_DIR=$PWD
 
@@ -93,5 +94,5 @@ cd $CUR_DIR/application/
 
 # VERBOSE=1 requires MAGICK?! TODO: understand
 # make VERBOSE=1 clean all run sample=$AUDIO_SAMPLE sdk=$SDK memory=$MEMORY CORE=8 platform=$PLATFORM 
-make clean all run sample=$AUDIO_SAMPLE sdk=$SDK memory=$MEMORY platform=$PLATFORM CORE=8 # runner_args="--trace=insn"
+make clean all run sample=$AUDIO_SAMPLE sdk=$SDK memory=$MEMORY platform=$PLATFORM mfcc=$MFCC CORE=8 # runner_args="--trace=insn"
 

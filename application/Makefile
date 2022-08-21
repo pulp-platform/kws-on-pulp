@@ -33,6 +33,7 @@ endif
 WAV_FILE = $(sample)
 SDK      = $(sdk)
 MEMORY   = $(memory)
+MFCC     = $(mfcc)
 PULP_SDK_STR = pulp_sdk
 L3_STR = 3
 
@@ -90,7 +91,7 @@ ifeq ($(USE_HIGH_PREC), 1)
 	APP_CFLAGS += -DHIGH_PREC_FFT
 endif
 
-APP_CFLAGS      += -DAT_WAV=$(WAV_FILE) -DSDK=$(SDK) -DMEMORY=$(MEMORY) # -DPERF -DPRINT_INOUT -DPRINTDEB 
+APP_CFLAGS      += -DAT_WAV=$(WAV_FILE) -DSDK=$(SDK) -DMEMORY=$(MEMORY) -DMFCC=$(MFCC) # -DPERF -DPRINT_INOUT -DPRINTDEB 
 APP_CFLAGS      += -I. -I$(MFCCBUILD_DIR) -I$(DSP_DIR) -I$(DSP_LUT_DIR) -I$(AUTOTILER_DIR) -I$(WAVIO_DIR) # -mno-fdiv -mabi=ilp32
 # APP_CFLAGS      += -I$(BSP_DIR)
 
