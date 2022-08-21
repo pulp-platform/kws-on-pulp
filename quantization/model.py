@@ -140,6 +140,7 @@ class DSCNN(torch.nn.Module):
             x = torch.flatten(x, 1) 
             x = self.fc1(x)
             npy_to_txt(10, x.int().cpu().detach().numpy())
+            print (x.int().cpu().detach().numpy())
 
         else:
 

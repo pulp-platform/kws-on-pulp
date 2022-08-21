@@ -277,11 +277,11 @@ int main () {
     // Compute MFCCs
     test_kickoff(NULL); 
 
-    printf("Printing MFCC");
+    // printf("Printing MFCC");
 
-    for (int i = 0; i < 490; i++){
-        printf("%i\n", feat_char[i]);
-    }
+    // for (int i = 0; i < 490; i++){
+    //     printf("%i\n", feat_char[i]);
+    // }
 
     printf("Performing inference");
 

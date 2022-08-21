@@ -46,10 +46,13 @@ def npy_to_txt(layer_number, activations):
         f = open('out_layer' + str(layer_number) + '.txt', "a")
         f.write('# layers.0.relu1 (shape [1, 25, 5, 64]),\\\n')  # Hardcoded, should be adapted for better understanding.
         for elem in tmp:
-            if (elem < 0):
-                f.write (str(256+elem) + ",\\\n")
+            if layer_number == 10:
+                f.write (str(elem) + ",\\\n") # The output layer is not shifted
             else:
-                f.write (str(elem) + ",\\\n")
+                if (elem < 0):
+                    f.write (str(256+elem) + ",\\\n")
+                else:
+                    f.write (str(elem) + ",\\\n")
         f.close()
 
 
@@ -106,9 +109,9 @@ def parameter_generation():
 
     # Training parameters
     training_parameters = {
-    'data_dir':'path/to/dataset/speech_commands_v0.02',
+    'data_dir':'/usr/scratch/sassauna2/cioflanc/dolphinGSC/speech_commands_v0.02',
     'data_url':'https://storage.googleapis.com/download.tensorflow.org/data/speech_commands_v0.02.tar.gz',
-    'epochs':40,
+    'epochs':1,
     'batch_size':128,
     'silence_percentage':10.0,
     'unknown_percentage':10.0,
