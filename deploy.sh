@@ -52,12 +52,6 @@ else
   source /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk/sourceme.sh
 fi
 
-# Save .WAV as .h for L2
-if [[ $MEMORY == "2" ]]
-then
-  python wav_to_header.py --file $AUDIO_SAMPLE --sdk $SDK
-fi
-
 # Copy model and it's activations to Dory
 cd dory/
 mkdir -p $NETWORD_DIR
@@ -84,7 +78,9 @@ fi
 mkdir -p $CUR_DIR/application/ && cp -r $NETWORD_DIR/DORY_network/ $CUR_DIR/application/
 if [[ $MEMORY == "2" ]]
 then
-  cp $CUR_DIR/wav.h $CUR_DIR/application
+  # Save .WAV as .h for L2
+  python wav_to_header.py --file $AUDIO_SAMPLE --sdk $SDK
+  mv $CUR_DIR/wav.h $CUR_DIR/application
 fi
 cd $CUR_DIR/application/
 
