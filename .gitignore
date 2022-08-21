@@ -8,3 +8,4 @@ application/BUILD/
 application/BUILD_MFCC/
 application/DORY_network/
 *.pth
+*__pycache__*
