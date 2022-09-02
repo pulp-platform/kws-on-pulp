@@ -90,5 +90,14 @@ cd $CUR_DIR/application/
 
 # VERBOSE=1 requires MAGICK?! TODO: understand
 # make VERBOSE=1 clean all run sample=$AUDIO_SAMPLE sdk=$SDK memory=$MEMORY CORE=8 platform=$PLATFORM 
+
+# Parametrized
 make clean all run sample=$AUDIO_SAMPLE sdk=$SDK memory=$MEMORY platform=$PLATFORM mfcc=$MFCC CORE=8 # runner_args="--trace=insn"
 
+# RTL-only
+# make clean all run sample=$AUDIO_SAMPLE sdk=$SDK memory=$MEMORY platform=rtl mfcc=$MFCC CORE=8 # runner_args="--trace=insn"
+
+# Instructions
+# screen -L /dev/ttyUSB2 115200
+# ./openocd -f openocd-zcu102-digilent-jtag-hs2.cfg
+# /usr/scratch/wetterhorn/cioflanc/tools/pulp_riscv_toolchain/v1.0.16-pulp-riscv-gcc-centos-7/bin/riscv32-unknown-elf-gdb executable

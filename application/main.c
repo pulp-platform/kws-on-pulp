@@ -41,6 +41,9 @@
 
 #include "wav.h"
 
+#define ICACHE_CTRL_UNIT 0x10201400
+#define ICACHE_PREFETCH ICACHE_CTRL_UNIT + 0x1C
+
 #define  L2_BUFFER_SIZE 80000  // ORIGINAL: 380000. TODO: Why it works???
 #define  BUF_SIZE       16500 
 #define  STACK_SIZE     2048
@@ -132,15 +135,19 @@ static void RunMFCC()
 
     // Compute MFCC following Tensorflow settings
     #if (N_DCT == 0)
+        printf("DCT is 0 \n");
             #if (DATA_TYPE==2) || (DATA_TYPE==3)
             Tensorflow_MFCC(MfccInSig, out_feat, R2_Twiddles_float_512, RFFT_Twiddles_float_1024, R2_SwapTable_float_512, WindowLUT, MFCC_FilterBank, MFCC_Coeffs);
             #else
             Tensorflow_MFCC(MfccInSig, out_feat, R2_Twiddles_fix_512,   RFFT_Twiddles_fix_1024,   R2_SwapTable_fix_512,   WindowLUT, MFCC_FilterBank, MFCC_Coeffs, NORM);
             #endif
     #else
+        printf("DCT is 1 \n");
             #if (DATA_TYPE==2) || (DATA_TYPE==3)
+            printf ("DATATYPE is %i\n", DATA_TYPE);
             Tensorflow_MFCC(MfccInSig, out_feat, R2_Twiddles_float_512, RFFT_Twiddles_float_1024, R2_SwapTable_float_512, WindowLUT, MFCC_FilterBank, MFCC_Coeffs, DCT_Coeff);
             #else
+            printf ("DATATYPE is %i\n", DATA_TYPE);
             Tensorflow_MFCC(MfccInSig, out_feat, R2_Twiddles_fix_512,   RFFT_Twiddles_fix_1024,   R2_SwapTable_fix_512,   WindowLUT, MFCC_FilterBank, MFCC_Coeffs, NORM, DCT_Coeff);
             #endif
     #endif
@@ -152,6 +159,7 @@ static void RunMFCC()
 
 void * test_kickoff(void *arg)
 {
+    printf ("Test kickoff - preinit \n");
     #ifndef __EMUL__
 
         printf ("Test kickoff - init \n");
@@ -222,15 +230,43 @@ void * test_kickoff(void *arg)
     printf ("SDK: %s\n", PULPSDK);
     if (strcmp(PULPSDK, "pulp_sdk") == 0) {
         // PULP
+        // Working before
+
+        // struct pi_cluster_task cluster_task = {0};
+        // printf ("Current: %s\n", cluster_task);
+        // // pi_cluster_task(&cluster_task, pulp_parallel, NULL);
+        // // Replace pulp_parallel with pi_cl_team_fork - is NUM_CORE included?
+        // pi_cluster_task(&cluster_task, pi_cl_team_fork, NULL); 
+        // cluster_task.stack_size = STACK_SIZE;
+        // cluster_task.slave_stack_size = STACK_SIZE;
+        // cluster_task.entry = RunMFCC;
+        // cluster_task.arg = NULL;
+        // pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);
+
+
+        struct pi_device cluster_dev = {0};
+        struct pi_cluster_conf conf;
         struct pi_cluster_task cluster_task = {0};
-        // pi_cluster_task(&cluster_task, pulp_parallel, NULL);
-        // Preplace pulp_parallel with pi_cl_team_fork - is NUM_CORE included?
-        pi_cluster_task(&cluster_task, pi_cl_team_fork, NULL); 
+        // First open the cluster
+        pi_cluster_conf_init(&conf);
+        conf.id=0;
+        printf ("pi_cluster_conf_init\n");
+        pi_cluster_task(&cluster_task, RunMFCC, NULL);
+        printf ("pi_cluster_task\n");
+        pi_open_from_conf(&cluster_dev, &conf);
+        printf ("pi_open_from_conf\n");
+        if (pi_cluster_open(&cluster_dev))
+            return -1;
+        printf ("pi_cluster_open\n");
+        // Then offload an entry point, this will get executed on the cluster controller
         cluster_task.stack_size = STACK_SIZE;
         cluster_task.slave_stack_size = STACK_SIZE;
-        cluster_task.entry = RunMFCC;
-        cluster_task.arg = NULL;
         pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);
+        printf ("pi_cluster_send_task_to_cl\n");
+
+
+
+        printf ("Current: %s\n", pi_cluster_send_task_to_cl);
     } else {
         // GAP
         struct pi_cluster_task task = {0};
@@ -283,22 +319,10 @@ int main () {
         Mfcc = 1;
     }
 
+
     printf ("%s\n", Memory);
-    printf("Start MFCC computation");
+    printf("Start MFCC computation\n");
 
-
-    // Compute MFCCs
-    test_kickoff(NULL); 
-
-    // printf("Printing MFCC");
-
-    // for (int i = 0; i < 490; i++){
-    //     printf("%i\n", feat_char[i]);
-    // }
-
-    printf("Performing inference");
-
-    
     char* L2_memory_buffer;
     char* L2_input;
     if (strcmp(PULPSDK, "gap_sdk") == 0){
@@ -310,55 +334,72 @@ int main () {
     pi_freq_set(PI_FREQ_DOMAIN_CL, 10000000);
     pi_time_wait_us(10000);
 
-    if (strcmp(PULPSDK, "pulp_sdk") == 0){
-        #if __PLATFORM__ == ARCHI_PLATFORM_FPGA
-            // *(int*)(ICACHE_PREFETCH) = 0xFFFF;
-        #endif
+    // if (strcmp(PULPSDK, "pulp_sdk") == 0){
+    //     #if __PLATFORM__ == ARCHI_PLATFORM_FPGA
+    //         *(int*)(ICACHE_PREFETCH) = 0xFFFF;
+    //     #endif
+    // }
+
+    *(int*)(ICACHE_PREFETCH) = 0xFFFF;
+
+
+
+
+
+    printf("Printing MFCC\n");
+
+    for (int i = 0; i < 490; i++){
+        printf("%i\n", feat_char[i]);
     }
+
+    printf("Performing inference\n");
+
+    
 
 
     int rdDone;
 #if MEMORY == 3
-        rdDone = 0;
+    rdDone = 0;
 #endif
 #if MEMORY == 2
-        rdDone = N_FRAME * N_MFCC;
+    rdDone = N_FRAME * N_MFCC;
 #endif
 
+    printf ("rdDone set\n");
+#if MEMORY == 3
     struct pi_device fs;
     struct pi_device flash;
     // Opening of Filesystem and 
-#if MEMORY == 3
-        open_filesystem_and_ram(&flash, &fs);
-        pi_ram_alloc(&ram, &activations_input, (uint32_t) 500000);
-        
-        if (Mfcc == 0) {
+    open_filesystem_and_ram(&flash, &fs);
+    pi_ram_alloc(&ram, &activations_input, (uint32_t) 500000);
+    
+    if (Mfcc == 0) {
 
-            pi_fs_file_t *file;
-            file = pi_fs_open(&fs, "inputs.hex", 0);
-            if (file == NULL)
-            {
-                printf("file open failed\n");
-                return -1;
-            }
+        pi_fs_file_t *file;
+        file = pi_fs_open(&fs, "inputs.hex", 0);
+        if (file == NULL)
+        {
+            printf("file open failed\n");
+            return -1;
+        }
 
-            // Copying the input file from flash to ram
-            int flashBuffSize = FLASH_BUFF_SIZE * sizeof(char);
-            // loop on chunk in file
-            // while(rdDone < (${int(DORY_HW_graph[0].tiling_dimensions["L2"]["input_activation_memory"])} / sizeof(char)))
-            while(rdDone < ( N_FRAME * N_MFCC / sizeof(char)))
-            {
-                // read from HyperFlash
-                int size = pi_fs_read(file, flashBuffer, flashBuffSize);
-                // write to HyperRam
-                pi_ram_write(&ram, activations_input+rdDone, flashBuffer, (uint32_t) size);
-                rdDone += size / sizeof(char);
-            }
+        // Copying the input file from flash to ram
+        int flashBuffSize = FLASH_BUFF_SIZE * sizeof(char);
+        // loop on chunk in file
+        // while(rdDone < (${int(DORY_HW_graph[0].tiling_dimensions["L2"]["input_activation_memory"])} / sizeof(char)))
+        while(rdDone < ( N_FRAME * N_MFCC / sizeof(char)))
+        {
+            // read from HyperFlash
+            int size = pi_fs_read(file, flashBuffer, flashBuffSize);
+            // write to HyperRam
+            pi_ram_write(&ram, activations_input+rdDone, flashBuffer, (uint32_t) size);
+            rdDone += size / sizeof(char);
         }
-        else {
-            int input_size = 8 * N_FRAME * N_MFCC;
-            pi_ram_write(&ram, activations_input+rdDone, feat_char, (uint32_t) input_size);
-        }
+    }
+    else {
+        int input_size = 8 * N_FRAME * N_MFCC;
+        pi_ram_write(&ram, activations_input+rdDone, feat_char, (uint32_t) input_size);
+    }
 #endif
 
     // Allocating space for input and copying it
@@ -369,6 +410,9 @@ int main () {
     // L2_input = L2_memory_buffer + (1 - begin_end) * (${l2_buffer_size} - rdDone);
     L2_input = L2_memory_buffer + (1 - begin_end) * (L2_BUFFER_SIZE - rdDone);
     L2_output = L2_memory_buffer;
+
+    printf ("Allocated memory\n");
+
 #ifdef VERBOSE
     printf("\nL2 Buffer alloc initial\t@ 0x%08x:\t%s\n", (unsigned int)L2_memory_buffer, L2_memory_buffer?"Ok":"Failed");
 #endif
@@ -413,6 +457,12 @@ int main () {
         network_free();  
         pi_l2_free(L2_memory_buffer, (uint32_t) L2_BUFFER_SIZE);
 #endif
+
+
+    // Compute MFCCs
+    test_kickoff(NULL); 
+
+
 }
 
 
