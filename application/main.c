@@ -71,7 +71,6 @@ static uint8_t flashBuffer[FLASH_BUFF_SIZE];
 char* L2_output;
 
 
-
 #if (DATA_TYPE==2)
 typedef f16 MFCC_IN_TYPE;
 typedef f16 OUT_TYPE;
@@ -302,6 +301,7 @@ void * test_kickoff(void *arg)
 
 #ifndef __EMUL__
 
+// extern uint8_t L2_input_h[490];
 int main () {
 
     printf ("Begin program");
@@ -423,8 +423,14 @@ int main () {
         network_run(L2_memory_buffer, L2_BUFFER_SIZE, L2_output, begin_end, ram); // Dory master
 #endif
 #if MEMORY == 2
+        if (Mfcc == 1){
+            for (int index = 0; index < 490; index++){
+                L2_input_h[index] = feat_char[index];
+            }
+            
+        }
         network_alloc();  
-        network_run(L2_memory_buffer, L2_BUFFER_SIZE, L2_output, begin_end, feat_char, Mfcc);
+        network_run(L2_memory_buffer, L2_BUFFER_SIZE, L2_output, begin_end);
 #endif
 #ifdef VERBOSE
     printf("Network Output: ");
