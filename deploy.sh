@@ -54,6 +54,9 @@ then
   elif [[ $PLATFORM == "fpga" ]]
   then
     source /usr/scratch/wetterhorn/cioflanc/tools/pulp_sdk_fpga/pulp-sdk/configs/pulp-open.sh
+  elif [[ $PLATFORM == "rtl" ]]
+  then
+    source /usr/scratch/wetterhorn/cioflanc/tools/pulp_sdk_fpga/pulp-sdk/configs/pulp-open.sh
   fi
 else
   export GAP_RISCV_GCC_TOOLCHAIN=/usr/scratch/wetterhorn/cioflanc/tools/gap_riscv_toolchain/
@@ -101,10 +104,10 @@ cd $CUR_DIR/application/
 # make VERBOSE=1 clean all run sample=$AUDIO_SAMPLE sdk=$SDK memory=$MEMORY CORE=8 platform=$PLATFORM 
 
 # Parametrized
-make clean all run sample=$AUDIO_SAMPLE sdk=$SDK memory=$MEMORY platform=$PLATFORM mfcc=$MFCC CORE=8 # runner_args="--trace=insn"
+# make clean all run sample=$AUDIO_SAMPLE sdk=$SDK memory=$MEMORY platform=$PLATFORM mfcc=$MFCC CORE=8 # runner_args="--trace=insn"
 
 # RTL-only
-# make clean all run sample=$AUDIO_SAMPLE sdk=$SDK memory=$MEMORY platform=rtl mfcc=$MFCC CORE=8 # runner_args="--trace=insn"
+make clean all run sample=$AUDIO_SAMPLE sdk=$SDK memory=$MEMORY platform=rtl mfcc=$MFCC CORE=8 # runner_args="--trace=insn"
 
 # Instructions
 # screen -L /dev/ttyUSB2 115200
