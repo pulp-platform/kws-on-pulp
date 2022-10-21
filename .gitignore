@@ -10,3 +10,5 @@ application/DORY_network/
 *.pth
 *__pycache__*
 logs/
+*slm
+*hex

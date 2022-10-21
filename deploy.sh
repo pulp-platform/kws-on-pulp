@@ -104,10 +104,17 @@ cd $CUR_DIR/application/
 # make VERBOSE=1 clean all run sample=$AUDIO_SAMPLE sdk=$SDK memory=$MEMORY CORE=8 platform=$PLATFORM 
 
 # Parametrized
-# make clean all run sample=$AUDIO_SAMPLE sdk=$SDK memory=$MEMORY platform=$PLATFORM mfcc=$MFCC CORE=8 # runner_args="--trace=insn"
+make clean all run sample=$AUDIO_SAMPLE sdk=$SDK memory=$MEMORY platform=$PLATFORM mfcc=$MFCC CORE=8 # runner_args="--trace=insn"
 
-# RTL-only
-make clean all run sample=$AUDIO_SAMPLE sdk=$SDK memory=$MEMORY platform=rtl mfcc=$MFCC CORE=8 # runner_args="--trace=insn"
+if [[ $PLATFORM == "rtl" ]]
+  then
+    cd $CUR_DIR
+    # Convert .slm to .hex
+    python utils/flash_to_hyperflash.py --input $CUR_DIR/application/BUILD/PULP/GCC_RISCV/slm_files/flash_stim.slm --output hyperflash_stim.slm
+    python utils/slm_to_hex.py --input hyperflash_stim.slm
+  fi
+
+
 
 # Instructions
 # screen -L /dev/ttyUSB2 115200
