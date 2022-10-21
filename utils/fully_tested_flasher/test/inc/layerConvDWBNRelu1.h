@@ -1,0 +1,115 @@
+// flag_DW                        1
+// out_mult                       23
+// out_mult2                      0
+// out_shift                      18
+// FLAG_BATCHNORM                 1
+// FLAG_RELU                      1
+// weight_T                       0
+// to_compute_acc_in              0
+// to_compute_acc_out             0
+// test_location                  L3
+// tile_dim_h                     1
+// tile_dim_w                     1
+// optional                       conv
+// conv_order                     PULP-NN
+// type                           char
+// func_name                      layerConvDWBNRelu1
+// l1_x_offset                    0
+// l1_y_offset                    16388
+// l1_W_offset                    32776
+// l1_k_offset                    32824
+// l1_lambda_offset               32892
+// k_size_byte                    64
+// lambda_size_byte               128
+// k_tile_size_byte               4
+// lambda_tile_size_byte          8
+// tile_dim_nof                   16
+// tile_dim_nif                   16
+// border                         1
+// nof                            32
+// nif                            32
+// h                              64
+// w                              64
+// fs1                            3
+// fs2                            3
+// conv_overlap1                  2
+// conv_overlap2                  2
+// has_bias                       0
+// padding                        1
+// stride                         1
+// x_h                            64
+// x_w                            64
+// x_data_size_byte               1
+// x_tile_size_nif                2
+// x_tile_size_h                  64
+// x_tile_size_w                  64
+// x_tile_size_byte               8192
+// x_stride_w_byte                2048
+// x_stride_c_byte                32
+// x_length_nif_px                2
+// x_length_nif_byte              2
+// x_length_h_px                  64
+// x_length_w_byte                64
+// x_tile_size_nif_last           2
+// x_tile_size_h_last             64
+// x_tile_size_w_last             64
+// x_length_nif_px_last           2
+// x_length_nif_byte_last         2
+// x_length_h_px_last             64
+// x_length_w_byte_last           64
+// x_tile_size_byte_first         8192
+// x_length_nif_px_first          2
+// x_length_nif_byte_first        2
+// x_length_h_px_first            64
+// x_length_w_byte_first          64
+// W_nof                          32
+// b_tile_size_byte               2
+// W_nif                          1
+// W_data_size_byte               1
+// W_tile_size_nof                2
+// W_tile_size_nif                1
+// W_tile_size_byte               18
+// W_stride_nof_byte              9
+// W_stride_hw_byte               1
+// W_length_nif_byte              1
+// W_tile_size_nof_last           2
+// W_tile_size_nif_last           1
+// W_length_nif_byte_last         1
+// W_tile_size_byte_first         18
+// W_length_nif_byte_first        1
+// b_size_byte                    32
+// l2_off_k                       288
+// l2_off_lambda                  352
+// y_h                            64
+// y_w                            64
+// y_data_size_byte               1
+// y_tile_size_nof                2
+// y_tile_size_h                  64
+// y_tile_size_w                  64
+// y_tile_size_byte               8192
+// y_stride_w_byte                2048
+// y_stride_c_byte                32
+// y_length_nof_px                2
+// y_length_nof_byte              2
+// y_length_h_px                  64
+// y_length_w_byte                64
+// y_tile_size_nof_last           2
+// y_tile_size_h_last             64
+// y_tile_size_w_last             64
+// y_length_nof_px_last           2
+// y_length_w_byte_last           64
+// y_length_nof_byte_last         2
+
+
+#include "pulp.h"
+#include "dory.h"
+#include "stats.h"
+
+void  layerConvDWBNRelu1(
+  unsigned int l2_x,
+  unsigned int l2_y,
+  unsigned int l2_W,
+  unsigned int l1_buffer,
+  unsigned int out_mult_in,
+  unsigned int out_shift_in
+);
