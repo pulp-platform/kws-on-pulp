@@ -71,7 +71,6 @@ static uint8_t flashBuffer[FLASH_BUFF_SIZE];
 char* L2_output;
 
 
-
 #if (DATA_TYPE==2)
 typedef f16 MFCC_IN_TYPE;
 typedef f16 OUT_TYPE;
@@ -232,37 +231,37 @@ void * test_kickoff(void *arg)
         // PULP
         // Working before
 
-        // struct pi_cluster_task cluster_task = {0};
-        // printf ("Current: %s\n", cluster_task);
-        // // pi_cluster_task(&cluster_task, pulp_parallel, NULL);
-        // // Replace pulp_parallel with pi_cl_team_fork - is NUM_CORE included?
-        // pi_cluster_task(&cluster_task, pi_cl_team_fork, NULL); 
-        // cluster_task.stack_size = STACK_SIZE;
-        // cluster_task.slave_stack_size = STACK_SIZE;
-        // cluster_task.entry = RunMFCC;
-        // cluster_task.arg = NULL;
-        // pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);
-
-
-        struct pi_device cluster_dev = {0};
-        struct pi_cluster_conf conf;
         struct pi_cluster_task cluster_task = {0};
-        // First open the cluster
-        pi_cluster_conf_init(&conf);
-        conf.id=0;
-        printf ("pi_cluster_conf_init\n");
-        pi_cluster_task(&cluster_task, RunMFCC, NULL);
-        printf ("pi_cluster_task\n");
-        pi_open_from_conf(&cluster_dev, &conf);
-        printf ("pi_open_from_conf\n");
-        if (pi_cluster_open(&cluster_dev))
-            return -1;
-        printf ("pi_cluster_open\n");
-        // Then offload an entry point, this will get executed on the cluster controller
+        printf ("Current: %s\n", cluster_task);
+        // pi_cluster_task(&cluster_task, pulp_parallel, NULL);
+        // Replace pulp_parallel with pi_cl_team_fork - is NUM_CORE included?
+        pi_cluster_task(&cluster_task, pi_cl_team_fork, NULL); 
         cluster_task.stack_size = STACK_SIZE;
         cluster_task.slave_stack_size = STACK_SIZE;
+        cluster_task.entry = RunMFCC;
+        cluster_task.arg = NULL;
         pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);
-        printf ("pi_cluster_send_task_to_cl\n");
+
+
+        // struct pi_device cluster_dev = {0};
+        // struct pi_cluster_conf conf;
+        // struct pi_cluster_task cluster_task = {0};
+        // // First open the cluster
+        // pi_cluster_conf_init(&conf);
+        // conf.id=0;
+        // printf ("pi_cluster_conf_init\n");
+        // pi_cluster_task(&cluster_task, RunMFCC, NULL);
+        // printf ("pi_cluster_task\n");
+        // pi_open_from_conf(&cluster_dev, &conf);
+        // printf ("pi_open_from_conf\n");
+        // if (pi_cluster_open(&cluster_dev))
+        //     return -1;
+        // printf ("pi_cluster_open\n");
+        // // Then offload an entry point, this will get executed on the cluster controller
+        // cluster_task.stack_size = STACK_SIZE;
+        // cluster_task.slave_stack_size = STACK_SIZE;
+        // pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);
+        // printf ("pi_cluster_send_task_to_cl\n");
 
 
 
@@ -302,6 +301,7 @@ void * test_kickoff(void *arg)
 
 #ifndef __EMUL__
 
+// extern uint8_t L2_input_h[490];
 int main () {
 
     printf ("Begin program");
@@ -313,10 +313,10 @@ int main () {
     int Mfcc;
 
     if (strcmp(Mfcc_str, "0") == 0){
-        Mfcc = 0;
+        Mfcc = 0;  // use precomputed MFCCs
     }
     else {
-        Mfcc = 1;
+        Mfcc = 1;  // compute MFCCs
     }
 
 
@@ -334,27 +334,21 @@ int main () {
     pi_freq_set(PI_FREQ_DOMAIN_CL, 10000000);
     pi_time_wait_us(10000);
 
-    // if (strcmp(PULPSDK, "pulp_sdk") == 0){
-    //     #if __PLATFORM__ == ARCHI_PLATFORM_FPGA
-    //         *(int*)(ICACHE_PREFETCH) = 0xFFFF;
-    //     #endif
-    // }
+    if (strcmp(PULPSDK, "pulp_sdk") == 0){
+        #if __PLATFORM__ == ARCHI_PLATFORM_FPGA
+            *(int*)(ICACHE_PREFETCH) = 0xFFFF;  // Enable prefetching for FPGA
+        #endif
+    }
 
-    *(int*)(ICACHE_PREFETCH) = 0xFFFF;
-
-
-
+    // Compute MFCCs
+    test_kickoff(NULL); 
 
 
     printf("Printing MFCC\n");
-
     for (int i = 0; i < 490; i++){
         printf("%i\n", feat_char[i]);
     }
-
     printf("Performing inference\n");
-
-    
 
 
     int rdDone;
@@ -418,8 +412,6 @@ int main () {
 #endif
 
     // Allocation
-
-
 #if MEMORY == 3
         // pi_ram_read(&ram, activations_input, L2_input, ${int(DORY_HW_graph[0].tiling_dimensions["L2"]["input_activation_memory"])});
         pi_ram_read(&ram, activations_input, L2_input, N_FRAME * N_MFCC);
@@ -428,11 +420,17 @@ int main () {
         // Running of the network
 
         // network_run(L2_memory_buffer, ${l2_buffer_size}, L2_output, begin_end, ram); // Dory master
-        network_run(L2_memory_buffer, L2_BUFFER_SIZE, L2_output, begin_end, ram, feat_char, Mfcc);
+        network_run(L2_memory_buffer, L2_BUFFER_SIZE, L2_output, begin_end, ram); // Dory master
 #endif
 #if MEMORY == 2
+        if (Mfcc == 1){
+            for (int index = 0; index < 490; index++){
+                L2_input_h[index] = feat_char[index];
+            }
+            
+        }
         network_alloc();  
-        network_run(L2_memory_buffer, L2_BUFFER_SIZE, L2_output, begin_end, feat_char, Mfcc);
+        network_run(L2_memory_buffer, L2_BUFFER_SIZE, L2_output, begin_end);
 #endif
 #ifdef VERBOSE
     printf("Network Output: ");
@@ -443,7 +441,6 @@ int main () {
     }
     printf("\n");
 #endif
-
 
 #if MEMORY == 3
     // Deallocation
@@ -457,11 +454,6 @@ int main () {
         network_free();  
         pi_l2_free(L2_memory_buffer, (uint32_t) L2_BUFFER_SIZE);
 #endif
-
-
-    // Compute MFCCs
-    test_kickoff(NULL); 
-
 
 }
 
