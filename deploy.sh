@@ -21,6 +21,15 @@
 
 # Set up constants
 
+if [ "$1" == "-h" ] ; then
+    echo "SDK: pulp_sdk, gap_sdk"
+    echo "MEMORY: (L)2, (L)3"
+    echo "PLATFORM: gvsoc, fpga, rtl"
+    echo "MFCC computation: 0 (offline), 1 (online)"
+    exit 0
+fi
+
+
 export PATH=/usr/pack/gcc-4.9.1-af/x86_64-rhe6-linux/bin:$PATH
 export LD_LIBRARY_PATH=/usr/pack/gcc-4.9.1-af/x86_64-rhe6-linux/lib64/:$LD_LIBRARY_PATH
 export LD_LIBRARY_PATH=/usr/pack/gcc-4.9.1-af/x86_64-rhe6-linux/lib/:$LD_LIBRARY_PATH
