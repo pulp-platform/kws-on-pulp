@@ -123,7 +123,7 @@ ifeq ($(MEMORY), $(L3_STR))
 	FLASH_FILES += DORY_network/inputs.hex
 	READFS_FILES := $(FLASH_FILES)
 endif
-	
+
 PLPBRIDGE_FLAGS += -f
 
 include $(RULES_DIR)/pmsis_rules.mk

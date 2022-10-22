@@ -91,8 +91,8 @@ mkdir -p $CUR_DIR/application/ && cp -r $NETWORD_DIR/DORY_network/ $CUR_DIR/appl
 if [[ $MEMORY == "2" ]]
 then
   # Save .WAV as .h for L2
-  python wav_to_header.py --file $AUDIO_SAMPLE --sdk $SDK
-  mv $CUR_DIR/wav.h $CUR_DIR/application
+  python $CUR_DIR/wav_to_header.py --file $AUDIO_SAMPLE --sdk $SDK
+  # mv $CUR_DIR/wav.h $CUR_DIR/application
 fi
 cd $CUR_DIR/application/
 
@@ -110,8 +110,12 @@ if [[ $PLATFORM == "rtl" ]]
   then
     cd $CUR_DIR
     # Convert .slm to .hex
-    python utils/flash_to_hyperflash.py --input $CUR_DIR/application/BUILD/PULP/GCC_RISCV/slm_files/flash_stim.slm --output hyperflash_stim.slm
-    python utils/slm_to_hex.py --input hyperflash_stim.slm
+    # Out size: 144 K
+    # python utils/flash_to_hyperflash.py --input $CUR_DIR/application/BUILD/PULP/GCC_RISCV/slm_files/flash_stim.slm --output hyperflash_stim.slm
+    # python utils/slm_to_hex.py --input hyperflash_stim.slm
+
+    # Out size: 294 K
+    python utils/slm_to_hex.py  --input $CUR_DIR/application/BUILD/PULP/GCC_RISCV/slm_files/flash_stim.slm
   fi
 
 

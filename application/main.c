@@ -16,7 +16,7 @@
 //
 // Author: Cristian Cioflan, ETH (cioflanc@iis.ee.ethz.ch)
 
-#define __PLATFORM__ ARCHI_PLATFORM_FPGA
+// #define __PLATFORM__ ARCHI_PLATFORM_FPGA
 
 #ifndef __EMUL__
     #include "pmsis.h"
@@ -301,7 +301,9 @@ void * test_kickoff(void *arg)
 
 #ifndef __EMUL__
 
-// extern uint8_t L2_input_h[490];
+// L2_input_h defined if MEMORY == 2
+extern uint8_t L2_input_h[490];
+
 int main () {
 
     printf ("Begin program");
@@ -328,20 +330,32 @@ int main () {
     if (strcmp(PULPSDK, "gap_sdk") == 0){
         // PMU_set_voltage(1000, 0);
     }
-    pi_time_wait_us(10000);
-    pi_freq_set(PI_FREQ_DOMAIN_FC, FREQ_FC);
-    pi_time_wait_us(10000);
-    pi_freq_set(PI_FREQ_DOMAIN_CL, 10000000);
-    pi_time_wait_us(10000);
 
+    // NOT NEEDED FOR FPGA (???) with L2 (???)
+    // printf("1\n");
+    // pi_time_wait_us(10000);
+    // pi_freq_set(PI_FREQ_DOMAIN_FC, FREQ_FC);
+    // printf ("2\n");
+    // pi_time_wait_us(10000);
+    // pi_freq_set(PI_FREQ_DOMAIN_CL, 10000000);
+    // printf ("3\n");
+    // pi_time_wait_us(10000);
+    // printf ("4\n");
     if (strcmp(PULPSDK, "pulp_sdk") == 0){
+        printf ("5\n");
         #if __PLATFORM__ == ARCHI_PLATFORM_FPGA
+            printf ("6\n");
             *(int*)(ICACHE_PREFETCH) = 0xFFFF;  // Enable prefetching for FPGA
         #endif
     }
+    printf ("7\n");
+    // *(int*)(ICACHE_PREFETCH) = 0xFFFF;  // Enable prefetching for FPGA
 
-    // Compute MFCCs
-    test_kickoff(NULL); 
+    if (Mfcc == 1) {
+        printf ("8\n");
+        // Compute MFCCs
+        test_kickoff(NULL); 
+    }
 
 
     printf("Printing MFCC\n");
