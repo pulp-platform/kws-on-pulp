@@ -16,7 +16,7 @@
 //
 // Author: Cristian Cioflan, ETH (cioflanc@iis.ee.ethz.ch)
 
-// #define __PLATFORM__ ARCHI_PLATFORM_FPGA
+#define __PLATFORM__ ARCHI_PLATFORM_FPGA
 
 #ifndef __EMUL__
     #include "pmsis.h"
@@ -345,7 +345,7 @@ int main () {
         #endif
     }
     printf ("7\n");
-    // *(int*)(ICACHE_PREFETCH) = 0xFFFF;  // Enable prefetching for FPGA
+    *(int*)(ICACHE_PREFETCH) = 0xFFFF;  // Enable prefetching for FPGA
 
     if (Mfcc == 1) {
         printf ("8\n");

@@ -111,11 +111,11 @@ if [[ $PLATFORM == "rtl" ]]
     cd $CUR_DIR
     # Convert .slm to .hex
     # Out size: 144 K
-    python utils/flash_to_hyperflash.py --input $CUR_DIR/application/BUILD/PULP/GCC_RISCV/slm_files/flash_stim.slm --output hyperflash_stim.slm
-    python utils/slm_to_hex.py --input hyperflash_stim.slm
+    # python utils/flash_to_hyperflash.py --input $CUR_DIR/application/BUILD/PULP/GCC_RISCV/slm_files/flash_stim.slm --output hyperflash_stim.slm
+    # python utils/slm_to_hex.py --input hyperflash_stim.slm
 
     # Out size: 294 K
-    # python utils/slm_to_hex.py  --input $CUR_DIR/application/BUILD/PULP/GCC_RISCV/slm_files/flash_stim.slm
+    python utils/slm_to_hex.py  --input $CUR_DIR/application/BUILD/PULP/GCC_RISCV/slm_files/flash_stim.slm
   fi
 
 
