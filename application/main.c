@@ -332,15 +332,11 @@ int main () {
     }
 
     // NOT NEEDED FOR FPGA (???) with L2 (???)
-    // printf("1\n");
     // pi_time_wait_us(10000);
     // pi_freq_set(PI_FREQ_DOMAIN_FC, FREQ_FC);
-    // printf ("2\n");
     // pi_time_wait_us(10000);
     // pi_freq_set(PI_FREQ_DOMAIN_CL, 10000000);
-    // printf ("3\n");
     // pi_time_wait_us(10000);
-    // printf ("4\n");
     if (strcmp(PULPSDK, "pulp_sdk") == 0){
         printf ("5\n");
         #if __PLATFORM__ == ARCHI_PLATFORM_FPGA
