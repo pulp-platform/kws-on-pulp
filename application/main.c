@@ -16,6 +16,10 @@
 //
 // Author: Cristian Cioflan, ETH (cioflanc@iis.ee.ethz.ch)
 
+// pulp_sdk 3 gvsoc 1 Network Output: -7990 -5814 -4537 1333 -7235 -4868 -2305 7159 561 -12239 -9144 -1110 (new structure)
+// (old structure)
+
+
 #define __PLATFORM__ ARCHI_PLATFORM_FPGA
 
 #ifndef __EMUL__
@@ -28,6 +32,10 @@
 
 #include <math.h>
 
+// Internal
+// #include "mfcc_utils.h"
+
+// GWT
 #include "gaplib/wavIO.h"
 #include "MFCC_params.h"
 #include "MFCCKernels.h"
@@ -93,6 +101,7 @@ volatile char *PULPSDK;
 volatile char *Memory;
 volatile char *Mfcc_str;
 char * feat_char;
+
 
 // filesystem management functions
 void open_filesystem_and_ram(struct pi_device *flash, struct pi_device *fs)
@@ -213,10 +222,20 @@ void * l3_mfcc_computation(struct pi_device fs){
 
     header_struct header_info;
 
+    // Internal implementation
+    // if (ReadWavFromFile(FileName, inWav, BUF_SIZE*sizeof(short), &header_info, fs)){
+    //     printf("Error reading wav file\n");
+    //     pmsis_exit(1);
+    // }
+
+    // GWT implementation
     if (ReadWavFromFile(FileName, inWav, BUF_SIZE*sizeof(short), &header_info)){
         printf("Error reading wav file\n");
         pmsis_exit(1);
     }
+
+
+
     num_samples = header_info.DataSize * 8 / (header_info.NumChannels * header_info.BitsPerSample);
 
 
@@ -436,15 +455,10 @@ int main () {
     *(int*)(ICACHE_PREFETCH) = 0xFFFF;  // Enable prefetching for FPGA
 
     
-
-
-    printf("Printing MFCC\n");
-    for (int i = 0; i < 490; i++){
-        printf("%i\n", feat_char[i]);
-    }
     printf("Performing inference\n");
 
-
+    printf ("Allocated memory\n");
+    
     int rdDone;
 #if MEMORY == 3
     rdDone = 0;
@@ -505,7 +519,12 @@ int main () {
     L2_input = L2_memory_buffer + (1 - begin_end) * (L2_BUFFER_SIZE - rdDone);
     L2_output = L2_memory_buffer;
 
-    printf ("Allocated memory\n");
+
+    printf("Printing MFCC\n");
+    for (int i = 0; i < 490; i++){
+        printf("%i\n", feat_char[i]);
+    }
+
 
 #ifdef VERBOSE
     printf("\nL2 Buffer alloc initial\t@ 0x%08x:\t%s\n", (unsigned int)L2_memory_buffer, L2_memory_buffer?"Ok":"Failed");
@@ -587,3 +606,48 @@ int main(int argc, char *argv[])
         network_run_FabricController(); 
 }
 #endif
+
+// Internal
+// 124
+// 125
+// 126
+// 74
+// 128
+// 121
+// 123
+// 125
+// 125
+// 124
+// 125
+// 126
+// 126
+
+// num_cycles: 922733
+// MACs: 2656768
+// MAC/cycle: 2.879238
+// n. of Cores: 8
+// Network Output: -7990 -5814 -4537 1333 -7235 -4868 -2305 7159 561 -12239 -9144 -1110
+
+
+
+// GWT
+// 124
+// 125
+// 126
+// 74
+// 128
+// 121
+// 123
+// 125
+// 125
+// 124
+// 125
+// 126
+// 126
+
+// num_cycles: 922738
+// MACs: 2656768
+// MAC/cycle: 2.879222
+// n. of Cores: 8
+// Network Output: -7990 -5814 -4537 1333 -7235 -4868 -2305 7159 561 -12239 -9144 -1110
+

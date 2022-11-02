@@ -77,6 +77,7 @@ APP_SRCS+=DORY_network/src/network.c
 APP_SRCS        += $(CURDIR)/main.c $(MFCCBUILD_DIR)/MFCCKernels.c $(DSP_LUT_DIR)TwiddlesDef.c $(DSP_LUT_DIR)RFFTTwiddlesDef.c $(DSP_LUT_DIR)SwapTablesDef.c
 APP_SRCS        += $(DSP_DIR)MfccBasicKernels.c $(DSP_DIR)FFT_Library.c $(DSP_DIR)math_funcs.c $(DSP_DIR)CmplxFunctions.c $(DSP_DIR)PreProcessing.c 
 APP_SRCS        += $(WAVIO_SRC)wavIO.c
+# APP_SRCS        += $(CURDIR)/mfcc_utils.c
 
 ifndef CORE
 CORE=1
@@ -95,6 +96,7 @@ endif
 APP_CFLAGS      += -DAT_WAV=$(WAV_FILE) -DSDK=$(SDK) -DMEMORY=$(MEMORY) -DMFCC=$(MFCC) # -DPERF -DPRINT_INOUT -DPRINTDEB 
 # APP_CFLAGS      += -DSDK=$(SDK) -DMEMORY=$(MEMORY) -DMFCC=$(MFCC) # -DPERF -DPRINT_INOUT -DPRINTDEB 
 APP_CFLAGS      += -I. -I$(MFCCBUILD_DIR) -I$(DSP_DIR) -I$(DSP_LUT_DIR) -I$(AUTOTILER_DIR) -I$(WAVIO_DIR) # -mno-fdiv -mabi=ilp32
+# APP_CFLAGS      += -I. -I$(MFCCBUILD_DIR) -I$(DSP_DIR) -I$(DSP_LUT_DIR) -I$(AUTOTILER_DIR) # -I$(WAVIO_DIR) # -mno-fdiv -mabi=ilp32
 # APP_CFLAGS      += -I$(BSP_DIR)
 
 
