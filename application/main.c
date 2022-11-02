@@ -39,7 +39,7 @@
 #include "LUT.def"
 #include "MFCC_FB.def"
 
-#include "wav.h"
+// #include "wav.h"
 
 #define ICACHE_CTRL_UNIT 0x10201400
 #define ICACHE_PREFETCH ICACHE_CTRL_UNIT + 0x1C
@@ -204,12 +204,29 @@ void * test_kickoff(void *arg)
     }
 
 #if MEMORY == 3
+    // Skip reading WAV from file
+    // TODO: Comment back in
+
+
+    // Verify that the .wav was flashed correctly
+    pi_fs_file_t *file;
+    file = pi_fs_open(&fs, "aa48c94a_nohash_2.wav", 0);
+    if (file == NULL)
+    {
+        printf("file open failed\n");
+        return -1;
+    }
+
     header_struct header_info;
+
     if (ReadWavFromFile(FileName, inWav, BUF_SIZE*sizeof(short), &header_info)){
         printf("Error reading wav file\n");
         pmsis_exit(1);
     }
     num_samples = header_info.DataSize * 8 / (header_info.NumChannels * header_info.BitsPerSample);
+
+    // num_samples = 16000;
+
 #endif
 #if MEMORY == 2
     num_samples = 16000;
@@ -240,7 +257,7 @@ void * test_kickoff(void *arg)
         cluster_task.slave_stack_size = STACK_SIZE;
         cluster_task.entry = RunMFCC;
         cluster_task.arg = NULL;
-        pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);
+        pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task); // TODO: Comment back in
 
 
         // struct pi_device cluster_dev = {0};
@@ -350,7 +367,7 @@ int main () {
     if (Mfcc == 1) {
         printf ("8\n");
         // Compute MFCCs
-        test_kickoff(NULL); 
+        test_kickoff(NULL); // Extend test_kickoff to accept the FS as an argument; run from there
     }
 
 

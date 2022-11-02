@@ -91,7 +91,9 @@ ifeq ($(USE_HIGH_PREC), 1)
 	APP_CFLAGS += -DHIGH_PREC_FFT
 endif
 
+# TODO: Comment back in the WAV_FILE
 APP_CFLAGS      += -DAT_WAV=$(WAV_FILE) -DSDK=$(SDK) -DMEMORY=$(MEMORY) -DMFCC=$(MFCC) # -DPERF -DPRINT_INOUT -DPRINTDEB 
+# APP_CFLAGS      += -DSDK=$(SDK) -DMEMORY=$(MEMORY) -DMFCC=$(MFCC) # -DPERF -DPRINT_INOUT -DPRINTDEB 
 APP_CFLAGS      += -I. -I$(MFCCBUILD_DIR) -I$(DSP_DIR) -I$(DSP_LUT_DIR) -I$(AUTOTILER_DIR) -I$(WAVIO_DIR) # -mno-fdiv -mabi=ilp32
 # APP_CFLAGS      += -I$(BSP_DIR)
 
@@ -121,6 +123,7 @@ ifeq ($(MEMORY), $(L3_STR))
 	FLASH_FILES += DORY_network/BNReluConvolution8_weights.hex
 	FLASH_FILES += DORY_network/FullyConnected10_weights.hex
 	FLASH_FILES += DORY_network/inputs.hex
+	FLASH_FILES += DORY_network/aa48c94a_nohash_2.wav
 	READFS_FILES := $(FLASH_FILES)
 endif
 
