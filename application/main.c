@@ -32,11 +32,7 @@
 
 #include <math.h>
 
-// Internal
-// #include "mfcc_utils.h"
-
-// GWT
-#include "gaplib/wavIO.h"
+#include "mfcc_utils.h"
 #include "MFCC_params.h"
 #include "MFCCKernels.h"
 #include "TwiddlesDef.h"
@@ -223,18 +219,10 @@ void * l3_mfcc_computation(struct pi_device fs){
     header_struct header_info;
 
     // Internal implementation
-    // if (ReadWavFromFile(FileName, inWav, BUF_SIZE*sizeof(short), &header_info, fs)){
-    //     printf("Error reading wav file\n");
-    //     pmsis_exit(1);
-    // }
-
-    // GWT implementation
-    if (ReadWavFromFile(FileName, inWav, BUF_SIZE*sizeof(short), &header_info)){
+    if (ReadWavFromFile(FileName, inWav, BUF_SIZE*sizeof(short), &header_info, fs)){
         printf("Error reading wav file\n");
         pmsis_exit(1);
     }
-
-
 
     num_samples = header_info.DataSize * 8 / (header_info.NumChannels * header_info.BitsPerSample);
 

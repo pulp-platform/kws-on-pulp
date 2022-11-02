@@ -1,6 +1,3 @@
-// filesystem management functions
-// void open_filesystem_and_ram(struct pi_device *flash, struct pi_device *fs);
-
 // WAVE file header format
 typedef struct {
     unsigned char riff[4];                      // RIFF string
@@ -17,5 +14,3 @@ typedef struct {
     unsigned char data_chunk_header[4];         // DATA string or FLLR string
     unsigned int DataSize;                      // NumSamples * NumChannels * BitsPerSample/8 - size of the next chunk that will be read
 } header_struct;
-
-// int ReadWavFromFile(char *FileName, void* OutBuf, unsigned int BufSize, header_struct *HeaderInfo, struct pi_device fs);

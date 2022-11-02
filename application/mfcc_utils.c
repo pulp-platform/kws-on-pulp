@@ -9,8 +9,6 @@
 #define INTER_BUFF_SIZE     (1000*2)
 static uint8_t *_tmp_buffer;
 
-
-
 static void progress_bar(char * OutString, int n, int tot)
 {
 	int tot_chars = 30;

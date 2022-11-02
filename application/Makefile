@@ -23,8 +23,6 @@ MFCCBUILD_DIR ?= $(CURDIR)/BUILD_MFCC
 DSP_DIR ?= $(GAP_SDK_DIR)tools/autotiler_v3/DSP_Libraries/
 AUTOTILER_DIR ?= $(GAP_SDK_DIR)tools/autotiler_v3/Autotiler/
 DSP_LUT_DIR ?= $(GAP_SDK_DIR)tools/autotiler_v3/DSP_Libraries/LUT_Tables/
-WAVIO_DIR ?= $(GAP_SDK_DIR)libs/gap_lib/include/
-WAVIO_SRC ?= $(GAP_SDK_DIR)libs/gap_lib/wav_io/
 
 ifeq '$(TARGET_CHIP_FAMILY)' 'GAP8'
 	COMPILE_MODEL_EXTRA_FLAGS += -DNO_FLOAT16
@@ -76,8 +74,7 @@ APP_SRCS+=DORY_network/src/network.c
 
 APP_SRCS        += $(CURDIR)/main.c $(MFCCBUILD_DIR)/MFCCKernels.c $(DSP_LUT_DIR)TwiddlesDef.c $(DSP_LUT_DIR)RFFTTwiddlesDef.c $(DSP_LUT_DIR)SwapTablesDef.c
 APP_SRCS        += $(DSP_DIR)MfccBasicKernels.c $(DSP_DIR)FFT_Library.c $(DSP_DIR)math_funcs.c $(DSP_DIR)CmplxFunctions.c $(DSP_DIR)PreProcessing.c 
-APP_SRCS        += $(WAVIO_SRC)wavIO.c
-# APP_SRCS        += $(CURDIR)/mfcc_utils.c
+APP_SRCS        += $(CURDIR)/mfcc_utils.c
 
 ifndef CORE
 CORE=1
@@ -94,9 +91,7 @@ endif
 
 # TODO: Comment back in the WAV_FILE
 APP_CFLAGS      += -DAT_WAV=$(WAV_FILE) -DSDK=$(SDK) -DMEMORY=$(MEMORY) -DMFCC=$(MFCC) # -DPERF -DPRINT_INOUT -DPRINTDEB 
-# APP_CFLAGS      += -DSDK=$(SDK) -DMEMORY=$(MEMORY) -DMFCC=$(MFCC) # -DPERF -DPRINT_INOUT -DPRINTDEB 
-APP_CFLAGS      += -I. -I$(MFCCBUILD_DIR) -I$(DSP_DIR) -I$(DSP_LUT_DIR) -I$(AUTOTILER_DIR) -I$(WAVIO_DIR) # -mno-fdiv -mabi=ilp32
-# APP_CFLAGS      += -I. -I$(MFCCBUILD_DIR) -I$(DSP_DIR) -I$(DSP_LUT_DIR) -I$(AUTOTILER_DIR) # -I$(WAVIO_DIR) # -mno-fdiv -mabi=ilp32
+APP_CFLAGS      += -I. -I$(MFCCBUILD_DIR) -I$(DSP_DIR) -I$(DSP_LUT_DIR) -I$(AUTOTILER_DIR) 
 # APP_CFLAGS      += -I$(BSP_DIR)
 
 
