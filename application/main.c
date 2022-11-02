@@ -39,7 +39,8 @@
 #include "LUT.def"
 #include "MFCC_FB.def"
 
-// #include "wav.h"
+// MEMORY == L2
+#include "wav.h"
 
 #define ICACHE_CTRL_UNIT 0x10201400
 #define ICACHE_PREFETCH ICACHE_CTRL_UNIT + 0x1C
@@ -156,8 +157,131 @@ static void RunMFCC()
     #endif
 }
 
-void * test_kickoff(void *arg)
-{
+void * l3_mfcc_computation(struct pi_device fs){
+    printf ("Test kickoff - preinit \n");
+    #ifndef __EMUL__
+
+        printf ("Test kickoff - init \n");
+
+        struct pi_device cluster_dev;
+        struct pi_cluster_conf cl_conf;
+        cl_conf.id = 0;
+
+        pi_open_from_conf(&cluster_dev, (void *) &cl_conf);
+        if (pi_cluster_open(&cluster_dev))
+        {
+            printf("Cluster open failed !\n");
+            pmsis_exit(-4);
+        }
+    #endif
+    
+    L1_Memory = (AT_L1_POINTER) AT_L1_ALLOC(0, _L1_Memory_SIZE);
+    if (L1_Memory==NULL){
+        printf("Error allocating L1\n");
+        pmsis_exit(-1);
+    }
+
+    int frame_size;
+    if (N_DCT > 0) frame_size = N_DCT;
+    else           frame_size = MFCC_BANK_CNT;
+
+    feat_char = (char*) pi_l2_malloc(N_FRAME * N_MFCC * sizeof(char));
+    out_feat = (OUT_TYPE *) pi_l2_malloc(N_FRAME * frame_size * sizeof(OUT_TYPE));    
+    inWav    = (short int *) pi_l2_malloc(BUF_SIZE * sizeof(short));   
+    MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(BUF_SIZE * sizeof(MFCC_IN_TYPE));   
+
+    if (inWav==NULL){
+        printf("Error allocating inWav\n");
+        pmsis_exit(1);
+    }
+    if (MfccInSig==NULL){
+        printf("Error allocating MfccInSig\n");
+        pmsis_exit(1);
+    }
+    if (out_feat==NULL){
+        printf("Error allocating out_feat\n");
+        pmsis_exit(1);
+    }
+    // Verify that the .wav was flashed correctly
+    pi_fs_file_t *file;
+    file = pi_fs_open(&fs, "aa48c94a_nohash_2.wav", 0);
+    if (file == NULL)
+    {
+        printf("file open failed\n");
+        return -1;
+    }
+
+    header_struct header_info;
+
+    if (ReadWavFromFile(FileName, inWav, BUF_SIZE*sizeof(short), &header_info)){
+        printf("Error reading wav file\n");
+        pmsis_exit(1);
+    }
+    num_samples = header_info.DataSize * 8 / (header_info.NumChannels * header_info.BitsPerSample);
+
+
+
+    #if (DATA_TYPE==2) || (DATA_TYPE==3)
+        for (int i=0; i<num_samples; i++) {
+            MfccInSig[i] = (MFCC_IN_TYPE) inWav[i] / (1<<15);
+        }
+    #else
+        for (int i=0; i<num_samples; i++) {
+            MfccInSig[i] = (MFCC_IN_TYPE) gap_clip(((int) inWav[i]), 15);
+        }
+    #endif
+    
+    printf ("SDK: %s\n", PULPSDK);
+    if (strcmp(PULPSDK, "pulp_sdk") == 0) {
+        // PULP
+        // Working before
+
+        struct pi_cluster_task cluster_task = {0};
+        printf ("Current: %s\n", cluster_task);
+        // pi_cluster_task(&cluster_task, pulp_parallel, NULL);
+        // Replace pulp_parallel with pi_cl_team_fork - is NUM_CORE included?
+        pi_cluster_task(&cluster_task, pi_cl_team_fork, NULL); 
+        cluster_task.stack_size = STACK_SIZE;
+        cluster_task.slave_stack_size = STACK_SIZE;
+        cluster_task.entry = RunMFCC;
+        cluster_task.arg = NULL;
+        pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task); // TODO: Comment back in
+
+        printf ("Current: %s\n", pi_cluster_send_task_to_cl);
+    } else {
+        // GAP
+        struct pi_cluster_task task = {0};
+        task.entry = RunMFCC;
+        task.arg = NULL;
+        task.stack_size = (unsigned int) STACK_SIZE;
+        pi_cluster_send_task_to_cl(&cluster_dev, &task);
+
+    }
+
+    // Closing the cluster once the task is finished
+    pi_cluster_close(&cluster_dev);
+
+    int k = 0;
+    for (int i = 0; i < 1960;i++){
+        
+        // Rescale MFCCs to match Tensorflow-generated ones
+        feat_char[k] = (char) (((int) floor(out_feat[i] * pow(2, -4) * sqrt(0.2))) + 128);
+        // Select 10 MFCC per window
+        if (i == 40*(k/10) + 9){
+            i = 40*(k/10) + 39;
+        }
+        k++;
+    }
+
+
+    pi_l2_free(out_feat, (uint32_t) N_FRAME * frame_size * sizeof(OUT_TYPE));
+    pi_l2_free(inWav, (uint32_t) BUF_SIZE * sizeof(short));
+    pi_l2_free(MfccInSig, (uint32_t) BUF_SIZE * sizeof(MFCC_IN_TYPE));
+
+}
+
+void * l2_mfcc_computation(){
+
     printf ("Test kickoff - preinit \n");
     #ifndef __EMUL__
 
@@ -203,35 +327,8 @@ void * test_kickoff(void *arg)
         pmsis_exit(1);
     }
 
-#if MEMORY == 3
-    // Skip reading WAV from file
-    // TODO: Comment back in
-
-
-    // Verify that the .wav was flashed correctly
-    pi_fs_file_t *file;
-    file = pi_fs_open(&fs, "aa48c94a_nohash_2.wav", 0);
-    if (file == NULL)
-    {
-        printf("file open failed\n");
-        return -1;
-    }
-
-    header_struct header_info;
-
-    if (ReadWavFromFile(FileName, inWav, BUF_SIZE*sizeof(short), &header_info)){
-        printf("Error reading wav file\n");
-        pmsis_exit(1);
-    }
-    num_samples = header_info.DataSize * 8 / (header_info.NumChannels * header_info.BitsPerSample);
-
-    // num_samples = 16000;
-
-#endif
-#if MEMORY == 2
     num_samples = 16000;
     inWav = L2_wav_input;
-#endif
 
     #if (DATA_TYPE==2) || (DATA_TYPE==3)
         for (int i=0; i<num_samples; i++) {
@@ -259,29 +356,6 @@ void * test_kickoff(void *arg)
         cluster_task.arg = NULL;
         pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task); // TODO: Comment back in
 
-
-        // struct pi_device cluster_dev = {0};
-        // struct pi_cluster_conf conf;
-        // struct pi_cluster_task cluster_task = {0};
-        // // First open the cluster
-        // pi_cluster_conf_init(&conf);
-        // conf.id=0;
-        // printf ("pi_cluster_conf_init\n");
-        // pi_cluster_task(&cluster_task, RunMFCC, NULL);
-        // printf ("pi_cluster_task\n");
-        // pi_open_from_conf(&cluster_dev, &conf);
-        // printf ("pi_open_from_conf\n");
-        // if (pi_cluster_open(&cluster_dev))
-        //     return -1;
-        // printf ("pi_cluster_open\n");
-        // // Then offload an entry point, this will get executed on the cluster controller
-        // cluster_task.stack_size = STACK_SIZE;
-        // cluster_task.slave_stack_size = STACK_SIZE;
-        // pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);
-        // printf ("pi_cluster_send_task_to_cl\n");
-
-
-
         printf ("Current: %s\n", pi_cluster_send_task_to_cl);
     } else {
         // GAP
@@ -298,7 +372,6 @@ void * test_kickoff(void *arg)
 
     int k = 0;
     for (int i = 0; i < 1960;i++){
-        
         // Rescale MFCCs to match Tensorflow-generated ones
         feat_char[k] = (char) (((int) floor(out_feat[i] * pow(2, -4) * sqrt(0.2))) + 128);
         // Select 10 MFCC per window
@@ -307,14 +380,12 @@ void * test_kickoff(void *arg)
         }
         k++;
     }
-
-
     pi_l2_free(out_feat, (uint32_t) N_FRAME * frame_size * sizeof(OUT_TYPE));
     pi_l2_free(inWav, (uint32_t) BUF_SIZE * sizeof(short));
     pi_l2_free(MfccInSig, (uint32_t) BUF_SIZE * sizeof(MFCC_IN_TYPE));
 
-   
 }
+
 
 #ifndef __EMUL__
 
@@ -364,11 +435,7 @@ int main () {
     printf ("7\n");
     *(int*)(ICACHE_PREFETCH) = 0xFFFF;  // Enable prefetching for FPGA
 
-    if (Mfcc == 1) {
-        printf ("8\n");
-        // Compute MFCCs
-        test_kickoff(NULL); // Extend test_kickoff to accept the FS as an argument; run from there
-    }
+    
 
 
     printf("Printing MFCC\n");
@@ -418,6 +485,12 @@ int main () {
         }
     }
     else {
+
+        printf ("8\n");
+        // // Compute MFCCs
+        // test_kickoff(NULL); // Extend test_kickoff to accept the FS as an argument; run from there
+        l3_mfcc_computation(fs);
+
         int input_size = 8 * N_FRAME * N_MFCC;
         pi_ram_write(&ram, activations_input+rdDone, feat_char, (uint32_t) input_size);
     }
@@ -451,6 +524,13 @@ int main () {
 #endif
 #if MEMORY == 2
         if (Mfcc == 1){
+
+
+            // test_kickoff(NULL); // Extend test_kickoff to accept the FS as an argument; run from there
+
+
+            l2_mfcc_computation();
+
             for (int index = 0; index < 490; index++){
                 L2_input_h[index] = feat_char[index];
             }
