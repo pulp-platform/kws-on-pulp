@@ -21,13 +21,23 @@
 
 # Set up constants
 
+if [ "$1" == "-h" ] ; then
+    echo "SDK: pulp_sdk, gap_sdk"
+    echo "MEMORY: (L)2, (L)3"
+    echo "PLATFORM: gvsoc, fpga, rtl"
+    echo "MFCC computation: 0 (offline), 1 (online)"
+    exit 0
+fi
+
+
 export PATH=/usr/pack/gcc-4.9.1-af/x86_64-rhe6-linux/bin:$PATH
 export LD_LIBRARY_PATH=/usr/pack/gcc-4.9.1-af/x86_64-rhe6-linux/lib64/:$LD_LIBRARY_PATH
 export LD_LIBRARY_PATH=/usr/pack/gcc-4.9.1-af/x86_64-rhe6-linux/lib/:$LD_LIBRARY_PATH
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/scratch/wetterhorn/cioflanc/miniconda3/pkgs/mpfr-4.0.2-hb69a4c5_1/lib/
 
 export GAP_SDK_DIR=/usr/scratch/wetterhorn/cioflanc/tools/gap_sdk/
-export AUDIO_SAMPLE=/usr/scratch/wetterhorn/cioflanc/kws-on-pulp/kws-on-pulp/dataset/train/right/aa48c94a_nohash_2.wav
+# export AUDIO_SAMPLE=/usr/scratch/wetterhorn/cioflanc/kws-on-pulp/kws-on-pulp/dataset/train/right/aa48c94a_nohash_2.wav
+export AUDIO_SAMPLE=aa48c94a_nohash_2.wav
 export SDK=$1
 export MEMORY=$2
 export PLATFORM=$3
@@ -43,6 +53,9 @@ then
   then
     source /usr/scratch/wetterhorn/cioflanc/tools/pulp-sdk/configs/pulp-open.sh
   elif [[ $PLATFORM == "fpga" ]]
+  then
+    source /usr/scratch/wetterhorn/cioflanc/tools/pulp_sdk_fpga/pulp-sdk/configs/pulp-open.sh
+  elif [[ $PLATFORM == "rtl" ]]
   then
     source /usr/scratch/wetterhorn/cioflanc/tools/pulp_sdk_fpga/pulp-sdk/configs/pulp-open.sh
   fi
@@ -79,8 +92,8 @@ mkdir -p $CUR_DIR/application/ && cp -r $NETWORD_DIR/DORY_network/ $CUR_DIR/appl
 if [[ $MEMORY == "2" ]]
 then
   # Save .WAV as .h for L2
-  python wav_to_header.py --file $AUDIO_SAMPLE --sdk $SDK
-  mv $CUR_DIR/wav.h $CUR_DIR/application
+  python $CUR_DIR/wav_to_header.py --file $AUDIO_SAMPLE --sdk $SDK
+  # mv $CUR_DIR/wav.h $CUR_DIR/application
 fi
 cd $CUR_DIR/application/
 
@@ -94,8 +107,19 @@ cd $CUR_DIR/application/
 # Parametrized
 make clean all run sample=$AUDIO_SAMPLE sdk=$SDK memory=$MEMORY platform=$PLATFORM mfcc=$MFCC CORE=8 # runner_args="--trace=insn"
 
-# RTL-only
-# make clean all run sample=$AUDIO_SAMPLE sdk=$SDK memory=$MEMORY platform=rtl mfcc=$MFCC CORE=8 # runner_args="--trace=insn"
+if [[ $PLATFORM == "rtl" ]]
+  then
+    cd $CUR_DIR
+    # Convert .slm to .hex
+    # Out size: 144 K
+    # python utils/flash_to_hyperflash.py --input $CUR_DIR/application/BUILD/PULP/GCC_RISCV/slm_files/flash_stim.slm --output hyperflash_stim.slm
+    # python utils/slm_to_hex.py --input hyperflash_stim.slm
+
+    # Out size: 294 K
+    python utils/slm_to_hex.py  --input $CUR_DIR/application/BUILD/PULP/GCC_RISCV/slm_files/flash_stim.slm
+  fi
+
+
 
 # Instructions
 # screen -L /dev/ttyUSB2 115200

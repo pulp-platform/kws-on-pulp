@@ -155,19 +155,21 @@ quantized_model.reset_alpha_act()
 quantized_model.remove_bias()
 
 print("\nFakeQuantized @ 8b accuracy (calibrated):")
-acc = trainining_environment.validate(model=quantized_model, mode='testing', batch_size=-1)
+acc = trainining_environment.validate(model=quantized_model, mode='testing', batch_size=128)
 
 quantized_model.qd_stage(eps_in=255./255)  # The activations are already in 0-255
 
 print("\nQuantizedDeployable @ mixed-precision accuracy:")
-acc = trainining_environment.validate(model=quantized_model, mode='testing', batch_size=-1)
+acc = trainining_environment.validate(model=quantized_model, mode='testing', batch_size=128)
 
 quantized_model.id_stage()
 
 print("\nIntegerDeployable @ mixed-precision accuracy:")
-acc = trainining_environment.validate(model=quantized_model, mode='testing', batch_size=-1, integer=True)
+acc = trainining_environment.validate(model=quantized_model, mode='testing', batch_size=128, integer=True)
 
 # Saving the model
-nemo.utils.export_onnx('model.onnx', quantized_model, quantized_model, (1, 49, 10))
+# Moving the quantized model to the GPU for Nemo
+
+nemo.utils.export_onnx('model.onnx', quantized_model.cuda(), quantized_model.cuda(), (1, 49, 10))
 # Saving the activations for comparison within Dory
 acc = trainining_environment.validate(model=quantized_model, mode='testing', batch_size=1, integer=True, save=True)

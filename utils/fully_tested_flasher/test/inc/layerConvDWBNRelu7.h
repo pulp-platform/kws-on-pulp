@@ -1,0 +1,115 @@
+// flag_DW                        1
+// out_mult                       17
+// out_mult2                      0
+// out_shift                      19
+// FLAG_BATCHNORM                 1
+// FLAG_RELU                      1
+// weight_T                       0
+// to_compute_acc_in              0
+// to_compute_acc_out             0
+// test_location                  L3
+// tile_dim_h                     1
+// tile_dim_w                     1
+// optional                       conv
+// conv_order                     PULP-NN
+// type                           char
+// func_name                      layerConvDWBNRelu7
+// l1_x_offset                    0
+// l1_y_offset                    32772
+// l1_W_offset                    40968
+// l1_k_offset                    41268
+// l1_lambda_offset               41528
+// k_size_byte                    256
+// lambda_size_byte               512
+// k_tile_size_byte               32
+// lambda_tile_size_byte          64
+// tile_dim_nof                   8
+// tile_dim_nif                   8
+// border                         1
+// nof                            128
+// nif                            128
+// h                              32
+// w                              32
+// fs1                            3
+// fs2                            3
+// conv_overlap1                  1
+// conv_overlap2                  1
+// has_bias                       0
+// padding                        1
+// stride                         2
+// x_h                            32
+// x_w                            32
+// x_data_size_byte               1
+// x_tile_size_nif                16
+// x_tile_size_h                  32
+// x_tile_size_w                  32
+// x_tile_size_byte               16384
+// x_stride_w_byte                4096
+// x_stride_c_byte                128
+// x_length_nif_px                16
+// x_length_nif_byte              16
+// x_length_h_px                  32
+// x_length_w_byte                32
+// x_tile_size_nif_last           16
+// x_tile_size_h_last             32
+// x_tile_size_w_last             32
+// x_length_nif_px_last           16
+// x_length_nif_byte_last         16
+// x_length_h_px_last             32
+// x_length_w_byte_last           32
+// x_tile_size_byte_first         16384
+// x_length_nif_px_first          16
+// x_length_nif_byte_first        16
+// x_length_h_px_first            32
+// x_length_w_byte_first          32
+// W_nof                          128
+// b_tile_size_byte               16
+// W_nif                          1
+// W_data_size_byte               1
+// W_tile_size_nof                16
+// W_tile_size_nif                1
+// W_tile_size_byte               144
+// W_stride_nof_byte              9
+// W_stride_hw_byte               1
+// W_length_nif_byte              1
+// W_tile_size_nof_last           16
+// W_tile_size_nif_last           1
+// W_length_nif_byte_last         1
+// W_tile_size_byte_first         144
+// W_length_nif_byte_first        1
+// b_size_byte                    128
+// l2_off_k                       1152
+// l2_off_lambda                  1408
+// y_h                            16
+// y_w                            16
+// y_data_size_byte               1
+// y_tile_size_nof                16
+// y_tile_size_h                  16
+// y_tile_size_w                  16
+// y_tile_size_byte               4096
+// y_stride_w_byte                2048
+// y_stride_c_byte                128
+// y_length_nof_px                16
+// y_length_nof_byte              16
+// y_length_h_px                  16
+// y_length_w_byte                16
+// y_tile_size_nof_last           16
+// y_tile_size_h_last             16
+// y_tile_size_w_last             16
+// y_length_nof_px_last           16
+// y_length_w_byte_last           16
+// y_length_nof_byte_last         16
+
+
+#include "pulp.h"
+#include "dory.h"
+#include "stats.h"
+
+void  layerConvDWBNRelu7(
+  unsigned int l2_x,
+  unsigned int l2_y,
+  unsigned int l2_W,
+  unsigned int l1_buffer,
+  unsigned int out_mult_in,
+  unsigned int out_shift_in
+);
