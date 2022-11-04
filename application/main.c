@@ -226,6 +226,9 @@ void * l3_mfcc_computation(struct pi_device fs){
 
     num_samples = header_info.DataSize * 8 / (header_info.NumChannels * header_info.BitsPerSample);
 
+    for (int i=0; i<10; i++) {
+        printf ("%i\n\r", inWav[i]);
+    }
 
 
     #if (DATA_TYPE==2) || (DATA_TYPE==3)
@@ -597,6 +600,21 @@ int main(int argc, char *argv[])
 
 // Internal
 
+// First 10 wavs:
+// -43
+// -109
+// -125
+// -132
+// -116
+// -84
+// -60
+// -9
+// 27
+// 61
+
+// MFCC
+
+
 // 75
 // 126
 // 120
@@ -656,6 +674,17 @@ int main(int argc, char *argv[])
 
 // On FPGA
 
+// First 10 wavs
+// -43
+// -109
+// -125
+// -132
+// -116
+// -84
+// -60
+// -9 
+// 27
+// 61
 
 // Beginning:
 
