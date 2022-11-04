@@ -16,10 +16,6 @@
 //
 // Author: Cristian Cioflan, ETH (cioflanc@iis.ee.ethz.ch)
 
-// pulp_sdk 3 gvsoc 1 Network Output: -7990 -5814 -4537 1333 -7235 -4868 -2305 7159 561 -12239 -9144 -1110 (new structure)
-// (old structure)
-
-
 #define __PLATFORM__ ARCHI_PLATFORM_FPGA
 
 #ifndef __EMUL__
@@ -65,7 +61,7 @@
 
 // ADDED NOW
 #define FLASH_BUFF_SIZE 128
-#define VERBOSE 1
+#define VERBOSE 0
 
 static struct pi_hyperflash_conf flash_conf;
 static struct pi_hyper_conf ram_conf;
@@ -74,7 +70,6 @@ static int activations_input;
 static uint8_t flashBuffer[FLASH_BUFF_SIZE];
 
 char* L2_output;
-
 
 #if (DATA_TYPE==2)
 typedef f16 MFCC_IN_TYPE;
@@ -98,7 +93,6 @@ volatile char *Memory;
 volatile char *Mfcc_str;
 char * feat_char;
 
-
 // filesystem management functions
 void open_filesystem_and_ram(struct pi_device *flash, struct pi_device *fs)
 {
@@ -110,7 +104,7 @@ void open_filesystem_and_ram(struct pi_device *flash, struct pi_device *fs)
     pi_open_from_conf(flash, &flash_conf);
     if (pi_flash_open(flash))
     {
-        printf("Error flash open !\n");
+        printf("Error flash open !\n\r");
         pmsis_exit(-1);
     }
 
@@ -120,7 +114,7 @@ void open_filesystem_and_ram(struct pi_device *flash, struct pi_device *fs)
     pi_open_from_conf(fs, &conf);
     if (pi_fs_mount(fs))
     {
-        printf("Error FS mounting !\n");
+        printf("Error FS mounting !\n\r");
         pmsis_exit(-2);
     }
     pi_task_t task = {0};
@@ -140,33 +134,30 @@ static void RunMFCC()
 
     // Compute MFCC following Tensorflow settings
     #if (N_DCT == 0)
-        printf("DCT is 0 \n");
+        printf("DCT is 0 \n\r");
             #if (DATA_TYPE==2) || (DATA_TYPE==3)
             Tensorflow_MFCC(MfccInSig, out_feat, R2_Twiddles_float_512, RFFT_Twiddles_float_1024, R2_SwapTable_float_512, WindowLUT, MFCC_FilterBank, MFCC_Coeffs);
             #else
             Tensorflow_MFCC(MfccInSig, out_feat, R2_Twiddles_fix_512,   RFFT_Twiddles_fix_1024,   R2_SwapTable_fix_512,   WindowLUT, MFCC_FilterBank, MFCC_Coeffs, NORM);
             #endif
     #else
-        printf("DCT is 1 \n");
+        printf("DCT is 1 \n\r");
             #if (DATA_TYPE==2) || (DATA_TYPE==3)
-            printf ("DATATYPE is %i\n", DATA_TYPE);
+            printf ("DATATYPE is %i\n\r", DATA_TYPE);
             Tensorflow_MFCC(MfccInSig, out_feat, R2_Twiddles_float_512, RFFT_Twiddles_float_1024, R2_SwapTable_float_512, WindowLUT, MFCC_FilterBank, MFCC_Coeffs, DCT_Coeff);
             #else
-            printf ("DATATYPE is %i\n", DATA_TYPE);
+            printf ("DATATYPE is %i\n\r", DATA_TYPE);
             Tensorflow_MFCC(MfccInSig, out_feat, R2_Twiddles_fix_512,   RFFT_Twiddles_fix_1024,   R2_SwapTable_fix_512,   WindowLUT, MFCC_FilterBank, MFCC_Coeffs, NORM, DCT_Coeff);
             #endif
     #endif
     #ifdef PERF
         int elapsed = gap_cl_readhwtimer() - start;
-        printf("Total Cycles: %d over %d Frames %d Cyc/Frame\n", elapsed, N_FRAME, elapsed / N_FRAME);
+        printf("Total Cycles: %d over %d Frames %d Cyc/Frame\n\r", elapsed, N_FRAME, elapsed / N_FRAME);
     #endif
 }
 
 void * l3_mfcc_computation(struct pi_device fs){
-    printf ("Test kickoff - preinit \n");
     #ifndef __EMUL__
-
-        printf ("Test kickoff - init \n");
 
         struct pi_device cluster_dev;
         struct pi_cluster_conf cl_conf;
@@ -175,14 +166,14 @@ void * l3_mfcc_computation(struct pi_device fs){
         pi_open_from_conf(&cluster_dev, (void *) &cl_conf);
         if (pi_cluster_open(&cluster_dev))
         {
-            printf("Cluster open failed !\n");
+            printf("Cluster open failed !\n\r");
             pmsis_exit(-4);
         }
     #endif
     
     L1_Memory = (AT_L1_POINTER) AT_L1_ALLOC(0, _L1_Memory_SIZE);
     if (L1_Memory==NULL){
-        printf("Error allocating L1\n");
+        printf("Error allocating L1\n\r");
         pmsis_exit(-1);
     }
 
@@ -196,15 +187,15 @@ void * l3_mfcc_computation(struct pi_device fs){
     MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(BUF_SIZE * sizeof(MFCC_IN_TYPE));   
 
     if (inWav==NULL){
-        printf("Error allocating inWav\n");
+        printf("Error allocating inWav\n\r");
         pmsis_exit(1);
     }
     if (MfccInSig==NULL){
-        printf("Error allocating MfccInSig\n");
+        printf("Error allocating MfccInSig\n\r");
         pmsis_exit(1);
     }
     if (out_feat==NULL){
-        printf("Error allocating out_feat\n");
+        printf("Error allocating out_feat\n\r");
         pmsis_exit(1);
     }
     // Verify that the .wav was flashed correctly
@@ -212,7 +203,7 @@ void * l3_mfcc_computation(struct pi_device fs){
     file = pi_fs_open(&fs, "aa48c94a_nohash_2.wav", 0);
     if (file == NULL)
     {
-        printf("file open failed\n");
+        printf("file open failed\n\r");
         return -1;
     }
 
@@ -220,16 +211,19 @@ void * l3_mfcc_computation(struct pi_device fs){
 
     // Internal implementation
     if (ReadWavFromFile(FileName, inWav, BUF_SIZE*sizeof(short), &header_info, fs)){
-        printf("Error reading wav file\n");
+        printf("Error reading wav file\n\r");
         pmsis_exit(1);
     }
 
     num_samples = header_info.DataSize * 8 / (header_info.NumChannels * header_info.BitsPerSample);
 
-    for (int i=0; i<10; i++) {
-        printf ("%i\n\r", inWav[i]);
+#ifdef VERBOSE
+    // Printing WAV
+    for (int i=0; i<num_samples; i++) {
+        printf ("%i, ", inWav[i]);
     }
-
+    printf("\n\r");
+#endif
 
     #if (DATA_TYPE==2) || (DATA_TYPE==3)
         for (int i=0; i<num_samples; i++) {
@@ -241,13 +235,10 @@ void * l3_mfcc_computation(struct pi_device fs){
         }
     #endif
     
-    printf ("SDK: %s\n", PULPSDK);
+    printf ("SDK: %s\n\r", PULPSDK);
     if (strcmp(PULPSDK, "pulp_sdk") == 0) {
-        // PULP
-        // Working before
 
         struct pi_cluster_task cluster_task = {0};
-        printf ("Current: %s\n", cluster_task);
         // pi_cluster_task(&cluster_task, pulp_parallel, NULL);
         // Replace pulp_parallel with pi_cl_team_fork - is NUM_CORE included?
         pi_cluster_task(&cluster_task, pi_cl_team_fork, NULL); 
@@ -255,11 +246,10 @@ void * l3_mfcc_computation(struct pi_device fs){
         cluster_task.slave_stack_size = STACK_SIZE;
         cluster_task.entry = RunMFCC;
         cluster_task.arg = NULL;
-        pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task); // TODO: Comment back in
+        pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);
 
-        printf ("Current: %s\n", pi_cluster_send_task_to_cl);
     } else {
-        // GAP
+
         struct pi_cluster_task task = {0};
         task.entry = RunMFCC;
         task.arg = NULL;
@@ -283,7 +273,6 @@ void * l3_mfcc_computation(struct pi_device fs){
         k++;
     }
 
-
     pi_l2_free(out_feat, (uint32_t) N_FRAME * frame_size * sizeof(OUT_TYPE));
     pi_l2_free(inWav, (uint32_t) BUF_SIZE * sizeof(short));
     pi_l2_free(MfccInSig, (uint32_t) BUF_SIZE * sizeof(MFCC_IN_TYPE));
@@ -292,10 +281,7 @@ void * l3_mfcc_computation(struct pi_device fs){
 
 void * l2_mfcc_computation(){
 
-    printf ("Test kickoff - preinit \n");
     #ifndef __EMUL__
-
-        printf ("Test kickoff - init \n");
 
         struct pi_device cluster_dev;
         struct pi_cluster_conf cl_conf;
@@ -304,14 +290,14 @@ void * l2_mfcc_computation(){
         pi_open_from_conf(&cluster_dev, (void *) &cl_conf);
         if (pi_cluster_open(&cluster_dev))
         {
-            printf("Cluster open failed !\n");
+            printf("Cluster open failed !\n\r");
             pmsis_exit(-4);
         }
     #endif
     
     L1_Memory = (AT_L1_POINTER) AT_L1_ALLOC(0, _L1_Memory_SIZE);
     if (L1_Memory==NULL){
-        printf("Error allocating L1\n");
+        printf("Error allocating L1\n\r");
         pmsis_exit(-1);
     }
 
@@ -325,15 +311,15 @@ void * l2_mfcc_computation(){
     MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(BUF_SIZE * sizeof(MFCC_IN_TYPE));   
 
     if (inWav==NULL){
-        printf("Error allocating inWav\n");
+        printf("Error allocating inWav\n\r");
         pmsis_exit(1);
     }
     if (MfccInSig==NULL){
-        printf("Error allocating MfccInSig\n");
+        printf("Error allocating MfccInSig\n\r");
         pmsis_exit(1);
     }
     if (out_feat==NULL){
-        printf("Error allocating out_feat\n");
+        printf("Error allocating out_feat\n\r");
         pmsis_exit(1);
     }
 
@@ -350,13 +336,11 @@ void * l2_mfcc_computation(){
         }
     #endif
     
-    printf ("SDK: %s\n", PULPSDK);
+    printf ("SDK: %s\n\r", PULPSDK);
     if (strcmp(PULPSDK, "pulp_sdk") == 0) {
-        // PULP
-        // Working before
 
         struct pi_cluster_task cluster_task = {0};
-        printf ("Current: %s\n", cluster_task);
+        printf ("Current: %s\n\r", cluster_task);
         // pi_cluster_task(&cluster_task, pulp_parallel, NULL);
         // Replace pulp_parallel with pi_cl_team_fork - is NUM_CORE included?
         pi_cluster_task(&cluster_task, pi_cl_team_fork, NULL); 
@@ -364,11 +348,11 @@ void * l2_mfcc_computation(){
         cluster_task.slave_stack_size = STACK_SIZE;
         cluster_task.entry = RunMFCC;
         cluster_task.arg = NULL;
-        pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task); // TODO: Comment back in
+        pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task);
 
-        printf ("Current: %s\n", pi_cluster_send_task_to_cl);
+        printf ("Current: %s\n\r", pi_cluster_send_task_to_cl);
     } else {
-        // GAP
+
         struct pi_cluster_task task = {0};
         task.entry = RunMFCC;
         task.arg = NULL;
@@ -404,7 +388,7 @@ extern uint8_t L2_input_h[490];
 
 int main () {
 
-    printf ("Begin program");
+    printf ("Begin program\n\r");
 
     FileName = __XSTR(AT_WAV);
     PULPSDK = __XSTR(SDK);
@@ -419,10 +403,6 @@ int main () {
         Mfcc = 1;  // compute MFCCs
     }
 
-
-    printf ("%s\n", Memory);
-    printf("Start MFCC computation\n");
-
     char* L2_memory_buffer;
     char* L2_input;
     if (strcmp(PULPSDK, "gap_sdk") == 0){
@@ -435,20 +415,13 @@ int main () {
     // pi_time_wait_us(10000);
     // pi_freq_set(PI_FREQ_DOMAIN_CL, 10000000);
     // pi_time_wait_us(10000);
+
     if (strcmp(PULPSDK, "pulp_sdk") == 0){
-        printf ("5\n");
         #if __PLATFORM__ == ARCHI_PLATFORM_FPGA
-            printf ("6\n");
             *(int*)(ICACHE_PREFETCH) = 0xFFFF;  // Enable prefetching for FPGA
         #endif
     }
-    printf ("7\n");
     *(int*)(ICACHE_PREFETCH) = 0xFFFF;  // Enable prefetching for FPGA
-
-    
-    printf("Performing inference\n");
-
-    printf ("Allocated memory\n");
     
     int rdDone;
 #if MEMORY == 3
@@ -458,7 +431,6 @@ int main () {
     rdDone = N_FRAME * N_MFCC;
 #endif
 
-    printf ("rdDone set\n");
 #if MEMORY == 3
     struct pi_device fs;
     struct pi_device flash;
@@ -472,7 +444,7 @@ int main () {
         file = pi_fs_open(&fs, "inputs.hex", 0);
         if (file == NULL)
         {
-            printf("file open failed\n");
+            printf("file open failed\n\r");
             return -1;
         }
 
@@ -491,9 +463,6 @@ int main () {
     }
     else {
 
-        printf ("8\n");
-        // // Compute MFCCs
-        // test_kickoff(NULL); // Extend test_kickoff to accept the FS as an argument; run from there
         l3_mfcc_computation(fs);
 
         int input_size = 8 * N_FRAME * N_MFCC;
@@ -510,15 +479,16 @@ int main () {
     L2_input = L2_memory_buffer + (1 - begin_end) * (L2_BUFFER_SIZE - rdDone);
     L2_output = L2_memory_buffer;
 
-
-    printf("Printing MFCC\n");
+#ifdef VERBOSE
+    printf("Printing MFCC\n\r");
     for (int i = 0; i < 490; i++){
-        printf("%i\n", feat_char[i]);
+        printf("%i, ", feat_char[i]);
     }
-
+    printf("\n\r");
+#endif
 
 #ifdef VERBOSE
-    printf("\nL2 Buffer alloc initial\t@ 0x%08x:\t%s\n", (unsigned int)L2_memory_buffer, L2_memory_buffer?"Ok":"Failed");
+    printf("\nL2 Buffer alloc initial\t@ 0x%08x:\t%s\n\r", (unsigned int)L2_memory_buffer, L2_memory_buffer?"Ok":"Failed");
 #endif
 
     // Allocation
@@ -533,31 +503,27 @@ int main () {
         network_run(L2_memory_buffer, L2_BUFFER_SIZE, L2_output, begin_end, ram); // Dory master
 #endif
 #if MEMORY == 2
-        if (Mfcc == 1){
+    if (Mfcc == 1){
 
+        l2_mfcc_computation();
 
-            // test_kickoff(NULL); // Extend test_kickoff to accept the FS as an argument; run from there
-
-
-            l2_mfcc_computation();
-
-            for (int index = 0; index < 490; index++){
-                L2_input_h[index] = feat_char[index];
-            }
-            
+        for (int index = 0; index < 490; index++){
+            L2_input_h[index] = feat_char[index];
         }
-        network_alloc();  
-        network_run(L2_memory_buffer, L2_BUFFER_SIZE, L2_output, begin_end);
+        
+    }
+    network_alloc();  
+    network_run(L2_memory_buffer, L2_BUFFER_SIZE, L2_output, begin_end);
 #endif
-#ifdef VERBOSE
-    printf("Network Output: ");
+
+    printf("Network Output: \n\r");
     // for(int i = 0; i < ${int(DORY_HW_graph[-1].tiling_dimensions["L2"]["output_activation_memory"] * (1 + int(DORY_HW_graph[-1].tiling_dimensions["L3"]["output_dimensions"] != DORY_HW_graph[-1].tiling_dimensions["L2"]["output_dimensions"]))) }; i+=4)
     for(int i = 0; i < N_CLASSES * 4; i+=4)
     {
         printf("%d ", *(int32_t *)(L2_output + i));
     }
-    printf("\n");
-#endif
+    printf("\n\r");
+
 
 #if MEMORY == 3
     // Deallocation
@@ -580,7 +546,7 @@ int main () {
 int main(int argc, char *argv[])
 {
         if (argc < 2) {
-            printf("Usage: mnist [image_file]\n");
+            printf("Usage: mnist [image_file]\n\r");
             exit(-1);
         }
         FileName = argv[1];
@@ -589,7 +555,7 @@ int main(int argc, char *argv[])
         test_kickoff(NULL);
 
         // for (int i = 0; i < 490; i++){
-        //     printf("%i\n", feat_char[i]);
+        //     printf("%i\n\r", feat_char[i]);
         // }
 
         // Model inference
@@ -597,126 +563,3 @@ int main(int argc, char *argv[])
         network_run_FabricController(); 
 }
 #endif
-
-// Internal
-
-// First 10 wavs:
-// -43
-// -109
-// -125
-// -132
-// -116
-// -84
-// -60
-// -9
-// 27
-// 61
-
-// MFCC
-
-
-// 75
-// 126
-// 120
-// 125
-// 126
-// 126
-// 124
-// 126
-// 126
-
-
-// ...
-
-// 124
-// 125
-// 126
-// 74
-// 128
-// 121
-// 123
-// 125
-// 125
-// 124
-// 125
-// 126
-// 126
-
-// num_cycles: 922733
-// MACs: 2656768
-// MAC/cycle: 2.879238
-// n. of Cores: 8
-// Network Output: -7990 -5814 -4537 1333 -7235 -4868 -2305 7159 561 -12239 -9144 -1110
-
-
-
-// GWT
-
-// 124
-// 125
-// 126
-// 74
-// 128
-// 121
-// 123
-// 125
-// 125
-// 124
-// 125
-// 126
-// 126
-
-// num_cycles: 922738
-// MACs: 2656768
-// MAC/cycle: 2.879222
-// n. of Cores: 8
-// Network Output: -7990 -5814 -4537 1333 -7235 -4868 -2305 7159 561 -12239 -9144 -1110
-
-// On FPGA
-
-// First 10 wavs
-// -43
-// -109
-// -125
-// -132
-// -116
-// -84
-// -60
-// -9 
-// 27
-// 61
-
-// Beginning:
-
-// Printing MFCC
-//                             75
-//                               126
-//                                  120
-//                                     125
-//                                        126
-//                                           126
-//                                              124
-//                                                 126
-//                                                    126
-
-// ...
-
-// 124
-// 125
-// 126
-// 74
-// 128
-// 121
-// 123
-// 125
-// 125
-// 124
-// 125
-// 126
-// 126
-
-// num_cycles: 2141835
-// MACs: 2656768
-// MAC/cycle: 1.240417
-// n. of Cores: 8
-// Network Output: -7990 -5814 -4537 1333 -7235 -4868 -2305 7159 561 -12239 -9144 -1110
