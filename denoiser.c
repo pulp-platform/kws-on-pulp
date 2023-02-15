@@ -246,7 +246,8 @@ static void RunDenoiser()
           reset: only enabled at the start of the application
     */
 #ifdef AUDIO_EVK
-        pi_gpio_pin_write( gpio_pin_o, 1);
+        pi_gpio_pin_write(gpio_pin_o, 1);
+
 #endif
     __PREFIX(CNN)(
 #   ifndef GRU
@@ -261,7 +262,7 @@ static void RunDenoiser()
         STFT_Magnitude
     );
 #ifdef AUDIO_EVK
-        pi_gpio_pin_write( gpio_pin_o, 0);
+        pi_gpio_pin_write(gpio_pin_o, 0);
 #endif
 
     /* 
@@ -324,7 +325,7 @@ static void RunDenoiser()
     #define SAI_SDO(itf)         (48+(itf*4)+3)
 
     SFU_uDMA_Channel_T *ChanOutCtxt_0;
-    SFU_uDMA_Channel_T *ChanOutCtxt_1;
+    //SFU_uDMA_Channel_T *ChanOutCtxt_1;
     SFU_uDMA_Channel_T *ChanInCtxt_0;
     SFU_uDMA_Channel_T *ChanInCtxt_1;
 
@@ -347,9 +348,10 @@ static void RunDenoiser()
         // polarity: b0: SDI: slave/master, b1:SDO: slave/master    1:RX, 0:TX
         i2s_conf.options = PI_I2S_OPT_REF_CLK_FAST;
         i2s_conf.frame_clk_freq = Frequency;                // In pdm mode, the frame_clk_freq = i2s_clk
-        i2s_conf.itf = SAIn;                                // Which sai interface
+        i2s_conf.itf = SAIn;   
         i2s_conf.mode = PI_I2S_MODE_PDM;                    // Choose PDM mode
         i2s_conf.pdm_direction = Direction;                 // 2b'11 slave on both SDI and SDO (SDO under test)
+
         i2s_conf.pdm_diff = Diff;                           // Set differential mode on pairs (TX only)
 
     //    i2s_conf.options |= PI_I2S_OPT_EXT_CLK;             // Put I2S CLK in input mode for safety
@@ -378,7 +380,7 @@ static void RunDenoiser()
             //pi_time_wait_us(5000);
 
             SFU_Enqueue_uDMA_Channel_Multi(ChanOutCtxt_0, CHUNK_NUM, BufferOutList, BUFF_SIZE, 0);
-            SFU_Enqueue_uDMA_Channel_Multi(ChanOutCtxt_1, CHUNK_NUM, BufferOutList, BUFF_SIZE, 0);
+            //SFU_Enqueue_uDMA_Channel_Multi(ChanOutCtxt_1, CHUNK_NUM, BufferOutList, BUFF_SIZE, 0);
             SFU_GraphResetInputs(&SFU_RTD(GraphINOUT));
         }
 
@@ -422,6 +424,7 @@ int denoiser(void)
     pi_pad_set_function(PI_PAD_089, PI_PAD_FUNC1);
 
     pi_gpio_pin_configure( gpio_pin_o, PI_GPIO_OUTPUT);
+
 #endif
 
 
@@ -494,7 +497,7 @@ int denoiser(void)
 
     ChanInCtxt_0   = (SFU_uDMA_Channel_T *) pi_l2_malloc(sizeof(SFU_uDMA_Channel_T));
     ChanOutCtxt_0  = (SFU_uDMA_Channel_T *) pi_l2_malloc(sizeof(SFU_uDMA_Channel_T));
-    ChanOutCtxt_1  = (SFU_uDMA_Channel_T *) pi_l2_malloc(sizeof(SFU_uDMA_Channel_T));
+    //ChanOutCtxt_1  = (SFU_uDMA_Channel_T *) pi_l2_malloc(sizeof(SFU_uDMA_Channel_T));
 
     
     
@@ -511,7 +514,7 @@ int denoiser(void)
     
     // Get uDMA channels for GraphOUT
     SFU_Allocate_uDMA_Channel(ChanOutCtxt_0, 0, &SFU_RTD(GraphINOUT));
-    SFU_Allocate_uDMA_Channel(ChanOutCtxt_1, 0, &SFU_RTD(GraphINOUT));
+    //SFU_Allocate_uDMA_Channel(ChanOutCtxt_1, 0, &SFU_RTD(GraphINOUT));
     
     // Connect Channels to SFU for Mic IN (PDM IN)
     SFU_GraphConnectIO(SFU_Name(GraphINOUT, In_1), SAI_ITF_IN, 2, &SFU_RTD(GraphINOUT));
@@ -523,7 +526,7 @@ int denoiser(void)
     Status =  SFU_GraphConnectIO(SFU_Name(GraphINOUT, Out1), SAI_ITF_OUT_1, 0, &SFU_RTD(GraphINOUT));
 
     // Connect Channels to SFU for PDM OUT 2
-    Status =  SFU_GraphConnectIO(SFU_Name(GraphINOUT, In2), ChanOutCtxt_1->ChannelId, 0, &SFU_RTD(GraphINOUT));
+    //Status =  SFU_GraphConnectIO(SFU_Name(GraphINOUT, In2), ChanOutCtxt_1->ChannelId, 0, &SFU_RTD(GraphINOUT));
     Status =  SFU_GraphConnectIO(SFU_Name(GraphINOUT, Out2), SAI_ITF_OUT_2, 0, &SFU_RTD(GraphINOUT));
 
     //Next API will have a value to replace this high number with -1
@@ -883,7 +886,11 @@ int denoiser(void)
 #endif //CHECKSUM
 
 #ifdef AUDIO_EVK
+<<<<<<< HEAD
         pi_gpio_pin_write( gpio_pin_o, 0);
+=======
+        pi_gpio_pin_write(gpio_pin_o, 0);
+>>>>>>> a8590fa (add spliter)
 #endif
 
 #endif  // DISABLE_NN_INFERENCE
@@ -893,7 +900,7 @@ int denoiser(void)
 #if IS_INPUT_STFT == 0 // if not loading the STFT
 
 #ifdef AUDIO_EVK
-        pi_gpio_pin_write( gpio_pin_o, 1);
+        pi_gpio_pin_write(gpio_pin_o, 1);
 #endif
 
         /******
@@ -939,7 +946,7 @@ int denoiser(void)
 
         // block until next input audio frame is ready
 #ifdef AUDIO_EVK
-        pi_gpio_pin_write( gpio_pin_o, 0);
+        pi_gpio_pin_write(gpio_pin_o, 0);
 #endif
         chunk_in_cnt++;
         pi_evt_sig_init(&proc_task);
@@ -1055,5 +1062,5 @@ int main()
     WavName = __XSTR(WAV_FILE);
 #   endif    
 
-    return pmsis_kickoff((void *) denoiser);
+    return denoiser();
 }
