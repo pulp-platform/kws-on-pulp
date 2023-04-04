@@ -58,12 +58,17 @@ static PI_L2 uint16_t slider_value;
 // allocate space to load the input signal
 char *WavName = NULL;
 
+// copy input data to L3
+static uint32_t temporary_carrier;
+
 /* 
     static allocation of temporary buffers
 */
 PI_L2 DATATYPE_SIGNAL Audio_Frame[FRAME_NFFT];  // stores the clip to compute the STFT. only first FRAME_SIZE samples (<FRAME_NFFT) are valid
 PI_L2 DATATYPE_SIGNAL STFT_Spectrogram[AT_INPUT_WIDTH*AT_INPUT_HEIGHT*2]; // the 2 is because of complex numbers
 PI_L2 DATATYPE_SIGNAL STFT_Magnitude[AT_INPUT_WIDTH*AT_INPUT_HEIGHT];     // magnitude of the precedent vectors, used as denoiser input and output
+
+PI_L2 DATATYPE_SIGNAL data_mover[16000];
 
 #define IS_SFU 1 
 PI_L2 DATATYPE_SIGNAL Audio_Frame_temp[FRAME_SIZE];
@@ -271,6 +276,7 @@ int denoiser(void)
     printf("Cluster Opened\n");
     pi_freq_set(PI_FREQ_DOMAIN_CL, FREQ_CL*1000*1000);
 
+    // Comment out on GVSOC
 //     /****
 //         Setup the SFU for PDM in/out
 //     ****/
@@ -415,6 +421,12 @@ int denoiser(void)
 
     // READ WAV instead of READ from MIC
 
+    __PREFIX(_L2_Memory) = pi_l2_malloc(MAX_L2_BUFFER);
+    if (__PREFIX(_L2_Memory) == 0) {
+        printf("Error when allocating L2 buffer\n");
+        pmsis_exit(18);        
+    }
+
     // Read audio from file
     #define AUDIO_BUFFER_SIZE (MAX_L2_BUFFER>>1)
     printf("Reading wav from: %s \n", WavName);
@@ -424,18 +436,55 @@ int denoiser(void)
         printf("\nError reading wav file\n");
         pmsis_exit(1);
     }
+    for (int i = 0; i < 10; i++){
+        // printf("%f, ", (&temporary_carrier)[i]);
+        printf("%f, ", ((DATATYPE_SIGNAL) __PREFIX(_L2_Memory)[i])/(1<<15) );
+        // data_mover[i] = ((DATATYPE_SIGNAL) __PREFIX(_L2_Memory)[i])/(1<<15);
+
+    }
     int num_samples = header_info.DataSize * 8 / (header_info.NumChannels * header_info.BitsPerSample);
     printf("Num Samples: %d with BitsPerSample: %d\n", num_samples, header_info.BitsPerSample);
     printf("Finished Read wav.\n");
 
+    // Allocate L3 buffers for audio IN/OUT
+    if (pi_ram_alloc(&DefaultRam, &temporary_carrier, (uint32_t) AUDIO_BUFFER_SIZE*sizeof(short)))
+    {
+        printf("temporary_carrier Ram malloc failed !\n");
+        pmsis_exit(-4);
+    }
+    // printf("Allocated space for temporary_carrier\n");
+
+    pi_ram_write(&DefaultRam, temporary_carrier, __PREFIX(_L2_Memory), num_samples * sizeof(short));
+
+    printf("Copied L2 in temporary_carrier\n");
+
+    for (int i = 0; i < 16000; i++){
+        // printf("%f, ", (&temporary_carrier)[i]);
+        // printf("%f, ", ((DATATYPE_SIGNAL) __PREFIX(_L2_Memory)[i])/(1<<15) );
+        data_mover[i] = ((DATATYPE_SIGNAL) __PREFIX(_L2_Memory)[i])/(1<<15);
+
+    }
+
+    // printf("\nFinished copying data\n");
+
+    // for (int i = 0; i < num_samples; i++){
+    //     printf("%f, ", temporary_carrier[i]);
+    // }
 
     // Write from L3
     // WriteWavToFile("test_gap.wav", 16, 16000, 1, 
     //     (uint32_t *) Audio_Frame, 16000* sizeof(short));
 
     // Write from L2
-    WriteWavToFile("test_gap.wav", 16, 16000, 1, 
-        (uint32_t *) __PREFIX(_L2_Memory), num_samples* sizeof(short));
+    // WriteWavToFile("test_gap.wav", 16, 16000, 1, 
+    //     (uint32_t *) __PREFIX(_L2_Memory), 16000* sizeof(short));
+
+
+    // WriteWavToFile("test_gap.wav", 16, 16000, 1, 
+    //     (uint32_t *) __PREFIX(_L2_Memory), 16000* sizeof(short));
+   WriteWavToFile("test_gap.wav", 16, 16000, 1, 
+        (uint32_t *) __PREFIX(_L2_Memory), 16000* sizeof(short));
+
     printf("Writing wav file to test_gap.wav completed successfully\n");
 
     // Close the cluster
