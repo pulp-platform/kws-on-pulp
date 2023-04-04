@@ -45,7 +45,7 @@ setup_cmake()
 # Application's kconfig options
 ###############################################################################
 
-set(WAV_FILE samples/sample_0000.wav)
+set(WAV_FILE /usr/scratch/wetterhorn/cioflanc/kws_on_gap9/b7e9f841_nohash_0.wav)
 set(APP_MSG_PREFIX "[${BoldRed}${TARGET_NAME}${ColourReset}]")
 # if (CONFIG_DEMO)
 #         set(DEMO                        1)
@@ -70,6 +70,7 @@ if (CONFIG_DEMO)
         set(CONFIG_FREQUENCY_CLUSTER  200000000)
         set(CONFIG_FREQUENCY_SFU      200000000)
         set(CONFIG_VOLTAGE            650)
+        set(WAV FILE /usr/scratch/wetterhorn/cioflanc/kws_on_gap9/b7e9f841_nohash_0.wav)
 
         set(CONFIG_IO_TYPE_UART         y)
 
@@ -285,7 +286,7 @@ list(APPEND TARGET_PREPROCESSOR -DPERF
                                 -DFREQ_FC=${FREQ_FC_MHZ}
                                 -DFREQ_SFU=${FREQ_SFU_MHZ}
                                 -DVOLTAGE=${CONFIG_VOLTAGE}
-                                -DWAV_FILE=${CMAKE_CURRENT_SOURCE_DIR}/${WAV_FILE}
+                                -DWAV_FILE=${WAV_FILE}
                                 -DIS_SFU=${IS_SFU}
                                 -DIS_INPUT_STFT=${IS_INPUT_STFT}
                                 -DSTFT_FRAMES=${STFT_FRAMES}
