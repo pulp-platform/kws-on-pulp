@@ -29,6 +29,7 @@ ifeq ($(APP_MODE), 0)
 	APP_SRCS += dac.c
 	io=uart
 	DEMO=1
+	WAV_FILE?=/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/b7e9f841_nohash_0.wav
 
 endif
 # 1:	DenoiseWav
@@ -387,10 +388,17 @@ graph: $(TARGET_BUILD_DIR)/GraphINOUT_L2_Descr.c
 	
 
 # all depends on the model
+# all:: | model gen_fft_code graph
+# build:: | model gen_fft_code graph
+
+# clean:: clean_model clean_fft_code
+# 	rm -rf BUILD*
+
+
 all:: | model gen_fft_code graph
 build:: | model gen_fft_code graph
 
-clean:: clean_model clean_fft_code
+clean:: 
 	rm -rf BUILD*
 
 include common/model_rules.mk

@@ -117,6 +117,8 @@ for c, filename in enumerate(files):
 		lim_2 = max_stats if max_stats > lim_2 else lim_2   
 		logging.debug('rnn_1_i_state | Sample: ',i,', Max: ', max_stats, 'Glob Max', lim_2)
 	
+		# Cioflan
+		break
 
 # get quantization stas and dump to file
 astats = stats_collector.stats
