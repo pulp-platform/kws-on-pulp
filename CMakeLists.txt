@@ -46,6 +46,19 @@ include($ENV{GAP_SDK_HOME}/utils/cmake/setup.cmake)
 
 set(WAV_FILE samples/sample_0000.wav)
 set(APP_MSG_PREFIX "[${BoldRed}${TARGET_NAME}${ColourReset}]")
+# if (CONFIG_DEMO)
+#         set(DEMO                        1)
+#         set(IS_SFU                      1)
+#         set(IS_INPUT_STFT               0)
+#         set(DISABLE_NN_INFERENCE        0)
+#         set(STFT_FRAMES                 1)
+#         set(CONFIG_FREQUENCY_CLUSTER  200000000)
+#         set(CONFIG_FREQUENCY_CLUSTER  200000000)
+#         set(CONFIG_FREQUENCY_SFU      200000000)
+#         set(CONFIG_VOLTAGE            650)
+
+#         set(CONFIG_IO_TYPE_UART         y)
+
 if (CONFIG_DEMO)
         set(DEMO                        1)
         set(IS_SFU                      1)
@@ -90,9 +103,11 @@ elseif(CONFIG_NN_TEST)
 
 endif()
 set(H_STATE_LEN          256)
-set(FRAME_SIZE           400)
+# set(FRAME_SIZE           8000) # Large buffer
+set(FRAME_SIZE           400) # original
 set(FRAME_STEP           100)
-set(FRAME_NFFT           512)
+set(FRAME_NFFT           512) # original
+# set(FRAME_NFFT           8192) # Large buffer
 set(NUM_FRAME_OVERLAP      3)
 set(SAMPLING_FREQ      16000)
 set(AT_INPUT_WIDTH       257)
@@ -163,9 +178,11 @@ set(WIN_LUT             ${FFT_BUILD_DIR}/WinLUT_f16.def)
 set(FFT_MODEL_GEN       ${FFT_BUILD_DIR}/GenSTFT)
 set(FFT_SRCG            $ENV{TILER_DSP_GENERATOR_PATH}/DSP_Generators.c)
 
-set(FRAME_SIZE          400)
+# set(FRAME_SIZE          8000) # Large buffer
+set(FRAME_SIZE          400) # original
 set(FRAME_STEP          100)
-set(FRAME_NFFT          512)
+set(FRAME_NFFT          512) # original
+# set(FRAME_NFFT          8192) # Large buffer
 
 message(STATUS "${APP_MSG_PREFIX} STFT: FRAME_SIZE=${FRAME_SIZE} FRAME_STEP=${FRAME_STEP} FRAME_NFFT=${FRAME_NFFT}")
 add_custom_command(

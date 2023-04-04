@@ -107,7 +107,8 @@ int setup_dac(uint8_t addr)
     /*************************/
 
     uint8_t vendor_id = read_reg8(&ssm_i2c, 0x00);
-    const uint8_t expected_vendor_id = 0x41;
+    // const uint8_t expected_vendor_id = 0x41; // Original
+    const uint8_t expected_vendor_id = 0x12;
     if (vendor_id != expected_vendor_id)
     {
         printf("Got an invalid vendor_id: 0x%x, expected 0x%x\n",
@@ -117,7 +118,8 @@ int setup_dac(uint8_t addr)
     }
 
     uint8_t device_id1 = read_reg8(&ssm_i2c, 0x01);
-    const uint8_t expected_device_id1 = 0x65;
+    // const uint8_t expected_device_id1 = 0x65; // Original
+    const uint8_t expected_device_id1 = 0x12;
     if (device_id1 != expected_device_id1)
     {
         printf("Got an invalid device_id1: 0x%x, expected 0x%x\n",
@@ -127,7 +129,8 @@ int setup_dac(uint8_t addr)
     }
 
     uint8_t device_id2 = read_reg8(&ssm_i2c, 0x02);
-    const uint8_t expected_device_id2 = 0x15;
+    // const uint8_t expected_device_id2 = 0x15; // Original
+    const uint8_t expected_device_id2 = 0x12;
     if (device_id2 != expected_device_id2)
     {
         printf("Got an invalid device_id2: 0x%x, expected 0x%x\n",
@@ -137,7 +140,8 @@ int setup_dac(uint8_t addr)
     }
 
     uint8_t revision = read_reg8(&ssm_i2c, 0x03);
-    const uint8_t expected_revision = 0x02;
+    // const uint8_t expected_revision = 0x02; // Original
+    const uint8_t expected_revision = 0x12;
     if (revision != expected_revision)
     {
         printf("Got an invalid revision: 0x%x, expected 0x%x\n",
