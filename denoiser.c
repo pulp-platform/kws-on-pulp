@@ -170,7 +170,7 @@ static int open_i2s_PDM(struct pi_device *i2s, unsigned int SAIn, unsigned int F
     pi_i2s_conf_init(&i2s_conf);
 
     // polarity: b0: SDI: slave/master, b1:SDO: slave/master    1:RX, 0:TX
-    i2s_conf.options = PI_I2S_OPT_REF_CLK_FAST;
+    // i2s_conf.options = PI_I2S_OPT_REF_CLK_FAST;
     i2s_conf.frame_clk_freq = Frequency;                // In pdm mode, the frame_clk_freq = i2s_clk
     i2s_conf.itf = SAIn;                                // Which sai interface
     i2s_conf.mode = PI_I2S_MODE_PDM;                // Choose PDM mode
@@ -396,6 +396,9 @@ int denoiser(void)
         int round = (chunk_in_cnt%CHUNK_NUM);
         int round_out = (chunk_in_cnt>(STRUCT_DELAY-1))? ((chunk_in_cnt-(STRUCT_DELAY-1))%CHUNK_NUM):0;
 
+        printf("round: %i\n", round);
+        printf("round_out: %i\n", round_out);
+
         // //First Copy previous loop processed frame to output
         // for(int i=0;i<BUFF_SIZE/4;i++) {
         //     ((int32_t*)BufferOutList[round_out])[i]= (int32_t)((float)(Audio_Frame_temp[i])*((int)(1<<Q_BIT_OUT)));
@@ -407,14 +410,15 @@ int denoiser(void)
         //     Audio_Frame_temp[i] = Audio_Frame_temp[i+FRAME_STEP];
         // }
 
-        for(int i=0;i<FRAME_STEP;i++){
-            Audio_Frame[i+FRAME_SIZE-FRAME_STEP] = (DATATYPE_SIGNAL)(((float)((int32_t*)BufferInList[round])[i]) /((int)(1<<Q_BIT_IN)));
-            Audio_Frame_temp[i+FRAME_SIZE-FRAME_STEP] = (DATATYPE_SIGNAL) 0.0f;
-        }
+        // for(int i=0;i<FRAME_STEP;i++){
+        //     Audio_Frame[i+FRAME_SIZE-FRAME_STEP] = (DATATYPE_SIGNAL)(((float)((int32_t*)BufferInList[round])[i]) /((int)(1<<Q_BIT_IN)));
+        //     Audio_Frame_temp[i+FRAME_SIZE-FRAME_STEP] = (DATATYPE_SIGNAL) 0.0f;
+        // }
 
         printf("I am recording set: %i\n", sets);
         for(int i=0;i<FRAME_SIZE;i++){
-            Audio_Recording[FRAME_SIZE*sets + i] = (DATATYPE_SIGNAL)(((float)((int32_t*)BufferInList[round])[i]) /((int)(1<<Q_BIT_IN)));
+            // Audio_Recording[FRAME_SIZE*sets + i] = (DATATYPE_SIGNAL)(((float)((int32_t*)BufferInList[round])[i]) /((int)(1<<15)));
+            Audio_Recording[FRAME_SIZE*sets + i] = (DATATYPE_SIGNAL)(((float)((int32_t*)BufferInList[round])[i])/((int)(1<<Q_BIT_IN)));
             // printf("Value %i is %f\n", FRAME_SIZE*sets + i, (DATATYPE_SIGNAL)(((float)((int32_t*)BufferInList[round])[i]) /((int)(1<<Q_BIT_IN))));
         }
 
@@ -425,75 +429,98 @@ int denoiser(void)
         }
 
 
-
-#ifdef AUDIO_EVK
-        pi_gpio_pin_write(gpio_pin_o, 0);
-#endif
-
-#if IS_SFU == 1
-
         // block until next input audio frame is ready
 #ifdef  AUDIO_EVK
         pi_gpio_pin_write(gpio_pin_o, 0);
 #endif
         chunk_in_cnt++;
         pi_evt_sig_init(&proc_task);
-#endif //IS_SFU == 1
 
         // TODO: Manually break loop?
+    }
+
+    for (int i = 0; i < 1000; i++){
+        if (i%400 == 0){
+            printf("Set %i\n", i/400);
+        }
+        printf("%f, ", Audio_Recording[i] );
+    }
+
+    WriteWavToFile("test_gap.wav", 16, 16000, 1, 
+        &Audio_Recording, 16000* sizeof(short));
+
+
+    // Read just-written wav
+    #define AUDIO_BUFFER_SIZE (MAX_L2_BUFFER>>1)
+    __PREFIX(_L2_Memory) = pi_l2_malloc(MAX_L2_BUFFER);
+    if (__PREFIX(_L2_Memory) == 0) {
+        printf("Error when allocating L2 buffer\n");
+        pmsis_exit(18);        
+    }
+    header_struct header_info;
+      if (ReadWavFromFile("test_gap.wav",
+            __PREFIX(_L2_Memory), AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+        printf("\nError reading wav file\n");
+        pmsis_exit(1);
+    }
+    for (int i = 0; i < 100; i++){
+        printf("%f, ", ((DATATYPE_SIGNAL) __PREFIX(_L2_Memory)[i])/(1<<15) );
     }
 
     // Comment out on GVSOC
 
 
     // Comment out for Microphone
-    // READ WAV instead of READ from MIC
-    __PREFIX(_L2_Memory) = pi_l2_malloc(MAX_L2_BUFFER);
-    if (__PREFIX(_L2_Memory) == 0) {
-        printf("Error when allocating L2 buffer\n");
-        pmsis_exit(18);        
-    }
+    // // READ WAV instead of READ from MIC
+    // __PREFIX(_L2_Memory) = pi_l2_malloc(MAX_L2_BUFFER);
+    // if (__PREFIX(_L2_Memory) == 0) {
+    //     printf("Error when allocating L2 buffer\n");
+    //     pmsis_exit(18);        
+    // }
 
-    // Read audio from file
-    #define AUDIO_BUFFER_SIZE (MAX_L2_BUFFER>>1)
-    printf("Reading wav from: %s \n", WavName);
-    header_struct header_info;
-      if (ReadWavFromFile(WavName,
-            __PREFIX(_L2_Memory), AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
-        printf("\nError reading wav file\n");
-        pmsis_exit(1);
-    }
-    for (int i = 0; i < 100; i++){
-        // printf("%f, ", (&temporary_carrier)[i]);
-        // printf("%f, ", ((DATATYPE_SIGNAL) __PREFIX(_L2_Memory)[i])/(1<<15) );
-        printf("%f, ", Audio_Recording[i]);
-        // data_mover[i] = ((DATATYPE_SIGNAL) __PREFIX(_L2_Memory)[i])/(1<<15);
+    // // Read audio from file
+    // #define AUDIO_BUFFER_SIZE (MAX_L2_BUFFER>>1)
+    // printf("Reading wav from: %s \n", WavName);
+    // header_struct header_info;
+    //   if (ReadWavFromFile(WavName,
+    //         __PREFIX(_L2_Memory), AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+    //     printf("\nError reading wav file\n");
+    //     pmsis_exit(1);
+    // }
+    // for (int i = 0; i < 100; i++){
+    //     printf("%f, ", ((DATATYPE_SIGNAL) __PREFIX(_L2_Memory)[i])/(1<<15) );
+    //     data_mover[i] = ((DATATYPE_SIGNAL) __PREFIX(_L2_Memory)[i])/(1<<15);
 
-    }
-    int num_samples = header_info.DataSize * 8 / (header_info.NumChannels * header_info.BitsPerSample);
-    printf("Num Samples: %d with BitsPerSample: %d\n", num_samples, header_info.BitsPerSample);
-    printf("Finished Read wav.\n");
+    // }
+    // int num_samples = header_info.DataSize * 8 / (header_info.NumChannels * header_info.BitsPerSample);
+    // printf("Num Samples: %d with BitsPerSample: %d\n", num_samples, header_info.BitsPerSample);
+    // printf("Finished Read wav.\n");
 
-    // Allocate L3 buffers for audio IN/OUT
-    if (pi_ram_alloc(&DefaultRam, &temporary_carrier, (uint32_t) AUDIO_BUFFER_SIZE*sizeof(short)))
-    {
-        printf("temporary_carrier Ram malloc failed !\n");
-        pmsis_exit(-4);
-    }
-    // printf("Allocated space for temporary_carrier\n");
+    // // Allocate L3 buffers for audio IN/OUT
+    // if (pi_ram_alloc(&DefaultRam, &temporary_carrier, (uint32_t) AUDIO_BUFFER_SIZE*sizeof(short)))
+    // {
+    //     printf("temporary_carrier Ram malloc failed !\n");
+    //     pmsis_exit(-4);
+    // }
+    // // printf("Allocated space for temporary_carrier\n");
 
-    pi_ram_write(&DefaultRam, temporary_carrier, __PREFIX(_L2_Memory), num_samples * sizeof(short));
+    // pi_ram_write(&DefaultRam, temporary_carrier, __PREFIX(_L2_Memory), num_samples * sizeof(short));
 
-    printf("Copied L2 in temporary_carrier\n");
+    // printf("Copied L2 in temporary_carrier\n");
 
-    for (int i = 0; i < 16000; i++){
-        // printf("%f, ", (&temporary_carrier)[i]);
-        // printf("%f, ", ((DATATYPE_SIGNAL) __PREFIX(_L2_Memory)[i])/(1<<15) );
-        data_mover[i] = ((DATATYPE_SIGNAL) __PREFIX(_L2_Memory)[i])/(1<<15);
-    }
-    WriteWavToFile("test_gap.wav", 16, 16000, 1, 
-        (uint32_t *) __PREFIX(_L2_Memory), 16000* sizeof(short));
-    // Comment out for Microphone
+    // for (int i = 0; i < 16000; i++){
+    //     // printf("%f, ", (&temporary_carrier)[i]);
+    //     // printf("%f, ", ((DATATYPE_SIGNAL) __PREFIX(_L2_Memory)[i])/(1<<15) );
+    //     data_mover[i] = ((DATATYPE_SIGNAL) __PREFIX(_L2_Memory)[i])/(1<<15);
+    // }
+    // WriteWavToFile("test_gap.wav", 16, 16000, 1, 
+    //     (uint32_t *) __PREFIX(_L2_Memory), 16000* sizeof(short));
+    // // Comment out for Microphone
+
+
+
+
+
 
 
 
