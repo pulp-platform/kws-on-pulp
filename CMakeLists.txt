@@ -223,7 +223,8 @@ add_custom_target(clean_stft_code COMMAND rm -rf ${FFT_KERNEL_C} ${FFT_MODEL_GEN
 ###############################################################################
 
 set(SFU_BUILDDIR        ${CMAKE_BINARY_DIR}/BUILD_SFU)
-set(SFU_KERNEL_C        ${SFU_BUILDDIR}/GraphINOUT_L2_Descr.c)
+# set(SFU_KERNEL_C        ${SFU_BUILDDIR}/GraphINOUT_L2_Descr.c)
+set(SFU_KERNEL_C        ${SFU_BUILDDIR}/Graph_L2_Descr.c)
 set(SFU_GRAPH           ${CMAKE_CURRENT_SOURCE_DIR}/Graph.src)
 
 add_custom_command(
