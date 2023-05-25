@@ -31,7 +31,8 @@ ifeq ($(APP_MODE), 0)
 # 	APP_SRCS   += $(SFU_RUNTIME)/SFU_RT.c
 	APP_SRCS   += /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk_private/rtos/sfu/SFU_RT.c
 	APP_SRCS += dac.c
-	io=uart
+# 	io=uart
+	io=host
 	DEMO=1
 	WAV_FILE?=/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/b7e9f841_nohash_0.wav
 
@@ -219,10 +220,10 @@ MODEL_TENSORS = $(MODEL_BUILD)/$(MODEL_PREFIX)_L3_Flash_Const.dat
 WAV_FILE?=$(CURDIR)/samples/sample_0000.wav
 STFT_FILE=
 
-STFT_FRAMES?=10
-FRAME_SIZE=400
-FRAME_STEP=100
-FRAME_NFFT=512
+STFT_FRAMES?=49
+FRAME_SIZE=640
+FRAME_STEP=320
+FRAME_NFFT=1024
 NUM_FRAME_OVERLAP=3
 SAMPLING_FREQ=16000
 AT_INPUT_WIDTH=257 #1088
