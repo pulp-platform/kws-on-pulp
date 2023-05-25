@@ -53,6 +53,12 @@ int fxl6408_setup()
     write_reg8(&i2c, 0x05, 0x2);
     write_reg8(&i2c, 0x07, 0x0);
 
+    // // // Turn-on ak4332
+    // write_reg8(&i2c, 0x01, 0x1); // reset the GPIO expander
+    // write_reg8(&i2c, 0x03, 0x80);
+    // write_reg8(&i2c, 0x05, 0x0);
+    // write_reg8(&i2c, 0x07, 0x0);
+
     pi_i2c_close(&i2c);
     // Wait at least 1ms after ak4332 power-up
     pi_time_wait_us(2000);
