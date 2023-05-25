@@ -415,3 +415,14 @@ include common/model_rules.mk
 $(info APP_CFLAGS... $(APP_CFLAGS))
 
 include $(RULES_DIR)/pmsis_rules.mk
+
+
+# Missing functions
+# RFFT_Arg_T
+# MelFilterBank_T
+# MFCC_Log_T (with FrameOut, Norm, Q_FFT_Out, Mel_Coeff_Dyn, IsMagSquared, shift_buff, ExtraQ)
+# DCT_II_Arg_T (with n_input)
+# RFFT_DIF_Par_Fix16
+# MelFilterBank_Fix32
+# MFCC_ComputeLog_Fix32
+# MFCC_ComputeDCT_II_Fix16
