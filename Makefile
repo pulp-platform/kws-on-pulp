@@ -18,7 +18,6 @@ include $(RULES_DIR)/pmsis_defs.mk
 MFCCBUILD_DIR ?= $(CURDIR)/MFCC_Placeholder
 MGAP_SDK_DIR ?= /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk_private/
 GAP8_SDK_DIR ?= /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk_mar23/gap_sdk/
-DSP8_DIR ?= $(GAP8_SDK_DIR)tools/autotiler_v3/DSP_Libraries/
 DSP_DIR ?= $(GAP8_SDK_DIR)tools/autotiler_v3/DSP_Libraries/
 AUTOTILER_DIR ?= $(GAP8_SDK_DIR)tools/autotiler_v3/Autotiler/
 DSP_LUT_DIR ?= $(GAP8_SDK_DIR)tools/autotiler_v3/DSP_Libraries/LUT_Tables/
@@ -26,14 +25,14 @@ DSP_LUT_DIR ?= $(GAP8_SDK_DIR)tools/autotiler_v3/DSP_Libraries/LUT_Tables/
 
 APP_CFLAGS += -I$(MFCCBUILD_DIR)
 APP_CFLAGS += -I$(DSP_DIR)
-APP_CFLAGS += -I$(DSP8_DIR)
 APP_CFLAGS += -I$(DSP_LUT_DIR)
 APP_CFLAGS += -I$(AUTOTILER_DIR)
 # APP_CFLAGS += -I$(AUTOTILER_MFCC_DIR)
 
 
-APP_SRCS  += $(MFCCBUILD_DIR)/MFCCKernels.c $(DSP_LUT_DIR)TwiddlesDef.c $(DSP_LUT_DIR)RFFTTwiddlesDef.c $(DSP_LUT_DIR)SwapTablesDef.c
-APP_SRCS  += $(DSP_DIR)MfccBasicKernels.c $(DSP_DIR)FFT_Library.c $(DSP_DIR)math_funcs.c $(DSP_DIR)CmplxFunctions.c $(DSP_DIR)PreProcessing.c 
+APP_SRCS  += $(DSP_LUT_DIR)TwiddlesDef.c $(DSP_LUT_DIR)RFFTTwiddlesDef.c $(DSP_LUT_DIR)SwapTablesDef.c $(DSP_DIR)FFT_Library.c 
+APP_SRCS  += $(DSP_DIR)CmplxFunctions.c $(DSP_DIR)PreProcessing.c $(DSP_DIR)math_funcs.c
+APP_SRCS  += $(DSP_DIR)MfccBasicKernels.c  $(MFCCBUILD_DIR)/MFCCKernels.c    
 
 
 

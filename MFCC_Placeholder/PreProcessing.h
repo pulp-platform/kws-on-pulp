@@ -60,3 +60,9 @@ void WindowingReal2Cmplx_PadCenter_f16(Windowing_T *Arg);
 void WindowingReal2Real_f16(Windowing_T *Arg);
 void WindowingReal2Real_PadCenter_f16(Windowing_T *Arg);
 #endif
+
+// GAP9
+extern void RFFT_DIF_Par_Fix16(RFFT_Arg_T *Arg);
+extern void MelFilterBank_Fix32(MelFilterBank_T *Arg);
+extern void MFCC_ComputeLog_Fix32(MFCC_Log_T *Arg);
+extern void MFCC_ComputeDCT_II_Fix16(DCT_II_Arg_T *Args);

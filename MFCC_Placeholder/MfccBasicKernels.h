@@ -5,6 +5,41 @@
 #define AT_NORM(x, n)	gap_norm_reg((x), (n))
 #endif
 
+typedef struct {
+  void  * __restrict__ Data; /**< Pointer to input data (I, Q) pairs, I and Q fixed point format */
+  void  * __restrict__ RFFT_Out; /**< Pointer to output */
+  void  * __restrict__ Twiddles; /**< Pointer to fft twiddles */
+  void  * __restrict__ RTwiddles; /**< Pointer to rfft twiddles */
+  short * __restrict__ SwapTable;    /**< Pointer to lookup table for bit reverse to/from natural order reordering of Data */
+  unsigned int N_fft;           /**< FFT dimension, has to be a power of 2 */
+  unsigned int Inverse;         /**< FFT direction, direct or inverse */
+} RFFT_Arg_T;
+
+typedef struct {
+        void *__restrict__ FramePower;
+        void *__restrict__ MelSpectr;
+        void *__restrict__ Mel_Coeffs;
+        signed char *__restrict__ shift_buff;
+        signed char *__restrict__ shift_fft;
+        short int *__restrict__ Mel_FilterBank;
+        short int Mel_NBanks;
+        short int Mel_Coeff_dyn;
+        signed char IsMagSquared;
+} MelFilterBank_T;
+
+typedef struct {
+        void * __restrict__ FrameIn;
+        void * __restrict__ FrameOut;
+        unsigned int FrameSize;
+        unsigned short int Norm;
+        short int ExtraQ;
+        short int Q_FFT_Out;
+        short int Mel_Coeff_Dyn;
+        signed char IsMagSquared;
+        signed char *__restrict__ shift_buff;
+        int LogOffset;
+} MFCC_Log_T;
+
 typedef struct mfcc_params {
   short int in_freq;
   short int min_freq;
@@ -85,14 +120,14 @@ typedef struct {
   short int MFCC_Coeff_dyn;
 } MFCC_MF_New_T;
 
-typedef struct {
-  void * __restrict__ FrameIn;
-  unsigned int FrameSize;
-  short int *Shift;
-  short int fft_bits;
-  short int MFCC_Coeff_dyn;
-  signed char *__restrict__ shift_BF;
-} MFCC_Log_T;
+// typedef struct {
+//   void * __restrict__ FrameIn;
+//   unsigned int FrameSize;
+//   short int *Shift;
+//   short int fft_bits;
+//   short int MFCC_Coeff_dyn;
+//   signed char *__restrict__ shift_BF;
+// } MFCC_Log_T;
 
 typedef struct {
   void *__restrict__ FramePower;
@@ -131,12 +166,20 @@ typedef struct {
   int numcep;
 } DCT_Arg_T;
 
+// typedef struct {
+//   void * __restrict__ Data; /**< Pointer to input data (I, Q) pairs, I and Q fixed point format */
+//   void * __restrict__ DCTCoeff;  /**< Pointer to fft twiddles (I, Q) pairs, I and Q fixed point Q15 */
+//   void * __restrict__ FeatList;  /**< Pointer to Feature list  */
+//   unsigned int n_dct; /**< DCT dimension, doesn't has to be a power of 2 */
+//   int numcep;
+// } DCT_II_Arg_T;
+
 typedef struct {
-  void * __restrict__ Data; /**< Pointer to input data (I, Q) pairs, I and Q fixed point format */
-  void * __restrict__ DCTCoeff;  /**< Pointer to fft twiddles (I, Q) pairs, I and Q fixed point Q15 */
-  void * __restrict__ FeatList;  /**< Pointer to Feature list  */
-  unsigned int n_dct; /**< DCT dimension, doesn't has to be a power of 2 */
-  int numcep;
+        void * __restrict__ Data;     /**< Pointer to input data (I, Q) pairs, I and Q fixed point format */
+        void * __restrict__ DCTCoeff; /**< Pointer to DCT twiddles (I, Q) pairs, I and Q fixed point Q15 */
+        void * __restrict__ FeatList; /**< Pointer to Feature list  */
+        short int n_input;           /**< Number of inputs */
+        short int n_dct;           /**< DCT dimension, doesn't has to be a power of 2, must be <= n_inputs */
 } DCT_II_Arg_T;
 
 typedef struct {
