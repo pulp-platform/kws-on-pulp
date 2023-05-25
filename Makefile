@@ -10,6 +10,33 @@ endif
 
 include $(RULES_DIR)/pmsis_defs.mk
 
+
+
+# MFCC
+
+# MFCCBUILD_DIR ?= $(CURDIR)/BUILD_MFCC
+MFCCBUILD_DIR ?= $(CURDIR)/MFCC_Placeholder
+MGAP_SDK_DIR ?= /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk_private/
+GAP8_SDK_DIR ?= /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk_mar23/gap_sdk/
+DSP8_DIR ?= $(GAP8_SDK_DIR)tools/autotiler_v3/DSP_Libraries/
+DSP_DIR ?= $(GAP8_SDK_DIR)tools/autotiler_v3/DSP_Libraries/
+AUTOTILER_DIR ?= $(GAP8_SDK_DIR)tools/autotiler_v3/Autotiler/
+DSP_LUT_DIR ?= $(GAP8_SDK_DIR)tools/autotiler_v3/DSP_Libraries/LUT_Tables/
+# AUTOTILER_MFCC_DIR ?= $(GAP8_SDK_DIR)tools/autotiler_v3/Generators/MFCC/
+
+APP_CFLAGS += -I$(MFCCBUILD_DIR)
+APP_CFLAGS += -I$(DSP_DIR)
+APP_CFLAGS += -I$(DSP8_DIR)
+APP_CFLAGS += -I$(DSP_LUT_DIR)
+APP_CFLAGS += -I$(AUTOTILER_DIR)
+# APP_CFLAGS += -I$(AUTOTILER_MFCC_DIR)
+
+
+APP_SRCS  += $(MFCCBUILD_DIR)/MFCCKernels.c $(DSP_LUT_DIR)TwiddlesDef.c $(DSP_LUT_DIR)RFFTTwiddlesDef.c $(DSP_LUT_DIR)SwapTablesDef.c
+APP_SRCS  += $(DSP_DIR)MfccBasicKernels.c $(DSP_DIR)FFT_Library.c $(DSP_DIR)math_funcs.c $(DSP_DIR)CmplxFunctions.c $(DSP_DIR)PreProcessing.c 
+
+
+
 ##############################################
 ############ Application Mode ################
 # 0:	Demo: input SFU, Run Denoiser, Output SFU
@@ -216,6 +243,8 @@ MODEL_TENSORS = $(MODEL_BUILD)/$(MODEL_PREFIX)_L3_Flash_Const.dat
 
 
 
+
+
 # set the input files
 WAV_FILE?=$(CURDIR)/samples/sample_0000.wav
 STFT_FILE=
@@ -228,7 +257,6 @@ NUM_FRAME_OVERLAP=3
 SAMPLING_FREQ=16000
 AT_INPUT_WIDTH=257 #1088
 AT_INPUT_HEIGHT=1
-
 
 
 
@@ -404,7 +432,8 @@ clean:: clean_model clean_fft_code
 
 all:: | model gen_fft_code graph
 	@echo "------------------"
-	@echo $(SFU_RUNTIME)
+	@echo $(CFLAGS)
+
 build:: | model gen_fft_code graph
 
 clean:: 

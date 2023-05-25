@@ -121,6 +121,40 @@ static int16_t Audio_Recording[BUFF_SIZE];
 #define SAI_SDI(itf)         (48+(itf*4)+2)
 #define SAI_SDO(itf)         (48+(itf*4)+3)
 
+
+// MFCC
+
+#include "MFCC_params.h"
+#include "MFCCKernels.h"
+#include "TwiddlesDef.h"
+#include "RFFTTwiddlesDef.h"
+#include "SwapTablesDef.h"
+
+#include "LUT.def"
+#include "MFCC_FB.def"
+
+
+#if (DATA_TYPE==2)
+typedef f16 MFCC_IN_TYPE;
+typedef f16 OUT_TYPE;
+#elif (DATA_TYPE==3)
+typedef float MFCC_IN_TYPE;
+typedef float OUT_TYPE;
+#else
+typedef short int OUT_TYPE; 
+typedef short int MFCC_IN_TYPE;
+#endif
+
+MFCC_IN_TYPE *MfccInSig;
+
+
+
+
+
+
+
+
+
 SFU_uDMA_Channel_T *ChanOutCtxt_0;
 
 // void ** BufferInList;
@@ -332,6 +366,39 @@ static void RunSTFT()
     PRINTF("%45s: Cycles: %10d\n","Magnitude Compute: ", ti );
 }
 
+
+static void RunMFCC()
+{
+    #ifdef PERF
+        gap_cl_starttimer();
+        gap_cl_resethwtimer();
+        int start = gap_cl_readhwtimer();
+    #endif
+
+    // Compute MFCC following Tensorflow settings
+    #if (N_DCT == 0)
+        printf("DCT is 0 \n");
+            #if (DATA_TYPE==2) || (DATA_TYPE==3)
+            Tensorflow_MFCC(MfccInSig, out_feat, R2_Twiddles_float_512, RFFT_Twiddles_float_1024, R2_SwapTable_float_512, WindowLUT, MFCC_FilterBank, MFCC_Coeffs);
+            #else
+            Tensorflow_MFCC(MfccInSig, out_feat, R2_Twiddles_fix_512,   RFFT_Twiddles_fix_1024,   R2_SwapTable_fix_512,   WindowLUT, MFCC_FilterBank, MFCC_Coeffs, NORM);
+            #endif
+    #else
+        printf("DCT is 1 \n");
+            #if (DATA_TYPE==2) || (DATA_TYPE==3)
+            printf ("DATATYPE is %i\n", DATA_TYPE);
+            Tensorflow_MFCC(MfccInSig, out_feat, R2_Twiddles_float_512, RFFT_Twiddles_float_1024, R2_SwapTable_float_512, WindowLUT, MFCC_FilterBank, MFCC_Coeffs, DCT_Coeff);
+            #else
+            printf ("DATATYPE is %i\n", DATA_TYPE);
+            Tensorflow_MFCC(MfccInSig, out_feat, R2_Twiddles_fix_512,   RFFT_Twiddles_fix_1024,   R2_SwapTable_fix_512,   WindowLUT, MFCC_FilterBank, MFCC_Coeffs, NORM, DCT_Coeff);
+            #endif
+    #endif
+    #ifdef PERF
+        int elapsed = gap_cl_readhwtimer() - start;
+        printf("Total Cycles: %d over %d Frames %d Cyc/Frame\n", elapsed, N_FRAME, elapsed / N_FRAME);
+    #endif
+}
+
 static int chunk_in_cnt;
 
 int denoiser(void)
@@ -417,6 +484,19 @@ int denoiser(void)
     pi_cluster_task_stacks(task_stft, NULL, SLAVE_STACK_SIZE);
 
 
+    /******
+        Setup MFCC task
+    ******/
+    printf("Setup MFCC task!\n");
+    struct pi_cluster_task* task_mfcc;
+    task_mfcc = pi_l2_malloc(sizeof(struct pi_cluster_task));
+    pi_cluster_task(task_mfcc,&RunMFCC,NULL);
+    if (task_mfcc == NULL) {
+        PRINTF("failed to allocate memory for task\n");
+    }
+    pi_cluster_task_stacks(task_mfcc, NULL, SLAVE_STACK_SIZE);
+
+
     /****
         Setup the SFU for PDM in/out
     ****/
@@ -479,48 +559,69 @@ int denoiser(void)
             Audio_Recording[i] = ((int16_t *)BufferInList)[i];
         }          
 
-        for (int i=0; i<(int)(BUFF_SIZE/FRAME_SIZE); i++){
 
-            for (int j=0; j<FRAME_SIZE; j++){
-                // Audio_Frame[j] = ((DATATYPE_SIGNAL *) BufferInList)[i*FRAME_SIZE+j];
-                Audio_Frame[j] = (DATATYPE_SIGNAL) Audio_Recording[i*FRAME_SIZE+j];
-            }
+        // MFCC generation - TinyDenoiser
+        // for (int i=0; i<(int)(BUFF_SIZE/FRAME_SIZE); i++){
 
-            /******
-                Compute the MFCC
-            ******/
+        //     for (int j=0; j<FRAME_SIZE; j++){
+        //         // Audio_Frame[j] = ((DATATYPE_SIGNAL *) BufferInList)[i*FRAME_SIZE+j];
+        //         Audio_Frame[j] = (DATATYPE_SIGNAL) Audio_Recording[i*FRAME_SIZE+j];
+        //     }
 
-            printf("\n\n****** Computing STFT ***** \n");
-            pi_cluster_task(task_stft,&RunSTFT,NULL);
+        //     /******
+        //         Compute the MFCC
+        //     ******/
 
-            L1_Memory = pi_l1_malloc(&cluster_dev, _L1_Memory_SIZE);
-            if (L1_Memory==NULL){
-                printf("Error allocating L1\n");
-                pmsis_exit(-1);
-            }
+        //     printf("\n\n****** Computing STFT ***** \n");
+        //     pi_cluster_task(task_stft,&RunSTFT,NULL);
 
-            pi_cluster_send_task_to_cl(&cluster_dev, task_stft);
-            pi_l1_free(&cluster_dev, L1_Memory,_L1_Memory_SIZE);
+        //     L1_Memory = pi_l1_malloc(&cluster_dev, _L1_Memory_SIZE);
+        //     if (L1_Memory==NULL){
+        //         printf("Error allocating L1\n");
+        //         pmsis_exit(-1);
+        //     }
 
-            /***
-                Check the Spectrogram Results
-            ***/
-            printf("\nSTFT OUT: ");
-            // for (int i = 0; i< AT_INPUT_WIDTH*AT_INPUT_HEIGHT*2; i++ ){
-            for (int i = 0; i < 10; i++ ){
-                printf("%f, ",STFT_Spectrogram[i]);
-            }
-            printf("\n");
+        //     pi_cluster_send_task_to_cl(&cluster_dev, task_stft);
+        //     pi_l1_free(&cluster_dev, L1_Memory,_L1_Memory_SIZE);
 
-            // printf("\nMagnitude OUT: ");
-            // for (int i = 0; i< AT_INPUT_WIDTH*AT_INPUT_HEIGHT; i++ ){
-            //     printf("%f, ",STFT_Magnitude[i]);
-            // }
-            // printf("\n");
+        //     /***
+        //         Check the Spectrogram Results
+        //     ***/
+        //     printf("\nSTFT OUT: ");
+        //     // for (int i = 0; i< AT_INPUT_WIDTH*AT_INPUT_HEIGHT*2; i++ ){
+        //     for (int i = 0; i < 10; i++ ){
+        //         printf("%f, ",STFT_Spectrogram[i]);
+        //     }
+        //     printf("\n");
 
-            break;
+        //     // printf("\nMagnitude OUT: ");
+        //     // for (int i = 0; i< AT_INPUT_WIDTH*AT_INPUT_HEIGHT; i++ ){
+        //     //     printf("%f, ",STFT_Magnitude[i]);
+        //     // }
+        //     // printf("\n");
 
-        }
+        //     break;
+
+        // }
+
+
+
+        // MFCC generation - KWS on PULP
+
+        /******
+            Compute the MFCC
+        ******/
+
+        printf("\n\n****** Computing MFCC ***** \n");
+        pi_cluster_send_task_to_cl(&cluster_dev, task_mfcc);
+        // Closing the cluster once the task is finished
+        pi_cluster_close(&cluster_dev);
+
+
+
+
+
+
 
         break;
 
