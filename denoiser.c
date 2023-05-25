@@ -411,8 +411,6 @@ int denoiser(void)
         pi_gpio_pin_write(gpio_pin_o, 1);
 #endif
 
-
-
         int round = (chunk_in_cnt%CHUNK_NUM);
         int round_out = (chunk_in_cnt>(STRUCT_DELAY-1))? ((chunk_in_cnt-(STRUCT_DELAY-1))%CHUNK_NUM):0;
 
@@ -420,10 +418,6 @@ int denoiser(void)
         printf("round_out: %i\n", round_out);
 
         printf("I am recording set: %i\n", sets);
-       
-        // for(int i=0;i<FRAME_SIZE;i++){
-        //     Audio_Recording[FRAME_SIZE*sets + i] = (DATATYPE_SIGNAL)(((float)((int32_t*)BufferInList[round])[i])/((int)(1<<Q_BIT_IN)));
-        // }
 
         for(int i=0;i<BUFF_SIZE;i++){
             Audio_Recording[i] = ((int16_t *)BufferInList)[i];
