@@ -109,6 +109,6 @@ To use the Vesper microphone on GAP9mod
 
 Select:
 * GAP9_EVK_AUDIO
-* GWT Board: Gap9mod V1.0b & Evaluation kit (V2.0)
+* GWT Board: Gap9mod V1.0b & Evaluation kit (V2.0) -- only for CMakeList
 
 
