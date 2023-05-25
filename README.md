@@ -100,3 +100,15 @@ python test_accuracy/test_GAP.py --mode test --pad_input 300 --dataset_path ./<p
 [dns]: https://www.microsoft.com/en-us/research/academic-program/deep-noise-suppression-challenge-interspeech-2020/
 [valentini]: https://datashare.ed.ac.uk/handle/10283/2791
 
+
+### Board configuration
+
+To use the Vesper microphone on GAP9mod
+* Jumper on J7
+* Connect CN9.1 and CN9.2
+
+Select:
+* GAP9_EVK_AUDIO
+* GWT Board: Gap9mod V1.0b & Evaluation kit (V2.0)
+
+
