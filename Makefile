@@ -19,13 +19,17 @@ include $(RULES_DIR)/pmsis_defs.mk
 APP_MODE=0
 ############################################## 
 # 0:	Demo
+
 ifeq ($(APP_MODE), 0)
 	IS_SFU=1 
 	IS_INPUT_STFT=0
 	DISABLE_NN_INFERENCE=0
-
-	APP_SRCS   += $(TARGET_BUILD_DIR)/GraphINOUT_L2_Descr.c $(SFU_RUNTIME)/SFU_RT.c
-	APP_CFLAGS += -I$(TARGET_BUILD_DIR) -I$(SFU_RUNTIME)/include
+# 	APP_CFLAGS += -I$(TARGET_BUILD_DIR) -I$(SFU_RUNTIME)/include
+	APP_CFLAGS += -I$(TARGET_BUILD_DIR) -I/usr/scratch/wetterhorn/cioflanc/tools/gap_sdk_private/rtos/sfu/include
+# 	APP_SRCS   += $(TARGET_BUILD_DIR)/GraphINOUT_L2_Descr.c
+	APP_SRCS   += $(TARGET_BUILD_DIR)/Graph_L2_Descr.c
+# 	APP_SRCS   += $(SFU_RUNTIME)/SFU_RT.c
+	APP_SRCS   += /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk_private/rtos/sfu/SFU_RT.c
 	APP_SRCS += dac.c
 	io=uart
 	DEMO=1
@@ -296,6 +300,13 @@ APP_CFLAGS += -I. -I$(MODEL_COMMON_INC) -I$(TILER_EMU_INC) -I$(TILER_INC) -I$(MO
 APP_CFLAGS += -I$(MFCC_GENERATOR) -I$(TILER_DSP_KERNEL_PATH) -I$(TILER_DSP_KERNEL_PATH)/LUT_Tables
 APP_CFLAGS += -IBUILD_MODEL_STFT
 APP_CFLAGS += -Isamples
+APP_CFLAGS += -I$(SFU_BUILDDIR)
+# list(APPEND TARGET_INCS -I${SFU_BUILDDIR}
+#                         -I$ENV{SFU_RUNTIME}/include)
+
+# list(APPEND TARGET_SRCS ${SFU_KERNEL_C}
+#                         $ENV{SFU_RUNTIME}/SFU_RT.c
+#                         ${CMAKE_SOURCE_DIR}/dac.c)
 
 #defines
 APP_CFLAGS += -DAT_MODEL_PREFIX=$(MODEL_PREFIX) $(MODEL_SIZE_CFLAGS)
@@ -386,16 +397,13 @@ $(TARGET_BUILD_DIR)/GraphINOUT_L2_Descr.c: $(CURDIR)/Graph.src
 
 graph: $(TARGET_BUILD_DIR)/GraphINOUT_L2_Descr.c
 	
-
-# all depends on the model
-# all:: | model gen_fft_code graph
-# build:: | model gen_fft_code graph
-
-# clean:: clean_model clean_fft_code
-# 	rm -rf BUILD*
+clean:: clean_model clean_fft_code
+	rm -rf BUILD*
 
 
 all:: | model gen_fft_code graph
+	@echo "------------------"
+	@echo $(SFU_RUNTIME)
 build:: | model gen_fft_code graph
 
 clean:: 
