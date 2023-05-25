@@ -376,13 +376,8 @@ int denoiser(void)
 
     ChanOutCtxt_0  = (SFU_uDMA_Channel_T *) pi_l2_malloc(sizeof(SFU_uDMA_Channel_T));
     
-    // BufferInList = (void*) pi_l2_malloc(sizeof(void*)*CHUNK_NUM);
-    // for(int i=0;i<CHUNK_NUM;i++) BufferInList[i]=pi_l2_malloc(BUFF_SIZE);
-
     BufferInList = (void*) pi_l2_malloc(BUFF_SIZE);
-    
-
-    
+        
     // Get uDMA channels for Graph
     SFU_Allocate_uDMA_Channel(ChanOutCtxt_0, 0, &SFU_RTD(Graph));
 
@@ -394,22 +389,7 @@ int denoiser(void)
     SFU_GraphConnectIO(SFU_Name(Graph, Out1), ChanOutCtxt_0->ChannelId, 0, &SFU_RTD(Graph));
     SFU_GraphConnectIO(SFU_Name(Graph, In1), SAI_ITF_IN, 2, &SFU_RTD(Graph));
 
-
-
-
-
-    // Commenting out the STFT task
-    // printf("Setup STFT task!\n");
-    // struct pi_cluster_task* task_stft;
-    // task_stft = pi_l2_malloc(sizeof(struct pi_cluster_task));
-    // pi_cluster_task(task_stft,&RunSTFT,NULL);
-    // if (task_stft == NULL) {
-    //     PRINTF("failed to allocate memory for task\n");
-    // }
-    // pi_cluster_task_stacks(task_stft, NULL, SLAVE_STACK_SIZE);
-
     fxl6408_setup();
-
 
     //Starting In and Out Graphs
     pi_i2s_ioctl(&i2s_sai1, PI_I2S_IOCTL_START, NULL);
@@ -439,22 +419,6 @@ int denoiser(void)
         printf("round: %i\n", round);
         printf("round_out: %i\n", round_out);
 
-        // //First Copy previous loop processed frame to output
-        // for(int i=0;i<BUFF_SIZE/4;i++) {
-        //     ((int32_t*)BufferOutList[round_out])[i]= (int32_t)((float)(Audio_Frame_temp[i])*((int)(1<<Q_BIT_OUT)));
-        // }
-
-
-        // for(int i=0;i<FRAME_SIZE-FRAME_STEP;i++){
-        //     Audio_Frame[i] = Audio_Frame[i+FRAME_STEP];
-        //     Audio_Frame_temp[i] = Audio_Frame_temp[i+FRAME_STEP];
-        // }
-
-        // for(int i=0;i<FRAME_STEP;i++){
-        //     Audio_Frame[i+FRAME_SIZE-FRAME_STEP] = (DATATYPE_SIGNAL)(((float)((int32_t*)BufferInList[round])[i]) /((int)(1<<Q_BIT_IN)));
-        //     Audio_Frame_temp[i+FRAME_SIZE-FRAME_STEP] = (DATATYPE_SIGNAL) 0.0f;
-        // }
-
         printf("I am recording set: %i\n", sets);
        
         // for(int i=0;i<FRAME_SIZE;i++){
@@ -462,17 +426,9 @@ int denoiser(void)
         // }
 
         for(int i=0;i<BUFF_SIZE;i++){
-            // Audio_Recording[16000*sets + i] = (DATATYPE_SIGNAL)(((float)((int32_t*)BufferInList)[i])/((int)(1<<Q_BIT_IN)));
             Audio_Recording[i] = ((int16_t *)BufferInList)[i];
-            // temporary_buffer[i] = ((int32_t *)BufferInList)[i];
         }   
-
-        // exit loop when done
-        // sets += 16000;
-        // if (sets >= 16000){
-        //     break;
-        // }
-
+       
         break;
 
 
@@ -481,108 +437,11 @@ int denoiser(void)
         pi_gpio_pin_write(gpio_pin_o, 0);
 #endif
         chunk_in_cnt++;
-
-
-        // TODO: Manually break loop?
     }
-
-    // for (int i = 0; i < 100; i++){
-    //     if (i%400 == 0){
-    //         printf("Set %i\n", i/400);
-    //     }
-    //     printf("%f, ", Audio_Recording[i] );
-    // }
-
-   // for (int i=0; i<128; i++)
-   //  {
-   //     printf("0x%08x\n", ((uint32_t *)BufferInList)[i]);
-   //  }
-
-    // WriteWavToFile("test_gap.wav", 32, 48000, 1, 
-    //     &BufferInList, 48000* sizeof(uint32_t));
 
     dump_wav_open("test_gap.wav", 32, 48000, 1, BUFF_SIZE);
     dump_wav_write(Audio_Recording, BUFF_SIZE);
     dump_wav_close();
-
-
-
-
-    // // Read just-written wav
-    // #define AUDIO_BUFFER_SIZE (MAX_L2_BUFFER>>1)
-    // __PREFIX(_L2_Memory) = pi_l2_malloc(MAX_L2_BUFFER);
-    // if (__PREFIX(_L2_Memory) == 0) {
-    //     printf("Error when allocating L2 buffer\n");
-    //     pmsis_exit(18);        
-    // }
-    // header_struct header_info;
-    // if (ReadWavFromFile("test_gap.wav",
-    //         __PREFIX(_L2_Memory), AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
-    //     printf("\nError reading wav file\n");
-    //     pmsis_exit(1);
-    // }
-    // for (int i = 0; i < 100; i++){
-    //     printf("%f, ", ((DATATYPE_SIGNAL) __PREFIX(_L2_Memory)[i])/(1<<15) );
-    // }
-
-
-
-
-    // Comment out on GVSOC
-
-    // Comment out for Microphone
-    // // READ WAV instead of READ from MIC
-    // __PREFIX(_L2_Memory) = pi_l2_malloc(MAX_L2_BUFFER);
-    // if (__PREFIX(_L2_Memory) == 0) {
-    //     printf("Error when allocating L2 buffer\n");
-    //     pmsis_exit(18);        
-    // }
-
-    // // Read audio from file
-    // #define AUDIO_BUFFER_SIZE (MAX_L2_BUFFER>>1)
-    // printf("Reading wav from: %s \n", WavName);
-    // header_struct header_info;
-    //   if (ReadWavFromFile(WavName,
-    //         __PREFIX(_L2_Memory), AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
-    //     printf("\nError reading wav file\n");
-    //     pmsis_exit(1);
-    // }
-    // for (int i = 0; i < 100; i++){
-    //     printf("%f, ", ((DATATYPE_SIGNAL) __PREFIX(_L2_Memory)[i])/(1<<15) );
-    //     data_mover[i] = ((DATATYPE_SIGNAL) __PREFIX(_L2_Memory)[i])/(1<<15);
-
-    // }
-    // int num_samples = header_info.DataSize * 8 / (header_info.NumChannels * header_info.BitsPerSample);
-    // printf("Num Samples: %d with BitsPerSample: %d\n", num_samples, header_info.BitsPerSample);
-    // printf("Finished Read wav.\n");
-
-    // // Allocate L3 buffers for audio IN/OUT
-    // if (pi_ram_alloc(&DefaultRam, &temporary_carrier, (uint32_t) AUDIO_BUFFER_SIZE*sizeof(short)))
-    // {
-    //     printf("temporary_carrier Ram malloc failed !\n");
-    //     pmsis_exit(-4);
-    // }
-    // // printf("Allocated space for temporary_carrier\n");
-
-    // pi_ram_write(&DefaultRam, temporary_carrier, __PREFIX(_L2_Memory), num_samples * sizeof(short));
-
-    // printf("Copied L2 in temporary_carrier\n");
-
-    // for (int i = 0; i < 16000; i++){
-    //     // printf("%f, ", (&temporary_carrier)[i]);
-    //     // printf("%f, ", ((DATATYPE_SIGNAL) __PREFIX(_L2_Memory)[i])/(1<<15) );
-    //     data_mover[i] = ((DATATYPE_SIGNAL) __PREFIX(_L2_Memory)[i])/(1<<15);
-    // }
-    // WriteWavToFile("test_gap.wav", 16, 16000, 1, 
-    //     (uint32_t *) __PREFIX(_L2_Memory), 16000* sizeof(short));
-    // // Comment out for Microphone
-
-
-
-
-
-
-
 
     printf("Writing wav file to test_gap.wav completed successfully\n");
 
@@ -605,12 +464,6 @@ int main()
     return denoiser();
 }
 
-
-// TODO: 1) RUN on GVSOC, read from .wav instead of MICRO, save in .wav - DONE
-// TODO: 1.1) Run on BOARD, read from .wav, save in .wav - DONE
-// 0.000397, 0.000000, 0.000305, 0.000000, 0.000214, 0.000000, 0.000031, 0.000000, 0.000214, 0.000000, 0.000366, 0.000000, 0.000336, 0.000000, 0.000397, 0.000000, 0.000397, 0.000000, 0.000336, 0.000000, 0.000519, 0.000000, 0.000641, 0.000000, 0.000397, 0.000000, 0.000519, 0.000000, 0.000427, 0.000000, 0.000366, 0.000000, 0.000580, 0.000000, 0.000610, 0.000000, 0.000549, 0.000000, 0.000153, 0.000000, 0.000275, 0.000000, 0.000397, 0.000000, 0.000580, 0.000000, 0.000671, 0.000000, 0.000763, 0.000000, 0.000732, 0.000000, 0.000641, 0.000000, 0.000671, 0.000000, 0.000366, 0.000000, 0.000641, 0.000000, 0.000610, 0.000000, 0.000366, 0.000000, 0.000580, 0.000000, 0.000366, 0.000000, 0.000061, 0.000000, 0.000244, 0.000000, 0.000305, 0.000000, 0.000183, 0.000000, 0.000275, 0.000000, 0.000305, 0.000000, 0.007751, 0.007782, 0.000153, 0.000000, 0.000305, 0.000000, 0.000397, 0.000000, 0.000427, 0.000000, 0.000214, 0.000000, 0.000549, 0.000000, 0.000275, 0.000000, 0.000183, 0.000000, 0.000214, 0.000000
-
-// TODO: 2) RUN on BOARD, read from MICRO, save in .wav
 
 
 
