@@ -148,7 +148,7 @@ typedef short int MFCC_IN_TYPE;
 
 MFCC_IN_TYPE *MfccInSig;
 OUT_TYPE *out_feat;
-
+char * feat_char;
 
 
 
@@ -497,7 +497,7 @@ int denoiser(void)
         PRINTF("failed to allocate memory for task\n");
     }
     pi_cluster_task_stacks(task_mfcc, NULL, SLAVE_STACK_SIZE);
-
+    feat_char = (char*) pi_l2_malloc(49 * 10 * sizeof(char));
 
     /****
         Setup the SFU for PDM in/out
@@ -619,7 +619,23 @@ int denoiser(void)
         // Closing the cluster once the task is finished
         pi_cluster_close(&cluster_dev);
 
+       int k = 0;
+	for (int i = 0; i < 1960;i++){
+        	
+        	// Rescale MFCCs to match Tensorflow-generated ones
+	        feat_char[k] = (char) (((int) floor(out_feat[i] * pow(2, -4) * sqrt(0.2))) + 128);
+        	// Select 10 MFCC per window
+	        if (i == 40*(k/10) + 9){
+	            i = 40*(k/10) + 39;
+	        }
+        	k++;
+	}
 
+	    
+	printf("Printing MFCC\n");
+        for (int i = 0; i < 490; i++){
+            printf("%i\n", feat_char[i]);
+        }
 
 
 
