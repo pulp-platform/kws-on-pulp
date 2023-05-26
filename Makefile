@@ -21,13 +21,15 @@ GAP8_SDK_DIR ?= /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk_mar23/gap_sdk/
 DSP_DIR ?= $(GAP8_SDK_DIR)tools/autotiler_v3/DSP_Libraries/
 AUTOTILER_DIR ?= $(GAP8_SDK_DIR)tools/autotiler_v3/Autotiler/
 DSP_LUT_DIR ?= $(GAP8_SDK_DIR)tools/autotiler_v3/DSP_Libraries/LUT_Tables/
-# AUTOTILER_MFCC_DIR ?= $(GAP8_SDK_DIR)tools/autotiler_v3/Generators/MFCC/
+AUTOTILER_MFCC_DIR ?= $(GAP8_SDK_DIR)tools/autotiler_v3/Generators/MFCC/
+WAVIO_DIR ?= $(GAP8_SDK_DIR)libs/gap_lib/include/
 
 APP_CFLAGS += -I$(MFCCBUILD_DIR)
 APP_CFLAGS += -I$(DSP_DIR)
 APP_CFLAGS += -I$(DSP_LUT_DIR)
 APP_CFLAGS += -I$(AUTOTILER_DIR)
-# APP_CFLAGS += -I$(AUTOTILER_MFCC_DIR)
+APP_CFLAGS += -I$(AUTOTILER_MFCC_DIR)
+APP_CFLAGS += -I$(WAVIO_DIR)
 
 
 APP_SRCS  += $(DSP_LUT_DIR)TwiddlesDef.c $(DSP_LUT_DIR)RFFTTwiddlesDef.c $(DSP_LUT_DIR)SwapTablesDef.c $(DSP_DIR)FFT_Library.c 
@@ -323,12 +325,21 @@ APP_SRCS += $(GAP_LIB_PATH)/wav_io/wavIO.c
 APP_CFLAGS += -O2 -s -mno-memcpy -fno-tree-loop-distribute-patterns -w
 
 #include paths
-APP_CFLAGS += -Icommon -I$(GAP_SDK_HOME)/libs/gap_lib/include/
-APP_CFLAGS += -I. -I$(MODEL_COMMON_INC) -I$(TILER_EMU_INC) -I$(TILER_INC) -I$(MODEL_BUILD) $(CNN_LIB_INCLUDE)
-APP_CFLAGS += -I$(MFCC_GENERATOR) -I$(TILER_DSP_KERNEL_PATH) -I$(TILER_DSP_KERNEL_PATH)/LUT_Tables
-APP_CFLAGS += -IBUILD_MODEL_STFT
+APP_CFLAGS += -Icommon 
+# APP_CFLAGS += -I$(GAP_SDK_HOME)/libs/gap_lib/include/
+APP_CFLAGS += -I.
+APP_CFLAGS += -I$(MODEL_COMMON_INC)
+# APP_CFLAGS += -I$(TILER_EMU_INC)
+# APP_CFLAGS += -I$(TILER_INC)
+# APP_CFLAGS += -I$(MODEL_BUILD)
+APP_CFLAGS += -I$(CNN_LIB_INCLUDE)
+# APP_CFLAGS += -I$(MFCC_GENERATOR)
+# APP_CFLAGS += -I$(TILER_DSP_KERNEL_PATH)
+# APP_CFLAGS += -I$(TILER_DSP_KERNEL_PATH)/LUT_Tables
+# APP_CFLAGS += -IBUILD_MODEL_STFT
 APP_CFLAGS += -Isamples
-APP_CFLAGS += -I$(SFU_BUILDDIR)
+# APP_CFLAGS += -I$(SFU_BUILDDIR)
+
 # list(APPEND TARGET_INCS -I${SFU_BUILDDIR}
 #                         -I$ENV{SFU_RUNTIME}/include)
 
@@ -442,6 +453,9 @@ graph: $(TARGET_BUILD_DIR)/GraphINOUT_L2_Descr.c
 
 # all:: | gen_fft_code graph
 all:: | graph
+	@echo "------------------"
+	@echo $(CFLAGS)
+	@echo $(APP_CFLAGS)
 
 clean:: clean_fft_code
 	rm -rf BUILD*

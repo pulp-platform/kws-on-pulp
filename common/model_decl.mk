@@ -12,8 +12,8 @@ MODEL_PYTHON=python3
 
 MODEL_PATH = $(MODEL_BUILD)/$(MODEL_PREFIX)$(suffix $(TRAINED_MODEL))
 MODEL_COMMON ?= common
-MODEL_COMMON_INC ?= $(GAP_SDK_HOME)/libs/gap_lib/include
-MODEL_COMMON_SRC ?= $(GAP_SDK_HOME)/libs/gap_lib/img_io
+# MODEL_COMMON_INC ?= $(GAP_SDK_HOME)/libs/gap_lib/include
+# MODEL_COMMON_SRC ?= $(GAP_SDK_HOME)/libs/gap_lib/img_io
 MODEL_COMMON_SRC_FILES ?= ImgIO.c
 MODEL_COMMON_SRCS = $(realpath $(addprefix $(MODEL_COMMON_SRC)/,$(MODEL_COMMON_SRC_FILES)))
 MODEL_BUILD = BUILD_MODEL$(MODEL_SUFFIX)
