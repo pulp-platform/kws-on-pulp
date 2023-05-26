@@ -317,10 +317,10 @@ PMSIS_OS=freertos
 ## File Definition ##
 APP_SRCS += denoiser.c $(MODEL_GEN_C) $(MODEL_COMMON_SRCS) $(CNN_LIB) 
 APP_SRCS += $(GAP_LIB_PATH)/wav_io/wavIO.c
-APP_SRCS += BUILD_MODEL_STFT/RFFTKernels.c  
+# APP_SRCS += BUILD_MODEL_STFT/RFFTKernels.c  # Removed 
 
 #C flags
-APP_CFLAGS += -O2 -s -mno-memcpy -fno-tree-loop-distribute-patterns 
+APP_CFLAGS += -O2 -s -mno-memcpy -fno-tree-loop-distribute-patterns -w
 
 #include paths
 APP_CFLAGS += -Icommon -I$(GAP_SDK_HOME)/libs/gap_lib/include/
@@ -423,24 +423,32 @@ $(TARGET_BUILD_DIR)/GraphINOUT_L2_Descr.c: $(CURDIR)/Graph.src
 	mkdir -p $(@D)
 	cd $(@D) && SFU -i $(CURDIR)/Graph.src -C
 
-graph: $(TARGET_BUILD_DIR)/GraphINOUT_L2_Descr.c
+# graph: $(TARGET_BUILD_DIR)/GraphINOUT_L2_Descr.c
 	
-clean:: clean_model clean_fft_code
-	rm -rf BUILD*
+# clean:: clean_model clean_fft_code
+# 	rm -rf BUILD*
 
 
-all:: | model gen_fft_code graph
-	@echo "------------------"
-	@echo $(CFLAGS)
+# all:: | model gen_fft_code graph
+# 	@echo "------------------"
+# 	@echo $(CFLAGS)
 
-build:: | model gen_fft_code graph
+# build:: | model gen_fft_code graph
 
-clean:: 
+# clean:: 
+# 	rm -rf BUILD*
+
+graph: $(TARGET_BUILD_DIR)/GraphINOUT_L2_Descr.c
+
+# all:: | gen_fft_code graph
+all:: | graph
+
+clean:: clean_fft_code
 	rm -rf BUILD*
 
 include common/model_rules.mk
 
-# $(info APP_SRCS... $(APP_SRCS))
+$(info APP_SRCS... $(APP_SRCS))
 $(info APP_CFLAGS... $(APP_CFLAGS))
 
 include $(RULES_DIR)/pmsis_rules.mk

@@ -16,8 +16,8 @@
 #include "gaplib/wavIO.h" 
 
 // Autotiler NN functions
-#include "RFFTKernels.h"
-#include "WinLUT_f16.def"   //load the input audio signal and compute the STFT
+// #include "RFFTKernels.h"
+// #include "WinLUT_f16.def"   //load the input audio signal and compute the STFT
 
 #define DEMO 1 
 #define GRU 1
@@ -133,6 +133,7 @@ static int16_t Audio_Recording[BUFF_SIZE];
 #include "LUT.def"
 #include "MFCC_FB.def"
 
+#define  NORM           6
 
 #if (DATA_TYPE==2)
 typedef f16 MFCC_IN_TYPE;
@@ -146,6 +147,7 @@ typedef short int MFCC_IN_TYPE;
 #endif
 
 MFCC_IN_TYPE *MfccInSig;
+OUT_TYPE *out_feat;
 
 
 
@@ -324,47 +326,47 @@ static int open_i2s_PDM(struct pi_device *i2s, unsigned int SAIn, unsigned int F
     STFT computation
         argument parameters are manually set based on STFT configuration
 */
-static void RunSTFT()
-{
-#ifdef PERF
-    gap_cl_starttimer();
-    gap_cl_resethwtimer();
-#endif
-    unsigned int ta = gap_cl_readhwtimer();
+// static void RunSTFT()
+// {
+// #ifdef PERF
+//     gap_cl_starttimer();
+//     gap_cl_resethwtimer();
+// #endif
+//     unsigned int ta = gap_cl_readhwtimer();
 
-    // compute the STFT 
-    //      input: Audio Frame (FRAME_SIZE): 16 bits from the microphone or file
-    //      output: STFT_Spectrogram, DATATYPE_SIGNAL as output (e.g. float16)
-    STFT(
-        Audio_Frame, 
-        STFT_Spectrogram, 
-        TwiddlesLUT,
-        RFFTTwiddlesLUT,
-        SwapTable,
-        WindowLUT
-    );
+//     // compute the STFT 
+//     //      input: Audio Frame (FRAME_SIZE): 16 bits from the microphone or file
+//     //      output: STFT_Spectrogram, DATATYPE_SIGNAL as output (e.g. float16)
+//     STFT(
+//         Audio_Frame, 
+//         STFT_Spectrogram, 
+//         TwiddlesLUT,
+//         RFFTTwiddlesLUT,
+//         SwapTable,
+//         WindowLUT
+//     );
 
-    unsigned int ti = gap_cl_readhwtimer() - ta;
-    PRINTF("%45s: Cycles: %10d\n","STFT: ", ti );
+//     unsigned int ti = gap_cl_readhwtimer() - ta;
+//     PRINTF("%45s: Cycles: %10d\n","STFT: ", ti );
 
-    printf("\nAudio frame: ");
-    // for (int i = 0; i < FRAME_SIZE; i++)
-    for (int i = 0; i < 10; i++)
-        printf("%10f ,", Audio_Frame[i]);
-    printf("\n");
+//     printf("\nAudio frame: ");
+//     // for (int i = 0; i < FRAME_SIZE; i++)
+//     for (int i = 0; i < 10; i++)
+//         printf("%10f ,", Audio_Frame[i]);
+//     printf("\n");
 
-    ta = gap_cl_readhwtimer();
-    // compute the magnitude of the STFT components
-    for (int i=0; i<AT_INPUT_WIDTH*AT_INPUT_HEIGHT; i++){
-        DATATYPE_SIGNAL STFT_Real_Part = STFT_Spectrogram[2*i];
-        DATATYPE_SIGNAL STFT_Imag_Part = STFT_Spectrogram[2*i+1];
-        DATATYPE_SIGNAL STFT_Squared = STFT_Real_Part*STFT_Real_Part + STFT_Imag_Part*STFT_Imag_Part ;
-        STFT_Magnitude[i] = SqrtF16 (STFT_Squared);
-    }
-    ti = gap_cl_readhwtimer() - ta;
+//     ta = gap_cl_readhwtimer();
+//     // compute the magnitude of the STFT components
+//     for (int i=0; i<AT_INPUT_WIDTH*AT_INPUT_HEIGHT; i++){
+//         DATATYPE_SIGNAL STFT_Real_Part = STFT_Spectrogram[2*i];
+//         DATATYPE_SIGNAL STFT_Imag_Part = STFT_Spectrogram[2*i+1];
+//         DATATYPE_SIGNAL STFT_Squared = STFT_Real_Part*STFT_Real_Part + STFT_Imag_Part*STFT_Imag_Part ;
+//         STFT_Magnitude[i] = SqrtF16 (STFT_Squared);
+//     }
+//     ti = gap_cl_readhwtimer() - ta;
 
-    PRINTF("%45s: Cycles: %10d\n","Magnitude Compute: ", ti );
-}
+//     PRINTF("%45s: Cycles: %10d\n","Magnitude Compute: ", ti );
+// }
 
 
 static void RunMFCC()
@@ -474,14 +476,14 @@ int denoiser(void)
     /******
         Setup STFT/ISTF task
     ******/
-    printf("Setup STFT task!\n");
-    struct pi_cluster_task* task_stft;
-    task_stft = pi_l2_malloc(sizeof(struct pi_cluster_task));
-    pi_cluster_task(task_stft,&RunSTFT,NULL);
-    if (task_stft == NULL) {
-        PRINTF("failed to allocate memory for task\n");
-    }
-    pi_cluster_task_stacks(task_stft, NULL, SLAVE_STACK_SIZE);
+    // printf("Setup STFT task!\n");
+    // struct pi_cluster_task* task_stft;
+    // task_stft = pi_l2_malloc(sizeof(struct pi_cluster_task));
+    // pi_cluster_task(task_stft,&RunSTFT,NULL);
+    // if (task_stft == NULL) {
+    //     PRINTF("failed to allocate memory for task\n");
+    // }
+    // pi_cluster_task_stacks(task_stft, NULL, SLAVE_STACK_SIZE);
 
 
     /******

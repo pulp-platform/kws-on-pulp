@@ -12,8 +12,8 @@
 #endif
 
 #define __PREFIX(x) denoiser_dns ## x
-#include "denoiser_dnsKernels.h"
-#include "denoiser_dnsInfo.h"
+// #include "denoiser_dnsKernels.h"
+// #include "denoiser_dnsInfo.h"
 #define denoiser_L1_SIZE _denoiser_dns_L1_Memory_SIZE
 #define denoiser_L2_SIZE _denoiser_dns_L2_Memory_SIZE
 

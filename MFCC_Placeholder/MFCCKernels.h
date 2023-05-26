@@ -6,6 +6,7 @@
 #include "CmplxFunctions.h"
 #include "PreProcessing.h"
 // #include "DSP_Lib.h"
+#include "DSP_FloatType.h"
 #define _L1_Memory_SIZE 25300
 #define _L2_Memory_SIZE 0
 extern char *L1_Memory; /* Size given for generation: 50784 bytes, used: 25300 bytes */
