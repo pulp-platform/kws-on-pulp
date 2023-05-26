@@ -540,6 +540,13 @@ int denoiser(void)
 
     pi_i2s_ioctl(&i2s_sai1, PI_I2S_IOCTL_STOP, NULL);
 
+
+    // Dory init
+    // TODO: Remove flash init and/or ram init duplicates
+    mem_init();
+    network_initialize();
+
+
     int sets = 0;
 
     int32_t temporary_buffer[BUFF_SIZE];
@@ -647,9 +654,11 @@ int denoiser(void)
         for (int i = 0; i < 490; i++){
             printf("%i\n", feat_char[i]);
         }
-
-
-
+        
+        // DORY inference
+        // TODO: Ensure input features are accesible to DORY
+        // network_run(l2_buffer, 380000, l2_buffer, 0);
+        network_run(feat_char, 380000,feat_char, 0);
 
 
         break;
