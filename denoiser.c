@@ -395,6 +395,7 @@ static void RunMFCC()
             Tensorflow_MFCC(MfccInSig, out_feat, R2_Twiddles_fix_512,   RFFT_Twiddles_fix_1024,   R2_SwapTable_fix_512,   WindowLUT, MFCC_FilterBank, MFCC_Coeffs, NORM, DCT_Coeff);
             #endif
     #endif
+    printf ("MFCC gen complete");
     #ifdef PERF
         int elapsed = gap_cl_readhwtimer() - start;
         printf("Total Cycles: %d over %d Frames %d Cyc/Frame\n", elapsed, N_FRAME, elapsed / N_FRAME);
@@ -485,7 +486,6 @@ int denoiser(void)
     // }
     // pi_cluster_task_stacks(task_stft, NULL, SLAVE_STACK_SIZE);
 
-
     /******
         Setup MFCC task
     ******/
@@ -559,9 +559,20 @@ int denoiser(void)
 
         for(int i=0;i<BUFF_SIZE;i++){
             Audio_Recording[i] = ((int16_t *)BufferInList)[i];
-        }          
-
-
+        }
+        // TODO: Fix. Data copy stalls the loop.
+	/*          
+        printf("I am transfering data");
+        #if (DATA_TYPE==2) || (DATA_TYPE==3)
+            for (int i=0; i<BUFF_SIZE; i++) {
+                MfccInSig[i] = (MFCC_IN_TYPE) Audio_Recording[i] / (1<<15);
+            }
+        #else
+            for (int i=0; i<BUFF_SIZE; i++) {
+                MfccInSig[i] = (MFCC_IN_TYPE) gap_clip(((int) Audio_Recording[i]), 15);
+            }
+        #endif
+	*/
         // MFCC generation - TinyDenoiser
         // for (int i=0; i<(int)(BUFF_SIZE/FRAME_SIZE); i++){
 
@@ -618,8 +629,8 @@ int denoiser(void)
         pi_cluster_send_task_to_cl(&cluster_dev, task_mfcc);
         // Closing the cluster once the task is finished
         pi_cluster_close(&cluster_dev);
-
-       int k = 0;
+        printf("MFCC Computation complete. Rescaling data");
+        int k = 0;
 	for (int i = 0; i < 1960;i++){
         	
         	// Rescale MFCCs to match Tensorflow-generated ones
