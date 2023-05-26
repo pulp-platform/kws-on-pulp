@@ -42,6 +42,20 @@ APP_SRCS  += $(DSP_DIR)math_funcs.c
 APP_SRCS  += $(DSP_DIR)MfccBasicKernels.c
 APP_SRCS  += $(MFCCBUILD_DIR)/MFCCKernels.c    
 
+# DORY
+APP_CFLAGS += -DNUM_CORES=8
+FLASH_TYPE ?= HYPERFLASH
+RAM_TYPE ?= HYPERRAM
+
+APP_CFLAGS += -DGAP_SDK=1
+
+ifeq '$(FLASH_TYPE)' 'MRAM'
+READFS_FLASH = target/chip/soc/mram
+endif
+
+APP_CFLAGS += -DFLASH_TYPE=$(FLASH_TYPE) -DUSE_$(FLASH_TYPE) -DUSE_$(RAM_TYPE)
+
+# DORY
 
 
 ##############################################
