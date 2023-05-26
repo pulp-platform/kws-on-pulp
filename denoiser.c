@@ -152,6 +152,10 @@ char * feat_char;
 
 
 
+// DORY
+#include "mem.h"
+#include "network.h"
+
 
 
 
@@ -631,7 +635,7 @@ int denoiser(void)
         /******
             Compute the MFCC
         ******/
-
+        /*
         printf("\n\n****** Computing MFCC ***** \n");
         pi_cluster_send_task_to_cl(&cluster_dev, task_mfcc);
         // Closing the cluster once the task is finished
@@ -654,6 +658,7 @@ int denoiser(void)
         for (int i = 0; i < 490; i++){
             printf("%i\n", feat_char[i]);
         }
+        */
         
         // DORY inference
         // TODO: Ensure input features are accesible to DORY

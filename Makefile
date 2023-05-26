@@ -44,6 +44,10 @@ APP_SRCS  += $(MFCCBUILD_DIR)/MFCCKernels.c
 
 # DORY
 APP_CFLAGS += -DNUM_CORES=8
+APP_CFLAGS += -Iinc
+
+APP_SRCS   += $(wildcard src/*.c)
+
 FLASH_TYPE ?= HYPERFLASH
 RAM_TYPE ?= HYPERRAM
 
