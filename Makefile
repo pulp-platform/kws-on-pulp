@@ -59,6 +59,7 @@ endif
 
 APP_CFLAGS += -DFLASH_TYPE=$(FLASH_TYPE) -DUSE_$(FLASH_TYPE) -DUSE_$(RAM_TYPE)
 
+include vars.mk
 # DORY
 
 
