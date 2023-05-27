@@ -332,9 +332,9 @@ endif
 MODEL_SIZE_CFLAGS = -DAT_INPUT_HEIGHT=$(AT_INPUT_HEIGHT) -DAT_INPUT_WIDTH=$(AT_INPUT_WIDTH) -DAT_INPUT_COLORS=$(AT_INPUT_COLORS)
 
 
-include common/model_decl.mk
-include $(RULES_DIR)/at_common_decl.mk
-include stft_model.mk
+# include common/model_decl.mk
+# include $(RULES_DIR)/at_common_decl.mk
+# include stft_model.mk
 
 
 PMSIS_OS=freertos
@@ -485,10 +485,10 @@ all:: | graph
 	@echo $(CFLAGS)
 	@echo $(APP_CFLAGS)
 
-clean:: clean_fft_code
+clean:: # clean_fft_code
 	rm -rf BUILD*
 
-include common/model_rules.mk
+# include common/model_rules.mk
 
 $(info APP_SRCS... $(APP_SRCS))
 $(info APP_CFLAGS... $(APP_CFLAGS))
