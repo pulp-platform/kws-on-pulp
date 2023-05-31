@@ -331,47 +331,56 @@ static int open_i2s_PDM(struct pi_device *i2s, unsigned int SAIn, unsigned int F
     STFT computation
         argument parameters are manually set based on STFT configuration
 */
-// static void RunSTFT()
-// {
-// #ifdef PERF
-//     gap_cl_starttimer();
-//     gap_cl_resethwtimer();
-// #endif
-//     unsigned int ta = gap_cl_readhwtimer();
+static void RunSTFT()
+{
+#ifdef PERF
+    gap_cl_starttimer();
+    gap_cl_resethwtimer();
+#endif
+    unsigned int ta = gap_cl_readhwtimer();
 
-//     // compute the STFT 
-//     //      input: Audio Frame (FRAME_SIZE): 16 bits from the microphone or file
-//     //      output: STFT_Spectrogram, DATATYPE_SIGNAL as output (e.g. float16)
-//     STFT(
-//         Audio_Frame, 
-//         STFT_Spectrogram, 
-//         TwiddlesLUT,
-//         RFFTTwiddlesLUT,
-//         SwapTable,
-//         WindowLUT
-//     );
+    // compute the STFT 
+    //      input: Audio Frame (FRAME_SIZE): 16 bits from the microphone or file
+    //      output: STFT_Spectrogram, DATATYPE_SIGNAL as output (e.g. float16)
+    // STFT(
+    //     Audio_Frame, 
+    //     STFT_Spectrogram, 
+    //     TwiddlesLUT,
+    //     RFFTTwiddlesLUT,
+    //     SwapTable,
+    //     WindowLUT
+    // );
 
-//     unsigned int ti = gap_cl_readhwtimer() - ta;
-//     PRINTF("%45s: Cycles: %10d\n","STFT: ", ti );
+    STFT(
+        Audio_Frame, 
+        STFT_Spectrogram, 
+        TwiddlesLUTR2,
+        RFFTTwiddlesLUT,
+        SwapTableR2,
+        WindowLUT
+    );
 
-//     printf("\nAudio frame: ");
-//     // for (int i = 0; i < FRAME_SIZE; i++)
-//     for (int i = 0; i < 10; i++)
-//         printf("%10f ,", Audio_Frame[i]);
-//     printf("\n");
+    unsigned int ti = gap_cl_readhwtimer() - ta;
+    PRINTF("%45s: Cycles: %10d\n","STFT: ", ti );
 
-//     ta = gap_cl_readhwtimer();
-//     // compute the magnitude of the STFT components
-//     for (int i=0; i<AT_INPUT_WIDTH*AT_INPUT_HEIGHT; i++){
-//         DATATYPE_SIGNAL STFT_Real_Part = STFT_Spectrogram[2*i];
-//         DATATYPE_SIGNAL STFT_Imag_Part = STFT_Spectrogram[2*i+1];
-//         DATATYPE_SIGNAL STFT_Squared = STFT_Real_Part*STFT_Real_Part + STFT_Imag_Part*STFT_Imag_Part ;
-//         STFT_Magnitude[i] = SqrtF16 (STFT_Squared);
-//     }
-//     ti = gap_cl_readhwtimer() - ta;
+    printf("\nAudio frame: ");
+    // for (int i = 0; i < FRAME_SIZE; i++)
+    for (int i = 0; i < 10; i++)
+        printf("%10f ,", Audio_Frame[i]);
+    printf("\n");
 
-//     PRINTF("%45s: Cycles: %10d\n","Magnitude Compute: ", ti );
-// }
+    ta = gap_cl_readhwtimer();
+    // compute the magnitude of the STFT components
+    for (int i=0; i<AT_INPUT_WIDTH*AT_INPUT_HEIGHT; i++){
+        DATATYPE_SIGNAL STFT_Real_Part = STFT_Spectrogram[2*i];
+        DATATYPE_SIGNAL STFT_Imag_Part = STFT_Spectrogram[2*i+1];
+        DATATYPE_SIGNAL STFT_Squared = STFT_Real_Part*STFT_Real_Part + STFT_Imag_Part*STFT_Imag_Part ;
+        STFT_Magnitude[i] = SqrtF16 (STFT_Squared);
+    }
+    ti = gap_cl_readhwtimer() - ta;
+
+    PRINTF("%45s: Cycles: %10d\n","Magnitude Compute: ", ti );
+}
 
 
 static void RunMFCC()
@@ -482,14 +491,14 @@ int denoiser(void)
     /******
         Setup STFT/ISTF task
     ******/
-    // printf("Setup STFT task!\n");
-    // struct pi_cluster_task* task_stft;
-    // task_stft = pi_l2_malloc(sizeof(struct pi_cluster_task));
-    // pi_cluster_task(task_stft,&RunSTFT,NULL);
-    // if (task_stft == NULL) {
-    //     PRINTF("failed to allocate memory for task\n");
-    // }
-    // pi_cluster_task_stacks(task_stft, NULL, SLAVE_STACK_SIZE);
+    printf("Setup STFT task!\n");
+    struct pi_cluster_task* task_stft;
+    task_stft = pi_l2_malloc(sizeof(struct pi_cluster_task));
+    pi_cluster_task(task_stft,&RunSTFT,NULL);
+    if (task_stft == NULL) {
+        PRINTF("failed to allocate memory for task\n");
+    }
+    pi_cluster_task_stacks(task_stft, NULL, SLAVE_STACK_SIZE);
 
     /******
         Setup MFCC task
@@ -587,48 +596,48 @@ int denoiser(void)
         #endif
         */
         // MFCC generation - TinyDenoiser
-        // for (int i=0; i<(int)(BUFF_SIZE/FRAME_SIZE); i++){
+        for (int i=0; i<(int)(BUFF_SIZE/FRAME_SIZE); i++){
 
-        //     for (int j=0; j<FRAME_SIZE; j++){
-        //         // Audio_Frame[j] = ((DATATYPE_SIGNAL *) BufferInList)[i*FRAME_SIZE+j];
-        //         Audio_Frame[j] = (DATATYPE_SIGNAL) Audio_Recording[i*FRAME_SIZE+j];
-        //     }
+            for (int j=0; j<FRAME_SIZE; j++){
+                // Audio_Frame[j] = ((DATATYPE_SIGNAL *) BufferInList)[i*FRAME_SIZE+j];
+                Audio_Frame[j] = (DATATYPE_SIGNAL) Audio_Recording[i*FRAME_SIZE+j];
+            }
 
-        //     /******
-        //         Compute the MFCC
-        //     ******/
+            /******
+                Compute the MFCC
+            ******/
 
-        //     printf("\n\n****** Computing STFT ***** \n");
-        //     pi_cluster_task(task_stft,&RunSTFT,NULL);
+            printf("\n\n****** Computing STFT ***** \n");
+            pi_cluster_task(task_stft,&RunSTFT,NULL);
 
-        //     L1_Memory = pi_l1_malloc(&cluster_dev, _L1_Memory_SIZE);
-        //     if (L1_Memory==NULL){
-        //         printf("Error allocating L1\n");
-        //         pmsis_exit(-1);
-        //     }
+            L1_Memory = pi_l1_malloc(&cluster_dev, _L1_Memory_SIZE);
+            if (L1_Memory==NULL){
+                printf("Error allocating L1\n");
+                pmsis_exit(-1);
+            }
 
-        //     pi_cluster_send_task_to_cl(&cluster_dev, task_stft);
-        //     pi_l1_free(&cluster_dev, L1_Memory,_L1_Memory_SIZE);
+            pi_cluster_send_task_to_cl(&cluster_dev, task_stft);
+            pi_l1_free(&cluster_dev, L1_Memory,_L1_Memory_SIZE);
 
-        //     /***
-        //         Check the Spectrogram Results
-        //     ***/
-        //     printf("\nSTFT OUT: ");
-        //     // for (int i = 0; i< AT_INPUT_WIDTH*AT_INPUT_HEIGHT*2; i++ ){
-        //     for (int i = 0; i < 10; i++ ){
-        //         printf("%f, ",STFT_Spectrogram[i]);
-        //     }
-        //     printf("\n");
+            /***
+                Check the Spectrogram Results
+            ***/
+            printf("\nSTFT OUT: ");
+            // for (int i = 0; i< AT_INPUT_WIDTH*AT_INPUT_HEIGHT*2; i++ ){
+            for (int i = 0; i < 10; i++ ){
+                printf("%f, ",STFT_Spectrogram[i]);
+            }
+            printf("\n");
 
-        //     // printf("\nMagnitude OUT: ");
-        //     // for (int i = 0; i< AT_INPUT_WIDTH*AT_INPUT_HEIGHT; i++ ){
-        //     //     printf("%f, ",STFT_Magnitude[i]);
-        //     // }
-        //     // printf("\n");
+            // printf("\nMagnitude OUT: ");
+            // for (int i = 0; i< AT_INPUT_WIDTH*AT_INPUT_HEIGHT; i++ ){
+            //     printf("%f, ",STFT_Magnitude[i]);
+            // }
+            // printf("\n");
 
-        //     break;
+            break;
 
-        // }
+        }
 
 
 
@@ -639,7 +648,9 @@ int denoiser(void)
         ******/
         
         printf("\n\n****** Computing MFCC ***** \n");
-        // pi_cluster_send_task_to_cl(&cluster_dev, task_mfcc); # TODO: FIX
+        pi_cluster_task(task_mfcc,&RunMFCC,NULL);
+
+        pi_cluster_send_task_to_cl(&cluster_dev, task_mfcc); // TODO: FIX
         // Closing the cluster once the task is finished
         pi_cluster_close(&cluster_dev);
         printf("MFCC Computation complete. Rescaling data");
@@ -661,17 +672,6 @@ int denoiser(void)
         //     printf("%i\n", feat_char[i]);
         // }
         
-        
-        // DORY inference
-        // TODO: Ensure input features are accesible to DORY
-        // network_run(l2_buffer, 380000, l2_buffer, 0);
-
-        // TODO: move data from feat_char to l2_buffer
-
-        // l2 buffer: calculated [219560]
-
-
-        
         void *l2_buffer = pi_l2_malloc(80000);
 
         for (int i = 0; i < 490; i++){
@@ -679,11 +679,7 @@ int denoiser(void)
             // L2_input[i] = feat_char[i];
         }
 
-
-       
         network_run(L2_input, 80000,l2_buffer, 0);
-
-
 
         break;
 

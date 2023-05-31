@@ -248,3 +248,123 @@ void Tensorflow_MFCC(
 	AT_L2_WAIT(0, &DmaW_Evt1); /* Wait DMA write Out */
 	/*============================ End Write Tiles Epilog ===============================*/
 }
+
+
+void STFT(
+		short int * __restrict__ In,
+		short int * __restrict__ Out,
+		short int * __restrict__ Twiddles_fft_int,
+		short int * __restrict__ Twiddles_rfft,
+		short int * SwapTable_fft,
+		short int * __restrict__ WinTable)
+
+{
+	/* Shared L1: 5956 bytes, L2 buffer: 0 bytes */
+	/* Local variables used by this kernel */
+	AT_L2_EVENT _DmaR_Evt1, *DmaR_Evt1 = &_DmaR_Evt1;
+	AT_L2_EVENT _DmaW_Evt1, *DmaW_Evt1 = &_DmaW_Evt1;
+	AT_L2_EVENT _DmaR_Evt2, *DmaR_Evt2 = &_DmaR_Evt2;
+	AT_L2_EVENT _DmaR_Evt3, *DmaR_Evt3 = &_DmaR_Evt3;
+	AT_L2_EVENT _DmaR_Evt4, *DmaR_Evt4 = &_DmaR_Evt4;
+	AT_L2_EVENT _DmaR_Evt5, *DmaR_Evt5 = &_DmaR_Evt5;
+	Windowing_T S_KerArg0, *KerArg0 = &S_KerArg0;
+	RFFT_Arg_T S_KerArg1, *KerArg1 = &S_KerArg1;
+
+	/* Iteration space related variables */
+	int D0Ind, D0Ind_Last;
+	int T0Ind, T0Ind_Last;
+	/* User kernel arguments related variables */
+	/*============================= Ker Arg Iter Spaces =========================================
+	User Kernel Iteration Space:
+		[D0 Dim: 1][Tile0 Dim: 1]
+	Ker Arg: In, Tiled Space: Buffer
+		Min Pipe Depth: 0, Max Pipe Depth: 0
+		KerArgItSpace: 1 logical tiles, 1 physical tiles
+			@ 0 (Total Size: 800 )[D0, [0 x 800, 800]]
+		KerArgItSpace (User Kernel Iter Order):
+			[D0, [0 x 800, 800]]
+		Tile0: [0, 800, 800], Tile1: [0, 800, 800], Tile2; [0, 800, 800]
+	Ker Arg: Out, Tiled Space: Buffer
+		Min Pipe Depth: 0, Max Pipe Depth: 0
+		KerArgItSpace: 1 logical tiles, 1 physical tiles
+			@ 800 (Total Size: 1028 )[D0, [0 x 1028, 1028]]
+		KerArgItSpace (User Kernel Iter Order):
+			[D0, [0 x 1028, 1028]]
+		Tile0: [0, 1028, 1028], Tile1: [0, 1028, 1028], Tile2; [0, 1028, 1028]
+	Ker Arg: In_rfft, Tiled Space: Buffer
+		Min Pipe Depth: 0, Max Pipe Depth: 0
+		KerArgItSpace: 1 logical tiles, 1 physical tiles
+			@ 1828 (Total Size: 1024 )[Tile0, 1:[1x512], 2]
+		KerArgItSpace (User Kernel Iter Order):
+			[Tile0, 1:[1x512], 2]
+		Tile0: [0, 1024, 1024], Tile1: [0, 1024, 1024], Tile2; [0, 1024, 1024]
+	Ker Arg: WinTable, Tiled Space: Buffer
+		Min Pipe Depth: 0, Max Pipe Depth: 0
+		KerArgItSpace: 1 logical tiles, 1 physical tiles
+			@ 2852 (Total Size: 800 )[Tile0, 1:[1x400], 2]
+		KerArgItSpace (User Kernel Iter Order):
+			[Tile0, 1:[1x400], 2]
+		Tile0: [0, 800, 800], Tile1: [0, 800, 800], Tile2; [0, 800, 800]
+	Ker Arg: Twiddles_fft_int, Tiled Space: Buffer
+		Min Pipe Depth: 0, Max Pipe Depth: 0
+		KerArgItSpace: 1 logical tiles, 1 physical tiles
+			@ 3652 (Total Size: 768 )[Tile0, 1:[1x384], 2]
+		KerArgItSpace (User Kernel Iter Order):
+			[Tile0, 1:[1x384], 2]
+		Tile0: [0, 768, 768], Tile1: [0, 768, 768], Tile2; [0, 768, 768]
+	Ker Arg: SwapTable_fft, Tiled Space: Buffer
+		Min Pipe Depth: 0, Max Pipe Depth: 0
+		KerArgItSpace: 1 logical tiles, 1 physical tiles
+			@ 4420 (Total Size: 512 )[Tile0, 1:[1x256], 2]
+		KerArgItSpace (User Kernel Iter Order):
+			[Tile0, 1:[1x256], 2]
+		Tile0: [0, 512, 512], Tile1: [0, 512, 512], Tile2; [0, 512, 512]
+	Ker Arg: Twiddles_rfft, Tiled Space: Buffer
+		Min Pipe Depth: 0, Max Pipe Depth: 0
+		KerArgItSpace: 1 logical tiles, 1 physical tiles
+			@ 4932 (Total Size: 1024 )[Tile0, 1:[1x512], 2]
+		KerArgItSpace (User Kernel Iter Order):
+			[Tile0, 1:[1x512], 2]
+		Tile0: [0, 1024, 1024], Tile1: [0, 1024, 1024], Tile2; [0, 1024, 1024]
+	======================== End Ker Arg Iter Spaces =========================================*/
+	/*=========================== Call Kernel, Invariant assignment =====================*/
+	KerArg0->Frame = (void *__restrict__) (L1_Memory+0);
+	KerArg0->OutFrame = (void *__restrict__) (L1_Memory+1828);
+	KerArg0->Window = (void *__restrict__) (L1_Memory+2852);
+	KerArg0->FrameSize = (int) (400);
+	KerArg0->FFT_Dim = (int) (512);
+	KerArg1->Data = (void * __restrict__) (L1_Memory+1828);
+	KerArg1->RFFT_Out = (void * __restrict__) (L1_Memory+800);
+	KerArg1->Twiddles = (void * __restrict__) (L1_Memory+3652);
+	KerArg1->RTwiddles = (void * __restrict__) (L1_Memory+4932);
+	KerArg1->SwapTable = (void * __restrict__) (L1_Memory+4420);
+	KerArg1->N_fft = (short int) (512);
+	KerArg1->Inverse = (unsigned char) (0);
+	/*================================= Read Tiles Prolog ===============================*/
+	AT_L2_COPY(0, ((AT_L2_EXT_ADDR_TYPE) In+0), ((AT_L2_INT_ADDR_TYPE) L1_Memory+0), 800, 0, DmaR_Evt1);
+	AT_L2_WAIT(0, DmaR_Evt1); /* Wait previous DMA read In */
+	AT_L2_COPY(0, ((AT_L2_EXT_ADDR_TYPE) WinTable+0), ((AT_L2_INT_ADDR_TYPE) L1_Memory+2852), 800, 0, DmaR_Evt2);
+	AT_L2_WAIT(0, DmaR_Evt2); /* Wait previous DMA read WinTable */
+	AT_L2_COPY(0, ((AT_L2_EXT_ADDR_TYPE) Twiddles_fft_int+0), ((AT_L2_INT_ADDR_TYPE) L1_Memory+3652), 768, 0, DmaR_Evt3);
+	AT_L2_WAIT(0, DmaR_Evt3); /* Wait previous DMA read Twiddles_fft_int */
+	AT_L2_COPY(0, ((AT_L2_EXT_ADDR_TYPE) SwapTable_fft+0), ((AT_L2_INT_ADDR_TYPE) L1_Memory+4420), 512, 0, DmaR_Evt4);
+	AT_L2_WAIT(0, DmaR_Evt4); /* Wait previous DMA read SwapTable_fft */
+	AT_L2_COPY(0, ((AT_L2_EXT_ADDR_TYPE) Twiddles_rfft+0), ((AT_L2_INT_ADDR_TYPE) L1_Memory+4932), 1024, 0, DmaR_Evt5);
+	AT_L2_WAIT(0, DmaR_Evt5); /* Wait previous DMA read Twiddles_rfft */
+	/*============================= End Read Tiles Prolog ===============================*/
+	{ /* Single iteration on D0 */
+		int D0Ind_Last = 1;
+		{ /* Single iteration on Tile0 */
+			int T0Ind_Last = 1;
+			/*====================== Call Kernel LOC_LOOP =========================*/
+			AT_FORK(gap_ncore(), (void *) WindowingReal2Real_f16, (void *) KerArg0);
+			__CALL(WindowingReal2Real_f16, KerArg0);
+			AT_FORK(gap_ncore(), (void *) RFFT_DIF_Par_Fix16, (void *) KerArg1);
+			__CALL(RFFT_DIF_Par_Fix16, KerArg1);
+		} /* End iteration on Tile0 */
+	} /* End iteration on D0 */
+	/*================================ Write Tiles Epilog ===============================*/
+	AT_L2_COPY(0, ((AT_L2_EXT_ADDR_TYPE) Out+0), ((AT_L2_INT_ADDR_TYPE) L1_Memory+800), 1028, 1, DmaW_Evt1);
+	AT_L2_WAIT(0, DmaW_Evt1); /* Wait DMA write Out */
+	/*============================ End Write Tiles Epilog ===============================*/
+}
