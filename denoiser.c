@@ -542,16 +542,17 @@ int denoiser(void)
         ******/
         
         printf("\n\n****** Computing MFCC ***** \n");
-        // pi_cluster_task(task_mfcc,&RunMFCC,NULL);
+        pi_cluster_task(task_mfcc,&RunMFCC,NULL);
 
-        // L1_Memory = pi_l1_malloc(&cluster_dev, _L1_Memory_SIZE);
-        //     if (L1_Memory==NULL){
-        //         printf("Error allocating L1\n");
-        //         pmsis_exit(-1);
-        //     }
-        // pi_cluster_send_task_to_cl(&cluster_dev, task_mfcc);
-        // pi_l2_free(MfccInSig, 16000 * sizeof(MFCC_IN_TYPE));
-        // pi_l2_free(task_mfcc, sizeof(struct pi_cluster_task));
+        L1_Memory = pi_l1_malloc(&cluster_dev, _L1_Memory_SIZE);
+            if (L1_Memory==NULL){
+                printf("Error allocating L1\n");
+                pmsis_exit(-1);
+            }
+        pi_cluster_send_task_to_cl(&cluster_dev, task_mfcc);
+        pi_l2_free(MfccInSig, 16000 * sizeof(MFCC_IN_TYPE));
+        pi_l2_free(task_mfcc, sizeof(struct pi_cluster_task));
+        pi_cluster_close(&cluster_dev);
 
 
         printf("MFCC Computation complete. Rescaling data\n");
