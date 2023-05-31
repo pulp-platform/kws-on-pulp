@@ -459,7 +459,6 @@ int denoiser(void)
 
     
     // Configure PDM
-    // if (open_i2s_PDM(&i2s_sai1, SAI1,   3072000, 3, 0)) return -1;
     if (open_i2s_PDM(&i2s_sai1, SAI1,   3072000, 3, 0)) return -1;
 
 
@@ -519,22 +518,22 @@ int denoiser(void)
 
         for(int i=0;i<BUFF_SIZE;i++){
             Audio_Recording[i] = ((int16_t *)BufferInList)[i];
+            // We for now assume that no rescaling is needed
+            MfccInSig[i] = ((int16_t *)BufferInList)[i];
+
+            // printf ("%i\n", MfccInSig[i]);
         }
-        // TODO: Fix. Data copy stalls the loop.
-        /*          
-        printf("I am transfering data");
-        #if (DATA_TYPE==2) || (DATA_TYPE==3)
-            for (int i=0; i<BUFF_SIZE; i++) {
-                MfccInSig[i] = (MFCC_IN_TYPE) Audio_Recording[i] / (1<<15);
-            }
-        #else
-            for (int i=0; i<BUFF_SIZE; i++) {
-                MfccInSig[i] = (MFCC_IN_TYPE) gap_clip(((int) Audio_Recording[i]), 15);
-            }
-        #endif
-        */
-
-
+                  
+        // #if (DATA_TYPE==2) || (DATA_TYPE==3)
+        //     for (int i=0; i<BUFF_SIZE; i++) {
+        //         MfccInSig[i] = (MFCC_IN_TYPE) Audio_Recording[i] / (1<<15);
+        //     }
+        // #else
+        //     for (int i=0; i<BUFF_SIZE; i++) {
+        //         MfccInSig[i] = (MFCC_IN_TYPE) gap_clip(((int) Audio_Recording[i]), 15);
+        //     }
+        // #endif
+        
 
         // MFCC generation - KWS on PULP
 
@@ -543,18 +542,19 @@ int denoiser(void)
         ******/
         
         printf("\n\n****** Computing MFCC ***** \n");
-        pi_cluster_task(task_mfcc,&RunMFCC,NULL);
+        // pi_cluster_task(task_mfcc,&RunMFCC,NULL);
 
-        L1_Memory = pi_l1_malloc(&cluster_dev, _L1_Memory_SIZE);
-            if (L1_Memory==NULL){
-                printf("Error allocating L1\n");
-                pmsis_exit(-1);
-            }
-        pi_cluster_send_task_to_cl(&cluster_dev, task_mfcc);
-        pi_l1_free(&cluster_dev, L1_Memory,_L1_Memory_SIZE);
-        // Closing the cluster once the task is finished
-        pi_cluster_close(&cluster_dev);
-        printf("MFCC Computation complete. Rescaling data");
+        // L1_Memory = pi_l1_malloc(&cluster_dev, _L1_Memory_SIZE);
+        //     if (L1_Memory==NULL){
+        //         printf("Error allocating L1\n");
+        //         pmsis_exit(-1);
+        //     }
+        // pi_cluster_send_task_to_cl(&cluster_dev, task_mfcc);
+        // pi_l2_free(MfccInSig, 16000 * sizeof(MFCC_IN_TYPE));
+        // pi_l2_free(task_mfcc, sizeof(struct pi_cluster_task));
+
+
+        printf("MFCC Computation complete. Rescaling data\n");
         int k = 0;
         for (int i = 0; i < 1960;i++){
             
@@ -566,21 +566,23 @@ int denoiser(void)
             }
             k++;
         }
-
         
-        // printf("Printing MFCC\n");
+        printf("Printing MFCC\n");
         // for (int i = 0; i < 490; i++){
         //     printf("%i\n", feat_char[i]);
         // }
         
         void *l2_buffer = pi_l2_malloc(80000);
+        if (task_mfcc == NULL) {
+            printf("failed to allocate memory for l2_buffer\n");
+        }
 
         for (int i = 0; i < 490; i++){
             L2_input[i] = 0;
             // L2_input[i] = feat_char[i];
         }
 
-        network_run(L2_input, 80000,l2_buffer, 0);
+        network_run(L2_input, 80000, l2_buffer, 0);
 
         break;
 
