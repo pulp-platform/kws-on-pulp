@@ -502,6 +502,7 @@ int denoiser(void)
     }
     pi_cluster_task_stacks(task_mfcc, NULL, SLAVE_STACK_SIZE);
     feat_char = (char*) pi_l2_malloc(49 * 10 * sizeof(char));
+    MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(16000 * sizeof(MFCC_IN_TYPE));
 
     /****
         Setup the SFU for PDM in/out
@@ -572,7 +573,7 @@ int denoiser(void)
             Audio_Recording[i] = ((int16_t *)BufferInList)[i];
         }
         // TODO: Fix. Data copy stalls the loop.
-	/*          
+        /*          
         printf("I am transfering data");
         #if (DATA_TYPE==2) || (DATA_TYPE==3)
             for (int i=0; i<BUFF_SIZE; i++) {
@@ -583,7 +584,7 @@ int denoiser(void)
                 MfccInSig[i] = (MFCC_IN_TYPE) gap_clip(((int) Audio_Recording[i]), 15);
             }
         #endif
-	*/
+        */
         // MFCC generation - TinyDenoiser
         // for (int i=0; i<(int)(BUFF_SIZE/FRAME_SIZE); i++){
 
@@ -635,35 +636,39 @@ int denoiser(void)
         /******
             Compute the MFCC
         ******/
-        /*
+        
         printf("\n\n****** Computing MFCC ***** \n");
-        pi_cluster_send_task_to_cl(&cluster_dev, task_mfcc);
+        // pi_cluster_send_task_to_cl(&cluster_dev, task_mfcc); # TODO: FIX
         // Closing the cluster once the task is finished
         pi_cluster_close(&cluster_dev);
         printf("MFCC Computation complete. Rescaling data");
         int k = 0;
-	for (int i = 0; i < 1960;i++){
-        	
-        	// Rescale MFCCs to match Tensorflow-generated ones
-	        feat_char[k] = (char) (((int) floor(out_feat[i] * pow(2, -4) * sqrt(0.2))) + 128);
-        	// Select 10 MFCC per window
-	        if (i == 40*(k/10) + 9){
-	            i = 40*(k/10) + 39;
-	        }
-        	k++;
-	}
-
-	    
-	printf("Printing MFCC\n");
-        for (int i = 0; i < 490; i++){
-            printf("%i\n", feat_char[i]);
+        for (int i = 0; i < 1960;i++){
+            
+            // Rescale MFCCs to match Tensorflow-generated ones
+            feat_char[k] = (char) (((int) floor(out_feat[i] * pow(2, -4) * sqrt(0.2))) + 128);
+            // Select 10 MFCC per window
+            if (i == 40*(k/10) + 9){
+                i = 40*(k/10) + 39;
+            }
+            k++;
         }
-        */
+
+        
+        // printf("Printing MFCC\n");
+        // for (int i = 0; i < 490; i++){
+        //     printf("%i\n", feat_char[i]);
+        // }
+        
         
         // DORY inference
         // TODO: Ensure input features are accesible to DORY
         // network_run(l2_buffer, 380000, l2_buffer, 0);
-        network_run(feat_char, 380000,feat_char, 0);
+
+        // TODO: move data from feat_char to l2_buffer
+        
+        void *l2_buffer = pi_l2_malloc(80000);
+        network_run(l2_buffer, 80000,l2_buffer, 0);
 
 
         break;

@@ -16,13 +16,13 @@ include $(RULES_DIR)/pmsis_defs.mk
 
 # MFCCBUILD_DIR ?= $(CURDIR)/BUILD_MFCC
 MFCCBUILD_DIR ?= $(CURDIR)/MFCC_Placeholder
-MGAP_SDK_DIR ?= /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk_private/
+GAP9_SDK_DIR ?= /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk_private/
 GAP8_SDK_DIR ?= /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk_mar23/gap_sdk/
-DSP_DIR ?= $(GAP8_SDK_DIR)tools/autotiler_v3/DSP_Libraries/
-AUTOTILER_DIR ?= $(GAP8_SDK_DIR)tools/autotiler_v3/Autotiler/
-DSP_LUT_DIR ?= $(GAP8_SDK_DIR)tools/autotiler_v3/DSP_Libraries/LUT_Tables/
-AUTOTILER_MFCC_DIR ?= $(GAP8_SDK_DIR)tools/autotiler_v3/Generators/MFCC/
-WAVIO_DIR ?= $(GAP8_SDK_DIR)libs/gap_lib/include/
+DSP_DIR ?= $(GAP9_SDK_DIR)tools/autotiler_v3/DSP_Libraries/
+AUTOTILER_DIR ?= $(GAP9_SDK_DIR)tools/autotiler_v3/Autotiler/
+DSP_LUT_DIR ?= $(GAP9_SDK_DIR)tools/autotiler_v3/DSP_Libraries/LUT_Tables/
+AUTOTILER_MFCC_DIR ?= $(GAP9_SDK_DIR)tools/autotiler_v3/Generators/MFCC/
+WAVIO_DIR ?= $(GAP9_SDK_DIR)libs/gap_lib/include/
 
 APP_CFLAGS += -I$(MFCCBUILD_DIR)
 APP_CFLAGS += -I$(DSP_DIR)
@@ -78,11 +78,11 @@ ifeq ($(APP_MODE), 0)
 	IS_INPUT_STFT=0
 	DISABLE_NN_INFERENCE=0
 # 	APP_CFLAGS += -I$(TARGET_BUILD_DIR) -I$(SFU_RUNTIME)/include
-	APP_CFLAGS += -I$(TARGET_BUILD_DIR) -I/usr/scratch/wetterhorn/cioflanc/tools/gap_sdk_private/rtos/sfu/include
+	APP_CFLAGS += -I$(TARGET_BUILD_DIR) -I$(GAP9_SDK_DIR)rtos/sfu/include
 # 	APP_SRCS   += $(TARGET_BUILD_DIR)/GraphINOUT_L2_Descr.c
 	APP_SRCS   += $(TARGET_BUILD_DIR)/Graph_L2_Descr.c
 # 	APP_SRCS   += $(SFU_RUNTIME)/SFU_RT.c
-	APP_SRCS   += /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk_private/rtos/sfu/SFU_RT.c
+	APP_SRCS   += $(GAP9_SDK_DIR)/rtos/sfu/SFU_RT.c
 	APP_SRCS += dac.c
 # 	io=uart
 	io=host

@@ -33,6 +33,7 @@ function cmake { /usr/scratch/wetterhorn/cioflanc/tools/cmake-3.19.5-Linux-x86_6
 
 # GVSOC
 make clean all run platform=board APP_MODE=0 [WAV_FILE=/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/b7e9f841_nohash_0.wav]
+# make clean
 
 
 
