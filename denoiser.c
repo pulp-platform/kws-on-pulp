@@ -449,6 +449,7 @@ int denoiser(void)
         PRINTF("failed to allocate memory for task\n");
     }
     pi_cluster_task_stacks(task_mfcc, NULL, SLAVE_STACK_SIZE);
+    out_feat = (OUT_TYPE *) pi_l2_malloc(49 * 10 * sizeof(OUT_TYPE));    
     feat_char = (char*) pi_l2_malloc(49 * 10 * sizeof(char));
     MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(16000 * sizeof(MFCC_IN_TYPE));
 
@@ -568,7 +569,7 @@ int denoiser(void)
             k++;
         }
         
-        printf("Printing MFCC\n");
+        // printf("Printing MFCC\n");
         // for (int i = 0; i < 490; i++){
         //     printf("%i\n", feat_char[i]);
         // }
@@ -579,10 +580,10 @@ int denoiser(void)
         }
 
         for (int i = 0; i < 490; i++){
-            L2_input[i] = 0;
-            // L2_input[i] = feat_char[i];
+            // L2_input[i] = 0;
+            L2_input[i] = feat_char[i];
         }
-
+        
         network_run(L2_input, 80000, l2_buffer, 0);
 
         break;
