@@ -157,6 +157,7 @@ char * feat_char;
 #include "network.h"
 
 
+PI_L2 DATATYPE_SIGNAL L2_input[490];
 
 
 
@@ -666,9 +667,22 @@ int denoiser(void)
         // network_run(l2_buffer, 380000, l2_buffer, 0);
 
         // TODO: move data from feat_char to l2_buffer
+
+        // l2 buffer: calculated [219560]
+
+
         
         void *l2_buffer = pi_l2_malloc(80000);
-        network_run(l2_buffer, 80000,l2_buffer, 0);
+
+        for (int i = 0; i < 490; i++){
+            L2_input[i] = 0;
+            // L2_input[i] = feat_char[i];
+        }
+
+
+       
+        network_run(L2_input, 80000,l2_buffer, 0);
+
 
 
         break;
@@ -693,7 +707,6 @@ int denoiser(void)
     pmsis_exit(0);
     return 0;
 }
-
 
 int main()
 {
