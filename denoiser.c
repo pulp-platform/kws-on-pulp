@@ -10,6 +10,10 @@
 /* 
     include files
 */
+
+// L2
+#include "input.h"
+
 #include "Gap.h"
 #include "bsp/ram.h"
 #include <bsp/fs/hostfs.h>
@@ -146,6 +150,9 @@ typedef short int OUT_TYPE;
 typedef short int MFCC_IN_TYPE;
 #endif
 
+
+#include "mfcc_offline.h"
+
 short int *inWav;
 MFCC_IN_TYPE *MfccInSig;
 OUT_TYPE *out_feat;
@@ -158,7 +165,9 @@ char * feat_char;
 #include "network.h"
 
 
-PI_L2 DATATYPE_SIGNAL L2_input[490];
+// PI_L2 uint8_t L2_input[490];
+PI_L2 uint8_t L2_input[490];
+
 
 
 
@@ -359,7 +368,6 @@ static void RunMFCC()
             Tensorflow_MFCC(MfccInSig, out_feat, R2_Twiddles_fix_512,   RFFT_Twiddles_fix_1024,   R2_SwapTable_fix_512,   WindowLUT, MFCC_FilterBank, MFCC_Coeffs, NORM, DCT_Coeff);
             #endif
     #endif
-    printf ("MFCC gen complete");
     #ifdef PERF
         int elapsed = gap_cl_readhwtimer() - start;
         printf("Total Cycles: %d over %d Frames %d Cyc/Frame\n", elapsed, N_FRAME, elapsed / N_FRAME);
@@ -471,10 +479,8 @@ int denoiser(void)
     ****/
     struct pi_device i2s_sai1;
 
-    
     // Configure PDM
     if (open_i2s_PDM(&i2s_sai1, SAI1,   3072000, 3, 0)) return -1;
-
 
     StartSFU(FREQ_SFU*1000*1000, 1);
 
@@ -510,7 +516,7 @@ int denoiser(void)
     // Dory init
     // TODO: Remove flash init and/or ram init duplicates
     mem_init();
-    network_initialize();
+    network_initialize(); // Absent in L2
 
 
     int sets = 0;
@@ -536,6 +542,7 @@ int denoiser(void)
 
         for(int i=0;i<BUFF_SIZE;i++){
             MfccInSig[i] = ((int16_t *)inWav)[i];
+            // printf ("%i, ", MfccInSig[i]);
         }
         pi_l2_free(inWav, AUDIO_BUFFER_SIZE * sizeof(short));
         out_feat = (OUT_TYPE *) pi_l2_malloc(49 * 10 * sizeof(OUT_TYPE));    
@@ -585,11 +592,19 @@ int denoiser(void)
             k++;
         }
         
-        printf("Printing MFCC\n");
+        // printf("Printing MFCC\n");
+        // for (int i = 0; i < 490; i++){
+        //     printf("%i, ", feat_char[i]);
+        // }
+        // printf("\n");
+
+        printf("MFCC manual allocation for testing purposes\n");
         for (int i = 0; i < 490; i++){
-            printf("%i, ", feat_char[i]);
+            feat_char[i] = offline_feat_char[i];
         }
         printf("\n");
+
+
         
         void *l2_buffer = pi_l2_malloc(80000);
         if (task_mfcc == NULL) {
@@ -601,7 +616,12 @@ int denoiser(void)
             L2_input[i] = feat_char[i];
         }
 
+        // L3
         network_run(L2_input, 80000, l2_buffer, 0);
+
+        // L2
+        // network_run(L2_input, 380000, l2_buffer, 0, L2_input_h);
+        // network_run(L2_input, 380000, l2_buffer, 0, L2_input);
 
         break;
 

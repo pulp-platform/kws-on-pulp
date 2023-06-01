@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 // first_layer                    0
-// node                           <dory.Parsers.HW_node.HW_node object at 0x7f54da9c95e0>
+// node                           <dory.Parsers.HW_node.HW_node object at 0x7fe4ca3c6f60>
 // sdk                            gap_sdk
 // number_of_clusters             1
 // optional_type                  8bit

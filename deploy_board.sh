@@ -31,6 +31,9 @@ function cmake { /usr/scratch/wetterhorn/cioflanc/tools/cmake-3.19.5-Linux-x86_6
 # cmake --build build --target run --verbose
 
 
+
+# using the files generated in: /usr/scratch/wetterhorn/cioflanc/mlonmcu_exercise6/exercise6/curr
+
 # GVSOC
 make clean all run platform=board APP_MODE=0 [WAV_FILE=/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/b7e9f841_nohash_0.wav]
 # make clean
@@ -40,6 +43,13 @@ make clean all run platform=board APP_MODE=0 [WAV_FILE=/usr/scratch/wetterhorn/c
 #   - num cycles: 1007870
 #   - MACs: 2656768
 #   - MAC/cycle: 2.63602
+#   - n. of Cores: 8
+
+# GAP9 GVSOC
+# Final performance:
+#   - num cycles: 1006487
+#   - MACs: 2656768
+#   - MAC/cycle: 2.63964
 #   - n. of Cores: 8
 
 
