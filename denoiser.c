@@ -165,7 +165,7 @@ char * feat_char;
 #include "network.h"
 
 
-// PI_L2 uint8_t L2_input[490];
+// PI_L2 DATATYPE_SIGNAL L2_input[490];
 PI_L2 uint8_t L2_input[490];
 
 
@@ -545,6 +545,7 @@ int denoiser(void)
             // printf ("%i, ", MfccInSig[i]);
         }
         pi_l2_free(inWav, AUDIO_BUFFER_SIZE * sizeof(short));
+        pi_l2_free(BufferInList, BUFF_SIZE);
         out_feat = (OUT_TYPE *) pi_l2_malloc(49 * 10 * sizeof(OUT_TYPE));    
         feat_char = (char*) pi_l2_malloc(49 * 10 * sizeof(char));
                   
@@ -557,6 +558,17 @@ int denoiser(void)
         //         MfccInSig[i] = (MFCC_IN_TYPE) gap_clip(((int) Audio_Recording[i]), 15);
         //     }
         // #endif
+
+        // TODO: Measuer error here versus only copying
+        #if (DATA_TYPE==2) || (DATA_TYPE==3)
+            for (int i=0; i<BUFF_SIZE; i++) {
+                MfccInSig[i] = (MFCC_IN_TYPE) inWav[i] / (1<<15);
+            }
+        #else
+            for (int i=0; i<BUFF_SIZE; i++) {
+                MfccInSig[i] = (MFCC_IN_TYPE) gap_clip(((int) inWav[i]), 15);
+            }
+        #endif
         
 
         // MFCC generation - KWS on PULP
@@ -591,31 +603,36 @@ int denoiser(void)
             }
             k++;
         }
-        
-        // printf("Printing MFCC\n");
-        // for (int i = 0; i < 490; i++){
-        //     printf("%i, ", feat_char[i]);
-        // }
-        // printf("\n");
 
-        printf("MFCC manual allocation for testing purposes\n");
+        printf ("Rescaled data\n");
+        
+        printf("Printing MFCC\n");
         for (int i = 0; i < 490; i++){
-            feat_char[i] = offline_feat_char[i];
+            printf("%i, ", feat_char[i]);
         }
         printf("\n");
 
+        // printf("MFCC manual allocation for testing purposes\n");
+        // for (int i = 0; i < 490; i++){
+        //     feat_char[i] = offline_feat_char[i];
+        // }
+        // printf("\n");
 
-        
+
+        // TODO: For some .wavs it stops here, for others it continues; TODO: FIX
+        printf("Allocating L2 data\n");
         void *l2_buffer = pi_l2_malloc(80000);
-        if (task_mfcc == NULL) {
-            printf("failed to allocate memory for l2_buffer\n");
-        }
-
+        printf("Allocated L2 data\n");
+        // if (l2_buffer == NULL) {
+        //     printf("failed to allocate memory for l2_buffer\n");
+        // }
+        printf("Moving data to L2\n");
         for (int i = 0; i < 490; i++){
             // L2_input[i] = 0;
             L2_input[i] = feat_char[i];
         }
 
+        printf ("Copied data\n");
         // L3
         network_run(L2_input, 80000, l2_buffer, 0);
 
