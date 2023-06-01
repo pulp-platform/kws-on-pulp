@@ -9,6 +9,7 @@ FLASH_FILES += hex/BNReluConvolution7_weights.hex
 FLASH_FILES += hex/BNReluConvolution8_weights.hex
 FLASH_FILES += hex/FullyConnected10_weights.hex
 FLASH_FILES += hex/inputs.hex
+FLASH_FILES += $(WAV_FILE)
 
 READFS_FILES := $(FLASH_FILES)
 APP_CFLAGS += -DFS_READ_FS

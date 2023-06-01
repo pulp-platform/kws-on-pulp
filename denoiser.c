@@ -146,6 +146,7 @@ typedef short int OUT_TYPE;
 typedef short int MFCC_IN_TYPE;
 #endif
 
+short int *inWav;
 MFCC_IN_TYPE *MfccInSig;
 OUT_TYPE *out_feat;
 char * feat_char;
@@ -438,6 +439,20 @@ int denoiser(void)
     pi_freq_set(PI_FREQ_DOMAIN_CL, FREQ_CL*1000*1000);
 
 
+    // Instead of listening from microphone, we read from WAV.
+    // Allocate L3 buffers for audio IN
+    #define AUDIO_BUFFER_SIZE 16000
+
+
+    inWav    = (short int *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(short));   
+    header_struct header_info;
+    if (ReadWavFromFile(WavName, inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+        printf("Error reading wav file\n");
+        pmsis_exit(1);
+    }
+    int num_samples = header_info.DataSize * 8 / (header_info.NumChannels * header_info.BitsPerSample);
+
+
     /******
         Setup MFCC task
     ******/
@@ -449,8 +464,6 @@ int denoiser(void)
         PRINTF("failed to allocate memory for task\n");
     }
     pi_cluster_task_stacks(task_mfcc, NULL, SLAVE_STACK_SIZE);
-    out_feat = (OUT_TYPE *) pi_l2_malloc(49 * 10 * sizeof(OUT_TYPE));    
-    feat_char = (char*) pi_l2_malloc(49 * 10 * sizeof(char));
     MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(16000 * sizeof(MFCC_IN_TYPE));
 
     /****
@@ -509,21 +522,24 @@ int denoiser(void)
         pi_gpio_pin_write(gpio_pin_o, 1);
 #endif
 
-        int round = (chunk_in_cnt%CHUNK_NUM);
-        int round_out = (chunk_in_cnt>(STRUCT_DELAY-1))? ((chunk_in_cnt-(STRUCT_DELAY-1))%CHUNK_NUM):0;
+        // int round = (chunk_in_cnt%CHUNK_NUM);
+        // int round_out = (chunk_in_cnt>(STRUCT_DELAY-1))? ((chunk_in_cnt-(STRUCT_DELAY-1))%CHUNK_NUM):0;
 
-        printf("round: %i\n", round);
-        printf("round_out: %i\n", round_out);
+        // printf("I am recording set: %i\n", sets);
 
-        printf("I am recording set: %i\n", sets);
+        // for(int i=0;i<BUFF_SIZE;i++){
+        //     Audio_Recording[i] = ((int16_t *)BufferInList)[i];
+        //     // We for now assume that no rescaling is needed
+        //     MfccInSig[i] = ((int16_t *)BufferInList)[i];
+        // }
+
 
         for(int i=0;i<BUFF_SIZE;i++){
-            Audio_Recording[i] = ((int16_t *)BufferInList)[i];
-            // We for now assume that no rescaling is needed
-            MfccInSig[i] = ((int16_t *)BufferInList)[i];
-
-            // printf ("%i\n", MfccInSig[i]);
+            MfccInSig[i] = ((int16_t *)inWav)[i];
         }
+        pi_l2_free(inWav, AUDIO_BUFFER_SIZE * sizeof(short));
+        out_feat = (OUT_TYPE *) pi_l2_malloc(49 * 10 * sizeof(OUT_TYPE));    
+        feat_char = (char*) pi_l2_malloc(49 * 10 * sizeof(char));
                   
         // #if (DATA_TYPE==2) || (DATA_TYPE==3)
         //     for (int i=0; i<BUFF_SIZE; i++) {
@@ -569,10 +585,11 @@ int denoiser(void)
             k++;
         }
         
-        // printf("Printing MFCC\n");
-        // for (int i = 0; i < 490; i++){
-        //     printf("%i\n", feat_char[i]);
-        // }
+        printf("Printing MFCC\n");
+        for (int i = 0; i < 490; i++){
+            printf("%i, ", feat_char[i]);
+        }
+        printf("\n");
         
         void *l2_buffer = pi_l2_malloc(80000);
         if (task_mfcc == NULL) {
@@ -583,7 +600,7 @@ int denoiser(void)
             // L2_input[i] = 0;
             L2_input[i] = feat_char[i];
         }
-        
+
         network_run(L2_input, 80000, l2_buffer, 0);
 
         break;
