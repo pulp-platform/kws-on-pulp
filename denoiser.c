@@ -543,7 +543,6 @@ int denoiser(void)
 
         pi_cluster_close(&cluster_dev);
 
-
         printf("MFCC Computation complete. Rescaling data\n");
         int k = 0;
         for (int i = 0; i < 1960;i++){
