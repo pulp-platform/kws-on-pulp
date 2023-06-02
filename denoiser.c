@@ -460,6 +460,8 @@ int denoiser(void)
     }
     int num_samples = header_info.DataSize * 8 / (header_info.NumChannels * header_info.BitsPerSample);
 
+    printf ("Number of samples is: %i\n", num_samples);
+
 
     /******
         Setup MFCC task
@@ -620,8 +622,10 @@ int denoiser(void)
 
 
         // TODO: For some .wavs it stops here, for others it continues; TODO: FIX
+        printf("Declaring L2 data\n");
+        void *l2_buffer;
         printf("Allocating L2 data\n");
-        void *l2_buffer = pi_l2_malloc(80000);
+        l2_buffer = pi_l2_malloc(80000);
         printf("Allocated L2 data\n");
         // if (l2_buffer == NULL) {
         //     printf("failed to allocate memory for l2_buffer\n");

@@ -88,8 +88,8 @@ ifeq ($(APP_MODE), 0)
 	io=host
 	DEMO=1
 # 	WAV_FILE?=/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/b7e9f841_nohash_0.wav
-# 	WAV_FILE?=/usr/scratch/wetterhorn/cioflanc/mlonmcu_exercise6/kws-on-pulp/aa48c94a_nohash_2.wav
-	WAV_FILE?=/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/94de6a6a_nohash_4.wav
+	WAV_FILE?=/usr/scratch/wetterhorn/cioflanc/mlonmcu_exercise6/kws-on-pulp/aa48c94a_nohash_2.wav
+# 	WAV_FILE?=/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/94de6a6a_nohash_4.wav
 
 endif
 # 1:	DenoiseWav
@@ -274,7 +274,7 @@ MODEL_PATH = $(MODEL_BUILD)/$(MODEL_PREFIX).onnx
 
 
 # set the input files
-WAV_FILE?=$(CURDIR)/samples/sample_0000.wav
+# WAV_FILE?=$(CURDIR)/samples/sample_0000.wav
 STFT_FILE=
 
 STFT_FRAMES?=49
