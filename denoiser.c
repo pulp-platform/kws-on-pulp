@@ -12,7 +12,7 @@
 */
 
 // L2
-#include "input.h"
+// #include "input.h"
 
 #include "Gap.h"
 #include "bsp/ram.h"
@@ -72,27 +72,6 @@ char *WavName = NULL;
 /* 
     static allocation of temporary buffers
 */
-PI_L2 DATATYPE_SIGNAL Audio_Frame[FRAME_NFFT];  // stores the clip to compute the STFT. only first FRAME_SIZE samples (<FRAME_NFFT) are valid
-PI_L2 DATATYPE_SIGNAL STFT_Spectrogram[AT_INPUT_WIDTH*AT_INPUT_HEIGHT*2]; // the 2 is because of complex numbers
-PI_L2 DATATYPE_SIGNAL STFT_Magnitude[AT_INPUT_WIDTH*AT_INPUT_HEIGHT];     // magnitude of the precedent vectors, used as denoiser input and output
-
-// PI_L2 DATATYPE_SIGNAL data_mover[16000];
-
-#define IS_SFU 0
-PI_L2 DATATYPE_SIGNAL Audio_Frame_temp[FRAME_SIZE];
-
-
-// RNN states statically allocated to preserve the values during time
-// note that, for simplicity we left the rnn states to be 16 bits variables even if quantized to 8 bits
-#define RNN_STATE_DIM_0 (H_STATE_LEN) 
-#define RNN_STATE_DIM_1 (H_STATE_LEN)
-PI_L2 DATATYPE_SIGNAL_INF RNN_STATE_0_I[RNN_STATE_DIM_0];
-PI_L2 DATATYPE_SIGNAL_INF RNN_STATE_1_I[RNN_STATE_DIM_1];
-#ifndef GRU
-PI_L2 DATATYPE_SIGNAL_INF RNN_STATE_0_C[RNN_STATE_DIM_0];
-PI_L2 DATATYPE_SIGNAL_INF RNN_STATE_1_C[RNN_STATE_DIM_1];
-#endif
-
 
 
 // #include "GraphINOUT_L2_Descr.h"
@@ -106,7 +85,9 @@ PI_L2 DATATYPE_SIGNAL_INF RNN_STATE_1_C[RNN_STATE_DIM_1];
 
 // #define BUFF_SIZE (FRAME_STEP*4)
 #define BUFF_SIZE (256*1024)
+// #define BUFF_SIZE (32*1024)
 static int16_t Audio_Recording[BUFF_SIZE];
+#define AUDIO_BUFFER_SIZE 16000
 
 #define CHUNK_NUM (8)
 
@@ -151,30 +132,19 @@ typedef short int MFCC_IN_TYPE;
 #endif
 
 
-#include "mfcc_offline.h"
+// #include "mfcc_offline.h"
 
 short int *inWav;
 MFCC_IN_TYPE *MfccInSig;
 OUT_TYPE *out_feat;
 char * feat_char;
 
-
-
 // DORY
 #include "mem.h"
 #include "network.h"
 
-
-// PI_L2 DATATYPE_SIGNAL L2_input[490];
-PI_L2 uint8_t L2_input[490];
-
-
-
-
-
 SFU_uDMA_Channel_T *ChanOutCtxt_0;
 
-// void ** BufferInList;
 void * BufferInList;
 
 volatile int remaining_size;
@@ -447,9 +417,8 @@ int denoiser(void)
     pi_freq_set(PI_FREQ_DOMAIN_CL, FREQ_CL*1000*1000);
 
 
-    // Instead of listening from microphone, we read from WAV.
-    // Allocate L3 buffers for audio IN
-    #define AUDIO_BUFFER_SIZE 16000
+    // // Instead of listening from microphone, we read from WAV.
+    // // Allocate L3 buffers for audio IN
 
 
     inWav    = (short int *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(short));   
@@ -459,8 +428,6 @@ int denoiser(void)
         pmsis_exit(1);
     }
     int num_samples = header_info.DataSize * 8 / (header_info.NumChannels * header_info.BitsPerSample);
-
-    printf ("Number of samples is: %i\n", num_samples);
 
 
     /******
@@ -474,7 +441,9 @@ int denoiser(void)
         PRINTF("failed to allocate memory for task\n");
     }
     pi_cluster_task_stacks(task_mfcc, NULL, SLAVE_STACK_SIZE);
-    MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(16000 * sizeof(MFCC_IN_TYPE));
+
+    MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
+    // MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(BUFF_SIZE);
 
     /****
         Setup the SFU for PDM in/out
@@ -485,9 +454,9 @@ int denoiser(void)
     if (open_i2s_PDM(&i2s_sai1, SAI1,   3072000, 3, 0)) return -1;
 
     StartSFU(FREQ_SFU*1000*1000, 1);
-
     ChanOutCtxt_0  = (SFU_uDMA_Channel_T *) pi_l2_malloc(sizeof(SFU_uDMA_Channel_T));
-    
+
+
     BufferInList = (void*) pi_l2_malloc(BUFF_SIZE);
         
     // Get uDMA channels for Graph
@@ -500,6 +469,8 @@ int denoiser(void)
     // Connect Channels to SFU for Mic IN (PDM IN)
     SFU_GraphConnectIO(SFU_Name(Graph, Out1), ChanOutCtxt_0->ChannelId, 0, &SFU_RTD(Graph));
     SFU_GraphConnectIO(SFU_Name(Graph, In1), SAI_ITF_IN, 2, &SFU_RTD(Graph));
+
+    pi_l2_free(ChanOutCtxt_0, sizeof(SFU_uDMA_Channel_T));
 
     fxl6408_setup();
 
@@ -514,16 +485,11 @@ int denoiser(void)
 
     pi_i2s_ioctl(&i2s_sai1, PI_I2S_IOCTL_STOP, NULL);
 
-
     // Dory init
     // TODO: Remove flash init and/or ram init duplicates
     mem_init();
     network_initialize(); // Absent in L2
 
-
-    int sets = 0;
-
-    int32_t temporary_buffer[BUFF_SIZE];
     while(1){
 
 #ifdef AUDIO_EVK
@@ -533,45 +499,29 @@ int denoiser(void)
         // int round = (chunk_in_cnt%CHUNK_NUM);
         // int round_out = (chunk_in_cnt>(STRUCT_DELAY-1))? ((chunk_in_cnt-(STRUCT_DELAY-1))%CHUNK_NUM):0;
 
-        // printf("I am recording set: %i\n", sets);
 
+        printf ("Scale data\n");
         // for(int i=0;i<BUFF_SIZE;i++){
         //     Audio_Recording[i] = ((int16_t *)BufferInList)[i];
         //     // We for now assume that no rescaling is needed
         //     MfccInSig[i] = ((int16_t *)BufferInList)[i];
         // }
-
-
-        for(int i=0;i<BUFF_SIZE;i++){
-            MfccInSig[i] = ((int16_t *)inWav)[i];
-            // printf ("%i, ", MfccInSig[i]);
-        }
-        pi_l2_free(inWav, AUDIO_BUFFER_SIZE * sizeof(short));
         pi_l2_free(BufferInList, BUFF_SIZE);
-        out_feat = (OUT_TYPE *) pi_l2_malloc(49 * 10 * sizeof(OUT_TYPE));    
-        feat_char = (char*) pi_l2_malloc(49 * 10 * sizeof(char));
-                  
-        // #if (DATA_TYPE==2) || (DATA_TYPE==3)
-        //     for (int i=0; i<BUFF_SIZE; i++) {
-        //         MfccInSig[i] = (MFCC_IN_TYPE) Audio_Recording[i] / (1<<15);
-        //     }
-        // #else
-        //     for (int i=0; i<BUFF_SIZE; i++) {
-        //         MfccInSig[i] = (MFCC_IN_TYPE) gap_clip(((int) Audio_Recording[i]), 15);
-        //     }
-        // #endif
 
-        // TODO: Measuer error here versus only copying
+        // // TODO: Measuer error here versus only copying
         #if (DATA_TYPE==2) || (DATA_TYPE==3)
-            for (int i=0; i<BUFF_SIZE; i++) {
+            for (int i=0; i<AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
                 MfccInSig[i] = (MFCC_IN_TYPE) inWav[i] / (1<<15);
             }
         #else
-            for (int i=0; i<BUFF_SIZE; i++) {
+            for (int i=0; i<AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
                 MfccInSig[i] = (MFCC_IN_TYPE) gap_clip(((int) inWav[i]), 15);
             }
         #endif
+        pi_l2_free(inWav, AUDIO_BUFFER_SIZE * sizeof(short));
         
+        out_feat = (OUT_TYPE *) pi_l2_malloc(49 * 10 * 4 * sizeof(OUT_TYPE));    
+        feat_char = (char*) pi_l2_malloc(49 * 10 * sizeof(char));
 
         // MFCC generation - KWS on PULP
 
@@ -581,15 +531,16 @@ int denoiser(void)
         
         printf("\n\n****** Computing MFCC ***** \n");
         pi_cluster_task(task_mfcc,&RunMFCC,NULL);
-
         L1_Memory = pi_l1_malloc(&cluster_dev, _L1_Memory_SIZE);
-            if (L1_Memory==NULL){
-                printf("Error allocating L1\n");
-                pmsis_exit(-1);
-            }
+        if (L1_Memory==NULL){
+            printf("Error allocating L1\n");
+            pmsis_exit(-1);
+        }
         pi_cluster_send_task_to_cl(&cluster_dev, task_mfcc);
-        pi_l2_free(MfccInSig, 16000 * sizeof(MFCC_IN_TYPE));
         pi_l2_free(task_mfcc, sizeof(struct pi_cluster_task));
+        pi_l2_free(MfccInSig, AUDIO_BUFFER_SIZE * sizeof (MFCC_IN_TYPE));
+        // pi_l2_free(MfccInSig, BUFF_SIZE);
+
         pi_cluster_close(&cluster_dev);
 
 
@@ -604,45 +555,30 @@ int denoiser(void)
                 i = 40*(k/10) + 39;
             }
             k++;
-        }
+        }        
 
-        printf ("Rescaled data\n");
-        
-        printf("Printing MFCC\n");
-        for (int i = 0; i < 490; i++){
-            printf("%i, ", feat_char[i]);
-        }
-        printf("\n");
+        pi_l2_free(out_feat, 49*10*4*sizeof(OUT_TYPE));
 
-        // printf("MFCC manual allocation for testing purposes\n");
-        // for (int i = 0; i < 490; i++){
-        //     feat_char[i] = offline_feat_char[i];
-        // }
-        // printf("\n");
-
-
-        // TODO: For some .wavs it stops here, for others it continues; TODO: FIX
-        printf("Declaring L2 data\n");
         void *l2_buffer;
-        printf("Allocating L2 data\n");
         l2_buffer = pi_l2_malloc(80000);
-        printf("Allocated L2 data\n");
-        // if (l2_buffer == NULL) {
-        //     printf("failed to allocate memory for l2_buffer\n");
-        // }
-        printf("Moving data to L2\n");
+        if (l2_buffer == NULL) {
+            printf("failed to allocate memory for l2_buffer\n");
+        }
+
         for (int i = 0; i < 490; i++){
             // L2_input[i] = 0;
-            L2_input[i] = feat_char[i];
+            ((uint8_t *)l2_buffer)[i] = feat_char[i];
         }
 
-        printf ("Copied data\n");
+        printf("Memory allocated.\n");
         // L3
-        network_run(L2_input, 80000, l2_buffer, 0);
+        network_run(l2_buffer, 80000, l2_buffer, 0);
 
         // L2
         // network_run(L2_input, 380000, l2_buffer, 0, L2_input_h);
         // network_run(L2_input, 380000, l2_buffer, 0, L2_input);
+
+        pi_l2_free(l2_buffer, 80000);
 
         break;
 

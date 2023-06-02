@@ -90,6 +90,9 @@ ifeq ($(APP_MODE), 0)
 # 	WAV_FILE?=/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/b7e9f841_nohash_0.wav
 	WAV_FILE?=/usr/scratch/wetterhorn/cioflanc/mlonmcu_exercise6/kws-on-pulp/aa48c94a_nohash_2.wav
 # 	WAV_FILE?=/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/94de6a6a_nohash_4.wav
+# 	WAV_FILE?=/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/3659fc1c_nohash_0.wav
+# 	WAV_FILE?=/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/e6e29c47_nohash_1.wav
+
 
 endif
 # 1:	DenoiseWav
