@@ -35,8 +35,8 @@ function cmake { /usr/scratch/wetterhorn/cioflanc/tools/cmake-3.19.5-Linux-x86_6
 # using the files generated in: /usr/scratch/wetterhorn/cioflanc/mlonmcu_exercise6/exercise6/curr
 
 # GVSOC
-# make clean all run platform=board APP_MODE=0 [WAV_FILE=/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/b7e9f841_nohash_0.wav]
-make clean all run platform=board APP_MODE=0 [WAV_FILE=/usr/scratch/wetterhorn/cioflanc/mlonmcu_exercise6/kws-on-pulp/94de6a6a_nohash_4.wav]
+# make clean all run platform=board APP_MODE=0 [WAV_FILE=/usr/scratch/wetterhorn/cioflanc/mlonmcu_exercise6/kws-on-pulp/94de6a6a_nohash_4.wav]
+make clean all run platform=gvsoc APP_MODE=0 [WAV_FILE=/usr/scratch/wetterhorn/cioflanc/mlonmcu_exercise6/kws-on-pulp/94de6a6a_nohash_4.wav]
 # make clean
 
 # GAP9 board
@@ -53,4 +53,26 @@ make clean all run platform=board APP_MODE=0 [WAV_FILE=/usr/scratch/wetterhorn/c
 #   - MAC/cycle: 2.63964
 #   - n. of Cores: 8
 
+
+# GAPOC GVSOC
+# Final performance:
+#   - num cycles: 668871
+#   - MACs: 2656768
+#   - MAC/cycle: 3.97202
+#   - n. of Cores: 8
+
+
+# GAP9 GVSOC
+# Final performance:
+#   - num cycles: 717865
+#   - MACs: 2656768
+#   - MAC/cycle: 3.70093
+#   - n. of Cores: 8
+
+# GAP9 board
+# Final performance:
+#   - num cycles: 1007468
+#   - MACs: 2656768
+#   - MAC/cycle: 2.63707
+#   - n. of Cores: 8
 

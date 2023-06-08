@@ -88,10 +88,11 @@ ifeq ($(APP_MODE), 0)
 	io=host
 	DEMO=1
 # 	WAV_FILE?=/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/b7e9f841_nohash_0.wav
-	WAV_FILE?=/usr/scratch/wetterhorn/cioflanc/mlonmcu_exercise6/kws-on-pulp/aa48c94a_nohash_2.wav
+# 	WAV_FILE?=/usr/scratch/wetterhorn/cioflanc/mlonmcu_exercise6/kws-on-pulp/aa48c94a_nohash_2.wav
 # 	WAV_FILE?=/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/94de6a6a_nohash_4.wav
 # 	WAV_FILE?=/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/3659fc1c_nohash_0.wav
 # 	WAV_FILE?=/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/e6e29c47_nohash_1.wav
+	WAV_FILE?=/usr/scratch/sassauna2/cioflanc/dolphinGSC/speech_commands_v0.02/right/94de6a6a_nohash_4.wav
 
 
 endif

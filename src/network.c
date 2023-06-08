@@ -24,20 +24,20 @@
 #include "directional_allocator.h"
 #include "mem.h"
 #include <string.h>
+#include "BNReluConvolution5.h"
+#include "ReluPooling9.h"
 #include "BNReluConvolution0.h"
+#include "BNReluConvolution1.h"
 #include "BNReluConvolution3.h"
+#include "BNReluConvolution2.h"
 #include "BNReluConvolution8.h"
 #include "FullyConnected10.h"
-#include "ReluPooling9.h"
-#include "BNReluConvolution4.h"
 #include "BNReluConvolution6.h"
-#include "BNReluConvolution5.h"
-#include "BNReluConvolution1.h"
 #include "BNReluConvolution7.h"
-#include "BNReluConvolution2.h"
+#include "BNReluConvolution4.h"
 
 
-#define VERBOSE 1
+#define VERBOSE 0
 
 #define L3_WEIGHTS_SIZE 4000000
 #define L3_INPUT_SIZE 1500000
@@ -231,6 +231,14 @@ void network_run_cluster(void *args) {
     else
       printf("Switching branch, already checked activation\n");
 #endif
+
+    // Printing output
+    if (i == 10){
+      for (int idx = 0; idx < 12; idx++){
+        printf("d[%i]: %i, ", idx, ((int *)L2_input)[idx]);
+      }
+      
+    }
 
     layer_args_t largs = {
       .L3_input = (unsigned int) L3_input,

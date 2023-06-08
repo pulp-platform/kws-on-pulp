@@ -16,6 +16,6 @@ source /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk_private/configs/gap9_evk_a
 
 function cmake { /usr/scratch/wetterhorn/cioflanc/tools/cmake-3.19.5-Linux-x86_64/bin/cmake "$@" ; }
 
-make clean all run platform=gvsoc APP_MODE=1 [WAV_FILE=/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/b7e9f841_nohash_0.wav]
+make clean all run platform=board APP_MODE=1 [WAV_FILE=/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/b7e9f841_nohash_0.wav]
 
 # make run platform=gvsoc APP_MODE=1 WAV_FILE=/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/b7e9f841_nohash_0.wav

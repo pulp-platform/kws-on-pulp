@@ -12,7 +12,7 @@
 */
 
 // L2
-// #include "input.h"
+#include "input.h"
 
 #include "Gap.h"
 #include "bsp/ram.h"
@@ -29,6 +29,7 @@
 
 #define DISABLE_NN_INFERENCE 1
 
+#define PERF 1
 
 
 #define WAV_HEADER_SIZE 44 //bytes
@@ -86,7 +87,6 @@ char *WavName = NULL;
 // #define BUFF_SIZE (FRAME_STEP*4)
 #define BUFF_SIZE (256*1024)
 // #define BUFF_SIZE (32*1024)
-static int16_t Audio_Recording[BUFF_SIZE];
 #define AUDIO_BUFFER_SIZE 16000
 
 #define CHUNK_NUM (8)
@@ -340,7 +340,9 @@ static void RunMFCC()
     #endif
     #ifdef PERF
         int elapsed = gap_cl_readhwtimer() - start;
-        printf("Total Cycles: %d over %d Frames %d Cyc/Frame\n", elapsed, N_FRAME, elapsed / N_FRAME);
+        printf("Total Cycles: %d over %d Frames %d Cyc/Frame\n", elapsed, 49, elapsed / 49);
+        // GAP9 - board
+        // Total Cycles: 53836024 over 49 Frames 1098694 Cyc/Frame
     #endif
 }
 
@@ -445,46 +447,49 @@ int denoiser(void)
     MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
     // MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(BUFF_SIZE);
 
-    /****
-        Setup the SFU for PDM in/out
-    ****/
-    struct pi_device i2s_sai1;
-
-    // Configure PDM
-    if (open_i2s_PDM(&i2s_sai1, SAI1,   3072000, 3, 0)) return -1;
-
-    StartSFU(FREQ_SFU*1000*1000, 1);
-    ChanOutCtxt_0  = (SFU_uDMA_Channel_T *) pi_l2_malloc(sizeof(SFU_uDMA_Channel_T));
-
-
-    BufferInList = (void*) pi_l2_malloc(BUFF_SIZE);
-        
-    // Get uDMA channels for Graph
-    SFU_Allocate_uDMA_Channel(ChanOutCtxt_0, 0, &SFU_RTD(Graph));
-
-    //Next API will have a value to replace this high number with -1
-    //To be able to 
-    SFU_Enqueue_uDMA_Channel(ChanOutCtxt_0, BufferInList, BUFF_SIZE);
     
-    // Connect Channels to SFU for Mic IN (PDM IN)
-    SFU_GraphConnectIO(SFU_Name(Graph, Out1), ChanOutCtxt_0->ChannelId, 0, &SFU_RTD(Graph));
-    SFU_GraphConnectIO(SFU_Name(Graph, In1), SAI_ITF_IN, 2, &SFU_RTD(Graph));
+    // /****
+    //     Setup the SFU for PDM in/out
+    // ****/
+    // struct pi_device i2s_sai1;
 
-    pi_l2_free(ChanOutCtxt_0, sizeof(SFU_uDMA_Channel_T));
+    // // Configure PDM
+    // if (open_i2s_PDM(&i2s_sai1, SAI1,   3072000, 3, 0)) return -1;
 
-    fxl6408_setup();
+    // StartSFU(FREQ_SFU*1000*1000, 1);
+    // ChanOutCtxt_0  = (SFU_uDMA_Channel_T *) pi_l2_malloc(sizeof(SFU_uDMA_Channel_T));
 
-    //Starting In and Out Graphs
-    pi_i2s_ioctl(&i2s_sai1, PI_I2S_IOCTL_START, NULL);
-    // Let the microphone start
-    pi_time_wait_us(30000); 
 
-    chunk_in_cnt=0;
-    SFU_StartGraph(&SFU_RTD(Graph));
-    pi_time_wait_us(2000000);
+    // BufferInList = (void*) pi_l2_malloc(BUFF_SIZE);
+        
+    // // Get uDMA channels for Graph
+    // SFU_Allocate_uDMA_Channel(ChanOutCtxt_0, 0, &SFU_RTD(Graph));
 
-    pi_i2s_ioctl(&i2s_sai1, PI_I2S_IOCTL_STOP, NULL);
+    // //Next API will have a value to replace this high number with -1
+    // //To be able to 
+    // SFU_Enqueue_uDMA_Channel(ChanOutCtxt_0, BufferInList, BUFF_SIZE);
+    
+    // // Connect Channels to SFU for Mic IN (PDM IN)
+    // SFU_GraphConnectIO(SFU_Name(Graph, Out1), ChanOutCtxt_0->ChannelId, 0, &SFU_RTD(Graph));
+    // SFU_GraphConnectIO(SFU_Name(Graph, In1), SAI_ITF_IN, 2, &SFU_RTD(Graph));
 
+    // pi_l2_free(ChanOutCtxt_0, sizeof(SFU_uDMA_Channel_T));
+
+    // fxl6408_setup();
+
+    // printf("Recording!\n");
+
+    // //Starting In and Out Graphs
+    // pi_i2s_ioctl(&i2s_sai1, PI_I2S_IOCTL_START, NULL);
+    // // Let the microphone start
+    // pi_time_wait_us(30000); 
+
+    // chunk_in_cnt=0;
+    // SFU_StartGraph(&SFU_RTD(Graph));
+    // pi_time_wait_us(2000000);
+
+    // pi_i2s_ioctl(&i2s_sai1, PI_I2S_IOCTL_STOP, NULL);
+    printf("Finished!\n");
     // Dory init
     // TODO: Remove flash init and/or ram init duplicates
     mem_init();
@@ -500,15 +505,26 @@ int denoiser(void)
         // int round_out = (chunk_in_cnt>(STRUCT_DELAY-1))? ((chunk_in_cnt-(STRUCT_DELAY-1))%CHUNK_NUM):0;
 
 
-        printf ("Scale data\n");
-        // for(int i=0;i<BUFF_SIZE;i++){
-        //     Audio_Recording[i] = ((int16_t *)BufferInList)[i];
+        // printf ("Scale data\n");
+        // int outidx = 0;
+        // for(int i=0;i<BUFF_SIZE;i+=3){
         //     // We for now assume that no rescaling is needed
-        //     MfccInSig[i] = ((int16_t *)BufferInList)[i];
-        // }
-        pi_l2_free(BufferInList, BUFF_SIZE);
+            
+        //     // MfccInSig[outidx] = ((MFCC_IN_TYPE *)BufferInList)[i];
+        //     // MfccInSig[outidx] = (MFCC_IN_TYPE) gap_clip( ( (int *) BufferInList)[i], 15);
+        //     // MfccInSig[outidx] = (MFCC_IN_TYPE)(((float)((int32_t*)BufferInList)[i]) /((int)(1<<Q_BIT_IN)));
 
-        // // TODO: Measuer error here versus only copying
+        //     // WORKING
+        //     MfccInSig[outidx] = (MFCC_IN_TYPE)(((float)((int32_t*)BufferInList)[i]) /((int)(1<<12)));
+        //     outidx++;
+        //     if (outidx == AUDIO_BUFFER_SIZE){
+        //         break;
+        //     }
+            
+        // }
+        // pi_l2_free(BufferInList, BUFF_SIZE);
+
+        // TODO: Measure error here versus only copying
         #if (DATA_TYPE==2) || (DATA_TYPE==3)
             for (int i=0; i<AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
                 MfccInSig[i] = (MFCC_IN_TYPE) inWav[i] / (1<<15);
@@ -516,9 +532,14 @@ int denoiser(void)
         #else
             for (int i=0; i<AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
                 MfccInSig[i] = (MFCC_IN_TYPE) gap_clip(((int) inWav[i]), 15);
+                // MfccInSig[i] = (MFCC_IN_TYPE) gap_clip(((int) inWav[i]), 10); // TODO: 10 or 9 give absurdly better results
             }
         #endif
-        pi_l2_free(inWav, AUDIO_BUFFER_SIZE * sizeof(short));
+        // for (int i=0; i<AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
+        //     MfccInSig[i] = (MFCC_IN_TYPE) inWav[i];
+        // }
+
+        // pi_l2_free(inWav, AUDIO_BUFFER_SIZE * sizeof(short));
         
         out_feat = (OUT_TYPE *) pi_l2_malloc(49 * 10 * 4 * sizeof(OUT_TYPE));    
         feat_char = (char*) pi_l2_malloc(49 * 10 * sizeof(char));
@@ -536,9 +557,23 @@ int denoiser(void)
             printf("Error allocating L1\n");
             pmsis_exit(-1);
         }
+
+        // perf measurement begin
+        pi_perf_conf(1<<PI_PERF_CYCLES);
+        pi_perf_reset();
+        pi_perf_stop();
+        pi_perf_start();
+
         pi_cluster_send_task_to_cl(&cluster_dev, task_mfcc);
+
+        // performance measurements: end
+        pi_perf_stop();
+        int perf_cyc = pi_perf_read(PI_PERF_CYCLES);
+        printf("MFCC cycles: %i\n", perf_cyc);
+
+
         pi_l2_free(task_mfcc, sizeof(struct pi_cluster_task));
-        pi_l2_free(MfccInSig, AUDIO_BUFFER_SIZE * sizeof (MFCC_IN_TYPE));
+        // pi_l2_free(MfccInSig, AUDIO_BUFFER_SIZE * sizeof (MFCC_IN_TYPE));
         // pi_l2_free(MfccInSig, BUFF_SIZE);
 
         pi_cluster_close(&cluster_dev);
@@ -565,8 +600,9 @@ int denoiser(void)
         }
 
         for (int i = 0; i < 490; i++){
-            // L2_input[i] = 0;
-            ((uint8_t *)l2_buffer)[i] = feat_char[i];
+            // ((uint8_t *)l2_buffer)[i] = L2_input_h[i]; // Precomputed MFCC
+            ((uint8_t *)l2_buffer)[i] = feat_char[i]; // Online computed MFCC
+            // printf("%i\n", feat_char[i]); // Online computed MFCC
         }
 
         printf("Memory allocated.\n");
@@ -589,9 +625,15 @@ int denoiser(void)
         chunk_in_cnt++;
     }
 
-    dump_wav_open("test_gap.wav", 32, 48000, 1, BUFF_SIZE);
-    dump_wav_write(Audio_Recording, BUFF_SIZE);
+
+    dump_wav_open("test_gap.wav", 16, 16000, 1, sizeof(short)*AUDIO_BUFFER_SIZE);
+    dump_wav_write(MfccInSig, sizeof(short)*AUDIO_BUFFER_SIZE);
     dump_wav_close();
+
+    // ORIGINAL
+    // dump_wav_open("test_gap.wav", 32, 48000, 1, BUFF_SIZE);
+    // dump_wav_write(MfccInSig, BUFF_SIZE);
+    // dump_wav_close();
 
     printf("Writing wav file to test_gap.wav completed successfully\n");
 
@@ -614,5 +656,5 @@ int main()
 }
 
 
-
+// 'yes,no,up,down,left,right,on,off,stop,go,'
 
