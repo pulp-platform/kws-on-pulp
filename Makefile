@@ -14,8 +14,7 @@ include $(RULES_DIR)/pmsis_defs.mk
 
 # MFCC
 
-# MFCCBUILD_DIR ?= $(CURDIR)/BUILD_MFCC
-MFCCBUILD_DIR ?= $(CURDIR)/MFCC_Placeholder
+MFCCBUILD_DIR ?= $(CURDIR)/BUILD_MFCC
 GAP9_SDK_DIR ?= /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk_private/
 GAP8_SDK_DIR ?= /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk_mar23/gap_sdk/
 DSP_DIR ?= $(GAP9_SDK_DIR)tools/autotiler_v3/DSP_Libraries/
@@ -31,7 +30,6 @@ APP_CFLAGS += -I$(AUTOTILER_DIR)
 APP_CFLAGS += -I$(AUTOTILER_MFCC_DIR)
 APP_CFLAGS += -I$(WAVIO_DIR)
 
-
 APP_SRCS  += $(DSP_LUT_DIR)TwiddlesDef.c
 APP_SRCS  += $(DSP_LUT_DIR)RFFTTwiddlesDef.c
 APP_SRCS  += $(DSP_LUT_DIR)SwapTablesDef.c
@@ -40,7 +38,7 @@ APP_SRCS  += $(DSP_DIR)CmplxFunctions.c
 APP_SRCS  += $(DSP_DIR)PreProcessing.c
 APP_SRCS  += $(DSP_DIR)math_funcs.c
 APP_SRCS  += $(DSP_DIR)MfccBasicKernels.c
-APP_SRCS  += $(MFCCBUILD_DIR)/MFCCKernels.c    
+APP_SRCS  += $(MFCCBUILD_DIR)/MfccKernels.c    
 
 # DORY
 APP_CFLAGS += -DNUM_CORES=8
@@ -459,39 +457,26 @@ ifeq ($(GRU), 1)
 endif
 
 
+include MfccModel.mk
 
-# READFS_FILES=$(abspath $(MODEL_TENSORS))
-
-
+mfcc:: gen_mfcc_code
+	
 
 $(TARGET_BUILD_DIR)/GraphINOUT_L2_Descr.c: $(CURDIR)/Graph.src
 	mkdir -p $(@D)
 	cd $(@D) && SFU -i $(CURDIR)/Graph.src -C
 
-# graph: $(TARGET_BUILD_DIR)/GraphINOUT_L2_Descr.c
-	
-# clean:: clean_model clean_fft_code
-# 	rm -rf BUILD*
-
-
-# all:: | model gen_fft_code graph
-# 	@echo "------------------"
-# 	@echo $(CFLAGS)
-
-# build:: | model gen_fft_code graph
-
-# clean:: 
-# 	rm -rf BUILD*
 
 graph: $(TARGET_BUILD_DIR)/GraphINOUT_L2_Descr.c
 
-# all:: | gen_fft_code graph
-all:: | graph
+
+
+all:: graph
 	@echo "------------------"
 	@echo $(CFLAGS)
 	@echo $(APP_CFLAGS)
 
-clean:: # clean_fft_code
+clean:: clean_mfcc_code
 	rm -rf BUILD*
 
 # include common/model_rules.mk
@@ -500,14 +485,3 @@ $(info APP_SRCS... $(APP_SRCS))
 $(info APP_CFLAGS... $(APP_CFLAGS))
 
 include $(RULES_DIR)/pmsis_rules.mk
-
-
-# Missing functions
-# RFFT_Arg_T
-# MelFilterBank_T
-# MFCC_Log_T (with FrameOut, Norm, Q_FFT_Out, Mel_Coeff_Dyn, IsMagSquared, shift_buff, ExtraQ)
-# DCT_II_Arg_T (with n_input)
-# RFFT_DIF_Par_Fix16
-# MelFilterBank_Fix32
-# MFCC_ComputeLog_Fix32
-# MFCC_ComputeDCT_II_Fix16

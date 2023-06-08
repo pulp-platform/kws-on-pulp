@@ -16,12 +16,16 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-DSP_GEN_DIR ?= $(GAP_SDK_DIR)/tools/autotiler_v3/DSP_Generators/
-EMUL_DIR ?= $(GAP_SDK_DIR)tools/autotiler_v3/Emulation/
+DSP_GEN_DIR ?= $(GAP9_SDK_DIR)/tools/autotiler_v3/DSP_Generators/
+MFCC_SRCG ?= $(GAP9_SDK_DIR)/tools/autotiler_v3/DSP_Generators/DSP_Generators.c
+EMUL_DIR ?= $(GAP9_SDK_DIR)tools/autotiler_v3/Emulation/
 MFCC_MODEL_GEN = $(MFCCBUILD_DIR)/GenMFCC
 FFT_LUT = $(MFCCBUILD_DIR)/LUT.def
 MFCC_LUT = $(MFCCBUILD_DIR)/MFCC_FB.def
 MFCC_HEAD = $(MFCCBUILD_DIR)/MFCC_params.h
+MFCC_PARAMS_JSON ?= $(CURDIR)/MfccConfig.json
+MFCC_SRC_CODE = $(MFCCBUILD_DIR)/MfccKernels.c
+
 
 # Everything bellow is not application specific
 TABLE_CFLAGS=-lm
@@ -47,22 +51,48 @@ endif
 
 USE_POWER?=1
 
+# $(MFCCBUILD_DIR):
+# 	mkdir $(MFCCBUILD_DIR)
+
+# # Build the code generator from the model code
+# $(MFCC_MODEL_GEN): $(MFCCBUILD_DIR)
+# 	gcc -g -o $(MFCC_MODEL_GEN) -I. -I$(CURDIR) -I$(AUTOTILER_DIR) -I$(EMUL_DIR) -I$(DSP_GEN_DIR) -I$(DSP_DIR) -I$(MFCCBUILD_DIR) \
+# 	$(CURDIR)/MfccModel.c $(DSP_GEN_DIR)DSP_Generators.c $(AUTOTILER_DIR)/LibTile.a $(TABLE_CFLAGS) $(COMPILE_MODEL_EXTRA_FLAGS) -DUSE_POWER=$(USE_POWER)
+
+# $(MFCC_LUT): $(MFCCBUILD_DIR)
+# 	python $(DSP_LUT_DIR)gen_scripts/GenMFCCLUT.py --fft_lut_file $(FFT_LUT) --mfcc_bf_lut_file $(MFCC_LUT) \
+# 	--save_params_header $(MFCC_HEAD) --sample_rate 16000 --frame_size 640 --frame_step 320 \
+# 	--n_fft 1024 --n_dct 40 --mfcc_bank_cnt 40 --fmin 20 --fmax 4000 --use_tf_mfcc --dtype fix16
+
+# # Run the code generator kernel code
+# $(MFCCBUILD_DIR)/MFCCKernels.c: $(MFCC_LUT) $(MFCC_MODEL_GEN)
+# 	$(MFCC_MODEL_GEN) -o $(MFCCBUILD_DIR) -c $(MFCCBUILD_DIR) $(MODEL_GEN_EXTRA_FLAGS)
+
+# clean_mfcc_code:
+# 	rm -rf $(MFCCBUILD_DIR)
+
+
+
+
+
 $(MFCCBUILD_DIR):
 	mkdir $(MFCCBUILD_DIR)
 
-# Build the code generator from the model code
-$(MFCC_MODEL_GEN): $(MFCCBUILD_DIR)
-	gcc -g -o $(MFCC_MODEL_GEN) -I. -I$(CURDIR) -I$(AUTOTILER_DIR) -I$(EMUL_DIR) -I$(DSP_GEN_DIR) -I$(DSP_DIR) -I$(MFCCBUILD_DIR) \
-	$(CURDIR)/MfccModel.c $(DSP_GEN_DIR)DSP_Generators.c $(AUTOTILER_DIR)/LibTile.a $(TABLE_CFLAGS) $(COMPILE_MODEL_EXTRA_FLAGS) -DUSE_POWER=$(USE_POWER)
+$(MFCC_HEAD): $(MFCC_PARAMS_JSON) | $(MFCCBUILD_DIR)
+	python $(DSP_GEN_DIR)/DSP_LUTGen.py $(MFCC_PARAMS_JSON) --build_dir $(MFCCBUILD_DIR) --save_params_header $(MFCC_HEAD) --save_text
 
-$(MFCC_LUT): $(MFCCBUILD_DIR)
-	python $(DSP_LUT_DIR)gen_scripts/GenMFCCLUT.py --fft_lut_file $(FFT_LUT) --mfcc_bf_lut_file $(MFCC_LUT) \
-	--save_params_header $(MFCC_HEAD) --sample_rate 16000 --frame_size 640 --frame_step 320 \
-	--n_fft 1024 --n_dct 40 --mfcc_bank_cnt 40 --fmin 20 --fmax 4000 --use_tf_mfcc --dtype fix16
+# # Build the code generator from the model code
+$(MFCC_MODEL_GEN): $(MFCC_HEAD) | $(MFCCBUILD_DIR)
+	gcc -g -o $(MFCC_MODEL_GEN) -I$(MFCCBUILD_DIR) -I$(DSP_GEN_DIR) -I$(TILER_INC) -I$(TILER_EMU_INC) $(CURDIR)/MfccModel.c $(MFCC_SRCG) $(TILER_LIB) $(TABLE_CFLAGS) $(COMPILE_MODEL_EXTRA_FLAGS) -DUSE_POWER=$(USE_POWER) $(SDL_FLAGS)
 
-# Run the code generator kernel code
-$(MFCCBUILD_DIR)/MFCCKernels.c: $(MFCC_LUT) $(MFCC_MODEL_GEN)
+# Run the code generator  kernel code
+$(MFCC_SRC_CODE): $(MFCC_MODEL_GEN) | $(MFCCBUILD_DIR)
 	$(MFCC_MODEL_GEN) -o $(MFCCBUILD_DIR) -c $(MFCCBUILD_DIR) $(MODEL_GEN_EXTRA_FLAGS)
+
+gen_mfcc_code: $(MFCC_SRC_CODE)
 
 clean_mfcc_code:
 	rm -rf $(MFCCBUILD_DIR)
+
+.PHONY: gen_mfcc_code clean_mfcc_code
+
