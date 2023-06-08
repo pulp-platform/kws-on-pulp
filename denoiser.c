@@ -110,13 +110,16 @@ char *WavName = NULL;
 // MFCC
 
 #include "MFCC_params.h"
-#include "MFCCKernels.h"
-#include "TwiddlesDef.h"
-#include "RFFTTwiddlesDef.h"
-#include "SwapTablesDef.h"
+#include "MfccKernels.h"
 
-#include "LUT.def"
-#include "MFCC_FB.def"
+#include "DCTTwiddles.def"
+#include "MelFBSparsity.def"
+#include "WindowLUT.def"
+#include "FFTTwiddles.def"
+#include "RFFTTwiddles.def"
+#include "MelFBCoeff.def"
+#include "SwapTable.def"
+
 
 #define  NORM           6
 
@@ -320,24 +323,46 @@ static void RunMFCC()
         int start = gap_cl_readhwtimer();
     #endif
 
+    // // Compute MFCC following Tensorflow settings
+    // #if (N_DCT == 0)
+    //     printf("DCT is 0 \n");
+    //         #if (DATA_TYPE==2) || (DATA_TYPE==3)
+    //         Tensorflow_MFCC(MfccInSig, out_feat, R2_Twiddles_float_512, RFFT_Twiddles_float_1024, R2_SwapTable_float_512, WindowLUT, MFCC_FilterBank, MFCC_Coeffs);
+    //         #else
+    //         Tensorflow_MFCC(MfccInSig, out_feat, R2_Twiddles_fix_512,   RFFT_Twiddles_fix_1024,   R2_SwapTable_fix_512,   WindowLUT, MFCC_FilterBank, MFCC_Coeffs, NORM);
+    //         #endif
+    // #else
+    //     printf("DCT is 1 \n");
+    //         #if (DATA_TYPE==2) || (DATA_TYPE==3)
+    //         printf ("DATATYPE is %i\n", DATA_TYPE);
+    //         Tensorflow_MFCC(MfccInSig, out_feat, R2_Twiddles_float_512, RFFT_Twiddles_float_1024, R2_SwapTable_float_512, WindowLUT, MFCC_FilterBank, MFCC_Coeffs, DCT_Coeff);
+    //         #else
+    //         printf ("DATATYPE is %i\n", DATA_TYPE);
+    //         Tensorflow_MFCC(MfccInSig, out_feat, R2_Twiddles_fix_512,   RFFT_Twiddles_fix_1024,   R2_SwapTable_fix_512,   WindowLUT, MFCC_FilterBank, MFCC_Coeffs, NORM, DCT_Coeff);
+    //         #endif
+    // #endif
+
     // Compute MFCC following Tensorflow settings
     #if (N_DCT == 0)
         printf("DCT is 0 \n");
-            #if (DATA_TYPE==2) || (DATA_TYPE==3)
-            Tensorflow_MFCC(MfccInSig, out_feat, R2_Twiddles_float_512, RFFT_Twiddles_float_1024, R2_SwapTable_float_512, WindowLUT, MFCC_FilterBank, MFCC_Coeffs);
-            #else
-            Tensorflow_MFCC(MfccInSig, out_feat, R2_Twiddles_fix_512,   RFFT_Twiddles_fix_1024,   R2_SwapTable_fix_512,   WindowLUT, MFCC_FilterBank, MFCC_Coeffs, NORM);
-            #endif
+        #if (DATA_TYPE==2) || (DATA_TYPE==3)
+        Tensorflow_MFCC(MfccInSig, out_feat, FFTTwiddles, RFFTTwiddles, SwapTable, WindowLUT, MelFBSparsity, MelFBCoeff);
+        #elif (DATA_TYPE==1)
+        Tensorflow_MFCC(MfccInSig, out_feat, FFTTwiddles, SwapTable, WindowLUT, MelFBSparsity, MelFBCoeff, NORM);
+        #else
+        Tensorflow_MFCC(MfccInSig, out_feat, FFTTwiddles, RFFTTwiddles, SwapTable, WindowLUT, MelFBSparsity, MelFBCoeff, NORM);
+        #endif
     #else
         printf("DCT is 1 \n");
-            #if (DATA_TYPE==2) || (DATA_TYPE==3)
-            printf ("DATATYPE is %i\n", DATA_TYPE);
-            Tensorflow_MFCC(MfccInSig, out_feat, R2_Twiddles_float_512, RFFT_Twiddles_float_1024, R2_SwapTable_float_512, WindowLUT, MFCC_FilterBank, MFCC_Coeffs, DCT_Coeff);
-            #else
-            printf ("DATATYPE is %i\n", DATA_TYPE);
-            Tensorflow_MFCC(MfccInSig, out_feat, R2_Twiddles_fix_512,   RFFT_Twiddles_fix_1024,   R2_SwapTable_fix_512,   WindowLUT, MFCC_FilterBank, MFCC_Coeffs, NORM, DCT_Coeff);
-            #endif
+        #if (DATA_TYPE==2) || (DATA_TYPE==3)
+        Tensorflow_MFCC(MfccInSig, out_feat, FFTTwiddles, RFFTTwiddles, SwapTable, WindowLUT, MelFBSparsity, MelFBCoeff, DCTTwiddles);
+        #elif (DATA_TYPE==1)
+        Tensorflow_MFCC(MfccInSig, out_feat, FFTTwiddles, SwapTable, WindowLUT, MelFBSparsity, MelFBCoeff, NORM, DCTTwiddles);
+        #else
+        Tensorflow_MFCC(MfccInSig, out_feat, FFTTwiddles, RFFTTwiddles, SwapTable, WindowLUT, MelFBSparsity, MelFBCoeff, NORM, DCTTwiddles);
+        #endif
     #endif
+
     #ifdef PERF
         int elapsed = gap_cl_readhwtimer() - start;
         printf("Total Cycles: %d over %d Frames %d Cyc/Frame\n", elapsed, 49, elapsed / 49);
