@@ -38,7 +38,7 @@ function cmake { /usr/scratch/wetterhorn/cioflanc/tools/cmake-3.19.5-Linux-x86_6
 
 # GVSOC
 # make clean all run platform=board APP_MODE=0 [WAV_FILE=/usr/scratch/wetterhorn/cioflanc/mlonmcu_exercise6/kws-on-pulp/94de6a6a_nohash_4.wav]
-make clean mfcc all run platform=board APP_MODE=0 [WAV_FILE=/usr/scratch/wetterhorn/cioflanc/mlonmcu_exercise6/kws-on-pulp/94de6a6a_nohash_4.wav]
+make clean mfcc all run platform=gvsoc APP_MODE=0 [WAV_FILE=/usr/scratch/wetterhorn/cioflanc/mlonmcu_exercise6/kws-on-pulp/94de6a6a_nohash_4.wav]
 # make clean
 
 # GAP9 board

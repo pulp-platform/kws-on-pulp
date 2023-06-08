@@ -583,7 +583,38 @@ int denoiser(void)
                 i = 40*(k/10) + 39;
             }
             k++;
-        }        
+        } 
+
+        // TEST
+
+        #if (DATA_TYPE==2) || (DATA_TYPE==3)
+        float QSNR_THR = 40;
+        #else
+        float QSNR_THR = 38;
+        #endif
+        int N_FRAME = 49;
+        int frame_size = 10;
+        float MSE = 0.0, SUM = 0.0;
+            for (int i=0; i<N_FRAME; i++) {
+                for (int j=0; j<frame_size; j++) {
+                    #if (DATA_TYPE==2) || (DATA_TYPE==3)
+                          MSE += (L2_input_h[i*frame_size+j] - feat_char[i*frame_size+j])*(L2_input_h[i*frame_size+j] - feat_char[i*frame_size+j]);
+                    #else
+                          int QMFCC = 15 - NORM - 7;
+                          MSE += (L2_input_h[i*frame_size+j] - FIX2FP(feat_char[i*frame_size+j], QMFCC)) * (L2_input_h[i*frame_size+j] - FIX2FP(feat_char[i*frame_size+j], QMFCC));
+                    #endif
+                    SUM += (L2_input_h[i*frame_size+j])*(L2_input_h[i*frame_size+j]);
+                }
+            }
+            float QSNR = 10*log10(SUM / MSE);
+            printf("QSNR: %f (thr: %f) --> ", QSNR, QSNR_THR);
+            if (QSNR < QSNR_THR) {
+                printf("Test NOT PASSED\n");
+                pmsis_exit(-1);
+            } else {
+                printf("Test PASSED\n");
+            }
+
 
         pi_l2_free(out_feat, 49*10*4*sizeof(OUT_TYPE));
 
