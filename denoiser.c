@@ -608,6 +608,8 @@ int denoiser(void)
         for (int i = 0; i < 1960;i++){
             
             // Rescale MFCCs to match Tensorflow-generated ones
+            // pow(2, -5): Checking L2 output: Checksum Failed: true [104159] vs. calculated [104953]
+            // pow(2, -4): Checking L2 output: Checksum Failed: true [104159] vs. calculated [118521]
             feat_char[k] = (char) (((int) floor(out_feat[i] * pow(2, -4) * sqrt(0.2))) + 128);
             // Select 10 MFCC per window
             if (i == 40*(k/10) + 9){
