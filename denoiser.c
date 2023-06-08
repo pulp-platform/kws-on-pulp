@@ -323,25 +323,6 @@ static void RunMFCC()
         int start = gap_cl_readhwtimer();
     #endif
 
-    // // Compute MFCC following Tensorflow settings
-    // #if (N_DCT == 0)
-    //     printf("DCT is 0 \n");
-    //         #if (DATA_TYPE==2) || (DATA_TYPE==3)
-    //         Tensorflow_MFCC(MfccInSig, out_feat, R2_Twiddles_float_512, RFFT_Twiddles_float_1024, R2_SwapTable_float_512, WindowLUT, MFCC_FilterBank, MFCC_Coeffs);
-    //         #else
-    //         Tensorflow_MFCC(MfccInSig, out_feat, R2_Twiddles_fix_512,   RFFT_Twiddles_fix_1024,   R2_SwapTable_fix_512,   WindowLUT, MFCC_FilterBank, MFCC_Coeffs, NORM);
-    //         #endif
-    // #else
-    //     printf("DCT is 1 \n");
-    //         #if (DATA_TYPE==2) || (DATA_TYPE==3)
-    //         printf ("DATATYPE is %i\n", DATA_TYPE);
-    //         Tensorflow_MFCC(MfccInSig, out_feat, R2_Twiddles_float_512, RFFT_Twiddles_float_1024, R2_SwapTable_float_512, WindowLUT, MFCC_FilterBank, MFCC_Coeffs, DCT_Coeff);
-    //         #else
-    //         printf ("DATATYPE is %i\n", DATA_TYPE);
-    //         Tensorflow_MFCC(MfccInSig, out_feat, R2_Twiddles_fix_512,   RFFT_Twiddles_fix_1024,   R2_SwapTable_fix_512,   WindowLUT, MFCC_FilterBank, MFCC_Coeffs, NORM, DCT_Coeff);
-    //         #endif
-    // #endif
-
     // Compute MFCC following Tensorflow settings
     #if (N_DCT == 0)
         printf("DCT is 0 \n");
@@ -366,8 +347,6 @@ static void RunMFCC()
     #ifdef PERF
         int elapsed = gap_cl_readhwtimer() - start;
         printf("Total Cycles: %d over %d Frames %d Cyc/Frame\n", elapsed, 49, elapsed / 49);
-        // GAP9 - board
-        // Total Cycles: 53836024 over 49 Frames 1098694 Cyc/Frame
     #endif
 }
 
@@ -583,19 +562,7 @@ int denoiser(void)
             pmsis_exit(-1);
         }
 
-        // perf measurement begin
-        pi_perf_conf(1<<PI_PERF_CYCLES);
-        pi_perf_reset();
-        pi_perf_stop();
-        pi_perf_start();
-
         pi_cluster_send_task_to_cl(&cluster_dev, task_mfcc);
-
-        // performance measurements: end
-        pi_perf_stop();
-        int perf_cyc = pi_perf_read(PI_PERF_CYCLES);
-        printf("MFCC cycles: %i\n", perf_cyc);
-
 
         pi_l2_free(task_mfcc, sizeof(struct pi_cluster_task));
         // pi_l2_free(MfccInSig, AUDIO_BUFFER_SIZE * sizeof (MFCC_IN_TYPE));
