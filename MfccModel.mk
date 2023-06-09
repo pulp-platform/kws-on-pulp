@@ -18,10 +18,7 @@
 
 DSP_GEN_DIR ?= $(GAP9_SDK_DIR)/tools/autotiler_v3/DSP_Generators/
 MFCC_SRCG ?= $(GAP9_SDK_DIR)/tools/autotiler_v3/DSP_Generators/DSP_Generators.c
-EMUL_DIR ?= $(GAP9_SDK_DIR)tools/autotiler_v3/Emulation/
 MFCC_MODEL_GEN = $(MFCCBUILD_DIR)/GenMFCC
-FFT_LUT = $(MFCCBUILD_DIR)/LUT.def
-MFCC_LUT = $(MFCCBUILD_DIR)/MFCC_FB.def
 MFCC_HEAD = $(MFCCBUILD_DIR)/MFCC_params.h
 MFCC_PARAMS_JSON ?= $(CURDIR)/MfccConfig.json
 MFCC_SRC_CODE = $(MFCCBUILD_DIR)/MfccKernels.c

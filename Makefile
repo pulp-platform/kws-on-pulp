@@ -74,15 +74,14 @@ APP_SRCS   += denoiser.c
 
 # io=uart
 io=host
-DEMO=1
 
 WAV_FILE?=/usr/scratch/sassauna2/cioflanc/dolphinGSC/speech_commands_v0.02/right/94de6a6a_nohash_4.wav
 
 DEMO        = 1
 FLASH_TYPE  = MRAM
 RAM_TYPE    = DEFAULT
-FREQ_CL     = 200
-FREQ_FC     = 200
+FREQ_CL     = 50
+FREQ_FC     = 50
 FREQ_SFU    = 200
 VOLTAGE     = 650
 
