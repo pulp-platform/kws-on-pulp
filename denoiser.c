@@ -19,17 +19,12 @@
 #include <bsp/fs/hostfs.h>
 #include "gaplib/wavIO.h" 
 
-// Autotiler NN functions
-// #include "RFFTKernels.h"
-// #include "WinLUT_f16.def"   //load the input audio signal and compute the STFT
-
 #define DEMO 1 
 #include "denoiser_dns.h"
 
 #define DISABLE_NN_INFERENCE 1
 
 #define PERF 1
-
 
 #define WAV_HEADER_SIZE 44 //bytes
 
@@ -54,27 +49,10 @@ static pi_fs_file_t * file[1];
 static struct pi_device fs;
 static struct pi_device flash;
 
-// datatype for computation
-#define DATATYPE_SIGNAL     float16
-#define DATATYPE_SIGNAL_INF float16
-#define SqrtF16(a) __builtin_pulp_f16sqrt(a)
-
-#define IS_INPUT_STFT 0
-
-// defines for audio IOs
-
 // allocate space to load the input signal
 char *WavName = NULL;
 
-// copy input data to L3
-// static uint32_t temporary_carrier;
-
-/* 
-    static allocation of temporary buffers
-*/
-
 #include "Graph_L2_Descr.h" // pdm_in_test
-
 
 // FIXME: to tune it!!
 #define Q_BIT_IN 27
@@ -87,15 +65,10 @@ char *WavName = NULL;
 
 #define CHUNK_NUM (8)
 
-//This should be equal to FRAME_SIZE/FRAME_STEP + 1
+// SAI Setup
 #define STRUCT_DELAY (1)
-
 #define SAI1         (1)
-
-
 #define SAI_ITF_IN         (SAI1)
-
-
 #define SAI_ID               (48)
 #define SAI_SCK(itf)         (48+(itf*4)+0)
 #define SAI_WS(itf)          (48+(itf*4)+1)
