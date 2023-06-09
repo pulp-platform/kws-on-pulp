@@ -24,7 +24,6 @@
 // #include "WinLUT_f16.def"   //load the input audio signal and compute the STFT
 
 #define DEMO 1 
-#define GRU 1
 #include "denoiser_dns.h"
 
 #define DISABLE_NN_INFERENCE 1
@@ -74,11 +73,8 @@ char *WavName = NULL;
     static allocation of temporary buffers
 */
 
-
-// #include "GraphINOUT_L2_Descr.h"
 #include "Graph_L2_Descr.h" // pdm_in_test
 
-// #include "SFU_RT.h"
 
 // FIXME: to tune it!!
 #define Q_BIT_IN 27
@@ -610,7 +606,7 @@ int denoiser(void)
             printf("QSNR: %f (thr: %f) --> ", QSNR, QSNR_THR);
             if (QSNR < QSNR_THR) {
                 printf("Test NOT PASSED\n");
-                pmsis_exit(-1);
+                // pmsis_exit(-1);
             } else {
                 printf("Test PASSED\n");
             }

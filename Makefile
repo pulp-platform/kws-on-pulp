@@ -11,9 +11,8 @@ endif
 include $(RULES_DIR)/pmsis_defs.mk
 
 
-
 # MFCC
-
+BUILD_DIR ?= BUILD
 MFCCBUILD_DIR ?= $(CURDIR)/BUILD_MFCC
 GAP9_SDK_DIR ?= /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk_private/
 GAP8_SDK_DIR ?= /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk_mar23/gap_sdk/
@@ -30,15 +29,18 @@ APP_CFLAGS += -I$(AUTOTILER_DIR)
 APP_CFLAGS += -I$(AUTOTILER_MFCC_DIR)
 APP_CFLAGS += -I$(WAVIO_DIR)
 
-APP_SRCS  += $(DSP_LUT_DIR)TwiddlesDef.c
-APP_SRCS  += $(DSP_LUT_DIR)RFFTTwiddlesDef.c
-APP_SRCS  += $(DSP_LUT_DIR)SwapTablesDef.c
 APP_SRCS  += $(DSP_DIR)FFT_Library.c 
 APP_SRCS  += $(DSP_DIR)CmplxFunctions.c
 APP_SRCS  += $(DSP_DIR)PreProcessing.c
 APP_SRCS  += $(DSP_DIR)math_funcs.c
 APP_SRCS  += $(DSP_DIR)MfccBasicKernels.c
-APP_SRCS  += $(MFCCBUILD_DIR)/MfccKernels.c    
+APP_SRCS  += $(MFCCBUILD_DIR)/MfccKernels.c 
+APP_SRCS  += $(GAP_LIB_PATH)/wav_io/wavIO.c  
+
+include MfccModel.mk
+
+mfcc:: gen_mfcc_code
+
 
 # DORY
 APP_CFLAGS += -DNUM_CORES=8
@@ -48,97 +50,43 @@ APP_SRCS   += $(wildcard src/*.c)
 
 FLASH_TYPE ?= HYPERFLASH
 RAM_TYPE ?= HYPERRAM
-
-APP_CFLAGS += -DGAP_SDK=1
-
 ifeq '$(FLASH_TYPE)' 'MRAM'
 READFS_FLASH = target/chip/soc/mram
 endif
 
-APP_CFLAGS += -DFLASH_TYPE=$(FLASH_TYPE) -DUSE_$(FLASH_TYPE) -DUSE_$(RAM_TYPE)
+APP_CFLAGS += -DGAP_SDK=1
+APP_CFLAGS += -DFLASH_TYPE=$(FLASH_TYPE)
+APP_CFLAGS += -DUSE_$(FLASH_TYPE)
+APP_CFLAGS += -DUSE_$(RAM_TYPE)
 
 include vars.mk
-# DORY
 
 
-##############################################
-############ Application Mode ################
-# 0:	Demo: input SFU, Run Denoiser, Output SFU
-# 1:	Demo DenoiseWav: Input file Wav, Run Denoiser, Output file Wav
-# 2: 	DSPWav_test: Input file Wav, Run Denoiser but not NN, Check Output Wav
-# 3:  	NN_Test: Input file STFT, Run NN Denoiser only, check NN Output
+# Application
 APP_MODE=0
-############################################## 
-# 0:	Demo
+APP_CFLAGS += -I$(TARGET_BUILD_DIR)
+APP_CFLAGS += -I$(GAP9_SDK_DIR)rtos/sfu/include
 
-ifeq ($(APP_MODE), 0)
-	IS_SFU=1 
-	IS_INPUT_STFT=0
-	DISABLE_NN_INFERENCE=0
-# 	APP_CFLAGS += -I$(TARGET_BUILD_DIR) -I$(SFU_RUNTIME)/include
-	APP_CFLAGS += -I$(TARGET_BUILD_DIR) -I$(GAP9_SDK_DIR)rtos/sfu/include
-# 	APP_SRCS   += $(TARGET_BUILD_DIR)/GraphINOUT_L2_Descr.c
-	APP_SRCS   += $(TARGET_BUILD_DIR)/Graph_L2_Descr.c
-# 	APP_SRCS   += $(SFU_RUNTIME)/SFU_RT.c
-	APP_SRCS   += $(GAP9_SDK_DIR)/rtos/sfu/SFU_RT.c
-	APP_SRCS += dac.c
-# 	io=uart
-	io=host
-	DEMO=1
-# 	WAV_FILE?=/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/b7e9f841_nohash_0.wav
-# 	WAV_FILE?=/usr/scratch/wetterhorn/cioflanc/mlonmcu_exercise6/kws-on-pulp/aa48c94a_nohash_2.wav
-# 	WAV_FILE?=/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/94de6a6a_nohash_4.wav
-# 	WAV_FILE?=/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/3659fc1c_nohash_0.wav
-# 	WAV_FILE?=/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/e6e29c47_nohash_1.wav
-	WAV_FILE?=/usr/scratch/sassauna2/cioflanc/dolphinGSC/speech_commands_v0.02/right/94de6a6a_nohash_4.wav
+APP_SRCS   += $(TARGET_BUILD_DIR)/Graph_L2_Descr.c
+APP_SRCS   += $(GAP9_SDK_DIR)/rtos/sfu/SFU_RT.c
+APP_SRCS   += dac.c
+APP_SRCS   += denoiser.c
+
+# io=uart
+io=host
+DEMO=1
+
+WAV_FILE?=/usr/scratch/sassauna2/cioflanc/dolphinGSC/speech_commands_v0.02/right/94de6a6a_nohash_4.wav
+
+DEMO        = 1
+FLASH_TYPE  = MRAM
+RAM_TYPE    = DEFAULT
+FREQ_CL     = 200
+FREQ_FC     = 200
+FREQ_SFU    = 200
+VOLTAGE     = 650
 
 
-endif
-# 1:	DenoiseWav
-ifeq ($(APP_MODE), 1)
-	IS_SFU=0 
-	IS_INPUT_STFT=0
-	DISABLE_NN_INFERENCE=0
-	io=host
-	WAV_FILE?=$(CURDIR)/samples/real_samples/phone_call.wav
-	DEMO=1
-endif
-# 2: 	DSPWav_test
-ifeq ($(APP_MODE), 2)
-	IS_SFU=0 
-	IS_INPUT_STFT=0
-	DISABLE_NN_INFERENCE=1
-	WAV_FILE?=$(CURDIR)/samples/dataset/noisy/p232_050.wav
-	io=host
-	DEMO=0
-	CHECKSUM=1
-	STFT_FRAMES=1
-endif
-# 3:  NN_Test
-ifeq ($(APP_MODE), 3)
-	IS_SFU=0 
-	IS_INPUT_STFT=1
-	DISABLE_NN_INFERENCE=0
-	STFT_FRAMES=1
-	io=host
-	CHECKSUM=1
-	DEMO=0
-endif
-
-ifeq ($(APP_MODE), 0)
-	DEMO 		= 1
-	FLASH_TYPE 	= MRAM
-	RAM_TYPE   	= DEFAULT
-	FREQ_CL		= 200
-	FREQ_FC		= 200
-	FREQ_SFU    = 200
-	VOLTAGE		= 650
-endif
-
-
-############################################## 
-FLASH_TYPE ?= DEFAULT
-RAM_TYPE   ?= DEFAULT
 #############################################
 ### 	External Mem Settings
 #############################################
@@ -168,116 +116,10 @@ else ifeq '$(RAM_TYPE)' 'DEFAULT'
     MODEL_L3_RAM=AT_MEM_L3_DEFAULTRAM
 endif
 
-#quantization dependent features
-
-# Quantization Mode
-# FP16=float16
-#QUANT_BITS?=FP16
-H_STATE_LEN?=256
-
 SILENT?=1
 CHECKSUM?=0
 DEBUG?=0
 DEBUG_STFT?=0
-
-
-FREQ_CL?=370
-FREQ_FC?=370
-VOLTAGE?=800
-
-
-
-#############################################
-### 		Demo Settings
-#############################################
-
-QUANT_BITS?=FP16MIXED
-MODEL_PREFIX=denoiser_dns
-MODEL_FP16=1
-MODEL_SQ8=1
-COLLECT_STATS_SCRIPT=model/nntool_scripts/collect_stats.py
-SAMPLES_QUANT=samples/quant/
-
-NNTOOL_EXTRA_FLAGS=--use_lut_sigmoid --use_lut_tanh
-#To use the full presixion FP16 you can use the nntool_script_f16_demo instead of nntool_script_fp16_mixed_demo
-#NNTOOL_SCRIPT=model/nntool_scripts/nntool_script_f16_demo
-NNTOOL_SCRIPT=model/nntool_scripts/nntool_script_fp16_mixed_demo
-GRU?=1
-#endif 
-DEMO?=0
-
-#############################################
-### NN experiment setup
-#############################################
-#ifeq ($(APP_MODE), 3) 
-ifeq ($(shell expr $(APP_MODE) \>= 2), 1)
-	# select model
-	ifeq ($(GRU), 0)
-		MODEL_PREFIX = denoiser
-	else
-		MODEL_PREFIX = denoiser_GRU
-	endif
-
-	# select quantization level 
-	ifeq 	'$(QUANT_BITS)' 'FP16'
-		MODEL_FP16=1
-		MODEL_SQ8=0
-		ifeq ($(GRU), 0)
-			NNTOOL_SCRIPT=model/nntool_scripts/nntool_script_fp16
-		else
-			NNTOOL_SCRIPT=model/nntool_scripts/nntool_script_fp16_gru
-		endif
-
-	else ifeq 	'$(QUANT_BITS)' 'FP16MIXED'
-		MODEL_FP16=1
-		MODEL_SQ8=1
-		ifeq ($(GRU), 0)
-			NNTOOL_SCRIPT=model/nntool_scripts/nntool_script_fp16_mixed
-		else
-			NNTOOL_SCRIPT=model/nntool_scripts/nntool_script_fp16_mixed_gru
-		endif
-
-	else ifeq 	'$(QUANT_BITS)' '8'
-		MODEL_SQ8=1
-		MODEL_FP16=1
-		ifeq ($(GRU), 0)
-			NNTOOL_SCRIPT=model/nntool_scripts/nntool_script_int8
-		else
-			NNTOOL_SCRIPT=model/nntool_scripts/nntool_script_int8_gru 
-		endif
-
-	else ifeq 	'$(QUANT_BITS)' 'NE16'
-		$(error NE16 Quantization mode is not yet fully supported)
-		MODEL_NE16=1
-		MODEL_SQ8=1
-		ifeq ($(GRU), 0)
-			NNTOOL_SCRIPT=model/nntool_scripts/nntool_script_ne16
-		else
-			NNTOOL_SCRIPT=model/nntool_scripts/nntool_script_ne16_gru 
-		endif
-
-	else
-		$(error Quantization mode is not recognized. Choose among 8, 16, FP16 or NE16)
-	endif
-endif
-
-## Model Definition Parameters ##
-BUILD_DIR?=BUILD
-MODEL_SUFFIX = _$(QUANT_BITS)BIT
-MODEL_BUILD=BUILD_MODEL$(MODEL_SUFFIX)
-TRAINED_MODEL_PATH=model
-TRAINED_MODEL = $(TRAINED_MODEL_PATH)/$(MODEL_PREFIX).onnx
-MODEL_PATH = $(MODEL_BUILD)/$(MODEL_PREFIX).onnx
-# TENSORS_DIR = $(MODEL_BUILD)/tensors
-# MODEL_TENSORS = $(MODEL_BUILD)/$(MODEL_PREFIX)_L3_Flash_Const.dat
-
-
-
-
-
-# set the input files
-# WAV_FILE?=$(CURDIR)/samples/sample_0000.wav
-STFT_FILE=
 
 STFT_FRAMES?=49
 FRAME_SIZE=640
@@ -289,7 +131,6 @@ AT_INPUT_WIDTH=257 #1088
 AT_INPUT_HEIGHT=1
 
 
-
 ifeq '$(TARGET_CHIP)' 'GAP9_V2'
 	FREQ_CL?=370
 	FREQ_FC?=370
@@ -297,6 +138,10 @@ ifeq '$(TARGET_CHIP)' 'GAP9_V2'
 
 	CLUSTER_STACK_SIZE=4096
 	CLUSTER_SLAVE_STACK_SIZE=2048
+# 	CLUSTER_STACK_SIZE=8192
+# 	CLUSTER_SLAVE_STACK_SIZE=4096
+# 	CLUSTER_STACK_SIZE=16384
+# 	CLUSTER_SLAVE_STACK_SIZE=8192
 	CLUSTER_NUM_CORES=8
 	TOTAL_STACK_SIZE=$(shell expr $(CLUSTER_STACK_SIZE) \+ $(CLUSTER_SLAVE_STACK_SIZE) \* $(CLUSTER_NUM_CORES))
 	MODEL_L1_MEMORY?=$(shell expr 120000 \- $(TOTAL_STACK_SIZE))
@@ -335,58 +180,20 @@ else
 endif
 MODEL_SIZE_CFLAGS = -DAT_INPUT_HEIGHT=$(AT_INPUT_HEIGHT) -DAT_INPUT_WIDTH=$(AT_INPUT_WIDTH) -DAT_INPUT_COLORS=$(AT_INPUT_COLORS)
 
-
-# include common/model_decl.mk
-# include $(RULES_DIR)/at_common_decl.mk
-# include stft_model.mk
-
-
 PMSIS_OS=freertos
-
-
-
-## File Definition ##
-APP_SRCS += denoiser.c
-#APP_SRCS += $(MODEL_GEN_C)
-APP_SRCS += $(MODEL_COMMON_SRCS)
-# APP_SRCS += $(CNN_LIB) 
-APP_SRCS += $(GAP_LIB_PATH)/wav_io/wavIO.c
-# APP_SRCS += BUILD_MODEL_STFT/RFFTKernels.c  # Removed 
 
 #C flags
 APP_CFLAGS += -O2 -s -mno-memcpy -fno-tree-loop-distribute-patterns -w
 
 #include paths
 APP_CFLAGS += -Icommon 
-# APP_CFLAGS += -I$(GAP_SDK_HOME)/libs/gap_lib/include/
 APP_CFLAGS += -I.
-# APP_CFLAGS += -I$(MODEL_COMMON_INC)
-# APP_CFLAGS += -I$(TILER_EMU_INC)
-# APP_CFLAGS += -I$(TILER_INC)
-# APP_CFLAGS += -I$(MODEL_BUILD)
-# APP_CFLAGS += -I$(CNN_LIB_INCLUDE)
-# APP_CFLAGS += -I$(MFCC_GENERATOR)
-# APP_CFLAGS += -I$(TILER_DSP_KERNEL_PATH)
-# APP_CFLAGS += -I$(TILER_DSP_KERNEL_PATH)/LUT_Tables
-# APP_CFLAGS += -IBUILD_MODEL_STFT
-APP_CFLAGS += -Isamples
-# APP_CFLAGS += -I$(SFU_BUILDDIR)
-
-# list(APPEND TARGET_INCS -I${SFU_BUILDDIR}
-#                         -I$ENV{SFU_RUNTIME}/include)
-
-# list(APPEND TARGET_SRCS ${SFU_KERNEL_C}
-#                         $ENV{SFU_RUNTIME}/SFU_RT.c
-#                         ${CMAKE_SOURCE_DIR}/dac.c)
 
 #defines
 APP_CFLAGS += -DAT_MODEL_PREFIX=$(MODEL_PREFIX) $(MODEL_SIZE_CFLAGS)
 APP_CFLAGS += -DSTACK_SIZE=$(CLUSTER_STACK_SIZE) -DSLAVE_STACK_SIZE=$(CLUSTER_SLAVE_STACK_SIZE) 
 APP_CFLAGS += -DFREQ_FC=$(FREQ_FC) -DFREQ_CL=$(FREQ_CL) -DFREQ_SFU=$(FREQ_SFU) -DVOLTAGE=$(VOLTAGE)
 APP_CFLAGS += -DAT_IMAGE=$(IMAGE) -DWAV_FILE=$(WAV_FILE) # -DWRITE_WAV #-DPRINT_AT_INPUT #-DPRINT_WAV 
-
-APP_CFLAGS += -DIS_SFU=$(IS_SFU)
-APP_CFLAGS += -DIS_INPUT_STFT=$(IS_INPUT_STFT)
 
 APP_CFLAGS += -DSTFT_FRAMES=$(STFT_FRAMES)
 APP_CFLAGS += -DFRAME_SIZE=$(FRAME_SIZE)
@@ -398,28 +205,11 @@ APP_CFLAGS += -DAT_INPUT_WIDTH=$(AT_INPUT_WIDTH)
 APP_CFLAGS += -DAT_INPUT_HEIGHT=$(AT_INPUT_HEIGHT)
 APP_CFLAGS += -DMAX_L2_BUFFER=$(MODEL_L2_MEMORY)
 APP_CFLAGS += -DDEMO=$(DEMO)
-APP_CFLAGS += -DH_STATE_LEN=$(H_STATE_LEN)
 APP_CFLAGS += -DBUILD_DIR="../../.."
 
 
 APP_LDFLAGS		+= -lm
 
-
-ifeq 	'$(QUANT_BITS)' 'FP16'
-	APP_CFLAGS += -DSTD_FLOAT
-
-else ifeq 	 '$(QUANT_BITS)' 'FP16MIXED'
-	APP_CFLAGS += -DSTD_FLOAT
-
-else ifeq 	'$(QUANT_BITS)' '8'
-	APP_CFLAGS += -DSTD_FLOAT
-
-else ifeq 	'$(QUANT_BITS)' 'NE16'
-	APP_CFLAGS += -DSTD_FLOAT
-
-else
-
-endif
 
 ifeq ($(platform), gvsoc)
 	APP_CFLAGS += -DPERF
@@ -446,20 +236,6 @@ endif
 ifeq ($(DEBUG), 1)
 	APP_CFLAGS += -DPRINTDEBUG
 endif
-
-
-ifeq ($(DISABLE_NN_INFERENCE), 1)
-	APP_CFLAGS += -DDISABLE_NN_INFERENCE
-endif
-
-ifeq ($(GRU), 1)
-	APP_CFLAGS += -DGRU
-endif
-
-
-include MfccModel.mk
-
-mfcc:: gen_mfcc_code
 	
 
 $(TARGET_BUILD_DIR)/GraphINOUT_L2_Descr.c: $(CURDIR)/Graph.src
@@ -469,17 +245,10 @@ $(TARGET_BUILD_DIR)/GraphINOUT_L2_Descr.c: $(CURDIR)/Graph.src
 
 graph: $(TARGET_BUILD_DIR)/GraphINOUT_L2_Descr.c
 
-
-
 all:: graph
-	@echo "------------------"
-	@echo $(CFLAGS)
-	@echo $(APP_CFLAGS)
 
 clean:: clean_mfcc_code
 	rm -rf BUILD*
-
-# include common/model_rules.mk
 
 $(info APP_SRCS... $(APP_SRCS))
 $(info APP_CFLAGS... $(APP_CFLAGS))
