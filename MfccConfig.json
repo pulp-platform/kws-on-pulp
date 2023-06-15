@@ -9,6 +9,6 @@
 	"fmin": 20.0,
 	"fmax": 4000.0,
 	"dtype": "fix16",
-	"use_librosa": false,
-	"use_tensorflow": true
+	"use_tf_mel": true
+
 }
