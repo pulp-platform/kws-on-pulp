@@ -185,7 +185,6 @@ PMSIS_OS=freertos
 APP_CFLAGS += -O2 -s -mno-memcpy -fno-tree-loop-distribute-patterns -w -DPERF # -DPRINTDEB -DPRINT_INOUT
 
 #include paths
-APP_CFLAGS += -Icommon 
 APP_CFLAGS += -I.
 
 #defines

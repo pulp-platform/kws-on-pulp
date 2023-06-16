@@ -15,14 +15,8 @@
 // #include "denoiser_dnsKernels.h"
 // #include "denoiser_dnsInfo.h"
 
-// char *denoiser_dns_L1_Memory; /* Size given for generation: 109760 bytes, used: 108460 bytes */
-// char *denoiser_dns_L2_Memory; /* Size used for generation (static): 796996 bytes */
-
-// #define _denoiser_dns_L1_Memory_SIZE 108460
-// #define _denoiser_dns_L2_Memory_SIZE 796996
-#define denoiser_L1_SIZE _denoiser_dns_L1_Memory_SIZE
-#define denoiser_L2_SIZE _denoiser_dns_L2_Memory_SIZE
-
+char *denoiser_dns_L1_Memory; /* Size given for generation: 109760 bytes, used: 108460 bytes */
+char *denoiser_dns_L2_Memory; /* Size used for generation (static): 796996 bytes */
 
 #define SCALE_IN denoiser_dns_Input_1_OUT_SCALE
 #define SCALE_OUT denoiser_dns_Output_1_OUT_SCALE
