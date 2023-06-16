@@ -75,7 +75,7 @@ APP_SRCS   += denoiser.c
 # io=uart
 io=host
 
-WAV_FILE?=/usr/scratch/sassauna2/cioflanc/dolphinGSC/speech_commands_v0.02/right/94de6a6a_nohash_4.wav
+WAV_FILE=/usr/scratch/sassauna2/cioflanc/dolphinGSC/speech_commands_v0.02/right/94de6a6a_nohash_4.wav
 
 DEMO        = 1
 FLASH_TYPE  = MRAM
@@ -117,7 +117,7 @@ endif
 
 SILENT?=1
 CHECKSUM?=0
-DEBUG?=0
+DEBUG?=1
 DEBUG_STFT?=0
 
 STFT_FRAMES?=49
@@ -182,7 +182,7 @@ MODEL_SIZE_CFLAGS = -DAT_INPUT_HEIGHT=$(AT_INPUT_HEIGHT) -DAT_INPUT_WIDTH=$(AT_I
 PMSIS_OS=freertos
 
 #C flags
-APP_CFLAGS += -O2 -s -mno-memcpy -fno-tree-loop-distribute-patterns -w
+APP_CFLAGS += -O2 -s -mno-memcpy -fno-tree-loop-distribute-patterns -w -DPERF # -DPRINTDEB -DPRINT_INOUT
 
 #include paths
 APP_CFLAGS += -Icommon 

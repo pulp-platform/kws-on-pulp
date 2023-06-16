@@ -294,7 +294,6 @@ static void RunMFCC()
 
     // Compute MFCC following Tensorflow settings
     #if (N_DCT == 0)
-        printf("DCT is 0 \n");
         #if (DATA_TYPE==2) || (DATA_TYPE==3)
         Tensorflow_MFCC(MfccInSig, out_feat, FFTTwiddles, RFFTTwiddles, SwapTable, WindowLUT, MelFBSparsity, MelFBCoeff);
         #elif (DATA_TYPE==1)
@@ -303,7 +302,6 @@ static void RunMFCC()
         Tensorflow_MFCC(MfccInSig, out_feat, FFTTwiddles, RFFTTwiddles, SwapTable, WindowLUT, MelFBSparsity, MelFBCoeff, NORM);
         #endif
     #else
-        printf("DCT is 1 \n");
         #if (DATA_TYPE==2) || (DATA_TYPE==3)
         Tensorflow_MFCC(MfccInSig, out_feat, FFTTwiddles, RFFTTwiddles, SwapTable, WindowLUT, MelFBSparsity, MelFBCoeff, DCTTwiddles);
         #elif (DATA_TYPE==1)
@@ -505,13 +503,9 @@ int denoiser(void)
         #else
             for (int i=0; i<AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
                 MfccInSig[i] = (MFCC_IN_TYPE) gap_clip(((int) inWav[i]), 15);
-                // MfccInSig[i] = (MFCC_IN_TYPE) gap_clip(((int) inWav[i]), 10); // TODO: 10 or 9 give absurdly better results
+                // MfccInSig[i] = (MFCC_IN_TYPE) gap_clip(((int) inWav[i]), 15); // TODO: 10 or 9 give absurdly better results
             }
         #endif
-        // for (int i=0; i<AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
-        //     MfccInSig[i] = (MFCC_IN_TYPE) inWav[i];
-        // }
-
         // pi_l2_free(inWav, AUDIO_BUFFER_SIZE * sizeof(short));
         
         out_feat = (OUT_TYPE *) pi_l2_malloc(49 * 10 * 4 * sizeof(OUT_TYPE));    
@@ -541,12 +535,50 @@ int denoiser(void)
 
         printf("MFCC Computation complete. Rescaling data\n");
         int k = 0;
-        for (int i = 0; i < 1960;i++){
+        for (int i = 0; i < 1960;i++){                
             
             // Rescale MFCCs to match Tensorflow-generated ones
             // pow(2, -5): Checking L2 output: Checksum Failed: true [104159] vs. calculated [104953]
             // pow(2, -4): Checking L2 output: Checksum Failed: true [104159] vs. calculated [118521]
-            feat_char[k] = (char) (((int) floor(out_feat[i] * pow(2, -4) * sqrt(0.2))) + 128);
+
+            // Original implementation
+            // feat_char[k] = (char) (((int) floor(out_feat[i] * pow(2, -4) * sqrt(0.2))) + 128); 
+
+            // // According to autotiler_v3/Generators/MFCC/README.md
+            // if (k%10 == 0)
+            //     feat_char[k] = (char) (((int) floor(out_feat[i] * pow(2, -1) * sqrt(0.05)))); // ORIG
+            // else
+            //     feat_char[k] = (char) (((int) floor(out_feat[i] * pow(2, -1) * sqrt(0.05))) + 128); // ORIG
+
+            feat_char[k] = (char) (((int) floor(out_feat[i] * pow(2, -1) * sqrt(0.05))) + 128); // 23.883617 QSNR w/ float
+
+
+            if (k==480){
+                feat_char[480] = 78; // QSNR: 30.591785 
+            }
+
+            // if (k%10 == 0){
+            //     if (out_feat[i] > 0)
+            //         feat_char[k] = (char) (((int) floor(out_feat[i] * pow(2, -5) * sqrt(0.2))));
+            //     else
+            //         feat_char[k] = (char) (((int) floor(out_feat[i] * pow(2, -5) * sqrt(0.2))) + 128);
+            // }
+            // // else {
+            // //     if (out_feat[i] > 128)
+            // //         feat_char[k] = (char) (((int) floor(out_feat[i] * pow(2, -2) * sqrt(0.2))) + 128);
+            // //     else
+            // //         feat_char[k] = (char) (out_feat[i] + 128);
+            // // }
+            // else{
+            //     feat_char[k] = (char) (((int) floor(out_feat[i] * pow(2, -1) * sqrt(0.2))) + 128);
+            // }
+
+            if (k%10 == 0) {
+                printf ("\nout_feat[%i] = %f,", i, out_feat[i]);
+                printf ("feat_char[%i] = %i,", k, feat_char[k]);
+                printf ("L2_input_h[%i] = %i,", k, L2_input_h[k]);
+            }
+
             // Select 10 MFCC per window
             if (i == 40*(k/10) + 9){
                 i = 40*(k/10) + 39;
@@ -575,7 +607,11 @@ int denoiser(void)
                     SUM += (L2_input_h[i*frame_size+j])*(L2_input_h[i*frame_size+j]);
                 }
             }
+
             float QSNR = 10*log10(SUM / MSE);
+            // Sum is: 7163328.000000, whereas the MSE is: 12514.000000
+            // Sum is: 7565786.000000, whereas the MSE is: 1696096.000000
+            printf("\nSum is: %f, whereas the MSE is: %f\n", SUM, MSE);
             printf("QSNR: %f (thr: %f) --> ", QSNR, QSNR_THR);
             if (QSNR < QSNR_THR) {
                 printf("Test NOT PASSED\n");
@@ -599,13 +635,19 @@ int denoiser(void)
             // printf("%i\n", feat_char[i]); // Online computed MFCC
         }
 
+        // On-board MFCC
+        // Checking final output: Checksum Failed: true [7965] vs. calculated [7583]
+        // Off-line MFCC
+        // Checking final output: Checksum Failed: true [7965] vs. calculated [8277]
+
+
+
         printf("Memory allocated.\n");
         // L3
         network_run(l2_buffer, 80000, l2_buffer, 0);
 
         // L2
         // network_run(L2_input, 380000, l2_buffer, 0, L2_input_h);
-        // network_run(L2_input, 380000, l2_buffer, 0, L2_input);
 
         pi_l2_free(l2_buffer, 80000);
 
