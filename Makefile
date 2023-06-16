@@ -65,7 +65,7 @@ APP_MODE=0
 APP_CFLAGS += -I$(TARGET_BUILD_DIR)
 APP_CFLAGS += -I$(GAP9_SDK_DIR)rtos/sfu/include
 
-APP_SRCS   += $(TARGET_BUILD_DIR)/Graph_L2_Descr.c
+APP_SRCS   += Graph_L2_Descr.c
 APP_SRCS   += $(GAP9_SDK_DIR)/rtos/sfu/SFU_RT.c
 APP_SRCS   += dac.c
 APP_SRCS   += denoiser.c
@@ -233,16 +233,6 @@ ifeq ($(DEBUG), 1)
 	APP_CFLAGS += -DPRINTDEBUG
 endif
 	
-
-$(TARGET_BUILD_DIR)/GraphINOUT_L2_Descr.c: $(CURDIR)/Graph.src
-	mkdir -p $(@D)
-	cd $(@D) && SFU -i $(CURDIR)/Graph.src -C
-
-
-graph: $(TARGET_BUILD_DIR)/GraphINOUT_L2_Descr.c
-
-all:: graph
-
 clean:: clean_mfcc_code
 	rm -rf BUILD*
 
