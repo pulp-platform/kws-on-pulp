@@ -15,7 +15,21 @@ source /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk_private/configs/gap9_evk_a
 
 function cmake { /usr/scratch/wetterhorn/cioflanc/tools/cmake-3.19.5-Linux-x86_64/bin/cmake "$@" ; }
 
-make clean mfcc all run platform=gvsoc APP_MODE=0 [WAV_FILE=/usr/scratch/wetterhorn/cioflanc/mlonmcu_exercise6/kws-on-pulp/94de6a6a_nohash_4.wav]
+if [ "$1" == "-h" ] ; then
+    echo "PLATFORM: gvsoc, board"
+    echo "INPUT: 0 (record)"
+    echo "MFCC computation: 0 (online)"
+    exit 0
+fi
 
+export AUDIO_SAMPLE=/usr/scratch/sassauna2/cioflanc/dolphinGSC/speech_commands_v0.02/right/94de6a6a_nohash_4.wav # ORIGINAL
+# export AUDIO_SAMPLE=/usr/scratch/sassauna2/cioflanc/dolphinGSC/speech_commands_v0.02/down/42a99aec_nohash_3.wav
+# export AUDIO_SAMPLE=/usr/scratch/sassauna2/cioflanc/dolphinGSC/speech_commands_v0.02/stop/3143fdff_nohash_0.wav
+
+export PLATFORM=$1
+export INPUT=$2
+export MFCC=$3
+
+make clean mfcc all run platform=$PLATFORM WAV_FILE=$AUDIO_SAMPLE INPUT=$INPUT MFCC=$MFCC
 
 

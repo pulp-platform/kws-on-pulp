@@ -41,10 +41,10 @@ To run the network on GAP9 with the Evaluation Kit:
 ./deploy_gvsoc.sh
 ```
 
-
 ### [TRAIN] Generate PULP TrainLib-based C code for GAP8
 
 WIP
+=======
 
 ### Board configuration
 
