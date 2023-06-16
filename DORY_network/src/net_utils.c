@@ -11,7 +11,16 @@ void print_perf(const char *name, const int cycles, const int macs) {
 
 void checksum(const char *name, const uint8_t *d, size_t size, uint32_t sum_true) {
   uint32_t sum = 0;
-  for (int i = 0; i < size; i++) sum += d[i];
+  for (int i = 0; i < size; i++) {
+    sum += d[i];
+  }
+  if (size == 48) {
+    for (int i = 0; i < 24; i++) {
+      if (i % 2 == 1) continue;    
+      printf("d[%i]=%i\n", i/2, ((uint16_t*) d)[i]);
+    }
+  }
+  
 
   printf("Checking %s: Checksum ", name);
   if (sum_true == sum)

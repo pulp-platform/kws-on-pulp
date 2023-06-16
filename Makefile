@@ -43,7 +43,7 @@ mfcc:: gen_mfcc_code
 
 # DORY
 APP_CFLAGS += -DNUM_CORES=8
-APP_CFLAGS += -Iinc
+APP_CFLAGS += -IDORY_network/inc
 
 APP_SRCS   += $(wildcard src/*.c)
 
