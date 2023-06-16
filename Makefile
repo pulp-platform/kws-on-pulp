@@ -72,7 +72,11 @@ APP_SRCS   += denoiser.c
 # io=uart
 io=host
 
-WAV_FILE=/usr/scratch/sassauna2/cioflanc/dolphinGSC/speech_commands_v0.02/right/94de6a6a_nohash_4.wav
+# WAV_FILE=/usr/scratch/sassauna2/cioflanc/dolphinGSC/speech_commands_v0.02/right/94de6a6a_nohash_4.wav
+# WAV_FILE=/usr/scratch/sassauna2/cioflanc/dolphinGSC/speech_commands_v0.02/down/42a99aec_nohash_3.wav
+WAV_FILE=/usr/scratch/sassauna2/cioflanc/dolphinGSC/speech_commands_v0.02/stop/3143fdff_nohash_0.wav
+
+
 
 DEMO        = 1
 FLASH_TYPE  = MRAM
