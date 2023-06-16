@@ -15,7 +15,6 @@ include $(RULES_DIR)/pmsis_defs.mk
 BUILD_DIR ?= BUILD
 MFCCBUILD_DIR ?= $(CURDIR)/BUILD_MFCC
 GAP9_SDK_DIR ?= /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk_private/
-GAP8_SDK_DIR ?= /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk_mar23/gap_sdk/
 DSP_DIR ?= $(GAP9_SDK_DIR)tools/autotiler_v3/DSP_Libraries/
 AUTOTILER_DIR ?= $(GAP9_SDK_DIR)tools/autotiler_v3/Autotiler/
 DSP_LUT_DIR ?= $(GAP9_SDK_DIR)tools/autotiler_v3/DSP_Libraries/LUT_Tables/

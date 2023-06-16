@@ -20,7 +20,6 @@
 #include "gaplib/wavIO.h" 
 
 #define DEMO 1 
-#include "denoiser_dns.h"
 
 #define DISABLE_NN_INFERENCE 1
 
@@ -28,13 +27,21 @@
 
 #define WAV_HEADER_SIZE 44 //bytes
 
+
+#ifdef SILENT
+# define PRINTF(...) ((void) 0)
+#else
+# define PRINTF printf
+#endif  /* DEBUG */
+
+
 /* 
      global variables
 */
 struct pi_device DefaultRam; 
 struct pi_device* ram = &DefaultRam;
 
-AT_DEFAULTFLASH_FS_EXT_ADDR_TYPE __PREFIX(_L3_Flash) = 0;
+// AT_DEFAULTFLASH_FS_EXT_ADDR_TYPE __PREFIX(_L3_Flash) = 0;
 
 #ifdef AUDIO_EVK
     // GPIO defines
