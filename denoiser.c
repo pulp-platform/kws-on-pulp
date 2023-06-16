@@ -60,6 +60,8 @@ static struct pi_device flash;
 
 // allocate space to load the input signal
 char *WavName = NULL;
+char *mfcc = NULL;
+char *input = NULL;
 
 #include "Graph_L2_Descr.h" // pdm_in_test
 
@@ -396,38 +398,19 @@ int denoiser(void)
     printf("Cluster Opened\n");
     pi_freq_set(PI_FREQ_DOMAIN_CL, FREQ_CL*1000*1000);
 
-    // Comment out on GVSOC
-//     /****
-//         Setup the SFU for PDM in/out
-//     ****/
-//     struct pi_device i2s_sai1;
-//     struct pi_device i2s_sai2;
-//     int Status;
-//     int Trace = 0;
-//     pi_evt_sig_init(&proc_task);
 
-//     // Drive pad with 12 mAP to have less noise
-//     uint32_t *Magic_Setting_0 = (uint32_t *)0x1A104064;
-//     *Magic_Setting_0 = 3 << 2 | 3 << 10 | 3 << 18 | 3 << 26;
-
-//     // SAI 2 -> Drive pad with 12 mAP to have less noise
-//     uint32_t *Magic_Setting = (uint32_t *)0x1A104068;
-//     *Magic_Setting = 3 << 10 | 3 << 18;
-    
-//     // Configure PDM in
-//     if (open_i2s_PDM(&i2s_sai1, SAI1,   3072000, 2, 0)) return -1;
-
-    // // Instead of listening from microphone, we read from WAV.
-    // // Allocate L3 buffers for audio IN
-
-
-    inWav    = (short int *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(short));  
-    header_struct header_info;
-    if (ReadWavFromFile(WavName, inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
-        printf("Error reading wav file\n");
-        pmsis_exit(1);
+    if (input == "1") {
+        // Instead of listening from microphone, we read from WAV.
+        // Allocate L3 buffers for audio IN
+        inWav    = (short int *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(short));  
+        header_struct header_info;
+        if (ReadWavFromFile(WavName, inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+            printf("Error reading wav file\n");
+            pmsis_exit(1);
+        }
+        int num_samples = header_info.DataSize * 8 / (header_info.NumChannels * header_info.BitsPerSample);
+        MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
     }
-    int num_samples = header_info.DataSize * 8 / (header_info.NumChannels * header_info.BitsPerSample);
 
 
     /******
@@ -442,56 +425,58 @@ int denoiser(void)
     }
     pi_cluster_task_stacks(task_mfcc, NULL, SLAVE_STACK_SIZE);
 
-    // MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
-    MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(BUFF_SIZE);
-
     
-    /****
-        Setup the SFU for PDM in/out
-    ****/
-    struct pi_device i2s_sai1;
-
-    // Configure PDM
-    if (open_i2s_PDM(&i2s_sai1, SAI1,   3072000, 3, 0)) return -1;
-
-    StartSFU(FREQ_SFU*1000*1000, 1);
-    ChanOutCtxt_0  = (SFU_uDMA_Channel_T *) pi_l2_malloc(sizeof(SFU_uDMA_Channel_T));
-
-
-    BufferInList = (void*) pi_l2_malloc(BUFF_SIZE);
+    
+    if (input == "0") {
         
-    // Get uDMA channels for Graph
-    SFU_Allocate_uDMA_Channel(ChanOutCtxt_0, 0, &SFU_RTD(Graph));
+        /****
+            Setup the SFU for PDM in/out
+        ****/
+        struct pi_device i2s_sai1;
 
-    //Next API will have a value to replace this high number with -1
-    //To be able to 
-    SFU_Enqueue_uDMA_Channel(ChanOutCtxt_0, BufferInList, BUFF_SIZE);
-    
-    // Connect Channels to SFU for Mic IN (PDM IN)
-    SFU_GraphConnectIO(SFU_Name(Graph, Out1), ChanOutCtxt_0->ChannelId, 0, &SFU_RTD(Graph));
-    SFU_GraphConnectIO(SFU_Name(Graph, In1), SAI_ITF_IN, 2, &SFU_RTD(Graph));
+        // Configure PDM
+        if (open_i2s_PDM(&i2s_sai1, SAI1,   3072000, 3, 0)) return -1;
 
-    pi_l2_free(ChanOutCtxt_0, sizeof(SFU_uDMA_Channel_T));
-
-    fxl6408_setup();
-
-    printf("Recording!\n");
-
-    //Starting In and Out Graphs
-    pi_i2s_ioctl(&i2s_sai1, PI_I2S_IOCTL_START, NULL);
-    // Let the microphone start
-    pi_time_wait_us(30000); 
-
-    chunk_in_cnt=0;
-    SFU_StartGraph(&SFU_RTD(Graph));
-    pi_time_wait_us(2000000);
-
-    pi_i2s_ioctl(&i2s_sai1, PI_I2S_IOCTL_STOP, NULL);
+        StartSFU(FREQ_SFU*1000*1000, 1);
+        ChanOutCtxt_0  = (SFU_uDMA_Channel_T *) pi_l2_malloc(sizeof(SFU_uDMA_Channel_T));
 
 
+        BufferInList = (void*) pi_l2_malloc(BUFF_SIZE);
+            
+        // Get uDMA channels for Graph
+        SFU_Allocate_uDMA_Channel(ChanOutCtxt_0, 0, &SFU_RTD(Graph));
 
+        //Next API will have a value to replace this high number with -1
+        //To be able to 
+        SFU_Enqueue_uDMA_Channel(ChanOutCtxt_0, BufferInList, BUFF_SIZE);
+        
+        // Connect Channels to SFU for Mic IN (PDM IN)
+        SFU_GraphConnectIO(SFU_Name(Graph, Out1), ChanOutCtxt_0->ChannelId, 0, &SFU_RTD(Graph));
+        SFU_GraphConnectIO(SFU_Name(Graph, In1), SAI_ITF_IN, 2, &SFU_RTD(Graph));
 
-    printf("Finished!\n");
+        pi_l2_free(ChanOutCtxt_0, sizeof(SFU_uDMA_Channel_T));
+
+        fxl6408_setup();
+
+        printf("Recording!\n");
+
+        //Starting In and Out Graphs
+        pi_i2s_ioctl(&i2s_sai1, PI_I2S_IOCTL_START, NULL);
+        // Let the microphone start
+        pi_time_wait_us(30000); 
+
+        chunk_in_cnt=0;
+        SFU_StartGraph(&SFU_RTD(Graph));
+        pi_time_wait_us(2000000);
+
+        pi_i2s_ioctl(&i2s_sai1, PI_I2S_IOCTL_STOP, NULL);
+
+        printf("Finished!\n");
+
+        MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(BUFF_SIZE);
+
+    }
+
     // Dory init
     // TODO: Remove flash init and/or ram init duplicates
     mem_init();
@@ -503,41 +488,37 @@ int denoiser(void)
         pi_gpio_pin_write(gpio_pin_o, 1);
 #endif
 
-        // int round = (chunk_in_cnt%CHUNK_NUM);
-        // int round_out = (chunk_in_cnt>(STRUCT_DELAY-1))? ((chunk_in_cnt-(STRUCT_DELAY-1))%CHUNK_NUM):0;
+
+        if (input == "0") {
+            int round = (chunk_in_cnt%CHUNK_NUM);
+            int round_out = (chunk_in_cnt>(STRUCT_DELAY-1))? ((chunk_in_cnt-(STRUCT_DELAY-1))%CHUNK_NUM):0;
 
 
-        printf ("Scale data\n");
-        int outidx = 0;
-        for(int i=0;i<BUFF_SIZE;i+=3){
-            // We for now assume that no rescaling is needed
-            
-            // MfccInSig[outidx] = ((MFCC_IN_TYPE *)BufferInList)[i];
-            // MfccInSig[outidx] = (MFCC_IN_TYPE) gap_clip( ( (int *) BufferInList)[i], 15);
-            // MfccInSig[outidx] = (MFCC_IN_TYPE)(((float)((int32_t*)BufferInList)[i]) /((int)(1<<Q_BIT_IN)));
-
-            // WORKING
-            MfccInSig[outidx] = (MFCC_IN_TYPE)(((float)((int32_t*)BufferInList)[i]) /((int)(1<<16)));
-            outidx++;
-            if (outidx == AUDIO_BUFFER_SIZE){
-                break;
+            printf ("Scale data\n");
+            int outidx = 0;
+            for(int i=0;i<BUFF_SIZE;i+=3){
+                MfccInSig[outidx] = (MFCC_IN_TYPE)(((float)((int32_t*)BufferInList)[i]) /((int)(1<<16)));
+                outidx++;
+                if (outidx == AUDIO_BUFFER_SIZE){
+                    break;
+                }
+                
             }
-            
+            pi_l2_free(BufferInList, BUFF_SIZE);
         }
-        pi_l2_free(BufferInList, BUFF_SIZE);
 
-        // // TODO: Measure error here versus only copying
-        // #if (DATA_TYPE==2) || (DATA_TYPE==3)
-        //     for (int i=0; i<AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
-        //         MfccInSig[i] = (MFCC_IN_TYPE) inWav[i] / (1<<15);
-        //     }
-        // #else
-        //     for (int i=0; i<AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
-        //         MfccInSig[i] = (MFCC_IN_TYPE) gap_clip(((int) inWav[i]), 15);
-        //         // MfccInSig[i] = (MFCC_IN_TYPE) gap_clip(((int) inWav[i]), 15); // TODO: 10 or 9 give absurdly better results
-        //     }
-        // #endif
-        // pi_l2_free(inWav, AUDIO_BUFFER_SIZE * sizeof(short));
+        if (input == "1"){
+            #if (DATA_TYPE==2) || (DATA_TYPE==3)
+                for (int i=0; i<AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
+                    MfccInSig[i] = (MFCC_IN_TYPE) inWav[i] / (1<<15);
+                }
+            #else
+                for (int i=0; i<AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
+                    MfccInSig[i] = (MFCC_IN_TYPE) gap_clip(((int) inWav[i]), 15);
+                }
+            #endif
+            pi_l2_free(inWav, AUDIO_BUFFER_SIZE * sizeof(short));
+        }
         
         out_feat = (OUT_TYPE *) pi_l2_malloc(49 * 10 * 4 * sizeof(OUT_TYPE));    
         feat_char = (char*) pi_l2_malloc(49 * 10 * sizeof(char));
@@ -661,8 +642,12 @@ int denoiser(void)
         }
 
         for (int i = 0; i < 490; i++){
-            // ((uint8_t *)l2_buffer)[i] = L2_input_h[i]; // Precomputed MFCC
-            ((uint8_t *)l2_buffer)[i] = feat_char[i]; // Online computed MFCC
+            if (mfcc == "1"){
+                ((uint8_t *)l2_buffer)[i] = L2_input_h[i]; // Precomputed MFCC
+            }
+            else {
+                ((uint8_t *)l2_buffer)[i] = feat_char[i]; // Online computed MFCC
+            }
             // printf("%i\n", feat_char[i]); // Online computed MFCC
         }
 
@@ -778,7 +763,9 @@ int main()
 
     #define __XSTR(__s) __STR(__s)
     #define __STR(__s) #__s
-    WavName = __XSTR(WAV_FILE);  
+    WavName = __XSTR(WAV_FILE); 
+    mfcc = __XSTR(MFCC);
+    input = __XSTR(INPUT);
 
     return denoiser();
 }
