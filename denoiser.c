@@ -39,6 +39,15 @@
 #endif  /* DEBUG */
 
 
+// TODO: Read from CMake
+#define VOLTAGE  650
+#define FREQ_FC  200
+#define FREQ_CL  200
+#define FREQ_SFU 200
+#define STACK_SIZE 4096
+#define SLAVE_STACK_SIZE 2048
+
+
 /* 
      global variables
 */
