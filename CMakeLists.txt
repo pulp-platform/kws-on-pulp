@@ -11,100 +11,101 @@ set(MAIN                "denoiser.c")
 
 set(CONFIG_GAP_SDK_HOME $ENV{GAP_SDK_HOME})
 include ($ENV{GAP_SDK_HOME}/utils/cmake/setup.cmake)
-set(BOARD_NAME, gap9_evk)
+set(BOARD_NAME gap9_evk)
+set(PMSIS_OS freertos)
+set(platform gvsoc)
 
 
 # kconfig options
 
-set (io,   host)
-set (DEMO, 1)
+set (io   host)
+set (DEMO 1)
 
 
 # TODO: Fix
-set (FLASH_TYPE, MRAM) # HYPERFLASH
-set (RAM_TYPE,   HYPERRAM) # DEFAULT
-set(MODEL_L3_FLASH,   AT_MEM_L3_MRAMFLASH)
-set(READFS_FLASH,   target/chip/soc/mram)
-set(MODEL_L3_RAM,   AT_MEM_L3_HRAM)
-if (${CONFIG_MODEL_FLASH_TYPE_MRAM})
-    set(EXEC_FROM_FLASH true)
-else()
-    set(EXEC_FROM_FLASH false)
-endif()
+set (FLASH_TYPE MRAM) # HYPERFLASH
+set (RAM_TYPE   DEFAULT) # DEFAULT
+# set(MODEL_L3_FLASH   AT_MEM_L3_MRAMFLASH)
+# set(READFS_FLASH  target/chip/soc/mram)
+# set(MODEL_L3_RAM   AT_MEM_L3_HRAM)
+# if (${CONFIG_MODEL_FLASH_TYPE_MRAM})
+#     set(EXEC_FROM_FLASH true)
+# else()
+#     set(EXEC_FROM_FLASH false)
+# endif()
 
 
-set (FREQ_CL, 200)
-set (FREQ_FC, 200)
-set (FREQ_SFU, 200)
-set (VOLTAGE, 650)
-set (CLUSTER_STACK_SIZE, 4096)
-set (CLUSTER_SLAVE_STACK_SIZE, 2048)
-set (TOTAL_STACK_SIZE, $(shell expr $(CLUSTER_STACK_SIZE) \+ $(CLUSTER_SLAVE_STACK_SIZE) \* $(CLUSTER_NUM_CORES)))
-set (MODEL_L1_MEMORY?, $(shell expr 120000 \- $(TOTAL_STACK_SIZE)))
-set (MODEL_L2_MEMORY, 1000000)
-set (MODEL_L3_MEMORY, 8000000)
+set (FREQ_CL 200)
+set (FREQ_FC 200)
+set (FREQ_SFU 200)
+set (VOLTAGE 650)
+set (CLUSTER_STACK_SIZE 4096)
+set (CLUSTER_SLAVE_STACK_SIZE 2048)
+set (TOTAL_STACK_SIZE $(shell expr $(CLUSTER_STACK_SIZE) \+ $(CLUSTER_SLAVE_STACK_SIZE) \* $(CLUSTER_NUM_CORES)))
+set (MODEL_L1_MEMORY $(shell expr 120000 \- $(TOTAL_STACK_SIZE)))
+set (MODEL_L2_MEMORY 1000000)
+set (MODEL_L3_MEMORY 8000000)
 
 
 set(GAP9_SDK_DIR        /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk_private/)
 set(CURDIR              /usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/)
 set(BUILD_DIR           ${CURDIR}/build)
 set(MFCCBUILD_DIR       ${CURDIR}/BUILD_MFCC)
-
+set(DSP_DIR             ${GAP9_SDK_DIR}tools/autotiler_v3/DSP_Libraries/)
+set(DSP_LUT_DIR         ${GAP9_SDK_DIR}tools/autotiler_v3/DSP_Libraries/LUT_Tables/)
+set(EMUL_DIR            ${GAP9_SDK_DIR}tools/autotiler_v3/Emulation/)
+set(AUTOTILER_DIR       ${GAP9_SDK_DIR}tools/autotiler_v3/Autotiler/)
+set(AUTOTILER_MFCC_DIR  ${GAP9_SDK_DIR}tools/autotiler_v3/Generators/MFCC/)
+set(WAVIO_DIR           ${GAP9_SDK_DIR}libs/gap_lib/include/)
+set(DSP_GEN_DIR         ${GAP9_SDK_DIR}/tools/autotiler_v3/DSP_Generators/)
 
 # Application
 
-list (APPEND TARGET_SRCS ${MAIN}
+list (APPEND TARGET_SRCS 
+                         
+                         
+                         ${DSP_DIR}FFT_Library.c 
+                         ${DSP_DIR}CmplxFunctions.c
+                         ${DSP_DIR}PreProcessing.c
+                         ${DSP_DIR}math_funcs.c
+                         ${DSP_DIR}MfccBasicKernels.c
+                         ${MFCCBUILD_DIR}/MfccKernels.c 
+                         ${GAP9_SDK_DIR}/libs/gap_lib/wav_io/wavIO.c
+                         ${MAIN}
                          dac.c
                          Graph_L2_Descr.c
-                         # ${GAP9_SDK_DIR}rtos/sfu/SFU_RT.c
+                         ${GAP9_SDK_DIR}rtos/sfu/SFU_RT.c
+                         ${GAP_SDK_HOME}/tools/audio-framework/runtime/include
 )
 
+
 list (APPEND TARGET_INCS 
+                         
+                         -I${TILER_INC}
+                         -I${TILER_EMU_INC}
+                         -I${GAP_SDK_HOME}/libs/gap_lib/include
                          -I${CURDIR}DORY_network/inc
                          -I${GAP9_SDK_DIR}rtos/pmsis/bsp/include/bsp
                          -I${GAP9_SDK_DIR}rtos/pmsis/bsp/include/bsp/ram
                          -I${GAP9_SDK_DIR}rtos/pmsis/bsp/include/bsp/flash
                          -I${GAP9_SDK_DIR}rtos/sfu/include
-                         -I${TARGET_BUILD_DIR}
                          -I.
-                                          
+                         -I${MFCCBUILD_DIR}
+                         -I${DSP_DIR}
+                         -I${DSP_LUT_DIR}
+                         -I${AUTOTILER_DIR}
+                         -I${AUTOTILER_MFCC_DIR}
+                         -I${WAVIO_DIR}
+                         -I${DSP_GEN_DIR}
+                         -I$DORY_network/inc
 
 )
 
-
-# MFCC
-
-set(DSP_DIR             ${GAP9_SDK_DIR}tools/autotiler_v3/DSP_Libraries/)
-set(EMUL_DIR            ${GAP9_SDK_DIR}tools/autotiler_v3/Emulation/)
-set(AUTOTILER_DIR       ${GAP9_SDK_DIR}tools/autotiler_v3/Autotiler/)
-set(DSP_LUT_DIR         ${GAP9_SDK_DIR}tools/autotiler_v3/DSP_Libraries/LUT_Tables/)
-set(AUTOTILER_MFCC_DIR  ${GAP9_SDK_DIR}tools/autotiler_v3/Generators/MFCC/)
-set(WAVIO_DIR           ${GAP9_SDK_DIR}libs/gap_lib/include/)
-
-list (APPEND TARGET_SRCS # ${DSP_DIR}FFT_Library.c 
-                         # ${DSP_DIR}CmplxFunctions.c
-                         # ${DSP_DIR}PreProcessing.c
-                         # ${DSP_DIR}math_funcs.c
-                         # ${DSP_DIR}MfccBasicKernels.c
-                         # ${MFCCBUILD_DIR}/MfccKernels.c 
-                         ${GAP9_SDK_DIR}/libs/gap_lib/wav_io/wavIO.c  
-                         
-)
-
-list(APPEND TARGET_INCS -I${MFCCBUILD_DIR}
-                        -I${DSP_DIR}
-                        -I${EMUL_DIR}
-                        -I${DSP_LUT_DIR}
-                        -I${AUTOTILER_DIR}
-                        -I${AUTOTILER_MFCC_DIR}
-                        -I${WAVIO_DIR}
-                        -I${GAP9_SDK_DIR}rtos/pmsis/bsp/include/bsp/flash
-)
 
 # DORY
 
-set (NUM_CORES, 8)
-set (GAP_SDK, 1)
+set (NUM_CORES 8)
+set (GAP_SDK 1)
 list (APPEND TARGET_SRCS DORY_network/src/BNReluConvolution0.c
                          DORY_network/src/BNReluConvolution1.c 
                          DORY_network/src/BNReluConvolution2.c 
@@ -152,7 +153,7 @@ list(APPEND TARGET_CFLAGS   -O2
 )
 
 list(APPEND TARGET_PREPROCESSOR -DPERF
-                                -DNUM_CORES=${NUM_CORES}
+                                -DNUM_CORES=8
                                 -DGAP_SDK=${GAP_SDK}
                                 -DFLASH_TYPE=${FLASH_TYPE}
                                 -DUSE_${FLASH_TYPE}
@@ -161,6 +162,7 @@ list(APPEND TARGET_PREPROCESSOR -DPERF
                                 -DSLAVE_STACK_SIZE=${CLUSTER_SLAVE_STACK_SIZE}
                                 -DFREQ_FC=${FREQ_FC}
                                 -DFREQ_CL=${FREQ_CL}
+                                -DFREQ_SFU=${FREQ_SFU}
                                 -DVOLTAGE=${VOLTAGE}
                                 -DWAV_FILE=${WAV_FILE}
                                 -DMFCC=${MFCC}
@@ -170,6 +172,7 @@ list(APPEND TARGET_PREPROCESSOR -DPERF
                                 -DPRINT_INOUT
                                 -DCHECKSUM
                                 -DSILENT
+                                -DCONFIG_GAP9_EVK
 
 )
 
@@ -188,7 +191,9 @@ target_compile_options(${TARGET_NAME} PUBLIC   ${TARGET_CFLAGS}
 
 )
 target_link_libraries(${TARGET_NAME} PRIVATE m)
+target_link_libraries(${TARGET_NAME} PRIVATE ${TILER_LIB})
 list(APPEND TABLE_CFLAGS -lm)
+
 
 # CMake post initialization
 
