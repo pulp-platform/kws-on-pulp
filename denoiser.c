@@ -11,7 +11,11 @@
     include files
 */
 
+// #include "mram.h"
+// #define pi_default_flash_conf pi_mram_conf
+
 // L2
+
 #include "input.h"
 
 #include "Gap.h"
@@ -37,15 +41,6 @@
 #else
 # define PRINTF printf
 #endif  /* DEBUG */
-
-
-// TODO: Read from CMake
-#define VOLTAGE  650
-#define FREQ_FC  200
-#define FREQ_CL  200
-#define FREQ_SFU 200
-#define STACK_SIZE 4096
-#define SLAVE_STACK_SIZE 2048
 
 
 /* 
