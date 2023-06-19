@@ -11,13 +11,25 @@
     include files
 */
 
-// L2
-#include "input.h"
+
+// #include <mx25u51245g.h>
+// #include <mram.h>
+// #include <hyperflash.h>
+// #include <sdcard.h>
+// #include <atxp032.h>
+
+#include <aps256xxn.h> // MRAM
+
+
+#include "gap9_evk.h"
 
 #include "Gap.h"
 #include "bsp/ram.h"
 #include <bsp/fs/hostfs.h>
 #include "gaplib/wavIO.h" 
+
+// L2
+#include "input.h"
 
 #define DEMO 1 
 
@@ -37,6 +49,16 @@
 #else
 # define PRINTF printf
 #endif  /* DEBUG */
+
+
+// TODO: Use CMake vars
+#define VOLTAGE 650
+#define FREQ_FC 200
+#define FREQ_CL 200
+#define FREQ_SFU 200
+#define STACK_SIZE 4096
+#define SLAVE_STACK_SIZE 2048
+
 
 
 /* 

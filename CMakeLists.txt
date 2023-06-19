@@ -1,20 +1,38 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.19.5)
 
 # Application
 
 set(TARGET_NAME         "denoiser")
 set(MAIN                "denoiser.c")
 
+
 # Cmake pre-inits
 
+
+set(CONFIG_GAP_SDK_HOME $ENV{GAP_SDK_HOME})
 include ($ENV{GAP_SDK_HOME}/utils/cmake/setup.cmake)
+set(BOARD_NAME, gap9_evk)
+
 
 # kconfig options
 
 set (io,   host)
 set (DEMO, 1)
-set (FLASH_TYPE, MRAM)
-set (RAM_TYPE, DEFAULT)
+
+
+# TODO: Fix
+set (FLASH_TYPE, MRAM) # HYPERFLASH
+set (RAM_TYPE,   HYPERRAM) # DEFAULT
+set(MODEL_L3_FLASH,   AT_MEM_L3_MRAMFLASH)
+set(READFS_FLASH,   target/chip/soc/mram)
+set(MODEL_L3_RAM,   AT_MEM_L3_HRAM)
+if (${CONFIG_MODEL_FLASH_TYPE_MRAM})
+    set(EXEC_FROM_FLASH true)
+else()
+    set(EXEC_FROM_FLASH false)
+endif()
+
+
 set (FREQ_CL, 200)
 set (FREQ_FC, 200)
 set (FREQ_SFU, 200)
@@ -27,48 +45,60 @@ set (MODEL_L2_MEMORY, 1000000)
 set (MODEL_L3_MEMORY, 8000000)
 
 
-if (${CONFIG_MODEL_FLASH_TYPE_MRAM})
-    set(EXEC_FROM_FLASH true)
-else()
-    set(EXEC_FROM_FLASH false)
-endif()
+set(GAP9_SDK_DIR        /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk_private/)
+set(CURDIR              /usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/)
+set(BUILD_DIR           ${CURDIR}/build)
+set(MFCCBUILD_DIR       ${CURDIR}/BUILD_MFCC)
 
 
-# TODO: FIX
-set(FLASH_TYPE,   HYPERFLASH)
-set(MODEL_L3_FLASH,   AT_MEM_L3_MRAMFLASH)
-set(READFS_FLASH,   target/chip/soc/mram)
-set(RAM_TYPE,   HYPERRAM)
-set(MODEL_L3_RAM,   AT_MEM_L3_HRAM)
+# Application
+
+list (APPEND TARGET_SRCS ${MAIN}
+                         dac.c
+                         Graph_L2_Descr.c
+                         # ${GAP9_SDK_DIR}rtos/sfu/SFU_RT.c
+)
+
+list (APPEND TARGET_INCS 
+                         -I${CURDIR}DORY_network/inc
+                         -I${GAP9_SDK_DIR}rtos/pmsis/bsp/include/bsp
+                         -I${GAP9_SDK_DIR}rtos/pmsis/bsp/include/bsp/ram
+                         -I${GAP9_SDK_DIR}rtos/pmsis/bsp/include/bsp/flash
+                         -I${GAP9_SDK_DIR}rtos/sfu/include
+                         -I${TARGET_BUILD_DIR}
+                         -I.
+                                          
+
+)
+
 
 # MFCC
 
-
-set(CURDIR              /usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser)
-set(BUILD_DIR           ${CURDIR}/BUILD)
-set(MFCCBUILD_DIR       ${CURDIR}/BUILD_MFCC)
-set(GAP9_SDK_DIR        /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk_private/)
 set(DSP_DIR             ${GAP9_SDK_DIR}tools/autotiler_v3/DSP_Libraries/)
+set(EMUL_DIR            ${GAP9_SDK_DIR}tools/autotiler_v3/Emulation/)
 set(AUTOTILER_DIR       ${GAP9_SDK_DIR}tools/autotiler_v3/Autotiler/)
 set(DSP_LUT_DIR         ${GAP9_SDK_DIR}tools/autotiler_v3/DSP_Libraries/LUT_Tables/)
 set(AUTOTILER_MFCC_DIR  ${GAP9_SDK_DIR}tools/autotiler_v3/Generators/MFCC/)
 set(WAVIO_DIR           ${GAP9_SDK_DIR}libs/gap_lib/include/)
 
-list (APPEND TARGET_SRCS ${DSP_DIR}FFT_Library.c 
-                         ${DSP_DIR}CmplxFunctions.c
-                         ${DSP_DIR}PreProcessing.c
-                         ${DSP_DIR}math_funcs.c
-                         ${DSP_DIR}MfccBasicKernels.c
-                         ${MFCCBUILD_DIR}/MfccKernels.c 
+list (APPEND TARGET_SRCS # ${DSP_DIR}FFT_Library.c 
+                         # ${DSP_DIR}CmplxFunctions.c
+                         # ${DSP_DIR}PreProcessing.c
+                         # ${DSP_DIR}math_funcs.c
+                         # ${DSP_DIR}MfccBasicKernels.c
+                         # ${MFCCBUILD_DIR}/MfccKernels.c 
                          ${GAP9_SDK_DIR}/libs/gap_lib/wav_io/wavIO.c  
+                         
 )
 
 list(APPEND TARGET_INCS -I${MFCCBUILD_DIR}
                         -I${DSP_DIR}
+                        -I${EMUL_DIR}
                         -I${DSP_LUT_DIR}
                         -I${AUTOTILER_DIR}
                         -I${AUTOTILER_MFCC_DIR}
                         -I${WAVIO_DIR}
+                        -I${GAP9_SDK_DIR}rtos/pmsis/bsp/include/bsp/flash
 )
 
 # DORY
@@ -110,32 +140,15 @@ list (APPEND TARGET_SRCS DORY_network/src/BNReluConvolution0.c
                          
 )
 
-list(APPEND TARGET_INCS -IDORY_network/inc
-)
 
 
-# Application
-
-list (APPEND TARGET_SRCS {MAIN}
-                         dac.c
-                         Graph_L2_Descr.c
-                         $(GAP9_SDK_DIR)/rtos/sfu/SFU_RT.c
-)
-
-list(APPEND TARGET_INCS -I${TARGET_BUILD_DIR}
-                        -I${GAP9_SDK_DIR}rtos/sfu/include
-                        -I.
-)
-
-
-list(APPEND TARGET_CFLAGS   -gdwarf-2
+list(APPEND TARGET_CFLAGS   -O2
                             -s
-                            -w 
-                            -gstrict-dwarf
-                            -O3
+                            -w
                             -mno-memcpy
                             -fno-tree-loop-distribute-patterns
                             -Wno-incompatible-pointer-types
+
 )
 
 list(APPEND TARGET_PREPROCESSOR -DPERF
@@ -166,12 +179,16 @@ project (${TARGET_NAME} C ASM)
 
 add_executable (${TARGET_NAME} ${TARGET_SRCS})
 
+
+
+
 target_compile_options(${TARGET_NAME} PUBLIC   ${TARGET_CFLAGS}
                                                ${TARGET_INCS}
                                                ${TARGET_PREPROCESSOR}
 
 )
-
+target_link_libraries(${TARGET_NAME} PRIVATE m)
+list(APPEND TABLE_CFLAGS -lm)
 
 # CMake post initialization
 
