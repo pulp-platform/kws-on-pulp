@@ -33,7 +33,7 @@ APP_SRCS  += $(DSP_DIR)PreProcessing.c
 APP_SRCS  += $(DSP_DIR)math_funcs.c
 APP_SRCS  += $(DSP_DIR)MfccBasicKernels.c
 APP_SRCS  += $(MFCCBUILD_DIR)/MfccKernels.c 
-APP_SRCS  += $(GAP_LIB_PATH)/wav_io/wavIO.c  
+APP_SRCS  += ${GAP9_SDK_DIR}/libs/wav_io/wavIO.c  
 
 include MfccModel.mk
 
