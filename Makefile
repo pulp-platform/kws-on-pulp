@@ -201,9 +201,7 @@ APP_CFLAGS += -DMAX_L2_BUFFER=$(MODEL_L2_MEMORY)
 APP_CFLAGS += -DDEMO=$(DEMO)
 APP_CFLAGS += -DBUILD_DIR="../../.."
 
-
 APP_LDFLAGS		+= -lm
-
 
 ifeq ($(platform), gvsoc)
 	APP_CFLAGS += -DPERF
