@@ -46,6 +46,8 @@ set (MODEL_L1_MEMORY $(shell expr 120000 \- $(TOTAL_STACK_SIZE)))
 set (MODEL_L2_MEMORY 1000000)
 set (MODEL_L3_MEMORY 8000000)
 
+set (WAV_FILE /usr/scratch/sassauna2/cioflanc/dolphinGSC/speech_commands_v0.02/right/94de6a6a_nohash_4.wav)
+
 
 set(GAP9_SDK_DIR        /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk_private/)
 set(CURDIR              /usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/)
@@ -97,7 +99,6 @@ list (APPEND TARGET_INCS
                          -I${AUTOTILER_MFCC_DIR}
                          -I${WAVIO_DIR}
                          -I${DSP_GEN_DIR}
-                         -I$DORY_network/inc
 
 )
 
@@ -106,38 +107,38 @@ list (APPEND TARGET_INCS
 
 set (NUM_CORES 8)
 set (GAP_SDK 1)
-list (APPEND TARGET_SRCS DORY_network/src/BNReluConvolution0.c
-                         DORY_network/src/BNReluConvolution1.c 
-                         DORY_network/src/BNReluConvolution2.c 
-                         DORY_network/src/BNReluConvolution3.c 
-                         DORY_network/src/BNReluConvolution4.c 
-                         DORY_network/src/BNReluConvolution5.c 
-                         DORY_network/src/BNReluConvolution6.c 
-                         DORY_network/src/BNReluConvolution7.c 
-                         DORY_network/src/BNReluConvolution8.c 
-                         DORY_network/src/dory.c 
-                         DORY_network/src/FullyConnected10.c 
-                         DORY_network/src/mem.c 
-                         DORY_network/src/net_utils.c 
-                         DORY_network/src/network.c 
-                         DORY_network/src/pulp_nn_add.c 
-                         DORY_network/src/pulp_nn_avgpool.c 
-                         DORY_network/src/pulp_nn_conv_Co_parallel.c 
-                         DORY_network/src/pulp_nn_conv_Ho_parallel.c 
-                         DORY_network/src/pulp_nn_conv_HoWo_parallel.c
-                         DORY_network/src/pulp_nn_depthwise_3x3_s1.c 
-                         DORY_network/src/pulp_nn_depthwise_generic.c
-                         DORY_network/src/pulp_nn_depthwise_generic_less_4_weights.c
-                         DORY_network/src/pulp_nn_linear.c
-                         DORY_network/src/pulp_nn_linear_out_32.c
-                         DORY_network/src/pulp_nn_matmul.c
-                         DORY_network/src/pulp_nn_maxpool.c
-                         DORY_network/src/pulp_nn_pointwise_Co_parallel.c
-                         DORY_network/src/pulp_nn_pointwise_Ho_parallel.c
-                         DORY_network/src/pulp_nn_pointwise_HoWo_parallel.c
-                         DORY_network/src/pulp_nn_utils.c
-                         DORY_network/src/ReluPooling9.c
-                         DORY_network/src/thorir_dma.c
+list (APPEND TARGET_SRCS ${CURDIR}DORY_network/src/BNReluConvolution0.c
+                         ${CURDIR}DORY_network/src/BNReluConvolution1.c 
+                         ${CURDIR}DORY_network/src/BNReluConvolution2.c 
+                         ${CURDIR}DORY_network/src/BNReluConvolution3.c 
+                         ${CURDIR}DORY_network/src/BNReluConvolution4.c 
+                         ${CURDIR}DORY_network/src/BNReluConvolution5.c 
+                         ${CURDIR}DORY_network/src/BNReluConvolution6.c 
+                         ${CURDIR}DORY_network/src/BNReluConvolution7.c 
+                         ${CURDIR}DORY_network/src/BNReluConvolution8.c 
+                         ${CURDIR}DORY_network/src/dory.c 
+                         ${CURDIR}DORY_network/src/FullyConnected10.c 
+                         ${CURDIR}DORY_network/src/mem.c 
+                         ${CURDIR}DORY_network/src/net_utils.c 
+                         ${CURDIR}DORY_network/src/network.c 
+                         ${CURDIR}DORY_network/src/pulp_nn_add.c 
+                         ${CURDIR}DORY_network/src/pulp_nn_avgpool.c 
+                         ${CURDIR}DORY_network/src/pulp_nn_conv_Co_parallel.c 
+                         ${CURDIR}DORY_network/src/pulp_nn_conv_Ho_parallel.c 
+                         ${CURDIR}DORY_network/src/pulp_nn_conv_HoWo_parallel.c
+                         ${CURDIR}DORY_network/src/pulp_nn_depthwise_3x3_s1.c 
+                         ${CURDIR}DORY_network/src/pulp_nn_depthwise_generic.c
+                         ${CURDIR}DORY_network/src/pulp_nn_depthwise_generic_less_4_weights.c
+                         ${CURDIR}DORY_network/src/pulp_nn_linear.c
+                         ${CURDIR}DORY_network/src/pulp_nn_linear_out_32.c
+                         ${CURDIR}DORY_network/src/pulp_nn_matmul.c
+                         ${CURDIR}DORY_network/src/pulp_nn_maxpool.c
+                         ${CURDIR}DORY_network/src/pulp_nn_pointwise_Co_parallel.c
+                         ${CURDIR}DORY_network/src/pulp_nn_pointwise_Ho_parallel.c
+                         ${CURDIR}DORY_network/src/pulp_nn_pointwise_HoWo_parallel.c
+                         ${CURDIR}DORY_network/src/pulp_nn_utils.c
+                         ${CURDIR}DORY_network/src/ReluPooling9.c
+                         ${CURDIR}DORY_network/src/thorir_dma.c
                          
 )
 
@@ -173,15 +174,31 @@ list(APPEND TARGET_PREPROCESSOR -DPERF
                                 -DCHECKSUM
                                 -DSILENT
                                 -DCONFIG_GAP9_EVK
+                                -DFS_READ_FS
 
 )
+
+list(APPEND FLASH_FILES  ${CURDIR}DORY_network/hex/BNReluConvolution0_weights.hex
+                         ${CURDIR}DORY_network/hex/BNReluConvolution1_weights.hex
+                         ${CURDIR}DORY_network/hex/BNReluConvolution2_weights.hex
+                         ${CURDIR}DORY_network/hex/BNReluConvolution3_weights.hex
+                         ${CURDIR}DORY_network/hex/BNReluConvolution4_weights.hex
+                         ${CURDIR}DORY_network/hex/BNReluConvolution5_weights.hex
+                         ${CURDIR}DORY_network/hex/BNReluConvolution6_weights.hex
+                         ${CURDIR}DORY_network/hex/BNReluConvolution7_weights.hex
+                         ${CURDIR}DORY_network/hex/BNReluConvolution8_weights.hex
+                         ${CURDIR}DORY_network/hex/FullyConnected10_weights.hex
+                         ${CURDIR}DORY_network/hex/inputs.hex
+                         ${WAV_FILE}
+)
+
 
 
 project (${TARGET_NAME} C ASM)
 
+set(READFS_FILES ${FLASH_FILES})
 
 add_executable (${TARGET_NAME} ${TARGET_SRCS})
-
 
 
 
