@@ -43,7 +43,9 @@ set(MODEL_L3_RAM,   AT_MEM_L3_HRAM)
 
 # MFCC
 
-set(BUILD_DIR           BUILD)
+
+set(CURDIR              /usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser)
+set(BUILD_DIR           ${CURDIR}/BUILD)
 set(MFCCBUILD_DIR       ${CURDIR}/BUILD_MFCC)
 set(GAP9_SDK_DIR        /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk_private/)
 set(DSP_DIR             ${GAP9_SDK_DIR}tools/autotiler_v3/DSP_Libraries/)
@@ -58,7 +60,7 @@ list (APPEND TARGET_SRCS ${DSP_DIR}FFT_Library.c
                          ${DSP_DIR}math_funcs.c
                          ${DSP_DIR}MfccBasicKernels.c
                          ${MFCCBUILD_DIR}/MfccKernels.c 
-                         ${GAP_LIB_PATH}/wav_io/wavIO.c  
+                         ${GAP9_SDK_DIR}/libs/gap_lib/wav_io/wavIO.c  
 )
 
 list(APPEND TARGET_INCS -I${MFCCBUILD_DIR}
@@ -150,7 +152,12 @@ list(APPEND TARGET_PREPROCESSOR -DPERF
                                 -DWAV_FILE=${WAV_FILE}
                                 -DMFCC=${MFCC}
                                 -DINPUT=${INPUT}
-                                -DMAX_L2_BUFFER=${MODEL_L2_MEMORY}
+                                -DPERF
+                                -DPRINTDEB
+                                -DPRINT_INOUT
+                                -DCHECKSUM
+                                -DSILENT
+
 )
 
 
@@ -159,10 +166,9 @@ project (${TARGET_NAME} C ASM)
 
 add_executable (${TARGET_NAME} ${TARGET_SRCS})
 
-target_compile_options(${TARGET_NAME} PUBLIC ${TARGET_CFLAGS}
-                                             ${TARGET_INCS}
-                                             ${TARGET_PREPROCESSOR}
-
+target_compile_options(${TARGET_NAME} PUBLIC   ${TARGET_CFLAGS}
+                                               ${TARGET_INCS}
+                                               ${TARGET_PREPROCESSOR}
 
 )
 
