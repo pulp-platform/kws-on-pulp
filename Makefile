@@ -75,8 +75,8 @@ io=host
 DEMO        = 1
 FLASH_TYPE  = MRAM
 RAM_TYPE    = DEFAULT
-FREQ_CL     = 50
-FREQ_FC     = 50
+FREQ_CL     = 200
+FREQ_FC     = 200
 FREQ_SFU    = 200
 VOLTAGE     = 650
 
@@ -177,7 +177,7 @@ MODEL_SIZE_CFLAGS = -DAT_INPUT_HEIGHT=$(AT_INPUT_HEIGHT) -DAT_INPUT_WIDTH=$(AT_I
 PMSIS_OS=freertos
 
 #C flags
-APP_CFLAGS += -O2 -s -mno-memcpy -fno-tree-loop-distribute-patterns -w -DPERF # -DPRINTDEB -DPRINT_INOUT
+APP_CFLAGS += -O2 -s -mno-memcpy -fno-tree-loop-distribute-patterns -w # -DPERF # -DPRINTDEB -DPRINT_INOUT
 
 #include paths
 APP_CFLAGS += -I.
