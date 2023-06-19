@@ -19,13 +19,27 @@ set (FREQ_CL, 200)
 set (FREQ_FC, 200)
 set (FREQ_SFU, 200)
 set (VOLTAGE, 650)
+set (CLUSTER_STACK_SIZE, 4096)
+set (CLUSTER_SLAVE_STACK_SIZE, 2048)
+set (TOTAL_STACK_SIZE, $(shell expr $(CLUSTER_STACK_SIZE) \+ $(CLUSTER_SLAVE_STACK_SIZE) \* $(CLUSTER_NUM_CORES)))
+set (MODEL_L1_MEMORY?, $(shell expr 120000 \- $(TOTAL_STACK_SIZE)))
+set (MODEL_L2_MEMORY, 1000000)
+set (MODEL_L3_MEMORY, 8000000)
 
 
 if (${CONFIG_MODEL_FLASH_TYPE_MRAM})
-        set(EXEC_FROM_FLASH true)
+    set(EXEC_FROM_FLASH true)
 else()
-        set(EXEC_FROM_FLASH false)
+    set(EXEC_FROM_FLASH false)
 endif()
+
+
+# TODO: FIX
+set(FLASH_TYPE,   HYPERFLASH)
+set(MODEL_L3_FLASH,   AT_MEM_L3_MRAMFLASH)
+set(READFS_FLASH,   target/chip/soc/mram)
+set(RAM_TYPE,   HYPERRAM)
+set(MODEL_L3_RAM,   AT_MEM_L3_HRAM)
 
 # MFCC
 
@@ -38,8 +52,7 @@ set(DSP_LUT_DIR         ${GAP9_SDK_DIR}tools/autotiler_v3/DSP_Libraries/LUT_Tabl
 set(AUTOTILER_MFCC_DIR  ${GAP9_SDK_DIR}tools/autotiler_v3/Generators/MFCC/)
 set(WAVIO_DIR           ${GAP9_SDK_DIR}libs/gap_lib/include/)
 
-list (APPEND TARGET_SRCS ${MAIN}
-                         ${DSP_DIR}FFT_Library.c 
+list (APPEND TARGET_SRCS ${DSP_DIR}FFT_Library.c 
                          ${DSP_DIR}CmplxFunctions.c
                          ${DSP_DIR}PreProcessing.c
                          ${DSP_DIR}math_funcs.c
@@ -92,9 +105,74 @@ list (APPEND TARGET_SRCS DORY_network/src/BNReluConvolution0.c
                          DORY_network/src/pulp_nn_utils.c
                          DORY_network/src/ReluPooling9.c
                          DORY_network/src/thorir_dma.c
-
                          
 )
 
 list(APPEND TARGET_INCS -IDORY_network/inc
 )
+
+
+# Application
+
+list (APPEND TARGET_SRCS {MAIN}
+                         dac.c
+                         Graph_L2_Descr.c
+                         $(GAP9_SDK_DIR)/rtos/sfu/SFU_RT.c
+)
+
+list(APPEND TARGET_INCS -I${TARGET_BUILD_DIR}
+                        -I${GAP9_SDK_DIR}rtos/sfu/include
+                        -I.
+)
+
+
+list(APPEND TARGET_CFLAGS   -gdwarf-2
+                            -s
+                            -w 
+                            -gstrict-dwarf
+                            -O3
+                            -mno-memcpy
+                            -fno-tree-loop-distribute-patterns
+                            -Wno-incompatible-pointer-types
+)
+
+list(APPEND TARGET_PREPROCESSOR -DPERF
+                                -DNUM_CORES=${NUM_CORES}
+                                -DGAP_SDK=${GAP_SDK}
+                                -DFLASH_TYPE=${FLASH_TYPE}
+                                -DUSE_${FLASH_TYPE}
+                                -DUSE_${RAM_TYPE}
+                                -DSTACK_SIZE=${CLUSTER_STACK_SIZE}
+                                -DSLAVE_STACK_SIZE=${CLUSTER_SLAVE_STACK_SIZE}
+                                -DFREQ_FC=${FREQ_FC}
+                                -DFREQ_CL=${FREQ_CL}
+                                -DVOLTAGE=${VOLTAGE}
+                                -DWAV_FILE=${WAV_FILE}
+                                -DMFCC=${MFCC}
+                                -DINPUT=${INPUT}
+                                -DMAX_L2_BUFFER=${MODEL_L2_MEMORY}
+)
+
+
+project (${TARGET_NAME} C ASM)
+
+
+add_executable (${TARGET_NAME} ${TARGET_SRCS})
+
+target_compile_options(${TARGET_NAME} PUBLIC ${TARGET_CFLAGS}
+                                             ${TARGET_INCS}
+                                             ${TARGET_PREPROCESSOR}
+
+
+)
+
+
+# CMake post initialization
+
+setupos(${TARGET_NAME})
+
+
+
+
+
+
