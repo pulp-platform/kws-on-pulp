@@ -13,7 +13,7 @@ set(CONFIG_GAP_SDK_HOME $ENV{GAP_SDK_HOME})
 include ($ENV{GAP_SDK_HOME}/utils/cmake/setup.cmake)
 set(BOARD_NAME gap9_evk)
 set(PMSIS_OS freertos)
-set(platform gvsoc)
+set(platform $ENV{PLATFORM})
 
 
 # kconfig options
@@ -49,7 +49,9 @@ set (MODEL_L1_MEMORY $(shell expr 120000 \- $(TOTAL_STACK_SIZE)))
 set (MODEL_L2_MEMORY 1000000)
 set (MODEL_L3_MEMORY 8000000)
 
-set (WAV_FILE /usr/scratch/sassauna2/cioflanc/dolphinGSC/speech_commands_v0.02/right/94de6a6a_nohash_4.wav)
+set (WAV_FILE $ENV{WAV_FILE})
+set (MFCC $ENV{MFCC})
+set (INPUT $ENV{INPUT})
 
 
 set(GAP9_SDK_DIR        /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk_private/)
@@ -172,10 +174,10 @@ list(APPEND TARGET_PREPROCESSOR -DPERF
                                 -DWAV_FILE=${WAV_FILE}
                                 -DMFCC=${MFCC}
                                 -DINPUT=${INPUT}
-                                -DPERF
-                                -DPRINTDEB
-                                -DPRINT_INOUT
-                                -DCHECKSUM
+                                # -DPERF
+                                # -DPRINTDEB
+                                # -DPRINT_INOUT
+                                # -DCHECKSUM
                                 -DSILENT
                                 -DCONFIG_GAP9_EVK
                                 -DFS_READ_FS
