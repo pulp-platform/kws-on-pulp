@@ -22,19 +22,14 @@ set (io   host)
 set (DEMO 1)
 
 
-# Without this flag, GAPY adds flash files to mram, but 
-# "Found unknown section while handling command-line flash section properties: readfs_flash"
-# With this, nothing is flashed, and app stalls at
-# gvsoc_launcher --config=gvsoc_config.json
-
+# Not needed for MRAM
 # set (CONFIG_FLASH_LAYOUT_CUSTOM 1)
 
 
-# TODO: Fix
 set (FLASH_TYPE MRAM) # HYPERFLASH
 set (RAM_TYPE   DEFAULT) # DEFAULT
 set (MODEL_L3_FLASH   AT_MEM_L3_MRAMFLASH)
-# set (READFS_FLASH  mram)
+# set (READFS_FLASH  mram) # Not needed for MRAM
 set (EXEC_FROM_FLASH true)
 set (MODEL_L3_RAM   AT_MEM_L3_DEFAULTRAM)
 
@@ -185,8 +180,9 @@ list(APPEND TARGET_PREPROCESSOR -DPERF
 
 )
 
-list(APPEND READFS_MRAM_FILES 
+
 # list(APPEND READFS_FILES 
+list(APPEND READFS_MRAM_FILES 
                          ${CURDIR}DORY_network/hex/BNReluConvolution0_weights.hex
                          ${CURDIR}DORY_network/hex/BNReluConvolution1_weights.hex
                          ${CURDIR}DORY_network/hex/BNReluConvolution2_weights.hex
@@ -204,8 +200,6 @@ list(APPEND READFS_MRAM_FILES
 
 
 project (${TARGET_NAME} C ASM)
-
-# set(READFS_FILES ${FLASH_FILES})
 
 add_executable (${TARGET_NAME} ${TARGET_SRCS})
 
