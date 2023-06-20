@@ -1,0 +1,226 @@
+cmake_minimum_required(VERSION 3.19.5)
+
+# Application
+
+set(TARGET_NAME         "denoiser")
+set(MAIN                "denoiser.c")
+
+
+# Cmake pre-inits
+
+
+set(CONFIG_GAP_SDK_HOME $ENV{GAP_SDK_HOME})
+include ($ENV{GAP_SDK_HOME}/utils/cmake/setup.cmake)
+set(BOARD_NAME gap9_evk)
+set(PMSIS_OS freertos)
+set(platform $ENV{PLATFORM})
+
+
+# kconfig options
+
+set (io   host)
+set (DEMO 1)
+
+
+# Not needed for MRAM
+# set (CONFIG_FLASH_LAYOUT_CUSTOM 1)
+
+
+set (FLASH_TYPE MRAM) # HYPERFLASH
+set (RAM_TYPE   DEFAULT) # DEFAULT
+set (MODEL_L3_FLASH   AT_MEM_L3_MRAMFLASH)
+# set (READFS_FLASH  mram) # Not needed for MRAM
+set (EXEC_FROM_FLASH true)
+set (MODEL_L3_RAM   AT_MEM_L3_DEFAULTRAM)
+
+set (FREQ_CL 200)
+set (FREQ_FC 200)
+set (FREQ_SFU 200)
+set (VOLTAGE 650)
+set (CLUSTER_STACK_SIZE 4096)
+set (CLUSTER_SLAVE_STACK_SIZE 2048)
+set (TOTAL_STACK_SIZE $(shell expr $(CLUSTER_STACK_SIZE) \+ $(CLUSTER_SLAVE_STACK_SIZE) \* $(CLUSTER_NUM_CORES)))
+set (MODEL_L1_MEMORY $(shell expr 120000 \- $(TOTAL_STACK_SIZE)))
+set (MODEL_L2_MEMORY 1000000)
+set (MODEL_L3_MEMORY 8000000)
+
+set (WAV_FILE $ENV{WAV_FILE})
+set (MFCC $ENV{MFCC})
+set (INPUT $ENV{INPUT})
+
+
+set(GAP9_SDK_DIR        /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk_private/)
+set(CURDIR              /usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/)
+set(BUILD_DIR           ${CURDIR}/build)
+set(MFCCBUILD_DIR       ${CURDIR}/BUILD_MFCC)
+set(DSP_DIR             ${GAP9_SDK_DIR}tools/autotiler_v3/DSP_Libraries/)
+set(DSP_LUT_DIR         ${GAP9_SDK_DIR}tools/autotiler_v3/DSP_Libraries/LUT_Tables/)
+set(EMUL_DIR            ${GAP9_SDK_DIR}tools/autotiler_v3/Emulation/)
+set(AUTOTILER_DIR       ${GAP9_SDK_DIR}tools/autotiler_v3/Autotiler/)
+set(AUTOTILER_MFCC_DIR  ${GAP9_SDK_DIR}tools/autotiler_v3/Generators/MFCC/)
+set(WAVIO_DIR           ${GAP9_SDK_DIR}libs/gap_lib/include/)
+set(DSP_GEN_DIR         ${GAP9_SDK_DIR}/tools/autotiler_v3/DSP_Generators/)
+
+# Application
+
+list (APPEND TARGET_SRCS 
+                         
+                         
+                         ${DSP_DIR}FFT_Library.c 
+                         ${DSP_DIR}CmplxFunctions.c
+                         ${DSP_DIR}PreProcessing.c
+                         ${DSP_DIR}math_funcs.c
+                         ${DSP_DIR}MfccBasicKernels.c
+                         ${MFCCBUILD_DIR}/MfccKernels.c 
+                         ${GAP9_SDK_DIR}/libs/gap_lib/wav_io/wavIO.c
+                         ${MAIN}
+                         dac.c
+                         Graph_L2_Descr.c
+                         ${GAP9_SDK_DIR}rtos/sfu/SFU_RT.c
+                         ${GAP_SDK_HOME}/tools/audio-framework/runtime/include
+)
+
+
+list (APPEND TARGET_INCS 
+                         
+                         -I${TILER_INC}
+                         -I${TILER_EMU_INC}
+                         -I${GAP_SDK_HOME}/libs/gap_lib/include
+                         -I${CURDIR}DORY_network/inc
+                         -I${GAP9_SDK_DIR}rtos/pmsis/bsp/include/bsp
+                         -I${GAP9_SDK_DIR}rtos/pmsis/bsp/include/bsp/ram
+                         -I${GAP9_SDK_DIR}rtos/pmsis/bsp/include/bsp/flash
+                         -I${GAP9_SDK_DIR}rtos/sfu/include
+                         -I.
+                         -I${MFCCBUILD_DIR}
+                         -I${DSP_DIR}
+                         -I${DSP_LUT_DIR}
+                         -I${AUTOTILER_DIR}
+                         -I${AUTOTILER_MFCC_DIR}
+                         -I${WAVIO_DIR}
+                         -I${DSP_GEN_DIR}
+
+)
+
+
+# DORY
+
+set (NUM_CORES 8)
+set (GAP_SDK 1)
+list (APPEND TARGET_SRCS ${CURDIR}DORY_network/src/BNReluConvolution0.c
+                         ${CURDIR}DORY_network/src/BNReluConvolution1.c 
+                         ${CURDIR}DORY_network/src/BNReluConvolution2.c 
+                         ${CURDIR}DORY_network/src/BNReluConvolution3.c 
+                         ${CURDIR}DORY_network/src/BNReluConvolution4.c 
+                         ${CURDIR}DORY_network/src/BNReluConvolution5.c 
+                         ${CURDIR}DORY_network/src/BNReluConvolution6.c 
+                         ${CURDIR}DORY_network/src/BNReluConvolution7.c 
+                         ${CURDIR}DORY_network/src/BNReluConvolution8.c 
+                         ${CURDIR}DORY_network/src/dory.c 
+                         ${CURDIR}DORY_network/src/FullyConnected10.c 
+                         ${CURDIR}DORY_network/src/mem.c 
+                         ${CURDIR}DORY_network/src/net_utils.c 
+                         ${CURDIR}DORY_network/src/network.c 
+                         ${CURDIR}DORY_network/src/pulp_nn_add.c 
+                         ${CURDIR}DORY_network/src/pulp_nn_avgpool.c 
+                         ${CURDIR}DORY_network/src/pulp_nn_conv_Co_parallel.c 
+                         ${CURDIR}DORY_network/src/pulp_nn_conv_Ho_parallel.c 
+                         ${CURDIR}DORY_network/src/pulp_nn_conv_HoWo_parallel.c
+                         ${CURDIR}DORY_network/src/pulp_nn_depthwise_3x3_s1.c 
+                         ${CURDIR}DORY_network/src/pulp_nn_depthwise_generic.c
+                         ${CURDIR}DORY_network/src/pulp_nn_depthwise_generic_less_4_weights.c
+                         ${CURDIR}DORY_network/src/pulp_nn_linear.c
+                         ${CURDIR}DORY_network/src/pulp_nn_linear_out_32.c
+                         ${CURDIR}DORY_network/src/pulp_nn_matmul.c
+                         ${CURDIR}DORY_network/src/pulp_nn_maxpool.c
+                         ${CURDIR}DORY_network/src/pulp_nn_pointwise_Co_parallel.c
+                         ${CURDIR}DORY_network/src/pulp_nn_pointwise_Ho_parallel.c
+                         ${CURDIR}DORY_network/src/pulp_nn_pointwise_HoWo_parallel.c
+                         ${CURDIR}DORY_network/src/pulp_nn_utils.c
+                         ${CURDIR}DORY_network/src/ReluPooling9.c
+                         ${CURDIR}DORY_network/src/thorir_dma.c
+                         
+)
+
+
+
+list(APPEND TARGET_CFLAGS   -O2
+                            -s
+                            -w
+                            -mno-memcpy
+                            -fno-tree-loop-distribute-patterns
+                            -Wno-incompatible-pointer-types
+
+)
+
+
+list(APPEND TARGET_PREPROCESSOR -DPERF
+                                -DNUM_CORES=8
+                                -DGAP_SDK=${GAP_SDK}
+                                -DFLASH_TYPE=${FLASH_TYPE}
+                                -DUSE_${FLASH_TYPE}
+                                -DUSE_${RAM_TYPE}
+                                -DSTACK_SIZE=${CLUSTER_STACK_SIZE}
+                                -DSLAVE_STACK_SIZE=${CLUSTER_SLAVE_STACK_SIZE}
+                                -DFREQ_FC=${FREQ_FC}
+                                -DFREQ_CL=${FREQ_CL}
+                                -DFREQ_SFU=${FREQ_SFU}
+                                -DVOLTAGE=${VOLTAGE}
+                                -DWAV_FILE=${WAV_FILE}
+                                -DMFCC=${MFCC}
+                                -DINPUT=${INPUT}
+                                # -DPERF
+                                # -DPRINTDEB
+                                # -DPRINT_INOUT
+                                # -DCHECKSUM
+                                -DSILENT
+                                -DCONFIG_GAP9_EVK
+                                -DFS_READ_FS
+                                -DCONFIG_FLASH_LAYOUT_CUSTOM
+
+)
+
+
+# list(APPEND READFS_FILES 
+list(APPEND READFS_MRAM_FILES 
+                         ${CURDIR}DORY_network/hex/BNReluConvolution0_weights.hex
+                         ${CURDIR}DORY_network/hex/BNReluConvolution1_weights.hex
+                         ${CURDIR}DORY_network/hex/BNReluConvolution2_weights.hex
+                         ${CURDIR}DORY_network/hex/BNReluConvolution3_weights.hex
+                         ${CURDIR}DORY_network/hex/BNReluConvolution4_weights.hex
+                         ${CURDIR}DORY_network/hex/BNReluConvolution5_weights.hex
+                         ${CURDIR}DORY_network/hex/BNReluConvolution6_weights.hex
+                         ${CURDIR}DORY_network/hex/BNReluConvolution7_weights.hex
+                         ${CURDIR}DORY_network/hex/BNReluConvolution8_weights.hex
+                         ${CURDIR}DORY_network/hex/FullyConnected10_weights.hex
+                         ${CURDIR}DORY_network/hex/inputs.hex
+                         ${WAV_FILE}
+)
+
+
+
+project (${TARGET_NAME} C ASM)
+
+add_executable (${TARGET_NAME} ${TARGET_SRCS})
+
+
+
+target_compile_options(${TARGET_NAME} PUBLIC   ${TARGET_CFLAGS}
+                                               ${TARGET_INCS}
+                                               ${TARGET_PREPROCESSOR}
+
+)
+target_link_libraries(${TARGET_NAME} PRIVATE m)
+target_link_libraries(${TARGET_NAME} PRIVATE ${TILER_LIB})
+list(APPEND TABLE_CFLAGS -lm)
+
+
+# CMake post initialization
+
+setupos(${TARGET_NAME})
+
+
+
+
+
+

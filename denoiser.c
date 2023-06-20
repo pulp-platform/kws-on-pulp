@@ -11,7 +11,11 @@
     include files
 */
 
+// #include "mram.h"
+// #define pi_default_flash_conf pi_mram_conf
+
 // L2
+
 #include "input.h"
 
 #include "Gap.h"
@@ -656,8 +660,6 @@ int denoiser(void)
         // Off-line MFCC
         // Checking final output: Checksum Failed: true [7965] vs. calculated [8277]
 
-
-
         printf("Memory allocated.\n");
         // L3
         network_run(l2_buffer, 80000, l2_buffer, 0);
@@ -717,10 +719,6 @@ int denoiser(void)
 
         printf("The uttered keyword was: %s.\n", prediction);
 
-
-
-
-
         // L2
         // network_run(L2_input, 380000, l2_buffer, 0, L2_input_h);
 
@@ -737,7 +735,6 @@ int denoiser(void)
     }
 
     // printf("\nFinished copying data\n");
-
 
     dump_wav_open("test_gap.wav", 16, 16000, 1, sizeof(short)*AUDIO_BUFFER_SIZE);
     dump_wav_write(MfccInSig, sizeof(short)*AUDIO_BUFFER_SIZE);

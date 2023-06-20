@@ -33,7 +33,7 @@ APP_SRCS  += $(DSP_DIR)PreProcessing.c
 APP_SRCS  += $(DSP_DIR)math_funcs.c
 APP_SRCS  += $(DSP_DIR)MfccBasicKernels.c
 APP_SRCS  += $(MFCCBUILD_DIR)/MfccKernels.c 
-APP_SRCS  += $(GAP_LIB_PATH)/wav_io/wavIO.c  
+APP_SRCS  += ${GAP9_SDK_DIR}/libs/gap_lib/wav_io/wavIO.c  
 
 include MfccModel.mk
 
@@ -201,9 +201,7 @@ APP_CFLAGS += -DMAX_L2_BUFFER=$(MODEL_L2_MEMORY)
 APP_CFLAGS += -DDEMO=$(DEMO)
 APP_CFLAGS += -DBUILD_DIR="../../.."
 
-
 APP_LDFLAGS		+= -lm
-
 
 ifeq ($(platform), gvsoc)
 	APP_CFLAGS += -DPERF
