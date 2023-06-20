@@ -22,18 +22,21 @@ set (io   host)
 set (DEMO 1)
 
 
+# Without this flag, GAPY adds flash files to mram, but 
+# "Found unknown section while handling command-line flash section properties: readfs_flash"
+# With this, nothing is flashed, and app stalls at
+# gvsoc_launcher --config=gvsoc_config.json
+
+# set (CONFIG_FLASH_LAYOUT_CUSTOM 1)
+
+
 # TODO: Fix
 set (FLASH_TYPE MRAM) # HYPERFLASH
 set (RAM_TYPE   DEFAULT) # DEFAULT
-# set(MODEL_L3_FLASH   AT_MEM_L3_MRAMFLASH)
-# set(READFS_FLASH  target/chip/soc/mram)
-# set(MODEL_L3_RAM   AT_MEM_L3_HRAM)
-# if (${CONFIG_MODEL_FLASH_TYPE_MRAM})
-#     set(EXEC_FROM_FLASH true)
-# else()
-#     set(EXEC_FROM_FLASH false)
-# endif()
-
+set (MODEL_L3_FLASH   AT_MEM_L3_MRAMFLASH)
+# set (READFS_FLASH  mram)
+set (EXEC_FROM_FLASH true)
+set (MODEL_L3_RAM   AT_MEM_L3_DEFAULTRAM)
 
 set (FREQ_CL 200)
 set (FREQ_FC 200)
@@ -153,6 +156,7 @@ list(APPEND TARGET_CFLAGS   -O2
 
 )
 
+
 list(APPEND TARGET_PREPROCESSOR -DPERF
                                 -DNUM_CORES=8
                                 -DGAP_SDK=${GAP_SDK}
@@ -175,10 +179,13 @@ list(APPEND TARGET_PREPROCESSOR -DPERF
                                 -DSILENT
                                 -DCONFIG_GAP9_EVK
                                 -DFS_READ_FS
+                                -DCONFIG_FLASH_LAYOUT_CUSTOM
 
 )
 
-list(APPEND FLASH_FILES  ${CURDIR}DORY_network/hex/BNReluConvolution0_weights.hex
+list(APPEND READFS_MRAM_FILES 
+# list(APPEND READFS_FILES 
+                         ${CURDIR}DORY_network/hex/BNReluConvolution0_weights.hex
                          ${CURDIR}DORY_network/hex/BNReluConvolution1_weights.hex
                          ${CURDIR}DORY_network/hex/BNReluConvolution2_weights.hex
                          ${CURDIR}DORY_network/hex/BNReluConvolution3_weights.hex
@@ -196,7 +203,7 @@ list(APPEND FLASH_FILES  ${CURDIR}DORY_network/hex/BNReluConvolution0_weights.he
 
 project (${TARGET_NAME} C ASM)
 
-set(READFS_FILES ${FLASH_FILES})
+# set(READFS_FILES ${FLASH_FILES})
 
 add_executable (${TARGET_NAME} ${TARGET_SRCS})
 
