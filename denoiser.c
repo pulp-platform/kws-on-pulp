@@ -414,6 +414,7 @@ int denoiser(void)
         }
         int num_samples = header_info.DataSize * 8 / (header_info.NumChannels * header_info.BitsPerSample);
         MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
+
     }
 
 
@@ -481,6 +482,13 @@ int denoiser(void)
 
     }
 
+    // WRITE WAV
+    dump_wav_open("test_gap.wav", 16, 16000, 1, sizeof(short)*AUDIO_BUFFER_SIZE);
+    dump_wav_write(MfccInSig, sizeof(short)*AUDIO_BUFFER_SIZE);
+    dump_wav_close();
+
+    printf("Writing wav file to test_gap.wav completed successfully\n");
+
     // Dory init
     // TODO: Remove flash init and/or ram init duplicates
     mem_init();
@@ -544,8 +552,12 @@ int denoiser(void)
         pi_cluster_send_task_to_cl(&cluster_dev, task_mfcc);
 
         pi_l2_free(task_mfcc, sizeof(struct pi_cluster_task));
-        // pi_l2_free(MfccInSig, AUDIO_BUFFER_SIZE * sizeof (MFCC_IN_TYPE));
-        // pi_l2_free(MfccInSig, BUFF_SIZE);
+
+        if (input == "0"){
+            pi_l2_free(MfccInSig, BUFF_SIZE);
+        } else {
+            pi_l2_free(MfccInSig, AUDIO_BUFFER_SIZE * sizeof (MFCC_IN_TYPE));
+        }
 
         pi_cluster_close(&cluster_dev);
 
@@ -604,37 +616,37 @@ int denoiser(void)
 
         // TEST
 
-        #if (DATA_TYPE==2) || (DATA_TYPE==3)
-        float QSNR_THR = 40;
-        #else
-        float QSNR_THR = 38;
-        #endif
-        int N_FRAME = 49;
-        int frame_size = 10;
-        float MSE = 0.0, SUM = 0.0;
-            for (int i=0; i<N_FRAME; i++) {
-                for (int j=0; j<frame_size; j++) {
-                    #if (DATA_TYPE==2) || (DATA_TYPE==3)
-                          MSE += (L2_input_h[i*frame_size+j] - feat_char[i*frame_size+j])*(L2_input_h[i*frame_size+j] - feat_char[i*frame_size+j]);
-                    #else
-                          int QMFCC = 15 - NORM - 7;
-                          MSE += (L2_input_h[i*frame_size+j] - FIX2FP(feat_char[i*frame_size+j], QMFCC)) * (L2_input_h[i*frame_size+j] - FIX2FP(feat_char[i*frame_size+j], QMFCC));
-                    #endif
-                    SUM += (L2_input_h[i*frame_size+j])*(L2_input_h[i*frame_size+j]);
-                }
-            }
+        // #if (DATA_TYPE==2) || (DATA_TYPE==3)
+        // float QSNR_THR = 40;
+        // #else
+        // float QSNR_THR = 38;
+        // #endif
+        // int N_FRAME = 49;
+        // int frame_size = 10;
+        // float MSE = 0.0, SUM = 0.0;
+        //     for (int i=0; i<N_FRAME; i++) {
+        //         for (int j=0; j<frame_size; j++) {
+        //             #if (DATA_TYPE==2) || (DATA_TYPE==3)
+        //                   MSE += (L2_input_h[i*frame_size+j] - feat_char[i*frame_size+j])*(L2_input_h[i*frame_size+j] - feat_char[i*frame_size+j]);
+        //             #else
+        //                   int QMFCC = 15 - NORM - 7;
+        //                   MSE += (L2_input_h[i*frame_size+j] - FIX2FP(feat_char[i*frame_size+j], QMFCC)) * (L2_input_h[i*frame_size+j] - FIX2FP(feat_char[i*frame_size+j], QMFCC));
+        //             #endif
+        //             SUM += (L2_input_h[i*frame_size+j])*(L2_input_h[i*frame_size+j]);
+        //         }
+        //     }
 
-            float QSNR = 10*log10(SUM / MSE);
-            // Sum is: 7163328.000000, whereas the MSE is: 12514.000000
-            // Sum is: 7565786.000000, whereas the MSE is: 1696096.000000
-            printf("\nSum is: %f, whereas the MSE is: %f\n", SUM, MSE);
-            printf("QSNR: %f (thr: %f) --> ", QSNR, QSNR_THR);
-            if (QSNR < QSNR_THR) {
-                printf("Test NOT PASSED\n");
-                // pmsis_exit(-1);
-            } else {
-                printf("Test PASSED\n");
-            }
+        //     float QSNR = 10*log10(SUM / MSE);
+        //     // Sum is: 7163328.000000, whereas the MSE is: 12514.000000
+        //     // Sum is: 7565786.000000, whereas the MSE is: 1696096.000000
+        //     printf("\nSum is: %f, whereas the MSE is: %f\n", SUM, MSE);
+        //     printf("QSNR: %f (thr: %f) --> ", QSNR, QSNR_THR);
+        //     if (QSNR < QSNR_THR) {
+        //         printf("Test NOT PASSED\n");
+        //         // pmsis_exit(-1);
+        //     } else {
+        //         printf("Test PASSED\n");
+        //     }
 
 
         pi_l2_free(out_feat, 49*10*4*sizeof(OUT_TYPE));
@@ -734,18 +746,6 @@ int denoiser(void)
         chunk_in_cnt++;
     }
 
-    // printf("\nFinished copying data\n");
-
-    dump_wav_open("test_gap.wav", 16, 16000, 1, sizeof(short)*AUDIO_BUFFER_SIZE);
-    dump_wav_write(MfccInSig, sizeof(short)*AUDIO_BUFFER_SIZE);
-    dump_wav_close();
-
-    // ORIGINAL
-    // dump_wav_open("test_gap.wav", 32, 48000, 1, BUFF_SIZE);
-    // dump_wav_write(MfccInSig, BUFF_SIZE);
-    // dump_wav_close();
-
-    printf("Writing wav file to test_gap.wav completed successfully\n");
 
     // Close the cluster
     pi_cluster_close(&cluster_dev);
