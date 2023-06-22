@@ -163,14 +163,13 @@ void net_step(void *args)
   unsigned int * real_args = (unsigned int *) args;
   void * l2_buffer = (void *) real_args[0];
   void * L3_weights_curr = (void *) real_args[1];
-
-  printf ("L3_weights_curr (net_step): %p\n", L3_weights_curr);
+  void * L3_weights_curr_updated = (void *) real_args[2];
 
   // L2 Dory to L1 TrainLib manual feature movement
   printf ("Training features\n");
   int in_feat_classif = 64;
   for (int i = 0; i < in_feat_classif; i++){
-      printf ("d[%i] = %f\n", i, ((float) ((uint8_t  *) l2_buffer)[i])/255 );
+      // printf ("d[%i] = %f\n", i, ((float) ((uint8_t  *) l2_buffer)[i])/255 );
       // Dory operates INT8, must be converted to FLOAT
       IN_DATA[i] = ((float) ((uint8_t  *) l2_buffer)[i])/255;
   }
@@ -180,23 +179,21 @@ void net_step(void *args)
   // Weights address - Wait for Dory to iterate and copy the data from there
   int dir = 1;
   void *L2_weights = NULL;
-  printf ("Size: %i\n", WGT_SIZE_L0);
   L2_weights = (uint8_t *) pi_l2_malloc(WGT_SIZE_L0 * sizeof(uint8_t));  
-  printf ("L2 weights: %p\n", L2_weights);
   cl_ram_read(L2_weights, L3_weights_curr, WGT_SIZE_L0);
-  printf ("L2 weights[0]: %p\n", ((uint8_t  *) L2_weights)[0]);
 
   // L2 Dory to L1 TrainLib manual weights movement
   printf ("Training weights");
   for (int i = 0; i < WGT_SIZE_L0; i++){
-
-      printf ("d[%i] = %f\n", i, ((float) ((uint8_t  *) L2_weights)[i])/255 );
-      
-      // IN_DATA[i] = (float) ((int*) l2_buffer)[i];
+      // printf ("d[%i] = %f\n", i, ((float) ((uint8_t  *) L2_weights)[i])/255 );
       // Dory operates INT8, must be converted to FLOAT
       init_WGT_l0[i] = ((float) ((uint8_t  *) L2_weights)[i])/255;
   }
 
+  printf("Original weights:\n");
+  for (int i = 0; i < 10; i++){
+    printf("W[%i] %f\n", i, init_WGT_l0[i]);
+  }
 
   printf("Initializing network..\n");
   DNN_init();
@@ -216,6 +213,14 @@ void net_step(void *args)
     compute_loss();
     backward();
     update_weights();
+  }
+  printf("Adapted weights:\n");
+  for (int i = 0; i < 10; i++){
+    printf("W[%i] %f\n", i, layer0_wgt.data[i]);
+  }
+
+  for (int i = 0; i < WGT_SIZE_L0; i++){
+   ((float*)L3_weights_curr_updated)[i] = layer0_wgt.data[i];
   }
 
   #ifdef PROF_NET
