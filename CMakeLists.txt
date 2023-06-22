@@ -48,11 +48,19 @@ set (WAV_FILE $ENV{WAV_FILE})
 set (MFCC $ENV{MFCC})
 set (INPUT $ENV{INPUT})
 
+# PULP trainlib
+set(MATMUL_TYPE_FW_L0  0)         # Selects which optimized matmul to be used in FW (see mm_manager_list.txt or "MM_manager()" body to verify which one is called)
+set(MATMUL_TYPE_WG_L0  0)         # Selects which optimized matmul to be used in WEIGHT GRAD (see mm_manager_list.txt or "MM_manager()" body to verify which one is called)
+set(MATMUL_TYPE_IG_L0  0)         # Selects which optimized matmul to be used in IN GRAD (see mm_manager_list.txt or "MM_manager()" body to verify which one is called)
+
+set (NUM_MATMULS 24)
+
 
 set(GAP9_SDK_DIR        /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk_private/)
 set(CURDIR              /usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/)
 set(BUILD_DIR           ${CURDIR}/build)
 set(MFCCBUILD_DIR       ${CURDIR}/BUILD_MFCC)
+set(TRAINLIB_DIR        ${CURDIR}/trainlib_example_dscnn/DSCNN)
 set(DSP_DIR             ${GAP9_SDK_DIR}tools/autotiler_v3/DSP_Libraries/)
 set(DSP_LUT_DIR         ${GAP9_SDK_DIR}tools/autotiler_v3/DSP_Libraries/LUT_Tables/)
 set(EMUL_DIR            ${GAP9_SDK_DIR}tools/autotiler_v3/Emulation/)
@@ -99,6 +107,8 @@ list (APPEND TARGET_INCS
                          -I${AUTOTILER_MFCC_DIR}
                          -I${WAVIO_DIR}
                          -I${DSP_GEN_DIR}
+                         -I${TRAINLIB_DIR}/lib/include
+                         -I${TRAINLIB_DIR}
 
 )
 
@@ -141,8 +151,36 @@ list (APPEND TARGET_SRCS ${CURDIR}DORY_network/src/BNReluConvolution0.c
                          ${CURDIR}DORY_network/src/pulp_nn_pointwise_HoWo_parallel.c
                          ${CURDIR}DORY_network/src/pulp_nn_utils.c
                          ${CURDIR}DORY_network/src/ReluPooling9.c
-                         ${CURDIR}DORY_network/src/thorir_dma.c # GAP8GAP9
-                         
+                         ${CURDIR}DORY_network/src/thorir_dma.c # GAP8GAP9                
+)
+
+list (APPEND TARGET_SRCS ${TRAINLIB_DIR}/net.c
+                         ${TRAINLIB_DIR}/lib/sources/pulp_act_fp16.c
+                         ${TRAINLIB_DIR}/lib/sources/pulp_act_fp32.c
+                         ${TRAINLIB_DIR}/lib/sources/pulp_conv2d_fp16.c
+                         ${TRAINLIB_DIR}/lib/sources/pulp_conv2d_fp32.c
+                         ${TRAINLIB_DIR}/lib/sources/pulp_conv_dw_fp16.c
+                         ${TRAINLIB_DIR}/lib/sources/pulp_conv_dw_fp32.c
+                         ${TRAINLIB_DIR}/lib/sources/pulp_conv_pw_fp16.c
+                         ${TRAINLIB_DIR}/lib/sources/pulp_conv_pw_fp32.c
+                         ${TRAINLIB_DIR}/lib/sources/pulp_im2col_fp16.c
+                         ${TRAINLIB_DIR}/lib/sources/pulp_im2col_fp32.c
+                         ${TRAINLIB_DIR}/lib/sources/pulp_linear_fp16.c
+                         ${TRAINLIB_DIR}/lib/sources/pulp_linear_fp32.c
+                         ${TRAINLIB_DIR}/lib/sources/pulp_losses_fp16.c
+                         ${TRAINLIB_DIR}/lib/sources/pulp_losses_fp32.c
+                         ${TRAINLIB_DIR}/lib/sources/pulp_matmul_fp16.c
+                         ${TRAINLIB_DIR}/lib/sources/pulp_matmul_fp32.c
+                         ${TRAINLIB_DIR}/lib/sources/pulp_mhsa_fp32.c
+                         ${TRAINLIB_DIR}/lib/sources/pulp_optimizers_fp16.c
+                         ${TRAINLIB_DIR}/lib/sources/pulp_optimizers_fp32.c
+                         ${TRAINLIB_DIR}/lib/sources/pulp_pooling_fp16.c
+                         ${TRAINLIB_DIR}/lib/sources/pulp_pooling_fp32.c
+                         # ${TRAINLIB_DIR}/lib/sources/pulp_residual_fp16.c
+                         # ${TRAINLIB_DIR}/lib/sources/pulp_residual_fp32.c
+                         ${TRAINLIB_DIR}/lib/sources/pulp_rnn_fp32.c
+                         ${TRAINLIB_DIR}/lib/sources/pulp_train_utils_fp16.c
+                         ${TRAINLIB_DIR}/lib/sources/pulp_train_utils_fp32.c
 )
 
 
@@ -182,6 +220,17 @@ list(APPEND TARGET_PREPROCESSOR -DPERF
                                 -DCONFIG_FLASH_LAYOUT_CUSTOM
                                 -DMODEL_L2_MEMORY
                                 -DTARGET_CHIP_FAMILY_GAP9
+                                # TrainLib
+                                -DFABRIC
+                                -DCLUSTER
+                                -DPROF_NET
+                                -mhwloopalign
+                                -DSTATS
+                                -DMATMUL_TYPE_FW_L0=${MATMUL_TYPE_FW_L0}
+                                -DMATMUL_TYPE_WG_L0=${MATMUL_TYPE_WG_L0}
+                                -DMATMUL_TYPE_IG_L0=${MATMUL_TYPE_IG_L0}
+
+
 
 )
 
