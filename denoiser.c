@@ -679,7 +679,9 @@ int denoiser(void)
         printf("Memory allocated.\n");
         // L3
         void * L3_weights_curr; // passing curr weights address, that will be used to update
-        network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, L3_weights_curr, 0);
+        network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &L3_weights_curr, 0);
+
+        printf ("L3_weights_curr (denoiser): %p\n", L3_weights_curr);
 
         // Declare word list, determine recognized keyword
         // 'silence,unknown,yes,no,up,down,left,right,on,off,stop,go,'

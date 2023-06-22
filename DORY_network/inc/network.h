@@ -26,7 +26,7 @@
 void network_terminate();
 void network_initialize();
 void network_run_cluster(void * args);
-void network_run(void *l2_buffer, size_t l2_buffer_size, void *l2_final_output, void *L3_weights_curr, int exec);
+void network_run(void *l2_buffer, size_t l2_buffer_size, void *l2_final_output, void **L3_weights_curr, int exec);
 void execute_layer_fork(void *arg);
 
 

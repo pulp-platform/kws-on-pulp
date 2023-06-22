@@ -164,6 +164,8 @@ void net_step(void *args)
   void * l2_buffer = (void *) real_args[0];
   void * L3_weights_curr = (void *) real_args[1];
 
+  printf ("L3_weights_curr (net_step): %p\n", L3_weights_curr);
+
   // L2 Dory to L1 TrainLib manual feature movement
   printf ("Training features\n");
   int in_feat_classif = 64;
@@ -178,8 +180,11 @@ void net_step(void *args)
   // Weights address - Wait for Dory to iterate and copy the data from there
   int dir = 1;
   void *L2_weights = NULL;
-  L2_weights = dmalloc(WGT_SIZE_L0*sizeof(uint8_t), dir);
+  printf ("Size: %i\n", WGT_SIZE_L0);
+  L2_weights = (uint8_t *) pi_l2_malloc(WGT_SIZE_L0 * sizeof(uint8_t));  
+  printf ("L2 weights: %p\n", L2_weights);
   cl_ram_read(L2_weights, L3_weights_curr, WGT_SIZE_L0);
+  printf ("L2 weights[0]: %p\n", ((uint8_t  *) L2_weights)[0]);
 
   // L2 Dory to L1 TrainLib manual weights movement
   printf ("Training weights");

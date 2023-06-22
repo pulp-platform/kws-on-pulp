@@ -47,6 +47,7 @@ static void *L3_input = NULL;
 static void *L3_output = NULL; 
 static void *L1_buffer = NULL;
 int cycle_network_execution;
+
 /* Moves the weights and the biases from hyperflash to hyperram */
 void network_initialize() {
 
@@ -117,7 +118,7 @@ void execute_layer_fork(void *args) {
 
 }
 
-void network_run(void *l2_buffer, size_t l2_buffer_size, void *l2_final_output, void *L3_weights_curr, int exec)
+void network_run(void *l2_buffer, size_t l2_buffer_size, void *l2_final_output, void ** L3_final_weights_curr, int exec)
 {
   struct pi_device cluster_dev = {0};
   struct pi_cluster_conf conf;
@@ -132,7 +133,6 @@ void network_run(void *l2_buffer, size_t l2_buffer_size, void *l2_final_output, 
   args[1] = (unsigned int) l2_buffer_size;
   args[2] = (unsigned int) l2_final_output;
   args[3] = (unsigned int) exec;
-  args[4] = (unsigned int) L3_weights_curr;
   // open cluster...
   pi_open_from_conf( &cluster_dev, &conf);
   if (pi_cluster_open(&cluster_dev))
@@ -149,6 +149,14 @@ void network_run(void *l2_buffer, size_t l2_buffer_size, void *l2_final_output, 
   pi_cl_l1_free((void *) 0, L1_buffer, 99000);
   pi_cluster_close(&cluster_dev);
   print_perf("Final", cycle_network_execution, 2656768);
+
+  // 9 layers with weights have been processed before FC layer  
+  *L3_final_weights_curr = L3_weights;
+  for (int i = 0; i < 9; i++){
+    *L3_final_weights_curr += L3_weights_size[i]; 
+  }
+  printf ("L3_weights_curr (network run): %p\n", *L3_final_weights_curr);
+
 }
 
 void network_run_cluster(void *args) {
@@ -157,7 +165,6 @@ void network_run_cluster(void *args) {
   size_t l2_buffer_size = (size_t) real_args[1];
   void * l2_final_output = (void *) real_args[2];
   int exec = (int) real_args[3];
-  void * L3_weights_curr = (void *) real_args[4];
 /*
   - initial buffer allocation L2 and L1
   - variable declaration
@@ -168,7 +175,7 @@ void network_run_cluster(void *args) {
   void *L2_output = NULL;
   void *L2_input = NULL;
   void *L2_weights = NULL;
-  L3_weights_curr = L3_weights; // Declaration moved above, passed as arg
+  void *L3_weights_curr = L3_weights; // Declaration moved above, passed as arg
   void *bypass_activations = NULL;
 
   int dir = 1;
@@ -341,6 +348,9 @@ void network_run_cluster(void *args) {
 
   for (int i=0; i<activations_out_size[10]; i++) // 10 should become 64, as we stop before FC
     *((uint8_t*)(l2_final_output+i)) = *((uint8_t*)(L2_output+i));
+
+  printf ("L3_weights_curr(network_run_cluster): %p\n", L3_weights_curr);
+
 
 /* ---------------------------------- */
 /* --------- SECTION 2 END ---------- */
