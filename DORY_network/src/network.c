@@ -117,7 +117,7 @@ void execute_layer_fork(void *args) {
 
 }
 
-void network_run(void *l2_buffer, size_t l2_buffer_size, void *l2_final_output, int exec)
+void network_run(void *l2_buffer, size_t l2_buffer_size, void *l2_final_output, void *L3_weights_curr, int exec)
 {
   struct pi_device cluster_dev = {0};
   struct pi_cluster_conf conf;
@@ -132,6 +132,7 @@ void network_run(void *l2_buffer, size_t l2_buffer_size, void *l2_final_output, 
   args[1] = (unsigned int) l2_buffer_size;
   args[2] = (unsigned int) l2_final_output;
   args[3] = (unsigned int) exec;
+  args[4] = (unsigned int) L3_weights_curr;
   // open cluster...
   pi_open_from_conf( &cluster_dev, &conf);
   if (pi_cluster_open(&cluster_dev))
@@ -156,6 +157,7 @@ void network_run_cluster(void *args) {
   size_t l2_buffer_size = (size_t) real_args[1];
   void * l2_final_output = (void *) real_args[2];
   int exec = (int) real_args[3];
+  void * L3_weights_curr = (void *) real_args[4];
 /*
   - initial buffer allocation L2 and L1
   - variable declaration
@@ -166,7 +168,7 @@ void network_run_cluster(void *args) {
   void *L2_output = NULL;
   void *L2_input = NULL;
   void *L2_weights = NULL;
-  void *L3_weights_curr = L3_weights;
+  L3_weights_curr = L3_weights; // Declaration moved above, passed as arg
   void *bypass_activations = NULL;
 
   int dir = 1;
@@ -336,7 +338,8 @@ void network_run_cluster(void *args) {
   }
 
   //memcpy(L2_output, l2_final_output, activations_out_size[10]); // BUGGY!
-  for (int i=0; i<activations_out_size[10]; i++)
+
+  for (int i=0; i<activations_out_size[10]; i++) // 10 should become 64, as we stop before FC
     *((uint8_t*)(l2_final_output+i)) = *((uint8_t*)(L2_output+i));
 
 /* ---------------------------------- */
