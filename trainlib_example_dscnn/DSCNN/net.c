@@ -9,6 +9,7 @@
 #include "initdefines.h"
 #include "iodata.h"
 
+#include "directional_allocator.h"
 
 
 /**
@@ -151,22 +152,46 @@ void check_post_training_output()
 **/
 
 // Call for a complete training step
-void net_step(l2_buffer)
-{
+// void net_step(void *l2_buffer, void *L3_weights_curr)
 
+void net_step(void *args)
+{
 
   // TODO: Move all in denoiser.c.
   // TODO: Add trainlib_example_dscnn back in .gitignore
 
+  unsigned int * real_args = (unsigned int *) args;
+  void * l2_buffer = (void *) real_args[0];
+  void * L3_weights_curr = (void *) real_args[1];
+
   // L2 Dory to L1 TrainLib manual feature movement
+  printf ("Training features\n");
   int in_feat_classif = 64;
   for (int i = 0; i < in_feat_classif; i++){
       printf ("d[%i] = %f\n", i, ((float) ((uint8_t  *) l2_buffer)[i])/255 );
-      
-      // IN_DATA[i] = (float) ((int*) l2_buffer)[i];
       // Dory operates INT8, must be converted to FLOAT
       IN_DATA[i] = ((float) ((uint8_t  *) l2_buffer)[i])/255;
   }
+
+  // L2 Dory to L1 TrainLib manual weights movement
+  // Weights size - 64 * 12 = WGT_SIZE_L0
+  // Weights address - Wait for Dory to iterate and copy the data from there
+  int dir = 1;
+  void *L2_weights = NULL;
+  L2_weights = dmalloc(WGT_SIZE_L0*sizeof(uint8_t), dir);
+  cl_ram_read(L2_weights, L3_weights_curr, WGT_SIZE_L0);
+
+  // L2 Dory to L1 TrainLib manual weights movement
+  printf ("Training weights");
+  for (int i = 0; i < WGT_SIZE_L0; i++){
+
+      printf ("d[%i] = %f\n", i, ((float) ((uint8_t  *) L2_weights)[i])/255 );
+      
+      // IN_DATA[i] = (float) ((int*) l2_buffer)[i];
+      // Dory operates INT8, must be converted to FLOAT
+      init_WGT_l0[i] = ((float) ((uint8_t  *) L2_weights)[i])/255;
+  }
+
 
   printf("Initializing network..\n");
   DNN_init();

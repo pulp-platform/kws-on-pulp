@@ -678,7 +678,8 @@ int denoiser(void)
 
         printf("Memory allocated.\n");
         // L3
-        network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, 0);
+        void * L3_weights_curr; // passing curr weights address, that will be used to update
+        network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, L3_weights_curr, 0);
 
         // Declare word list, determine recognized keyword
         // 'silence,unknown,yes,no,up,down,left,right,on,off,stop,go,'
@@ -733,6 +734,8 @@ int denoiser(void)
                 break;
         }
 
+
+
         printf("The uttered keyword was: %s.\n", prediction);
 
         // L2
@@ -763,7 +766,12 @@ int denoiser(void)
 
         printf("\nLaunching training procedure...\n");
         // pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, NULL));
-        pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, l2_buffer));
+
+        unsigned int args[2];
+        args[0] = (unsigned int) l2_buffer;
+        args[1] = (unsigned int) L3_weights_curr;
+
+        pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, args));
 
         printf("Exiting DNN Training.\n");
         pi_cluster_close(&cluster_dev);
