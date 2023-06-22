@@ -24,20 +24,20 @@
 #include "directional_allocator.h"
 #include "mem.h"
 #include <string.h>
+#include "BNReluConvolution3.h"
 #include "BNReluConvolution8.h"
 #include "BNReluConvolution1.h"
 #include "BNReluConvolution0.h"
 #include "BNReluConvolution4.h"
-#include "BNReluConvolution5.h"
-#include "BNReluConvolution3.h"
-#include "BNReluConvolution6.h"
-#include "BNReluConvolution2.h"
-#include "ReluPooling9.h"
-#include "BNReluConvolution7.h"
 #include "FullyConnected10.h"
+#include "BNReluConvolution5.h"
+#include "BNReluConvolution6.h"
+#include "BNReluConvolution7.h"
+#include "ReluPooling9.h"
+#include "BNReluConvolution2.h"
 
 
-// #define VERBOSE 0
+#define VERBOSE 1
 
 #define L3_WEIGHTS_SIZE 4000000
 #define L3_INPUT_SIZE 1500000
@@ -145,7 +145,7 @@ void network_run(void *l2_buffer, size_t l2_buffer_size, void *l2_final_output, 
   //cluster_task.stack_size = 3800;
   //cluster_task.slave_stack_size = 3600;
   pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task); 
-  pi_cl_l1_free((void *) 0, L1_buffer, 35000);
+  pi_cl_l1_free((void *) 0, L1_buffer, 99000);
   pi_cluster_close(&cluster_dev);
   print_perf("Final", cycle_network_execution, 2656768);
 }

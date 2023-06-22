@@ -107,6 +107,8 @@ list (APPEND TARGET_INCS
 
 set (NUM_CORES 8)
 set (GAP_SDK 1)
+
+set (TARGET_CHIP_FAMILY_GAP9 1)
 list (APPEND TARGET_SRCS ${CURDIR}DORY_network/src/BNReluConvolution0.c
                          ${CURDIR}DORY_network/src/BNReluConvolution1.c 
                          ${CURDIR}DORY_network/src/BNReluConvolution2.c 
@@ -116,7 +118,8 @@ list (APPEND TARGET_SRCS ${CURDIR}DORY_network/src/BNReluConvolution0.c
                          ${CURDIR}DORY_network/src/BNReluConvolution6.c 
                          ${CURDIR}DORY_network/src/BNReluConvolution7.c 
                          ${CURDIR}DORY_network/src/BNReluConvolution8.c 
-                         ${CURDIR}DORY_network/src/dory.c 
+                         ${CURDIR}DORY_network/src/dory.c # GAP8GAP9
+                         # ${CURDIR}DORY_network/src/dory_dma.c # ONESHOT
                          ${CURDIR}DORY_network/src/FullyConnected10.c 
                          ${CURDIR}DORY_network/src/mem.c 
                          ${CURDIR}DORY_network/src/net_utils.c 
@@ -138,7 +141,7 @@ list (APPEND TARGET_SRCS ${CURDIR}DORY_network/src/BNReluConvolution0.c
                          ${CURDIR}DORY_network/src/pulp_nn_pointwise_HoWo_parallel.c
                          ${CURDIR}DORY_network/src/pulp_nn_utils.c
                          ${CURDIR}DORY_network/src/ReluPooling9.c
-                         ${CURDIR}DORY_network/src/thorir_dma.c
+                         ${CURDIR}DORY_network/src/thorir_dma.c # GAP8GAP9
                          
 )
 
@@ -155,7 +158,7 @@ list(APPEND TARGET_CFLAGS   -O2
 
 
 list(APPEND TARGET_PREPROCESSOR -DPERF
-                                -DNUM_CORES=8
+                                -DNUM_CORES=${NUM_CORES}
                                 -DGAP_SDK=${GAP_SDK}
                                 -DFLASH_TYPE=${FLASH_TYPE}
                                 -DUSE_${FLASH_TYPE}
@@ -177,6 +180,8 @@ list(APPEND TARGET_PREPROCESSOR -DPERF
                                 -DCONFIG_GAP9_EVK
                                 -DFS_READ_FS
                                 -DCONFIG_FLASH_LAYOUT_CUSTOM
+                                -DMODEL_L2_MEMORY
+                                -DTARGET_CHIP_FAMILY_GAP9
 
 )
 

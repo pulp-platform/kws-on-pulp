@@ -35,6 +35,9 @@
 #define GRU 1
 #include "denoiser_dns.h"
 
+// #define L2_MEMORY_SIZE MODEL_L2_MEMORY
+#define L2_MEMORY_SIZE 128000
+
 
 #ifdef SILENT
 # define PRINTF(...) ((void) 0)
@@ -652,7 +655,7 @@ int denoiser(void)
         pi_l2_free(out_feat, 49*10*4*sizeof(OUT_TYPE));
 
         void *l2_buffer;
-        l2_buffer = pi_l2_malloc(80000);
+        l2_buffer = pi_l2_malloc(L2_MEMORY_SIZE);
         if (l2_buffer == NULL) {
             printf("failed to allocate memory for l2_buffer\n");
         }
@@ -674,7 +677,7 @@ int denoiser(void)
 
         printf("Memory allocated.\n");
         // L3
-        network_run(l2_buffer, 80000, l2_buffer, 0);
+        network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, 0);
 
         // Declare word list, determine recognized keyword
         // 'silence,unknown,yes,no,up,down,left,right,on,off,stop,go,'
@@ -732,9 +735,9 @@ int denoiser(void)
         printf("The uttered keyword was: %s.\n", prediction);
 
         // L2
-        // network_run(L2_input, 380000, l2_buffer, 0, L2_input_h);
+        // network_run(L2_input, L2_MEMORY_SIZE, l2_buffer, 0, L2_input_h);
 
-        pi_l2_free(l2_buffer, 80000);
+        pi_l2_free(l2_buffer, L2_MEMORY_SIZE);
 
         break;
 

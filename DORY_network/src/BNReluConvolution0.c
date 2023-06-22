@@ -114,6 +114,15 @@ void BNReluConvolution0(
   ////////////////////////////
   // First tile transfering //
   ////////////////////////////
+
+
+  int cycle_network_execution = 0;
+  // pi_perf_conf(1<<PI_PERF_CYCLES);
+  pi_perf_reset();
+  pi_perf_stop();
+  pi_perf_start();  // performance measurements: end
+
+
   DMA_copy_k.ext = (uint32_t) l2_W+2560;
   DMA_copy_k.loc = (uint32_t) l1_buffer + 11074;
   DMA_copy_k.number_of_2d_copies = 1;
@@ -151,6 +160,13 @@ void BNReluConvolution0(
 
   pi_cl_team_barrier(0);
 
+
+  pi_perf_stop();
+  cycle_network_execution =  pi_perf_read(PI_PERF_CYCLES);
+
+  printf ("Memory transfer 1: %i\n", cycle_network_execution);
+
+
   int total_tiles = 1;
   // tile loop nest
   for(iter=0; iter < total_tiles; iter++) {
@@ -183,6 +199,13 @@ void BNReluConvolution0(
 
     // double buffered reads
 
+
+
+    // pi_perf_conf(1<<PI_PERF_CYCLES);
+    pi_perf_reset();
+    pi_perf_stop();
+    pi_perf_start();  // performance measurements: end
+
     if(iter < (total_tiles-1) )
     {
       asm volatile("": : :"memory");
@@ -194,6 +217,7 @@ void BNReluConvolution0(
       W_length_nif_byte = (_i_nif_load+1 == 1) ? 1 : 1;
       // transfer of next input tile in double buffering
       // transfer of next weight tile if changed input or output channels
+
       if (_i_nif_load!=_i_nif_exec || _i_nof_load!=_i_nof_exec)
       {
         DMA_copy_W.ext = dory_get_tile_3d(l2_W, _i_nof_load, 0, _i_nif_load, 64, 10*4, 1, 10*4, 1, 0,0,0,0,0,0, 8);
@@ -213,6 +237,10 @@ void BNReluConvolution0(
         thorir_dma(&DMA_copy_lambda);
       }
     }
+
+    
+
+
     // creation of the pointers to input, output, weights, lambda and k
     x = (uint8_t *) (l1_buffer + 0 + exec_db_x);
     k = (int32_t *) (l1_buffer + 11074 + exec_db_act);
@@ -242,6 +270,17 @@ void BNReluConvolution0(
       p_r = 1;
     pi_cl_team_barrier(0);
     asm volatile("": : :"memory");
+
+    pi_perf_stop();
+    cycle_network_execution =  pi_perf_read(PI_PERF_CYCLES);
+    printf ("Memory transfer 2: %i\n", cycle_network_execution);
+
+
+    // pi_perf_conf(1<<PI_PERF_CYCLES);
+    pi_perf_reset();
+    pi_perf_stop();
+    pi_perf_start();  // performance measurements: end
+
     pulp_nn_conv_Ho_parallel(
       x, im2col,
       NULL,
@@ -258,6 +297,16 @@ void BNReluConvolution0(
    // wait for DMA write/read
      pi_cl_team_barrier(0);
 
+    pi_perf_stop();
+    cycle_network_execution =  pi_perf_read(PI_PERF_CYCLES);
+    printf ("Concrete operation: %i\n", cycle_network_execution);
+
+
+    // pi_perf_conf(1<<PI_PERF_CYCLES);
+    pi_perf_reset();
+    pi_perf_stop();
+    pi_perf_start();  // performance measurements: end
+
    if(iter < (total_tiles-1) && (_i_nif_load!=_i_nif_exec || _i_nof_load!=_i_nof_exec))
    {
        pi_cl_team_barrier(0);
@@ -268,6 +317,8 @@ void BNReluConvolution0(
       DMA_copy_y.number_of_1d_copies = y_tile_size_w;
       DMA_copy_y.length_1d_copy = y_length_nof_byte;
       thorir_dma(&DMA_copy_y);
+
+
     // update prev iterators
     db_state_y = ! db_state_y;
     _i_nof_exec = _i_nof_load;
@@ -276,6 +327,15 @@ void BNReluConvolution0(
     _i_w_exec = _i_w_load;
     pi_cl_team_barrier(0);
   }
+
+  
+  pi_perf_stop();
+  cycle_network_execution =  pi_perf_read(PI_PERF_CYCLES);
+  
+  printf ("Memory transfer 3: %i\n", cycle_network_execution);
+
+
+
 
 
   // wait for final write
