@@ -676,11 +676,6 @@ int denoiser(void)
             // printf("%i\n", feat_char[i]); // Online computed MFCC
         }
 
-        // On-board MFCC
-        // Checking final output: Checksum Failed: true [7965] vs. calculated [7583]
-        // Off-line MFCC
-        // Checking final output: Checksum Failed: true [7965] vs. calculated [8277]
-
         printf("Memory allocated.\n");
         // L3
         network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, 0);
@@ -751,6 +746,10 @@ int denoiser(void)
         // run training (don't clean buffer yet)
 
 
+        // Move weights from Dory to TrainLib
+
+
+        // Network update
         struct pi_device cluster_dev;
         struct pi_cluster_conf cl_conf;
         struct pi_cluster_task cl_task;
@@ -763,10 +762,13 @@ int denoiser(void)
         }
 
         printf("\nLaunching training procedure...\n");
-        pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, NULL));
+        // pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, NULL));
+        pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, l2_buffer));
 
         printf("Exiting DNN Training.\n");
         pi_cluster_close(&cluster_dev);
+
+        // Move weights from TrainLib to Dory
 
 
         break;

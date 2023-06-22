@@ -201,7 +201,12 @@ void network_run_cluster(void *args) {
 /* -------- SECTION 2 BEGIN --------- */
 /* ---------------------------------- */
   int weight_l_cnt = 0; // count how many layers with weights we have processed to increment the weights_L3 pointer
-  for (int i = 0; i < 11; i++) {
+
+
+  // int n_inf_layers = 11; // Inference
+  int n_inf_layers = 10; // Training
+
+  for (int i = 0; i < n_inf_layers; i++) {
 /* MEMORY ALLOCATION
   - allocate memory if layer is executed from L3;
   - allocate weights
