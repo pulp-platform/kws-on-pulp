@@ -155,7 +155,6 @@ void network_run(void *l2_buffer, size_t l2_buffer_size, void *l2_final_output, 
   for (int i = 0; i < 9; i++){
     *L3_final_weights_curr += L3_weights_size[i]; 
   }
-  printf ("L3_weights_curr (network run): %p\n", *L3_final_weights_curr);
 
 }
 
@@ -348,8 +347,6 @@ void network_run_cluster(void *args) {
 
   for (int i=0; i<activations_out_size[10]; i++) // 10 should become 64, as we stop before FC
     *((uint8_t*)(l2_final_output+i)) = *((uint8_t*)(L2_output+i));
-
-  printf ("L3_weights_curr(network_run_cluster): %p\n", L3_weights_curr);
 
 
 /* ---------------------------------- */

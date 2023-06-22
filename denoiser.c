@@ -769,16 +769,35 @@ int denoiser(void)
         printf("\nLaunching training procedure...\n");
         // pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, NULL));
 
+
+        // Move weights from TrainLib to Dory
+        void *L2_weights_curr_updated;
+        L2_weights_curr_updated = pi_l2_malloc(784 * sizeof(float));
+
+        int update = 0;
+        int init = 1;
+
         unsigned int args[2];
         args[0] = (unsigned int) l2_buffer;
         args[1] = (unsigned int) L3_weights_curr;
+        args[2] = (unsigned int) L2_weights_curr_updated;
+        args[3] = (unsigned int) update;
+        args[4] = (unsigned int) init;
+
+
 
         pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, args));
 
         printf("Exiting DNN Training.\n");
         pi_cluster_close(&cluster_dev);
 
-        // Move weights from TrainLib to Dory
+
+
+
+        printf("Copied weights:\n");
+        for (int i = 0; i < 10; i++){
+            printf("W[%i] %f\n", i, ((float*)L2_weights_curr_updated)[i]);
+        }
 
 
         break;
