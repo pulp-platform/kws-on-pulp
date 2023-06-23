@@ -14,36 +14,36 @@
 // #include "mram.h"
 // #define pi_default_flash_conf pi_mram_conf
 
-// L2
+#include "denoiser.h"
 
+// L2
 #include "input.h"
 
+// Peripherals
 #include "Gap.h"
 #include "bsp/ram.h"
 #include <bsp/fs/hostfs.h>
 #include "gaplib/wavIO.h" 
+#include "Graph_L2_Descr.h" // pdm_in_test
+#include "wavutil.h"
 
-#define DEMO 1 
+// MFCC
+#include "MFCC_params.h"
+#include "MfccKernels.h"
+#include "DCTTwiddles.def"
+#include "MelFBSparsity.def"
+#include "WindowLUT.def"
+#include "FFTTwiddles.def"
+#include "RFFTTwiddles.def"
+#include "MelFBCoeff.def"
+#include "SwapTable.def"
 
-#define DISABLE_NN_INFERENCE 1
+// DORY
+#include "mem.h"
+#include "network.h"
 
-#define PERF 1
-
-#define WAV_HEADER_SIZE 44 //bytes
-
-#define DEMO 1 
-#define GRU 1
-#include "denoiser_dns.h"
-
-// #define L2_MEMORY_SIZE MODEL_L2_MEMORY
-#define L2_MEMORY_SIZE 128000
-
-
-#ifdef SILENT
-# define PRINTF(...) ((void) 0)
-#else
-# define PRINTF printf
-#endif  /* DEBUG */
+// PULP TrainLib
+#include "net.h"
 
 
 /* 
@@ -51,8 +51,6 @@
 */
 struct pi_device DefaultRam; 
 struct pi_device* ram = &DefaultRam;
-
-// AT_DEFAULTFLASH_FS_EXT_ADDR_TYPE __PREFIX(_L3_Flash) = 0;
 
 #ifdef AUDIO_EVK
     // GPIO defines
@@ -65,212 +63,20 @@ static pi_fs_file_t * file[1];
 static struct pi_device fs;
 static struct pi_device flash;
 
-// allocate space to load the input signal
+// Load args
 char *WavName = NULL;
 char *mfcc = NULL;
 char *input = NULL;
 
-#include "Graph_L2_Descr.h" // pdm_in_test
-
-// FIXME: to tune it!!
-#define Q_BIT_IN 27
-#define Q_BIT_OUT (Q_BIT_IN-3)
-
-// #define BUFF_SIZE (FRAME_STEP*4)
-#define BUFF_SIZE (256*1024)
-// #define BUFF_SIZE (32*1024)
-#define AUDIO_BUFFER_SIZE 16000
-
-#define CHUNK_NUM (8)
-
-// SAI Setup
-#define STRUCT_DELAY (1)
-#define SAI1         (1)
-#define SAI_ITF_IN         (SAI1)
-#define SAI_ID               (48)
-#define SAI_SCK(itf)         (48+(itf*4)+0)
-#define SAI_WS(itf)          (48+(itf*4)+1)
-#define SAI_SDI(itf)         (48+(itf*4)+2)
-#define SAI_SDO(itf)         (48+(itf*4)+3)
-
-
-// MFCC
-
-#include "MFCC_params.h"
-#include "MfccKernels.h"
-
-#include "DCTTwiddles.def"
-#include "MelFBSparsity.def"
-#include "WindowLUT.def"
-#include "FFTTwiddles.def"
-#include "RFFTTwiddles.def"
-#include "MelFBCoeff.def"
-#include "SwapTable.def"
-
-#define  NORM           6
-
-#if (DATA_TYPE==2)
-typedef f16 MFCC_IN_TYPE;
-typedef f16 OUT_TYPE;
-#elif (DATA_TYPE==3)
-typedef float MFCC_IN_TYPE;
-typedef float OUT_TYPE;
-#else
-typedef short int OUT_TYPE; 
-typedef short int MFCC_IN_TYPE;
-#endif
-
-
-// #include "mfcc_offline.h"
-
+// Arrays handling data movement
 short int *inWav;
 MFCC_IN_TYPE *MfccInSig;
 OUT_TYPE *out_feat;
 char * feat_char;
 
-// DORY
-#include "mem.h"
-#include "network.h"
 
 SFU_uDMA_Channel_T *ChanOutCtxt_0;
 void * BufferInList;
-
-volatile int remaining_size;
-volatile int sent_size;
-volatile int done;
-int nb_transfers;
-int current_size[2];
-
-
-static PI_L2 uint8_t header_buffer[WAV_HEADER_SIZE];
-static struct pi_device fs_wav;
-static void *wavfile;
-
-
-// PULP TrainLib
-#include "net.h"
-
-
-
-void dump_wav_open(char *filename, int width, int sampling_rate, int nb_channels, int size)
-{
-    unsigned int idx = 0;
-    unsigned int sz = WAV_HEADER_SIZE + size;
-
-    // 4 bytes "RIFF"
-    header_buffer[idx++] = 'R';
-    header_buffer[idx++] = 'I';
-    header_buffer[idx++] = 'F';
-    header_buffer[idx++] = 'F';
-
-    // 4 bytes File size - 8bytes 32kS 0x10024 - 65408S 0x1ff24
-    //header_buffer[idx++] = 0x24;
-    //header_buffer[idx++] = 0xff;
-    //header_buffer[idx++] = 0x01;
-    //header_buffer[idx++] = 0x00;
-    header_buffer[idx++] = (unsigned char) (sz & 0x000000ff);
-    header_buffer[idx++] = (unsigned char)((sz & 0x0000ff00) >> 8);
-    header_buffer[idx++] = (unsigned char)((sz & 0x00ff0000) >> 16);
-    header_buffer[idx++] = (unsigned char)((sz & 0xff000000) >> 24);
-
-    // 4 bytes file type: "WAVE"
-    header_buffer[idx++] = 'W';
-    header_buffer[idx++] = 'A';
-    header_buffer[idx++] = 'V';
-    header_buffer[idx++] = 'E';
-
-    // 4 bytes format chunk: "fmt " last char is trailing NULL
-    header_buffer[idx++] = 'f';
-    header_buffer[idx++] = 'm';
-    header_buffer[idx++] = 't';
-    header_buffer[idx++] = ' ';
-
-    // 4 bytes length of format data below, until data part
-    header_buffer[idx++] = 0x10;
-    header_buffer[idx++] = 0x00;
-    header_buffer[idx++] = 0x00;
-    header_buffer[idx++] = 0x00;
-
-    // 2 bytes type of format: 1 (PCM)
-    header_buffer[idx++] = 0x01;
-    header_buffer[idx++] = 0x00;
-
-    // 2 bytes nb of channels: 1 or 2
-    //header_buffer[idx++] = 0x02;
-    //header_buffer[idx++] = 0x01;
-    header_buffer[idx++] = nb_channels;
-    header_buffer[idx++] = 0x00;
-
-    // 4 bytes sample rate in Hz:
-    header_buffer[idx++] = (sampling_rate >> 0) & 0xff;
-    header_buffer[idx++] = (sampling_rate >> 8) & 0xff;
-    header_buffer[idx++] = (sampling_rate >> 16) & 0xff;
-    header_buffer[idx++] = (sampling_rate >> 24) & 0xff;
-
-    // 4 bytes (Sample Rate * BitsPerSample * Channels) / 8:
-    // (8000*16*1)/8=0x3e80 * 2
-    // (16000*16*1)/8=32000 or 0x6F00
-    // (22050*16*1)/8=0xac44
-    // (22050*16*2)/8=0x15888
-    int rate = (sampling_rate * width * nb_channels) / 8;
-    header_buffer[idx++] = (rate >> 0) & 0xff;
-    header_buffer[idx++] = (rate >> 8) & 0xff;
-    header_buffer[idx++] = (rate >> 16) & 0xff;
-    header_buffer[idx++] = (rate >> 24) & 0xff;
-
-    // 2 bytes (BitsPerSample * Channels) / 8:
-    // 16*1/8=2 - 16b mono
-    // 16*2/8=4 - 16b stereo
-    rate = (width * nb_channels) / 8;
-    header_buffer[idx++] = (rate >> 0) & 0xff;
-    header_buffer[idx++] = (rate >> 8) & 0xff;
-
-    // 2 bytes bit per sample:
-    header_buffer[idx++] = width;
-    header_buffer[idx++] = 0x00;
-
-    // 4 bytes "data" chunk
-    header_buffer[idx++] = 'd';
-    header_buffer[idx++] = 'a';
-    header_buffer[idx++] = 't';
-    header_buffer[idx++] = 'a';
-
-    // 4 bytes size of data section in bytes:
-    header_buffer[idx++] = (unsigned char) (size & 0x000000ff);
-    header_buffer[idx++] = (unsigned char)((size & 0x0000ff00) >> 8);
-    header_buffer[idx++] = (unsigned char)((size & 0x00ff0000) >> 16);
-    header_buffer[idx++] = (unsigned char)((size & 0xff000000) >> 24);
-
-    struct pi_hostfs_conf conf;
-    pi_hostfs_conf_init(&conf);
-
-    pi_open_from_conf(&fs_wav, &conf);
-
-    if (pi_fs_mount(&fs_wav))
-     return;
-
-    wavfile = pi_fs_open(&fs_wav, filename, PI_FS_FLAGS_WRITE);
-    if (wavfile == 0)
-    {
-        printf("Failed to open file, %s\n", filename);
-        return;
-    }
-
-    pi_fs_write(wavfile, header_buffer, WAV_HEADER_SIZE);
-}
-
-void dump_wav_write(void *data, int size)
-{
-    pi_fs_write(wavfile, data, size);
-}
-
-
-void dump_wav_close()
-{
-    pi_fs_close(wavfile);
-
-    pi_fs_unmount(&fs_wav);
-}
 
 
 static int open_i2s_PDM(struct pi_device *i2s, unsigned int SAIn, unsigned int Frequency, unsigned int Polarity, unsigned int Diff)
@@ -678,11 +484,9 @@ int denoiser(void)
 
         printf("Memory allocated.\n");
         // L3
-        void * L3_weights_curr; // passing curr weights address, that will be used to update
+        void *L3_weights_curr; // passing curr weights address, that will be used to update
         network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &L3_weights_curr, 0);
-
-        printf ("L3_weights_curr (denoiser): %p\n", L3_weights_curr);
-
+        
         // Declare word list, determine recognized keyword
         // 'silence,unknown,yes,no,up,down,left,right,on,off,stop,go,'
         int max_val = -65535;

@@ -83,6 +83,7 @@ list (APPEND TARGET_SRCS
                          ${GAP9_SDK_DIR}/libs/gap_lib/wav_io/wavIO.c
                          ${MAIN}
                          dac.c
+                         wavutil.c
                          Graph_L2_Descr.c
                          ${GAP9_SDK_DIR}rtos/sfu/SFU_RT.c
                          ${GAP_SDK_HOME}/tools/audio-framework/runtime/include
