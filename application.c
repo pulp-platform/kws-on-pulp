@@ -518,6 +518,9 @@ int application(void){
             break;
         }
 
+        // TODO: Buffer the recording and the inference
+        // TODO: Trigger inference every 250 ms
+
 
     }
 
