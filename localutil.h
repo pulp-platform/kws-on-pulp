@@ -1,5 +1,5 @@
-#ifndef _WAVUTIL_H_
-#define _WAVUTIL_H_
+#ifndef _LOCALUTIL_H_
+#define _LOCALUTIL_H_
 
 #include "Gap.h"
 
@@ -11,6 +11,8 @@ static struct pi_device fs_wav;
 static void *wavfile;
 
 
+int predict (void * buffer_l2, int n_classes);
+
 void dump_wav_open(char *filename, int width, int sampling_rate, int nb_channels, int size);
 
 void dump_wav_write(void *data, int size);
@@ -18,4 +20,4 @@ void dump_wav_write(void *data, int size);
 void dump_wav_close();
 
 
-#endif /* WAVUTIL_H */
+#endif /* LOCALUTIL_H */

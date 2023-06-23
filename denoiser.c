@@ -25,7 +25,7 @@
 #include <bsp/fs/hostfs.h>
 #include "gaplib/wavIO.h" 
 #include "Graph_L2_Descr.h" // pdm_in_test
-#include "wavutil.h"
+#include "localutil.h"
 
 // MFCC
 #include "MFCC_params.h"
@@ -74,11 +74,11 @@ MFCC_IN_TYPE *MfccInSig;
 OUT_TYPE *out_feat;
 char * feat_char;
 
-
 SFU_uDMA_Channel_T *ChanOutCtxt_0;
 void * BufferInList;
 
 
+// Microphone handling
 static int open_i2s_PDM(struct pi_device *i2s, unsigned int SAIn, unsigned int Frequency, unsigned int Polarity, unsigned int Diff)
 {
     struct pi_i2s_conf i2s_conf;
@@ -107,11 +107,7 @@ static int open_i2s_PDM(struct pi_device *i2s, unsigned int SAIn, unsigned int F
     return 0;
 }
 
-/*
-    STFT computation
-        argument parameters are manually set based on STFT configuration
-*/
-
+// MFCC Computation
 static void RunMFCC()
 {
     #ifdef PERF
@@ -201,7 +197,7 @@ int denoiser(void)
     struct pi_cluster_conf cl_conf;
     pi_cluster_conf_init(&cl_conf);
     cl_conf.cc_stack_size = STACK_SIZE;
-        cl_conf.id = 0;                /* Set cluster ID. */
+    cl_conf.id = 0;                /* Set cluster ID. */
                        // Enable the special icache for the master core
     cl_conf.icache_conf = PI_CLUSTER_MASTER_CORE_ICACHE_ENABLE |   
                        // Enable the prefetch for all the cores, it's a 9bits mask (from bit 2 to bit 10), each bit correspond to 1 core
@@ -217,7 +213,6 @@ int denoiser(void)
     printf("Cluster Opened\n");
     pi_freq_set(PI_FREQ_DOMAIN_CL, FREQ_CL*1000*1000);
 
-
     if (input == "1") {
         // Instead of listening from microphone, we read from WAV.
         // Allocate L3 buffers for audio IN
@@ -229,7 +224,6 @@ int denoiser(void)
         }
         int num_samples = header_info.DataSize * 8 / (header_info.NumChannels * header_info.BitsPerSample);
         MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
-
     }
 
 
@@ -245,7 +239,6 @@ int denoiser(void)
     }
     pi_cluster_task_stacks(task_mfcc, NULL, SLAVE_STACK_SIZE);
 
-    
     
     if (input == "0") {
         
@@ -350,12 +343,9 @@ int denoiser(void)
         out_feat = (OUT_TYPE *) pi_l2_malloc(49 * 10 * 4 * sizeof(OUT_TYPE));    
         feat_char = (char*) pi_l2_malloc(49 * 10 * sizeof(char));
 
-        // MFCC generation - KWS on PULP
-
         /******
             Compute the MFCC
         ******/
-        
         printf("\n\n****** Computing MFCC ***** \n");
         pi_cluster_task(task_mfcc,&RunMFCC,NULL);
         L1_Memory = pi_l1_malloc(&cluster_dev, _L1_Memory_SIZE);
@@ -381,7 +371,6 @@ int denoiser(void)
         for (int i = 0; i < 1960;i++){                
             
             feat_char[k] = (char) (((int) floor(out_feat[i] * pow(2, -1) * sqrt(0.05))) + 128); // 23.883617 QSNR w/ float
-            
 
             // Select 10 MFCC per window
             if (i == 40*(k/10) + 9){
@@ -446,78 +435,9 @@ int denoiser(void)
         printf("Memory allocated.\n");
         // L3
         void *L3_weights_curr; // passing curr weights address, that will be used to update
-        network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &L3_weights_curr, 0);
+        network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &L3_weights_curr, 0); // L2_input_h extra-arg for L2-only
 
-        // Declare word list, determine recognized keyword
-        // 'silence,unknown,yes,no,up,down,left,right,on,off,stop,go,'
-        int max_val = -65535;
-        int max_idx = 0;
-        char prediction[10];
-        for (int i = 0; i < 12; i++){
-            printf ("d[%i] = %i\n", i, ((int*) l2_buffer)[i]);
-
-            if (((int*) l2_buffer)[i] > max_val){
-                max_val = ((int*) l2_buffer)[i];
-                max_idx = i;
-            }
-        }
-
-        switch (max_idx){
-            case 0:
-                strncpy(prediction, "silence", 10);
-                break;
-            case 1:
-                strncpy(prediction, "unknown", 10);
-                break;
-            case 2:
-                strncpy(prediction, "yes", 10);
-                break;
-            case 3:
-                strncpy(prediction, "no", 10);
-                break;
-            case 4:
-                strncpy(prediction, "up", 10);
-                break;
-            case 5:
-                strncpy(prediction, "down", 10);
-                break;
-            case 6:
-                strncpy(prediction, "left", 10);
-                break;
-            case 7:
-                strncpy(prediction, "right", 10);
-                break;
-            case 8:
-                strncpy(prediction, "on", 10);
-                break;
-            case 9:
-                strncpy(prediction, "off", 10);
-                break;
-            case 10:
-                strncpy(prediction, "stop", 10);
-                break;
-            case 11:
-                strncpy(prediction, "go", 10);
-                break;
-        }
-
-
-
-        printf("The uttered keyword was: %s.\n", prediction);
-
-        // L2
-        // network_run(L2_input, L2_MEMORY_SIZE, l2_buffer, 0, L2_input_h);
-
-
-        // clean buffer
-        // pi_l2_free(l2_buffer, L2_MEMORY_SIZE);
-
-
-        // run training (don't clean buffer yet)
-
-
-        // Move weights from Dory to TrainLib
-
+        int predicted_class = predict (l2_buffer);
 
         // Network update
         struct pi_device cluster_dev;
@@ -532,8 +452,6 @@ int denoiser(void)
         }
 
         printf("\nLaunching training procedure...\n");
-        // pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, NULL));
-
 
         // Move weights from TrainLib to Dory
         void *L2_weights_curr_updated;
@@ -549,20 +467,19 @@ int denoiser(void)
         args[3] = (unsigned int) update;
         args[4] = (unsigned int) init;
 
-
-
         pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, args));
 
         printf("Exiting DNN Training.\n");
         pi_cluster_close(&cluster_dev);
 
 
-
-
         printf("Copied weights:\n");
         for (int i = 0; i < 10; i++){
             printf("W[%i] %f\n", i, ((float*)L2_weights_curr_updated)[i]);
         }
+
+        // clean buffer
+        pi_l2_free(l2_buffer, L2_MEMORY_SIZE);
 
 
         break;

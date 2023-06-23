@@ -1,4 +1,66 @@
-#include "wavutil.h"
+#include "localutil.h"
+
+
+int predict (void * buffer_l2, int n_classes){
+
+    // Declare word list, determine recognized keyword
+    // 'silence,unknown,yes,no,up,down,left,right,on,off,stop,go,'
+    int max_val = -65535;
+    int max_idx = 0;
+    char prediction[10];
+    for (int i = 0; i < n_classes; i++){
+        PRINTF ("d[%i] = %i\n", i, ((int*) l2_buffer)[i]);
+
+        if (((int*) l2_buffer)[i] > max_val){
+            max_val = ((int*) l2_buffer)[i];
+            max_idx = i;
+        }
+    }
+
+    switch (max_idx){
+        case 0:
+            strncpy(prediction, "silence", 10);
+            break;
+        case 1:
+            strncpy(prediction, "unknown", 10);
+            break;
+        case 2:
+            strncpy(prediction, "yes", 10);
+            break;
+        case 3:
+            strncpy(prediction, "no", 10);
+            break;
+        case 4:
+            strncpy(prediction, "up", 10);
+            break;
+        case 5:
+            strncpy(prediction, "down", 10);
+            break;
+        case 6:
+            strncpy(prediction, "left", 10);
+            break;
+        case 7:
+            strncpy(prediction, "right", 10);
+            break;
+        case 8:
+            strncpy(prediction, "on", 10);
+            break;
+        case 9:
+            strncpy(prediction, "off", 10);
+            break;
+        case 10:
+            strncpy(prediction, "stop", 10);
+            break;
+        case 11:
+            strncpy(prediction, "go", 10);
+            break;
+        default:
+            printf ("Undefined class!\n");
+    }
+
+    printf("The uttered keyword was: %s.\n", prediction);
+    return max_idx;
+}
 
 void dump_wav_open(char *filename, int width, int sampling_rate, int nb_channels, int size)
 {
