@@ -59,7 +59,6 @@ set (NUM_MATMULS 24)
 set(GAP9_SDK_DIR        /home/cioflanc/odda_gap9/gap_sdk_private/)
 set(CURDIR              /home/cioflanc/odda_gap9/tiny_denoiser/)
 set(BUILD_DIR           ${CURDIR}/build)
-set(MFCCBUILD_DIR       ${CURDIR}/BUILD_MFCC) # TODO: Add this in CMake
 set(TRAINLIB_DIR        ${CURDIR}/trainlib_example_dscnn/DSCNN)
 set(DSP_DIR             ${GAP9_SDK_DIR}tools/autotiler_v3/DSP_Libraries/)
 set(DSP_LUT_DIR         ${GAP9_SDK_DIR}tools/autotiler_v3/DSP_Libraries/LUT_Tables/)
@@ -69,7 +68,53 @@ set(AUTOTILER_MFCC_DIR  ${GAP9_SDK_DIR}tools/autotiler_v3/Generators/MFCC/)
 set(WAVIO_DIR           ${GAP9_SDK_DIR}libs/gap_lib/include/)
 set(DSP_GEN_DIR         ${GAP9_SDK_DIR}/tools/autotiler_v3/DSP_Generators/)
 
+set(MFCC_SRCG                    ${GAP9_SDK_DIR}/tools/autotiler_v3/DSP_Generators/DSP_Generators.c)
+set(MFCC_MODEL_GEN               ${BUILD_DIR}/GenMFCC)
+set(MFCC_HEAD                    ${BUILD_DIR}/MFCC_params.h)
+set(MFCC_PARAMS_JSON             ${CURDIR}/MfccConfig.json)
+set(MFCC_SRC_CODE                ${BUILD_DIR}/MfccKernels.c)
+
 # Application
+
+add_custom_command (
+    
+    OUTPUT    ${MFCC_MODEL_GEN}
+    COMMAND   python ${DSP_GEN_DIR}/DSP_LUTGen.py ${MFCC_PARAMS_JSON} --build_dir ${BUILD_DIR} --save_params_header ${MFCC_HEAD} --save_text
+
+)
+
+add_custom_command (
+    
+    OUTPUT    ${MFCC_SRC_CODE}
+    COMMAND   ${MFCC_MODEL_GEN} -o ${BUILD_DIR} -c ${BUILD_DIR} ${MODEL_GEN_EXTRA_FLAGS}
+    DEPENDS   ${MFCC_MODEL_GEN}
+
+)
+
+add_custom_target (
+    MFCC_HEAD
+    WORKING_DIRECTORY    ${BUILD_DIR}
+    COMMAND              python ${DSP_GEN_DIR}/DSP_LUTGen.py ${MFCC_PARAMS_JSON} --build_dir ${BUILD_DIR} --save_params_header ${MFCC_HEAD} --save_text
+    SOURCES              ${MFCC_PARAMS_JSON}
+    BYPRODUCTS           ${MFCC_HEAD}
+)
+
+
+add_custom_target (
+    MFCC_MODEL_GEN
+    WORKING_DIRECTORY    ${BUILD_DIR}
+    COMMAND              gcc -g -o ${MFCC_MODEL_GEN} -I${BUILD_DIR} -I${DSP_GEN_DIR} -I${TILER_INC} -I${TILER_EMU_INC} ${CURDIR}/MfccModel.c ${MFCC_SRCG} ${TILER_LIB} ${TABLE_CFLAGS} ${COMPILE_MODEL_EXTRA_FLAGS} -DUSE_POWER=${USE_POWER} ${SDL_FLAGS}
+    BYPRODUCTS           ${MFCC_MODEL_GEN}   
+    DEPENDS              ${MFCC_HEAD}          
+
+)
+
+add_custom_target (
+    mfcc_src
+    WORKING_DIRECTORY    ${BUILD_DIR}
+    COMMAND              
+    DEPENDS              ${MFCC_MODEL_GEN}
+)
 
 
 add_custom_target(
@@ -80,6 +125,7 @@ add_custom_target(
     BYPRODUCTS          ${BUILD_DIR}/Graph_L2_Descr.c ${BUILD_DIR}/Graph_L2_Descr.h ${BUILD_DIR}/L2_Descr_Table.c ${BUILD_DIR}/L2_Descr_Table.h
     )
 
+
 list (APPEND TARGET_SRCS 
                          
                          
@@ -88,7 +134,7 @@ list (APPEND TARGET_SRCS
                          ${DSP_DIR}PreProcessing.c
                          ${DSP_DIR}math_funcs.c
                          ${DSP_DIR}MfccBasicKernels.c
-                         ${MFCCBUILD_DIR}/MfccKernels.c 
+                         ${BUILD_DIR}/MfccKernels.c 
                          ${GAP9_SDK_DIR}/libs/gap_lib/wav_io/wavIO.c
                          ${MAIN}
                          dac.c
@@ -111,7 +157,6 @@ list (APPEND TARGET_INCS
                          -I${GAP9_SDK_DIR}rtos/pmsis/bsp/include/bsp/flash
                          -I${GAP9_SDK_DIR}rtos/sfu/include
                          -I.
-                         -I${MFCCBUILD_DIR}
                          -I${DSP_DIR}
                          -I${DSP_LUT_DIR}
                          -I${AUTOTILER_DIR}

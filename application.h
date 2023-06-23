@@ -17,8 +17,7 @@
 #define SCALE_IN denoiser_dns_Input_1_OUT_SCALE
 #define SCALE_OUT denoiser_dns_Output_1_OUT_SCALE
 
-// #define BUFF_SIZE (48*1024*4)
-#define BUFF_SIZE (256*1024)
+#define BUFF_SIZE (48*1024*4)
 #define AUDIO_BUFFER_SIZE 16000 // (32*1024)
 #define CHUNK_NUM (8)
 
@@ -33,19 +32,16 @@
 
 #define L2_MEMORY_SIZE MODEL_L2_MEMORY // TODO: Read from CMake
 
-// #if (DATA_TYPE==2)
-// typedef f16 MFCC_IN_TYPE;
-// typedef f16 OUT_TYPE;
-// #elif (DATA_TYPE==3)
-// typedef float MFCC_IN_TYPE;
-// typedef float OUT_TYPE;
-// #else
-// typedef short int OUT_TYPE; 
-// typedef short int MFCC_IN_TYPE;
-// #endif
-
-typedef short int OUT_TYPE; 
-typedef short int MFCC_IN_TYPE;
+#if (DATA_TYPE==2)
+typedef f16 MFCC_IN_TYPE;
+typedef f16 OUT_TYPE;
+#elif (DATA_TYPE==3)
+typedef float MFCC_IN_TYPE;
+typedef float OUT_TYPE;
+#else
+typedef short int OUT_TYPE;  // Save MFCCs works 
+typedef short int MFCC_IN_TYPE; // Save MFCCs works
+#endif
 
 #define NORM 6
 

@@ -251,7 +251,7 @@ int application(void){
     pi_l2_free(l2_buffer, L2_MEMORY_SIZE);
 
     int test_idx = 0;
-    int test_array[10] = {0, 0, 1, 0, 1, 1, 0, 0}; // if 1 - update
+    int test_array[10] = {0, 1, 0, 1, 1, 0, 0}; // if 1 - update
 
     // Inference loop
     while (1){
@@ -299,7 +299,7 @@ int application(void){
             // Connect Channels to SFU for Mic IN (PDM IN)
             SFU_GraphConnectIO(SFU_Name(Graph, Out1), ChanOutCtxt_0->ChannelId, 0, &SFU_RTD(Graph));
             SFU_GraphConnectIO(SFU_Name(Graph, In1), SAI1, 2, &SFU_RTD(Graph));
-            // pi_l2_free(ChanOutCtxt_0, sizeof(SFU_uDMA_Channel_T));
+            pi_l2_free(ChanOutCtxt_0, sizeof(SFU_uDMA_Channel_T));
 
             printf("Start rec!\n");
 
@@ -325,11 +325,10 @@ int application(void){
     #endif
 
         if (input == "0") {
-            // int round = (chunk_in_cnt%CHUNK_NUM);
-            // int round_out = (chunk_in_cnt>(STRUCT_DELAY-1))? ((chunk_in_cnt-(STRUCT_DELAY-1))%CHUNK_NUM):0;
             // Scale data
-            int outidx = 0;
+            int outidx;
             for(int i=0;i<BUFF_SIZE;i+=3){
+
                 // printf("BufferInList)[%i]=%f\n", i, ((int32_t*)BufferInList)[i]);
                 MfccInSig[outidx] = (MFCC_IN_TYPE)(((float)((int32_t*)BufferInList)[i]) /((int)(1<<16)));
                 outidx++;
@@ -368,8 +367,6 @@ int application(void){
             printf("Writing wav file to test_gap.wav completed successfully\n");
 
         }
-
-
 
         /******
             Compute the MFCC
