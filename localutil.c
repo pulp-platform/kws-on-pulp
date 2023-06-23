@@ -1,7 +1,7 @@
 #include "localutil.h"
 
 
-int predict (void * buffer_l2, int n_classes){
+int predict (void * l2_buffer, int n_classes){
 
     // Declare word list, determine recognized keyword
     // 'silence,unknown,yes,no,up,down,left,right,on,off,stop,go,'

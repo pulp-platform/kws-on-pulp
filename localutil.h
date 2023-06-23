@@ -2,6 +2,7 @@
 #define _LOCALUTIL_H_
 
 #include "Gap.h"
+#include "application.h"
 
 #define WAV_HEADER_SIZE 44 // bytes
 
@@ -11,7 +12,7 @@ static struct pi_device fs_wav;
 static void *wavfile;
 
 
-int predict (void * buffer_l2, int n_classes);
+int predict (void * l2_buffer, int n_classes);
 
 void dump_wav_open(char *filename, int width, int sampling_rate, int nb_channels, int size);
 

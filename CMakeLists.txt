@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 3.19.5)
 
 # Application
 
-set(TARGET_NAME         "denoiser")
-set(MAIN                "denoiser.c")
+set(TARGET_NAME         "application")
+set(MAIN                "application.c")
 
 
 # Cmake pre-inits
@@ -219,7 +219,7 @@ list(APPEND TARGET_PREPROCESSOR -DPERF
                                 -DCONFIG_GAP9_EVK
                                 -DFS_READ_FS
                                 -DCONFIG_FLASH_LAYOUT_CUSTOM
-                                -DMODEL_L2_MEMORY
+                                -DMODEL_L2_MEMORY=${MODEL_L2_MEMORY}
                                 -DTARGET_CHIP_FAMILY_GAP9
                                 # TrainLib
                                 -DFABRIC

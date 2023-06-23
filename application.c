@@ -14,7 +14,7 @@
 // #include "mram.h"
 // #define pi_default_flash_conf pi_mram_conf
 
-#include "denoiser.h"
+#include "application.h"
 
 // L2
 #include "input.h"
@@ -76,6 +76,8 @@ char * feat_char;
 
 SFU_uDMA_Channel_T *ChanOutCtxt_0;
 void * BufferInList;
+
+static int chunk_in_cnt;
 
 
 // Microphone handling
@@ -141,16 +143,10 @@ static void RunMFCC()
     #endif
 }
 
-static int chunk_in_cnt;
+int application(void){
 
-int denoiser(void)
-{
-    printf("Entering main controller\n");
+    printf ("Environment setup");
 
-    /****
-        Change Frequency if needed
-    ****/
- 
     // Voltage-Frequency settings
     uint32_t voltage =VOLTAGE;
     pi_freq_set(PI_FREQ_DOMAIN_FC,      FREQ_FC*1000*1000);
@@ -192,7 +188,6 @@ int denoiser(void)
     /****
         Configure And open cluster. 
     ****/
-
     struct pi_device cluster_dev;
     struct pi_cluster_conf cl_conf;
     pi_cluster_conf_init(&cl_conf);
@@ -213,108 +208,127 @@ int denoiser(void)
     printf("Cluster Opened\n");
     pi_freq_set(PI_FREQ_DOMAIN_CL, FREQ_CL*1000*1000);
 
-    if (input == "1") {
-        // Instead of listening from microphone, we read from WAV.
-        // Allocate L3 buffers for audio IN
-        inWav    = (short int *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(short));  
-        header_struct header_info;
-        if (ReadWavFromFile(WavName, inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
-            printf("Error reading wav file\n");
-            pmsis_exit(1);
-        }
-        int num_samples = header_info.DataSize * 8 / (header_info.NumChannels * header_info.BitsPerSample);
-        MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
-    }
-
-
-    /******
-        Setup MFCC task
-    ******/
-    printf("Setup MFCC task!\n");
-    struct pi_cluster_task* task_mfcc;
-    task_mfcc = pi_l2_malloc(sizeof(struct pi_cluster_task));
-    pi_cluster_task(task_mfcc,&RunMFCC,NULL);
-    if (task_mfcc == NULL) {
-        PRINTF("failed to allocate memory for task\n");
-    }
-    pi_cluster_task_stacks(task_mfcc, NULL, SLAVE_STACK_SIZE);
-
-    
-    if (input == "0") {
-        
-        /****
-            Setup the SFU for PDM in/out
-        ****/
-        struct pi_device i2s_sai1;
-
-        // Configure PDM
-        if (open_i2s_PDM(&i2s_sai1, SAI1,   3072000, 3, 0)) return -1;
-
-        StartSFU(FREQ_SFU*1000*1000, 1);
-        ChanOutCtxt_0  = (SFU_uDMA_Channel_T *) pi_l2_malloc(sizeof(SFU_uDMA_Channel_T));
-
-
-        BufferInList = (void*) pi_l2_malloc(BUFF_SIZE);
-            
-        // Get uDMA channels for Graph
-        SFU_Allocate_uDMA_Channel(ChanOutCtxt_0, 0, &SFU_RTD(Graph));
-
-        //Next API will have a value to replace this high number with -1
-        //To be able to 
-        SFU_Enqueue_uDMA_Channel(ChanOutCtxt_0, BufferInList, BUFF_SIZE);
-        
-        // Connect Channels to SFU for Mic IN (PDM IN)
-        SFU_GraphConnectIO(SFU_Name(Graph, Out1), ChanOutCtxt_0->ChannelId, 0, &SFU_RTD(Graph));
-        SFU_GraphConnectIO(SFU_Name(Graph, In1), SAI_ITF_IN, 2, &SFU_RTD(Graph));
-
-        pi_l2_free(ChanOutCtxt_0, sizeof(SFU_uDMA_Channel_T));
-
-        fxl6408_setup();
-
-        printf("Recording!\n");
-
-        //Starting In and Out Graphs
-        pi_i2s_ioctl(&i2s_sai1, PI_I2S_IOCTL_START, NULL);
-        // Let the microphone start
-        pi_time_wait_us(30000); 
-
-        chunk_in_cnt=0;
-        SFU_StartGraph(&SFU_RTD(Graph));
-        pi_time_wait_us(2000000);
-
-        pi_i2s_ioctl(&i2s_sai1, PI_I2S_IOCTL_STOP, NULL);
-
-        printf("Finished!\n");
-
-        MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(BUFF_SIZE);
-
-    }
-
-    // WRITE WAV
-    dump_wav_open("test_gap.wav", 16, 16000, 1, sizeof(short)*AUDIO_BUFFER_SIZE);
-    dump_wav_write(MfccInSig, sizeof(short)*AUDIO_BUFFER_SIZE);
-    dump_wav_close();
-
-    printf("Writing wav file to test_gap.wav completed successfully\n");
-
     // Dory init
-    // TODO: Remove flash init and/or ram init duplicates
     mem_init();
-    network_initialize(); // Absent in L2
+    network_initialize(); // Absent in L2-only
+    pi_cluster_close(&cluster_dev);
 
-    while(1){
+    // DORY - TrainLib FC weights copy
+    void *l2_buffer;
+    l2_buffer = pi_l2_malloc(L2_MEMORY_SIZE);
+    if (l2_buffer == NULL) {
+        printf("failed to allocate memory for l2_buffer\n");
+    }
+    void *L2_FC_weights_int8;
+    network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &L2_FC_weights_int8, 0); // L2_input_h extra-arg for L2-only
 
-#ifdef AUDIO_EVK
+    // Run classifier
+    struct pi_cluster_task cl_task;
+    pi_cluster_conf_init(&cl_conf);
+    pi_open_from_conf(&cluster_dev, &cl_conf);
+    if (pi_cluster_open(&cluster_dev))
+    {
+      return -1;
+    }
+    
+    void * L2_FC_weights_float;
+    L2_FC_weights_float = pi_l2_malloc (784 * 4);
+    unsigned int args[5];
+    args[0] = (unsigned int) l2_buffer;
+    args[1] = (unsigned int) L2_FC_weights_int8; // Weights buffer
+    args[2] = (unsigned int) L2_FC_weights_float;
+    args[3] = (unsigned int) 0; // update = 0
+    args[4] = (unsigned int) 1; // init = 0
+
+    pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, args));
+
+    pi_cluster_close(&cluster_dev);
+
+    // pi_l2_free(l2_buffer, L2_MEMORY_SIZE);
+    // pi_l2_free(L2_FC_weights_float, 784 * 4);
+
+    // Inference loop
+    while (1){
+
+        // Read from WAV
+        if (input == "1") {
+            // Instead of listening from microphone, we read from WAV.
+            // Allocate L3 buffers for audio IN
+            inWav    = (short int *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(short));  
+            header_struct header_info;
+            if (ReadWavFromFile(WavName, inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+                printf("Error reading wav file\n");
+                pmsis_exit(1);
+            }
+            int num_samples = header_info.DataSize * 8 / (header_info.NumChannels * header_info.BitsPerSample);
+            MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
+
+            // Log WAV 
+            dump_wav_open("test_gap.wav", 16, 16000, 1, sizeof(short)*AUDIO_BUFFER_SIZE);
+            dump_wav_write(MfccInSig, sizeof(short)*AUDIO_BUFFER_SIZE);
+            dump_wav_close();
+            printf("Writing wav file to test_gap.wav completed successfully\n");
+        }
+
+        // Read from MIC
+        else if (input == "0") {
+        
+            /****
+                Setup the SFU for PDM in/out
+            ****/
+            struct pi_device i2s_sai1;
+
+            // Configure PDM
+            if (open_i2s_PDM(&i2s_sai1, SAI1,   3072000, 3, 0)) return -1;
+
+            StartSFU(FREQ_SFU*1000*1000, 1);
+
+            ChanOutCtxt_0  = (SFU_uDMA_Channel_T *) pi_l2_malloc(sizeof(SFU_uDMA_Channel_T));
+            BufferInList = (void*) pi_l2_malloc(BUFF_SIZE);
+            // Get uDMA channels for Graph
+            SFU_Allocate_uDMA_Channel(ChanOutCtxt_0, 0, &SFU_RTD(Graph));
+            //Next API will have a value to replace this high number with -1
+            //To be able to 
+            SFU_Enqueue_uDMA_Channel(ChanOutCtxt_0, BufferInList, BUFF_SIZE);
+            // Connect Channels to SFU for Mic IN (PDM IN)
+            SFU_GraphConnectIO(SFU_Name(Graph, Out1), ChanOutCtxt_0->ChannelId, 0, &SFU_RTD(Graph));
+            SFU_GraphConnectIO(SFU_Name(Graph, In1), SAI_ITF_IN, 2, &SFU_RTD(Graph));
+            pi_l2_free(ChanOutCtxt_0, sizeof(SFU_uDMA_Channel_T));
+
+            fxl6408_setup();
+
+            printf("Start rec!\n");
+
+            //Starting In and Out Graphs
+            pi_i2s_ioctl(&i2s_sai1, PI_I2S_IOCTL_START, NULL);
+            // Let the microphone start
+            pi_time_wait_us(30000); 
+
+            chunk_in_cnt=0;
+            SFU_StartGraph(&SFU_RTD(Graph));
+            pi_time_wait_us(2000000);
+
+            pi_i2s_ioctl(&i2s_sai1, PI_I2S_IOCTL_STOP, NULL);
+
+            printf("Finish rec!\n");
+
+            MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(BUFF_SIZE);
+
+            // Log WAV 
+            dump_wav_open("test_gap.wav", 16, 16000, 1, BUFF_SIZE);
+            dump_wav_write(MfccInSig, BUFF_SIZE);
+            dump_wav_close();
+            printf("Writing wav file to test_gap.wav completed successfully\n");
+        }
+
+    #ifdef AUDIO_EVK
         pi_gpio_pin_write(gpio_pin_o, 1);
-#endif
-
+    #endif
 
         if (input == "0") {
             int round = (chunk_in_cnt%CHUNK_NUM);
             int round_out = (chunk_in_cnt>(STRUCT_DELAY-1))? ((chunk_in_cnt-(STRUCT_DELAY-1))%CHUNK_NUM):0;
-
-
-            printf ("Scale data\n");
+            // Scale data
             int outidx = 0;
             for(int i=0;i<BUFF_SIZE;i+=3){
                 MfccInSig[outidx] = (MFCC_IN_TYPE)(((float)((int32_t*)BufferInList)[i]) /((int)(1<<16)));
@@ -326,8 +340,7 @@ int denoiser(void)
             }
             pi_l2_free(BufferInList, BUFF_SIZE);
         }
-
-        if (input == "1"){
+        else if (input == "1"){
             #if (DATA_TYPE==2) || (DATA_TYPE==3)
                 for (int i=0; i<AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
                     MfccInSig[i] = (MFCC_IN_TYPE) inWav[i] / (1<<15);
@@ -339,34 +352,52 @@ int denoiser(void)
             #endif
             pi_l2_free(inWav, AUDIO_BUFFER_SIZE * sizeof(short));
         }
-        
-        out_feat = (OUT_TYPE *) pi_l2_malloc(49 * 10 * 4 * sizeof(OUT_TYPE));    
-        feat_char = (char*) pi_l2_malloc(49 * 10 * sizeof(char));
+
 
         /******
             Compute the MFCC
         ******/
+        out_feat = (OUT_TYPE *) pi_l2_malloc(49 * 10 * 4 * sizeof(OUT_TYPE));    
+        feat_char = (char*) pi_l2_malloc(49 * 10 * sizeof(char));
+
         printf("\n\n****** Computing MFCC ***** \n");
-        pi_cluster_task(task_mfcc,&RunMFCC,NULL);
+
+
+        // struct pi_cluster_task task_mfcc;
+
+        struct pi_cluster_task* task_mfcc;
+        task_mfcc = pi_l2_malloc(sizeof(struct pi_cluster_task));
+        pi_cluster_task(task_mfcc, &RunMFCC, NULL);
+        pi_cluster_task_stacks(task_mfcc, NULL, SLAVE_STACK_SIZE);
+
+        pi_cluster_conf_init(&cl_conf);
+        pi_open_from_conf(&cluster_dev, &cl_conf);
+        if (pi_cluster_open(&cluster_dev))
+        {
+          return -1;
+        }
         L1_Memory = pi_l1_malloc(&cluster_dev, _L1_Memory_SIZE);
         if (L1_Memory==NULL){
             printf("Error allocating L1\n");
             pmsis_exit(-1);
         }
+       
+        // pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(task_mfcc, RunMFCC, NULL));
 
         pi_cluster_send_task_to_cl(&cluster_dev, task_mfcc);
-
         pi_l2_free(task_mfcc, sizeof(struct pi_cluster_task));
-
-        if (input == "0"){
-            pi_l2_free(MfccInSig, BUFF_SIZE);
-        } else {
-            pi_l2_free(MfccInSig, AUDIO_BUFFER_SIZE * sizeof (MFCC_IN_TYPE));
-        }
 
         pi_cluster_close(&cluster_dev);
 
-        printf("MFCC Computation complete. Rescaling data\n");
+
+        if (input == "0"){
+            pi_l2_free(MfccInSig, BUFF_SIZE);
+        } else if (input == "1") {
+            pi_l2_free(MfccInSig, AUDIO_BUFFER_SIZE * sizeof (MFCC_IN_TYPE));
+        }
+
+       
+        // Rescale data
         int k = 0;
         for (int i = 0; i < 1960;i++){                
             
@@ -378,46 +409,11 @@ int denoiser(void)
             }
             k++;
         } 
-
-        // TEST
-
-        // #if (DATA_TYPE==2) || (DATA_TYPE==3)
-        // float QSNR_THR = 40;
-        // #else
-        // float QSNR_THR = 38;
-        // #endif
-        // int N_FRAME = 49;
-        // int frame_size = 10;
-        // float MSE = 0.0, SUM = 0.0;
-        //     for (int i=0; i<N_FRAME; i++) {
-        //         for (int j=0; j<frame_size; j++) {
-        //             #if (DATA_TYPE==2) || (DATA_TYPE==3)
-        //                   MSE += (L2_input_h[i*frame_size+j] - feat_char[i*frame_size+j])*(L2_input_h[i*frame_size+j] - feat_char[i*frame_size+j]);
-        //             #else
-        //                   int QMFCC = 15 - NORM - 7;
-        //                   MSE += (L2_input_h[i*frame_size+j] - FIX2FP(feat_char[i*frame_size+j], QMFCC)) * (L2_input_h[i*frame_size+j] - FIX2FP(feat_char[i*frame_size+j], QMFCC));
-        //             #endif
-        //             SUM += (L2_input_h[i*frame_size+j])*(L2_input_h[i*frame_size+j]);
-        //         }
-        //     }
-
-        //     float QSNR = 10*log10(SUM / MSE);
-        //     // Sum is: 7163328.000000, whereas the MSE is: 12514.000000
-        //     // Sum is: 7565786.000000, whereas the MSE is: 1696096.000000
-        //     printf("\nSum is: %f, whereas the MSE is: %f\n", SUM, MSE);
-        //     printf("QSNR: %f (thr: %f) --> ", QSNR, QSNR_THR);
-        //     if (QSNR < QSNR_THR) {
-        //         printf("Test NOT PASSED\n");
-        //         // pmsis_exit(-1);
-        //     } else {
-        //         printf("Test PASSED\n");
-        //     }
-
-
         pi_l2_free(out_feat, 49*10*4*sizeof(OUT_TYPE));
 
-        void *l2_buffer;
-        l2_buffer = pi_l2_malloc(L2_MEMORY_SIZE);
+        // Fill input buffer
+
+        // l2_buffer = pi_l2_malloc(L2_MEMORY_SIZE);
         if (l2_buffer == NULL) {
             printf("failed to allocate memory for l2_buffer\n");
         }
@@ -429,17 +425,14 @@ int denoiser(void)
             else {
                 ((uint8_t *)l2_buffer)[i] = feat_char[i]; // Online computed MFCC
             }
-            // printf("%i\n", feat_char[i]); // Online computed MFCC
         }
+        
+        // Extract backbone features
+        void *dump; // dump to copy FC weights, won't be used; TODO: Parametrize DORY
+        network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &dump, 0); // L2_input_h extra-arg for L2-only
 
-        printf("Memory allocated.\n");
-        // L3
-        void *L3_weights_curr; // passing curr weights address, that will be used to update
-        network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &L3_weights_curr, 0); // L2_input_h extra-arg for L2-only
-
-        int predicted_class = predict (l2_buffer, 12);
-
-        // Network update
+        printf ("Run classifier\n");
+        // Run classifier
         struct pi_device cluster_dev;
         struct pi_cluster_conf cl_conf;
         struct pi_cluster_task cl_task;
@@ -451,58 +444,43 @@ int denoiser(void)
           return -1;
         }
 
-        printf("\nLaunching training procedure...\n");
-
-        // Move weights from TrainLib to Dory
-        void *L2_weights_curr_updated;
-        L2_weights_curr_updated = pi_l2_malloc(784 * sizeof(float));
-
-        int update = 0;
-        int init = 1;
-
-        unsigned int args[2];
+        unsigned int args[5];
         args[0] = (unsigned int) l2_buffer;
-        args[1] = (unsigned int) L3_weights_curr;
-        args[2] = (unsigned int) L2_weights_curr_updated;
-        args[3] = (unsigned int) update;
-        args[4] = (unsigned int) init;
+        args[1] = (unsigned int) dump;
+        args[2] = (unsigned int) L2_FC_weights_float;
+        args[3] = (unsigned int) 0; // update = 0
+        args[4] = (unsigned int) 0; // init = 0
 
         pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, args));
 
-        printf("Exiting DNN Training.\n");
         pi_cluster_close(&cluster_dev);
-
-
-        printf("Copied weights:\n");
-        for (int i = 0; i < 10; i++){
-            printf("W[%i] %f\n", i, ((float*)L2_weights_curr_updated)[i]);
-        }
 
         // clean buffer
         pi_l2_free(l2_buffer, L2_MEMORY_SIZE);
 
 
-        break;
 
+        // // Move weights from TrainLib to Dory
+        // void *L2_FC_weights_float;
+        // L2_FC_weights_float = pi_l2_malloc(784 * sizeof(float));
+
+        // break;
 
         // block until next input audio frame is ready
-#ifdef  AUDIO_EVK
+    #ifdef  AUDIO_EVK
         pi_gpio_pin_write(gpio_pin_o, 0);
-#endif
+    #endif
         chunk_in_cnt++;
+
     }
 
-
-    // Close the cluster
-    pi_cluster_close(&cluster_dev);
-    PRINTF("Ended\n");
     pmsis_exit(0);
     return 0;
 }
 
 int main()
 {
-    PRINTF("\n\n\t *** Denoiser ***\n\n");
+    PRINTF("\n\n\t *** Application ***\n\n");
 
     #define __XSTR(__s) __STR(__s)
     #define __STR(__s) #__s
@@ -510,6 +488,5 @@ int main()
     mfcc = __XSTR(MFCC);
     input = __XSTR(INPUT);
 
-    return denoiser();
+    return application();
 }
-
