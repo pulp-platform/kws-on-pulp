@@ -197,7 +197,7 @@ list(APPEND TARGET_CFLAGS   -O2
 )
 
 
-list(APPEND TARGET_PREPROCESSOR -DPERF
+list(APPEND TARGET_PREPROCESSOR  # -DPERF
                                 -DNUM_CORES=${NUM_CORES}
                                 -DGAP_SDK=${GAP_SDK}
                                 -DFLASH_TYPE=${FLASH_TYPE}
@@ -225,9 +225,9 @@ list(APPEND TARGET_PREPROCESSOR -DPERF
                                 # TrainLib
                                 -DFABRIC
                                 -DCLUSTER
-                                -DPROF_NET
+                                # -DPROF_NET
                                 -mhwloopalign
-                                -DSTATS
+                                # -DSTATS
                                 -DMATMUL_TYPE_FW_L0=${MATMUL_TYPE_FW_L0}
                                 -DMATMUL_TYPE_WG_L0=${MATMUL_TYPE_WG_L0}
                                 -DMATMUL_TYPE_IG_L0=${MATMUL_TYPE_IG_L0}

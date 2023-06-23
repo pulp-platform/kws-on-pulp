@@ -164,7 +164,7 @@ void BNReluConvolution0(
   pi_perf_stop();
   cycle_network_execution =  pi_perf_read(PI_PERF_CYCLES);
 
-  printf ("Memory transfer 1: %i\n", cycle_network_execution);
+  // printf ("Memory transfer 1: %i\n", cycle_network_execution);
 
 
   int total_tiles = 1;
@@ -273,7 +273,7 @@ void BNReluConvolution0(
 
     pi_perf_stop();
     cycle_network_execution =  pi_perf_read(PI_PERF_CYCLES);
-    printf ("Memory transfer 2: %i\n", cycle_network_execution);
+    // printf ("Memory transfer 2: %i\n", cycle_network_execution);
 
 
     // pi_perf_conf(1<<PI_PERF_CYCLES);
@@ -299,7 +299,7 @@ void BNReluConvolution0(
 
     pi_perf_stop();
     cycle_network_execution =  pi_perf_read(PI_PERF_CYCLES);
-    printf ("Concrete operation: %i\n", cycle_network_execution);
+    // printf ("Concrete operation: %i\n", cycle_network_execution);
 
 
     // pi_perf_conf(1<<PI_PERF_CYCLES);
@@ -332,7 +332,7 @@ void BNReluConvolution0(
   pi_perf_stop();
   cycle_network_execution =  pi_perf_read(PI_PERF_CYCLES);
   
-  printf ("Memory transfer 3: %i\n", cycle_network_execution);
+  // printf ("Memory transfer 3: %i\n", cycle_network_execution);
 
 
 
