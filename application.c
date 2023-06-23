@@ -301,8 +301,6 @@ int application(void){
             SFU_GraphConnectIO(SFU_Name(Graph, In1), SAI1, 2, &SFU_RTD(Graph));
             // pi_l2_free(ChanOutCtxt_0, sizeof(SFU_uDMA_Channel_T));
 
-            // fxl6408_setup();
-
             printf("Start rec!\n");
 
             //Starting In and Out Graphs
@@ -339,9 +337,7 @@ int application(void){
                     break;
                 }
                 
-            }
-            
-            // pi_l2_free(BufferInList, BUFF_SIZE);
+            }          
 
             // Log WAV 
             // dump_wav_open("test_gap.wav", 16, 16000, 1, sizeof(short)*AUDIO_BUFFER_SIZE);
@@ -350,6 +346,8 @@ int application(void){
             dump_wav_write(BufferInList, BUFF_SIZE);
             dump_wav_close();
             printf("Writing wav file to test_gap.wav completed successfully\n");
+
+            pi_l2_free(BufferInList, BUFF_SIZE);
         }
         else if (input == "1"){
             #if (DATA_TYPE==2) || (DATA_TYPE==3)

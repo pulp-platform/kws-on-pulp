@@ -71,6 +71,15 @@ set(DSP_GEN_DIR         ${GAP9_SDK_DIR}/tools/autotiler_v3/DSP_Generators/)
 
 # Application
 
+
+add_custom_target(
+    graph
+    WORKING_DIRECTORY   ${BUILD_DIR}
+    COMMAND             SFU -i ${CURDIR}/Graph.src -C
+    SOURCES             ${CURDIR}/Graph.src
+    BYPRODUCTS          ${BUILD_DIR}/Graph_L2_Descr.c ${BUILD_DIR}/Graph_L2_Descr.h ${BUILD_DIR}/L2_Descr_Table.c ${BUILD_DIR}/L2_Descr_Table.h
+    )
+
 list (APPEND TARGET_SRCS 
                          
                          
@@ -84,8 +93,8 @@ list (APPEND TARGET_SRCS
                          ${MAIN}
                          dac.c
                          localutil.c
-                         Graph_L2_Descr.c
-                         L2_Descr_Table.c
+                         ${BUILD_DIR}/Graph_L2_Descr.c
+                         ${BUILD_DIR}/L2_Descr_Table.c
                          ${GAP9_SDK_DIR}rtos/sfu/SFU_RT.c
                          ${GAP_SDK_HOME}/tools/audio-framework/runtime/include
 )
