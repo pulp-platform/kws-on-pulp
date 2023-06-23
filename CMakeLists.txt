@@ -56,10 +56,10 @@ set(MATMUL_TYPE_IG_L0  0)         # Selects which optimized matmul to be used in
 set (NUM_MATMULS 24)
 
 
-set(GAP9_SDK_DIR        /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk_private/)
-set(CURDIR              /usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/)
+set(GAP9_SDK_DIR        /home/cioflanc/odda_gap9/gap_sdk_private/)
+set(CURDIR              /home/cioflanc/odda_gap9/tiny_denoiser/)
 set(BUILD_DIR           ${CURDIR}/build)
-set(MFCCBUILD_DIR       ${CURDIR}/BUILD_MFCC)
+set(MFCCBUILD_DIR       ${CURDIR}/BUILD_MFCC) # TODO: Add this in CMake
 set(TRAINLIB_DIR        ${CURDIR}/trainlib_example_dscnn/DSCNN)
 set(DSP_DIR             ${GAP9_SDK_DIR}tools/autotiler_v3/DSP_Libraries/)
 set(DSP_LUT_DIR         ${GAP9_SDK_DIR}tools/autotiler_v3/DSP_Libraries/LUT_Tables/)
@@ -85,6 +85,7 @@ list (APPEND TARGET_SRCS
                          dac.c
                          localutil.c
                          Graph_L2_Descr.c
+                         L2_Descr_Table.c
                          ${GAP9_SDK_DIR}rtos/sfu/SFU_RT.c
                          ${GAP_SDK_HOME}/tools/audio-framework/runtime/include
 )

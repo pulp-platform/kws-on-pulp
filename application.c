@@ -87,7 +87,7 @@ static int open_i2s_PDM(struct pi_device *i2s, unsigned int SAIn, unsigned int F
     pi_i2s_conf_init(&i2s_conf);
 
     // polarity: b0: SDI: slave/master, b1:SDO: slave/master    1:RX, 0:TX
-    // i2s_conf.options = PI_I2S_OPT_REF_CLK_FAST;
+    i2s_conf.options = PI_I2S_OPT_REF_CLK_FAST;
     i2s_conf.frame_clk_freq = Frequency;                // In pdm mode, the frame_clk_freq = i2s_clk
     i2s_conf.itf = SAIn;                                // Which sai interface
     i2s_conf.mode = PI_I2S_MODE_PDM;                // Choose PDM mode
@@ -213,36 +213,40 @@ int application(void){
     network_initialize(); // Absent in L2-only
     pi_cluster_close(&cluster_dev);
 
-    // DORY - TrainLib FC weights copy
-    void *l2_buffer;
-    l2_buffer = pi_l2_malloc(L2_MEMORY_SIZE);
-    if (l2_buffer == NULL) {
-        printf("failed to allocate memory for l2_buffer\n");
-    }
-    void *L2_FC_weights_int8;
-    network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &L2_FC_weights_int8, 0); // L2_input_h extra-arg for L2-only
+    // TODO: Comment in
+    // // DORY - TrainLib FC weights copy
+    void *l2_buffer = NULL;
+    // l2_buffer = pi_l2_malloc(L2_MEMORY_SIZE);
+    // if (l2_buffer == NULL) {
+    //     printf("failed to allocate memory for l2_buffer\n");
+    // }
+    void *L2_FC_weights_int8 = NULL;
+    // network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &L2_FC_weights_int8, 0); // L2_input_h extra-arg for L2-only
 
-    // Run classifier
-    struct pi_cluster_task cl_task;
-    pi_cluster_conf_init(&cl_conf);
-    pi_open_from_conf(&cluster_dev, &cl_conf);
-    if (pi_cluster_open(&cluster_dev))
-    {
-      return -1;
-    }
+    // // Run classifier
+    // struct pi_cluster_task cl_task;
+    // pi_cluster_conf_init(&cl_conf);
+    // pi_open_from_conf(&cluster_dev, &cl_conf);
+    // if (pi_cluster_open(&cluster_dev))
+    // {
+    //   return -1;
+    // }
     
-    void * L2_FC_weights_float;
-    L2_FC_weights_float = pi_l2_malloc (784 * 4);
-    unsigned int args[5];
-    args[0] = (unsigned int) l2_buffer;
-    args[1] = (unsigned int) L2_FC_weights_int8; // Weights buffer
-    args[2] = (unsigned int) L2_FC_weights_float;
-    args[3] = (unsigned int) 0; // update = 0
-    args[4] = (unsigned int) 1; // init = 0
+    void * L2_FC_weights_float = NULL;
+    // L2_FC_weights_float = pi_l2_malloc (784 * 4);
+    // if (L2_FC_weights_float == NULL) {
+    //     printf("failed to allocate memory for L2_FC_weights_float\n");
+    // }
+    // unsigned int args[5];
+    // args[0] = (unsigned int) l2_buffer;
+    // args[1] = (unsigned int) L2_FC_weights_int8; // Weights buffer
+    // args[2] = (unsigned int) L2_FC_weights_float;
+    // args[3] = (unsigned int) 0; // update = 0
+    // args[4] = (unsigned int) 1; // init = 0
 
-    pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, args));
+    // pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, args));
 
-    pi_cluster_close(&cluster_dev);
+    // pi_cluster_close(&cluster_dev);
 
     // pi_l2_free(l2_buffer, L2_MEMORY_SIZE);
     // pi_l2_free(L2_FC_weights_float, 784 * 4);
@@ -252,6 +256,8 @@ int application(void){
 
     // Inference loop
     while (1){
+
+        printf ("Input value: %s\n", input);
 
         // Read from WAV
         if (input == "1") {
@@ -266,11 +272,6 @@ int application(void){
             int num_samples = header_info.DataSize * 8 / (header_info.NumChannels * header_info.BitsPerSample);
             MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
 
-            // Log WAV 
-            dump_wav_open("test_gap.wav", 16, 16000, 1, sizeof(short)*AUDIO_BUFFER_SIZE);
-            dump_wav_write(MfccInSig, sizeof(short)*AUDIO_BUFFER_SIZE);
-            dump_wav_close();
-            printf("Writing wav file to test_gap.wav completed successfully\n");
         }
 
         // Read from MIC
@@ -288,6 +289,9 @@ int application(void){
 
             ChanOutCtxt_0  = (SFU_uDMA_Channel_T *) pi_l2_malloc(sizeof(SFU_uDMA_Channel_T));
             BufferInList = (void*) pi_l2_malloc(BUFF_SIZE);
+            printf("BufferInList)[0]=%i\n", ((int32_t*)BufferInList)[0]);
+            printf("BufferInList)[1]=%i\n", ((int32_t*)BufferInList)[1]);
+
             // Get uDMA channels for Graph
             SFU_Allocate_uDMA_Channel(ChanOutCtxt_0, 0, &SFU_RTD(Graph));
             //Next API will have a value to replace this high number with -1
@@ -295,10 +299,10 @@ int application(void){
             SFU_Enqueue_uDMA_Channel(ChanOutCtxt_0, BufferInList, BUFF_SIZE);
             // Connect Channels to SFU for Mic IN (PDM IN)
             SFU_GraphConnectIO(SFU_Name(Graph, Out1), ChanOutCtxt_0->ChannelId, 0, &SFU_RTD(Graph));
-            SFU_GraphConnectIO(SFU_Name(Graph, In1), SAI_ITF_IN, 2, &SFU_RTD(Graph));
-            pi_l2_free(ChanOutCtxt_0, sizeof(SFU_uDMA_Channel_T));
+            SFU_GraphConnectIO(SFU_Name(Graph, In1), SAI1, 2, &SFU_RTD(Graph));
+            // pi_l2_free(ChanOutCtxt_0, sizeof(SFU_uDMA_Channel_T));
 
-            fxl6408_setup();
+            // fxl6408_setup();
 
             printf("Start rec!\n");
 
@@ -315,13 +319,8 @@ int application(void){
 
             printf("Finish rec!\n");
 
-            MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(BUFF_SIZE);
+            MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(BUFF_SIZE/3/2);
 
-            // Log WAV 
-            dump_wav_open("test_gap.wav", 16, 16000, 1, BUFF_SIZE);
-            dump_wav_write(MfccInSig, BUFF_SIZE);
-            dump_wav_close();
-            printf("Writing wav file to test_gap.wav completed successfully\n");
         }
 
     #ifdef AUDIO_EVK
@@ -329,11 +328,12 @@ int application(void){
     #endif
 
         if (input == "0") {
-            int round = (chunk_in_cnt%CHUNK_NUM);
-            int round_out = (chunk_in_cnt>(STRUCT_DELAY-1))? ((chunk_in_cnt-(STRUCT_DELAY-1))%CHUNK_NUM):0;
+            // int round = (chunk_in_cnt%CHUNK_NUM);
+            // int round_out = (chunk_in_cnt>(STRUCT_DELAY-1))? ((chunk_in_cnt-(STRUCT_DELAY-1))%CHUNK_NUM):0;
             // Scale data
             int outidx = 0;
             for(int i=0;i<BUFF_SIZE;i+=3){
+                // printf("BufferInList)[%i]=%f\n", i, ((int32_t*)BufferInList)[i]);
                 MfccInSig[outidx] = (MFCC_IN_TYPE)(((float)((int32_t*)BufferInList)[i]) /((int)(1<<16)));
                 outidx++;
                 if (outidx == AUDIO_BUFFER_SIZE){
@@ -341,7 +341,16 @@ int application(void){
                 }
                 
             }
-            pi_l2_free(BufferInList, BUFF_SIZE);
+            
+            // pi_l2_free(BufferInList, BUFF_SIZE);
+
+            // Log WAV 
+            // dump_wav_open("test_gap.wav", 16, 16000, 1, sizeof(short)*AUDIO_BUFFER_SIZE);
+            // dump_wav_write(MfccInSig, sizeof(short)*AUDIO_BUFFER_SIZE);
+            dump_wav_open("test_gap.wav", 32, 48000, 1, BUFF_SIZE);
+            dump_wav_write(BufferInList, BUFF_SIZE);
+            dump_wav_close();
+            printf("Writing wav file to test_gap.wav completed successfully\n");
         }
         else if (input == "1"){
             #if (DATA_TYPE==2) || (DATA_TYPE==3)
@@ -354,7 +363,15 @@ int application(void){
                 }
             #endif
             pi_l2_free(inWav, AUDIO_BUFFER_SIZE * sizeof(short));
+
+             // Log WAV 
+            dump_wav_open("test_gap.wav", 16, 16000, 1, sizeof(short)*AUDIO_BUFFER_SIZE);
+            dump_wav_write(MfccInSig, sizeof(short)*AUDIO_BUFFER_SIZE);
+            dump_wav_close();
+            printf("Writing wav file to test_gap.wav completed successfully\n");
+
         }
+
 
 
         /******
