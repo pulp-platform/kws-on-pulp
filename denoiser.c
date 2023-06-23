@@ -380,47 +380,8 @@ int denoiser(void)
         int k = 0;
         for (int i = 0; i < 1960;i++){                
             
-            // Rescale MFCCs to match Tensorflow-generated ones
-            // pow(2, -5): Checking L2 output: Checksum Failed: true [104159] vs. calculated [104953]
-            // pow(2, -4): Checking L2 output: Checksum Failed: true [104159] vs. calculated [118521]
-
-            // Original implementation
-            // feat_char[k] = (char) (((int) floor(out_feat[i] * pow(2, -4) * sqrt(0.2))) + 128); 
-
-            // // According to autotiler_v3/Generators/MFCC/README.md
-            // if (k%10 == 0)
-            //     feat_char[k] = (char) (((int) floor(out_feat[i] * pow(2, -1) * sqrt(0.05)))); // ORIG
-            // else
-            //     feat_char[k] = (char) (((int) floor(out_feat[i] * pow(2, -1) * sqrt(0.05))) + 128); // ORIG
-
             feat_char[k] = (char) (((int) floor(out_feat[i] * pow(2, -1) * sqrt(0.05))) + 128); // 23.883617 QSNR w/ float
-
-
-            // if (k==480){
-            //     feat_char[480] = 78; // QSNR: 30.591785 
-            // }
-
-            // if (k%10 == 0){
-            //     if (out_feat[i] > 0)
-            //         feat_char[k] = (char) (((int) floor(out_feat[i] * pow(2, -5) * sqrt(0.2))));
-            //     else
-            //         feat_char[k] = (char) (((int) floor(out_feat[i] * pow(2, -5) * sqrt(0.2))) + 128);
-            // }
-            // // else {
-            // //     if (out_feat[i] > 128)
-            // //         feat_char[k] = (char) (((int) floor(out_feat[i] * pow(2, -2) * sqrt(0.2))) + 128);
-            // //     else
-            // //         feat_char[k] = (char) (out_feat[i] + 128);
-            // // }
-            // else{
-            //     feat_char[k] = (char) (((int) floor(out_feat[i] * pow(2, -1) * sqrt(0.2))) + 128);
-            // }
-
-            // if (k%10 == 0) {
-            //     printf ("\nout_feat[%i] = %f,", i, out_feat[i]);
-            //     printf ("feat_char[%i] = %i,", k, feat_char[k]);
-            //     printf ("L2_input_h[%i] = %i,", k, L2_input_h[k]);
-            // }
+            
 
             // Select 10 MFCC per window
             if (i == 40*(k/10) + 9){
@@ -486,7 +447,7 @@ int denoiser(void)
         // L3
         void *L3_weights_curr; // passing curr weights address, that will be used to update
         network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &L3_weights_curr, 0);
-        
+
         // Declare word list, determine recognized keyword
         // 'silence,unknown,yes,no,up,down,left,right,on,off,stop,go,'
         int max_val = -65535;
