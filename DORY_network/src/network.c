@@ -36,9 +36,6 @@
 #include "ReluPooling9.h"
 #include "BNReluConvolution2.h"
 
-
-// #define VERBOSE 1
-
 #define L3_WEIGHTS_SIZE 4000000
 #define L3_INPUT_SIZE 1500000
 #define L3_OUTPUT_SIZE 1500000
