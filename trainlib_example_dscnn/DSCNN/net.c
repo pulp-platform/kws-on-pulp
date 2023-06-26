@@ -166,6 +166,12 @@ void net_step(void *args)
   void * L2_weights_curr_updated = (void *) real_args[2];
   int update = (int) real_args[3]; // 1 - update
   int init = (int) real_args[4]; // 1 - initialize
+  int classidx = (int) real_args[5];
+
+  // TODO: Discuss sample management per epoch
+  LABEL[0] = classidx;
+
+
 
   if (update == 1 || init == 1){
 
@@ -210,7 +216,7 @@ void net_step(void *args)
     printf("W[%i] %f\n", i, init_WGT_l0[i]);
   }
 #endif
-
+  printf("Initializing network..\n");
   DNN_init();
 
   if (update == 1){
@@ -239,6 +245,7 @@ void net_step(void *args)
      ((float*)L2_weights_curr_updated)[i] = layer0_wgt.data[i];
     }
 
+
     #ifdef PROF_NET
     STOP_STATS();
     #endif
@@ -252,7 +259,6 @@ void net_step(void *args)
 #endif
   }
   else {
-    printf("Initializing network..\n");
     printf("Testing DNN initialization forward..\n");
     forward();
 

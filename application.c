@@ -146,6 +146,48 @@ static void RunMFCC()
     #endif
 }
 
+void record(){
+    /****
+        Setup the SFU for PDM in/out
+    ****/
+    struct pi_device i2s_sai1;
+
+    // Configure PDM
+    if (open_i2s_PDM(&i2s_sai1, SAI1,   3072000, 3, 0)) return -1;
+
+    StartSFU(FREQ_SFU*1000*1000, 1);
+
+    ChanOutCtxt_0  = (SFU_uDMA_Channel_T *) pi_l2_malloc(sizeof(SFU_uDMA_Channel_T));
+    BufferInList = (void*) pi_l2_malloc(BUFF_SIZE);
+
+    // Get uDMA channels for Graph
+    SFU_Allocate_uDMA_Channel(ChanOutCtxt_0, 0, &SFU_RTD(Graph));
+    //Next API will have a value to replace this high number with -1
+    //To be able to 
+    SFU_Enqueue_uDMA_Channel(ChanOutCtxt_0, BufferInList, BUFF_SIZE);
+    // Connect Channels to SFU for Mic IN (PDM IN)
+    SFU_GraphConnectIO(SFU_Name(Graph, Out1), ChanOutCtxt_0->ChannelId, 0, &SFU_RTD(Graph));
+    SFU_GraphConnectIO(SFU_Name(Graph, In1), SAI1, 2, &SFU_RTD(Graph));
+    pi_l2_free(ChanOutCtxt_0, sizeof(SFU_uDMA_Channel_T));
+
+    printf("Start rec!\n");
+
+    //Starting In and Out Graphs
+    pi_i2s_ioctl(&i2s_sai1, PI_I2S_IOCTL_START, NULL);
+    // Let the microphone start
+    pi_time_wait_us(30000); 
+
+    chunk_in_cnt=0;
+    SFU_StartGraph(&SFU_RTD(Graph));
+    pi_time_wait_us(2000000);
+
+    pi_i2s_ioctl(&i2s_sai1, PI_I2S_IOCTL_STOP, NULL);
+
+    printf("Finish rec!\n");
+
+    MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(BUFF_SIZE/3/2);
+}
+
 int application(void){
 
     printf ("Environment setup");
@@ -447,36 +489,174 @@ int application(void){
         if (test_array[test_idx] == 1){ // TODO: This should be a press of a button
 
             // TODO: Record
+            record();
+
             // TODO: Augment utterances with recorded data
-            // TODO: Compute MFCCs
 
-            // Extract backbone features
-            void *L2_FC_weights_int8; // dump to copy FC weights, won't be used; TODO: Parametrize DORY
-            network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &L2_FC_weights_int8, 0); // L2_input_h extra-arg for L2-only
+            for (int uttridx = 0; uttridx < 100; uttridx++){
+                int sampleidx;
+                int classidx;
 
-            printf ("**********Run classifier*******************\n");
-            // Run classifier
-            struct pi_device cluster_dev;
-            struct pi_cluster_conf cl_conf;
-            struct pi_cluster_task cl_task;
+                // TODO: Compute MFCCs
+                for (int samplepos = 0; samplepos < AUDIO_BUFFER_SIZE; samplepos++){
+                    // switch-case to determine class
+                    sampleidx = uttridx / 10;
+                    classidx = uttridx % 10;
 
-            pi_cluster_conf_init(&cl_conf);
-            pi_open_from_conf(&cluster_dev, &cl_conf);
-            if (pi_cluster_open(&cluster_dev))
-            {
-              return -1;
+                    switch (classidx){
+                        case 0:
+                            continue; // TODO: Get data 
+                            MfccInSig[samplepos] = MfccInSig[samplepos] + class_0[sampleidx];
+                            break;
+                        case 1:
+                            continue; // TODO: Get data 
+                            MfccInSig[samplepos] = MfccInSig[samplepos] + class_1[sampleidx];
+                            break;
+                        case 2:
+                            MfccInSig[samplepos] = MfccInSig[samplepos] + class_2[sampleidx];
+                            break;
+                        case 3:
+                            MfccInSig[samplepos] = MfccInSig[samplepos] + class_3[sampleidx];
+                            break;
+                        case 4:
+                            MfccInSig[samplepos] = MfccInSig[samplepos] + class_4[sampleidx];
+                            break;
+                        case 5:
+                            MfccInSig[samplepos] = MfccInSig[samplepos] + class_5[sampleidx];
+                            break;
+                        case 6:
+                            MfccInSig[samplepos] = MfccInSig[samplepos] + class_6[sampleidx];
+                            break;
+                        case 7:
+                            MfccInSig[samplepos] = MfccInSig[samplepos] + class_7[sampleidx];
+                            break;
+                        case 8:
+                            MfccInSig[samplepos] = MfccInSig[samplepos] + class_8[sampleidx];
+                            break;
+                        case 9:
+                            MfccInSig[samplepos] = MfccInSig[samplepos] + class_9[sampleidx];
+                            break;
+                        case 10:
+                            MfccInSig[samplepos] = MfccInSig[samplepos] + class_10[sampleidx];
+                            break;
+                        case 11:
+                            MfccInSig[samplepos] = MfccInSig[samplepos] + class_11[sampleidx];
+                            break;
+
+                    }
+
+                    
+                }
+
+
+                // TODO: Create separate FUNCTION!!!
+                /******
+                    Compute the MFCC
+                ******/
+                out_feat = (OUT_TYPE *) pi_l2_malloc(49 * 10 * 4 * sizeof(OUT_TYPE));    
+                feat_char = (char*) pi_l2_malloc(49 * 10 * sizeof(char));
+                printf("\n\n****** Computing MFCC ***** \n");
+
+
+                // struct pi_cluster_task task_mfcc;
+
+                struct pi_cluster_task* task_mfcc;
+                task_mfcc = pi_l2_malloc(sizeof(struct pi_cluster_task));
+                pi_cluster_task(task_mfcc, &RunMFCC, NULL);
+                pi_cluster_task_stacks(task_mfcc, NULL, SLAVE_STACK_SIZE);
+
+                pi_cluster_conf_init(&cl_conf);
+                pi_open_from_conf(&cluster_dev, &cl_conf);
+                if (pi_cluster_open(&cluster_dev))
+                {
+                  return -1;
+                }
+                L1_Memory = pi_l1_malloc(&cluster_dev, _L1_Memory_SIZE);
+                if (L1_Memory==NULL){
+                    printf("Error allocating L1\n");
+                    pmsis_exit(-1);
+                }
+               
+                // pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(task_mfcc, RunMFCC, NULL));
+
+                pi_cluster_send_task_to_cl(&cluster_dev, task_mfcc);
+                pi_l2_free(task_mfcc, sizeof(struct pi_cluster_task));
+
+                pi_cluster_close(&cluster_dev);
+
+               
+                // Rescale data
+                int k = 0;
+                for (int i = 0; i < 1960;i++){                
+                    
+                    feat_char[k] = (char) (((int) floor(out_feat[i] * pow(2, -1) * sqrt(0.05))) + 128); // 23.883617 QSNR w/ float
+
+                    // Select 10 MFCC per window
+                    if (i == 40*(k/10) + 9){
+                        i = 40*(k/10) + 39;
+                    }
+                    k++;
+                } 
+                pi_l2_free(out_feat, 49*10*4*sizeof(OUT_TYPE));
+
+                // Fill input buffer
+
+                // l2_buffer = pi_l2_malloc(L2_MEMORY_SIZE);
+                if (l2_buffer == NULL) {
+                    printf("failed to allocate memory for l2_buffer\n");
+                }
+
+                for (int i = 0; i < 490; i++){
+                    if (mfcc == "1"){
+                        ((uint8_t *)l2_buffer)[i] = L2_input_h[i]; // Precomputed MFCC
+                    }
+                    else {
+                        ((uint8_t *)l2_buffer)[i] = feat_char[i]; // Online computed MFCC
+                    }
+                }
+                pi_l2_free(feat_char, 49 * 10 * sizeof(char));
+
+
+                // Pass LABEL to TrainLib
+
+
+
+                // Extract backbone features
+                network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &L2_FC_weights_int8, 0); // L2_input_h extra-arg for L2-only
+
+                printf ("**********Run classifier*******************\n");
+                // Run classifier
+                struct pi_device cluster_dev;
+                struct pi_cluster_conf cl_conf;
+                struct pi_cluster_task cl_task;
+
+                pi_cluster_conf_init(&cl_conf);
+                pi_open_from_conf(&cluster_dev, &cl_conf);
+                if (pi_cluster_open(&cluster_dev))
+                {
+                  return -1;
+                }
+
+                unsigned int args[5];
+                args[0] = (unsigned int) l2_buffer;
+                args[1] = (unsigned int) L2_FC_weights_int8;
+                args[2] = (unsigned int) L2_FC_weights_float;
+                args[3] = (unsigned int) 1; // update = 0
+                args[4] = (unsigned int) 0; // init = 0
+                args[5] = (unsigned int) classidx;
+
+                pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, args));
+
+                pi_cluster_close(&cluster_dev);
             }
 
-            unsigned int args[5];
-            args[0] = (unsigned int) l2_buffer;
-            args[1] = (unsigned int) L2_FC_weights_int8;
-            args[2] = (unsigned int) L2_FC_weights_float;
-            args[3] = (unsigned int) 1; // update = 0
-            args[4] = (unsigned int) 0; // init = 0
+            // Free noise buffer ONLY AFTER training is complete
+            if (input == "0"){
+                pi_l2_free(MfccInSig, BUFF_SIZE);
+            } else if (input == "1") {
+                pi_l2_free(MfccInSig, AUDIO_BUFFER_SIZE * sizeof (MFCC_IN_TYPE));
+            }
 
-            pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, args));
-
-            pi_cluster_close(&cluster_dev);
         }
         
         // Extract backbone features
