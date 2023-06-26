@@ -211,14 +211,7 @@ void net_step(void *args)
   }
 #endif
 
-  printf("Initializing network..\n");
   DNN_init();
-  printf("Testing DNN initialization forward..\n");
-  forward();
-
-#ifdef VERBOSE 
-  print_output();
-#endif
 
   if (update == 1){
     #ifdef PROF_NET
@@ -252,11 +245,20 @@ void net_step(void *args)
 
     // Check and print updated output
     forward();
+#ifdef VERBOSE
     printf("Checking updated output..\n");
     check_post_training_output();
-#ifdef VERBOSE
     print_output();
 #endif
+  }
+  else {
+    printf("Initializing network..\n");
+    printf("Testing DNN initialization forward..\n");
+    forward();
+
+  #ifdef VERBOSE 
+    print_output();
+  #endif
   }
 
   if (init == 1) {

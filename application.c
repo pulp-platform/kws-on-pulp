@@ -45,6 +45,9 @@
 // PULP TrainLib
 #include "net.h"
 
+// Clean utterances
+#include "utterances.h"
+
 
 /* 
      global variables
