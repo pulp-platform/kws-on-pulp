@@ -26,9 +26,11 @@ set (DEMO 1)
 # set (CONFIG_FLASH_LAYOUT_CUSTOM 1)
 
 
-set (FLASH_TYPE MRAM) # HYPERFLASH
+# set (FLASH_TYPE MRAM) # HYPERFLASH # Working for small things to flash
+set (FLASH_TYPE DEFAULT) # HYPERFLASH
 set (RAM_TYPE   DEFAULT) # DEFAULT
-set (MODEL_L3_FLASH   AT_MEM_L3_MRAMFLASH)
+# set (MODEL_L3_FLASH   AT_MEM_L3_MRAMFLASH) # Working for small things to flash
+set (MODEL_L3_FLASH   AT_MEM_L3_DEFAULTFLASH)
 # set (READFS_FLASH  mram) # Not needed for MRAM
 set (EXEC_FROM_FLASH true)
 set (MODEL_L3_RAM   AT_MEM_L3_DEFAULTRAM)
@@ -291,8 +293,9 @@ list(APPEND TARGET_PREPROCESSOR  # -DPERF
 )
 
 
-# list(APPEND READFS_FILES 
-list(APPEND READFS_MRAM_FILES 
+list(APPEND READFS_FILES 
+# Working well for small files
+# list(APPEND READFS_MRAM_FILES 
                          ${CURDIR}DORY_network/hex/BNReluConvolution0_weights.hex
                          ${CURDIR}DORY_network/hex/BNReluConvolution1_weights.hex
                          ${CURDIR}DORY_network/hex/BNReluConvolution2_weights.hex
@@ -312,8 +315,9 @@ set (UTTR_FILE /home/cioflanc/odda_gap9/tiny_denoiser/utterances.txt)
 
 FILE(STRINGS ${UTTR_FILE} UTTERANCES)
 
-
-list(APPEND READFS_MRAM_FILES 
+list(APPEND READFS_FILES 
+# Working well for small files
+# list(APPEND READFS_MRAM_FILES 
                        ${UTTERANCES}
     )
 
