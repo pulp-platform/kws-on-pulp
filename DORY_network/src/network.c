@@ -37,7 +37,7 @@
 #include "BNReluConvolution2.h"
 
 
-#define VERBOSE 1
+// #define VERBOSE 1
 
 #define L3_WEIGHTS_SIZE 4000000
 #define L3_INPUT_SIZE 1500000
@@ -148,7 +148,10 @@ void network_run(void *l2_buffer, size_t l2_buffer_size, void *l2_final_output, 
   pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task); 
   pi_cl_l1_free((void *) 0, L1_buffer, 99000);
   pi_cluster_close(&cluster_dev);
+
+#ifdef VERBOSE
   print_perf("Final", cycle_network_execution, 2656768);
+#endif
 
   // 9 layers with weights have been processed before FC layer  
   *L3_final_weights_curr = L3_weights;
@@ -274,8 +277,10 @@ void network_run_cluster(void *args) {
     perf_cyc =  pi_perf_read(PI_PERF_CYCLES);
     cycle_network_execution += perf_cyc;
 
+#ifdef VERBOSE
     print_perf(Layers_name[i], perf_cyc, NODEs_MACS[i]);
-
+#endif
+    
     // TODO: What error?
     // prevents error from compiler
     asm volatile("": : :"memory");

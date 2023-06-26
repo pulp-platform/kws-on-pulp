@@ -248,7 +248,7 @@ int application(void){
 
     pi_cluster_close(&cluster_dev);
 
-    pi_l2_free(l2_buffer, L2_MEMORY_SIZE);
+    // pi_l2_free(l2_buffer, L2_MEMORY_SIZE);
 
     int test_idx = 0;
     int test_array[10] = {0, 1, 0, 1, 1, 0, 0}; // if 1 - update
@@ -288,8 +288,6 @@ int application(void){
 
             ChanOutCtxt_0  = (SFU_uDMA_Channel_T *) pi_l2_malloc(sizeof(SFU_uDMA_Channel_T));
             BufferInList = (void*) pi_l2_malloc(BUFF_SIZE);
-            printf("BufferInList)[0]=%i\n", ((int32_t*)BufferInList)[0]);
-            printf("BufferInList)[1]=%i\n", ((int32_t*)BufferInList)[1]);
 
             // Get uDMA channels for Graph
             SFU_Allocate_uDMA_Channel(ChanOutCtxt_0, 0, &SFU_RTD(Graph));
@@ -373,7 +371,6 @@ int application(void){
         ******/
         out_feat = (OUT_TYPE *) pi_l2_malloc(49 * 10 * 4 * sizeof(OUT_TYPE));    
         feat_char = (char*) pi_l2_malloc(49 * 10 * sizeof(char));
-
         printf("\n\n****** Computing MFCC ***** \n");
 
 
@@ -440,7 +437,7 @@ int application(void){
                 ((uint8_t *)l2_buffer)[i] = feat_char[i]; // Online computed MFCC
             }
         }
-
+        pi_l2_free(feat_char, 49 * 10 * sizeof(char));
 
 
         // UPDATE
@@ -454,7 +451,7 @@ int application(void){
             void *L2_FC_weights_int8; // dump to copy FC weights, won't be used; TODO: Parametrize DORY
             network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &L2_FC_weights_int8, 0); // L2_input_h extra-arg for L2-only
 
-            printf ("Run classifier\n");
+            printf ("**********Run classifier*******************\n");
             // Run classifier
             struct pi_device cluster_dev;
             struct pi_cluster_conf cl_conf;
@@ -483,7 +480,7 @@ int application(void){
         void *dump; // dump to copy FC weights, won't be used; TODO: Parametrize DORY
         network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &dump, 0); // L2_input_h extra-arg for L2-only
 
-        printf ("Run classifier\n");
+        printf ("**********Run classifier*******************\n");
         // Run classifier
         struct pi_device cluster_dev;
         struct pi_cluster_conf cl_conf;
@@ -506,6 +503,8 @@ int application(void){
         pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, args));
 
         pi_cluster_close(&cluster_dev);
+
+        printf ("**********Task completed*******************\n");
 
         // clean buffer
         // pi_l2_free(l2_buffer, L2_MEMORY_SIZE); // Not cleaning such that we don't reallocate
