@@ -308,6 +308,16 @@ list(APPEND READFS_MRAM_FILES
 )
 
 
+set (UTTR_FILE /home/cioflanc/odda_gap9/tiny_denoiser/utterances.txt)
+
+FILE(STRINGS ${UTTR_FILE} UTTERANCES)
+
+
+list(APPEND READFS_MRAM_FILES 
+                       ${UTTERANCES}
+    )
+
+
 
 project (${TARGET_NAME} C ASM)
 
