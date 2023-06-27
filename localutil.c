@@ -1,17 +1,95 @@
 #include "localutil.h"
 
 
+
+int predict_float (void * array, int n_classes){
+
+    // Declare word list, determine recognized keyword
+    // 'silence,unknown,yes,no,up,down,left,right,on,off,stop,go,'
+    float supraunitary = 0;
+    float subunitary = 0;
+    int supra_idx = 0;
+    int sub_idx = 0;
+    char prediction[10];
+    for (int i = 0; i < n_classes; i++){
+        PRINTF ("d[%i] = %f\n", i, ((float*) array)[i]);
+
+        if (((float *) array)[i] > supraunitary && ((float *) array)[i] > 1){
+            supraunitary = ((float *) array)[i];
+            supra_idx = i;
+        }
+        if (((float *) array)[i] < subunitary && ((float *) array)[i] < 1){
+            subunitary = ((float *) array)[i];
+            sub_idx = i;
+        }
+
+    }
+
+
+    int idx;
+
+    if (subunitary > 0)
+        idx = sub_idx;
+    else
+        idx = supra_idx;
+
+    switch (idx){
+        case 0:
+            strncpy(prediction, "silence", 10);
+            break;
+        case 1:
+            strncpy(prediction, "unknown", 10);
+            break;
+        case 2:
+            strncpy(prediction, "yes", 10);
+            break;
+        case 3:
+            strncpy(prediction, "no", 10);
+            break;
+        case 4:
+            strncpy(prediction, "up", 10);
+            break;
+        case 5:
+            strncpy(prediction, "down", 10);
+            break;
+        case 6:
+            strncpy(prediction, "left", 10);
+            break;
+        case 7:
+            strncpy(prediction, "right", 10);
+            break;
+        case 8:
+            strncpy(prediction, "on", 10);
+            break;
+        case 9:
+            strncpy(prediction, "off", 10);
+            break;
+        case 10:
+            strncpy(prediction, "stop", 10);
+            break;
+        case 11:
+            strncpy(prediction, "go", 10);
+            break;
+        default:
+            printf ("Undefined class!\n");
+    }
+
+    printf("The uttered keyword was: %s (%i).\n", prediction, idx);
+    return idx;
+}
+
+
 int predict (void * l2_buffer, int n_classes){
 
     // Declare word list, determine recognized keyword
     // 'silence,unknown,yes,no,up,down,left,right,on,off,stop,go,'
-    int max_val = -65535;
+    int max_val = 0;
     int max_idx = 0;
     char prediction[10];
     for (int i = 0; i < n_classes; i++){
         PRINTF ("d[%i] = %i\n", i, ((int*) l2_buffer)[i]);
 
-        if (((int*) l2_buffer)[i] > max_val){
+        if (((int *) l2_buffer)[i] > max_val){
             max_val = ((int*) l2_buffer)[i];
             max_idx = i;
         }
@@ -58,7 +136,7 @@ int predict (void * l2_buffer, int n_classes){
             printf ("Undefined class!\n");
     }
 
-    printf("The uttered keyword was: %s.\n", prediction);
+    printf("The uttered keyword was: %s (%i).\n", prediction, max_idx);
     return max_idx;
 }
 

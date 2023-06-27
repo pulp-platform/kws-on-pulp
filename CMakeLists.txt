@@ -294,8 +294,10 @@ list(APPEND TARGET_PREPROCESSOR  # -DPERF
 )
 
 set (UTTR_FILE /home/cioflanc/odda_gap9/tiny_denoiser/utterances.txt)
+set (TINYTEST_FILE /home/cioflanc/odda_gap9/tiny_denoiser/tinytest.txt)
 
 FILE(STRINGS ${UTTR_FILE} UTTERANCES)
+FILE(STRINGS ${TINYTEST_FILE} TINYTEST_UTTR)
 
 
 # Working well for small files
@@ -314,8 +316,14 @@ FILE(STRINGS ${UTTR_FILE} UTTERANCES)
                         ${CURDIR}DORY_network/hex/FullyConnected10_weights.hex
                         ${CURDIR}DORY_network/hex/inputs.hex
                         ${WAV_FILE}
-                        ${UTTERANCES}
+                        ${UTTERANCES} 
+                        ${TINYTEST_UTTR}
 )
+
+
+# tinytest
+
+
 
 
 project (${TARGET_NAME} C ASM)

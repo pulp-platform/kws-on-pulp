@@ -12,6 +12,84 @@
 #include "directional_allocator.h"
 
 
+
+int predict_float_local (void * array, int n_classes){
+
+    // Declare word list, determine recognized keyword
+    // 'silence,unknown,yes,no,up,down,left,right,on,off,stop,go,'
+    float supraunitary = 0;
+    float subunitary = 1;
+    int supra_idx = 0;
+    int sub_idx = 0;
+    char prediction[10];
+    for (int i = 0; i < n_classes; i++){
+
+        printf ("d[%i] = %f\n", i, ((float*) array)[i]);
+  
+        if ( ((float *) array)[i] > supraunitary && ((float *) array)[i] > 1){
+            supraunitary = ((float *) array)[i];
+            supra_idx = i;
+        }
+        if (((float *) array)[i] < subunitary && ((float *) array)[i] < 1){
+            subunitary = ((float *) array)[i];
+            sub_idx = i;
+        }
+
+    }
+
+    int idx;
+
+    if (subunitary < 1)
+        idx = sub_idx;
+    else
+        idx = supra_idx;
+
+    switch (idx){
+        case 0:
+            strncpy(prediction, "silence", 10);
+            break;
+        case 1:
+            strncpy(prediction, "unknown", 10);
+            break;
+        case 2:
+            strncpy(prediction, "yes", 10);
+            break;
+        case 3:
+            strncpy(prediction, "no", 10);
+            break;
+        case 4:
+            strncpy(prediction, "up", 10);
+            break;
+        case 5:
+            strncpy(prediction, "down", 10);
+            break;
+        case 6:
+            strncpy(prediction, "left", 10);
+            break;
+        case 7:
+            strncpy(prediction, "right", 10);
+            break;
+        case 8:
+            strncpy(prediction, "on", 10);
+            break;
+        case 9:
+            strncpy(prediction, "off", 10);
+            break;
+        case 10:
+            strncpy(prediction, "stop", 10);
+            break;
+        case 11:
+            strncpy(prediction, "go", 10);
+            break;
+        default:
+            printf ("Undefined class!\n");
+    }
+
+    printf("The uttered keyword was: %s (%i).\n", prediction, idx);
+    return idx;
+}
+
+
 /**
  * DATA
 **/
@@ -187,7 +265,8 @@ void net_step(void *args)
     for (int i = 0; i < WGT_SIZE_L0; i++){
         // printf ("d[%i] = %f\n", i, ((float) ((uint8_t  *) L2_weights)[i])/255 );
         // Dory operates INT8, must be converted to FLOAT
-        init_WGT_l0[i] = ((float) ((uint8_t  *) L2_weights)[i])/255;
+        // init_WGT_l0[i] = ((float) ((uint8_t  *) L2_weights)[i])/255.0;
+      init_WGT_l0[i] = ((float) ((uint8_t  *) L2_weights)[i])/255.0;
     }
 
     pi_l2_free(L2_weights, WGT_SIZE_L0 * sizeof(uint8_t));
@@ -202,12 +281,9 @@ void net_step(void *args)
   }
 
   // L2 Dory to L1 TrainLib manual feature movement
-  printf ("Training features\n");
-  int in_feat_classif = 64;
-  for (int i = 0; i < in_feat_classif; i++){
-      // printf ("d[%i] = %f\n", i, ((float) ((uint8_t  *) l2_buffer)[i])/255 );
+  for (int i = 0; i < IN_SIZE; i++){
       // Dory operates INT8, must be converted to FLOAT
-      IN_DATA[i] = ((float) ((uint8_t  *) l2_buffer)[i])/255;
+      IN_DATA[i] = ((float) ((uint8_t  *) l2_buffer)[i])/255.0;
   }
 
 #ifdef VERBOSE
@@ -216,7 +292,6 @@ void net_step(void *args)
     printf("W[%i] %f\n", i, init_WGT_l0[i]);
   }
 #endif
-  printf("Initializing network..\n");
   DNN_init();
 
   if (update == 1){
@@ -225,7 +300,6 @@ void net_step(void *args)
     PRE_START_STATS();
     START_STATS();
     #endif
-
 
     for (int epoch=0; epoch<EPOCHS; epoch++)
     {
@@ -259,12 +333,35 @@ void net_step(void *args)
 #endif
   }
   else {
+#ifdef VERBOSE
     printf("Testing DNN initialization forward..\n");
+
+    for (int i = 0; i < 10; i++){
+      printf("W[%i] = %f, ", i, init_WGT_l0[i]);
+    }
+    printf("\n");
+
+    for (int i = 0; i < 10; i++){
+      printf("IN_DATA[%i] %f, ", i, IN_DATA[i]);
+    }
+    printf("\n");
+#endif
+
     forward();
 
-  #ifdef VERBOSE 
-    print_output();
-  #endif
+    for (int i = 0; i < OUT_SIZE; i++){
+      // ((uint8_t  *) l2_buffer)[i] = (uint8_t) ((l0_out[i])*255.0); 
+      ((int *) l2_buffer)[i] = ((uint16_t *)l0_out)[i]; 
+    }
+
+
+  // print_output();
+
+  predict_float_local(l0_out, OUT_SIZE);
+
+  // #ifdef VERBOSE 
+  //   print_output();
+  // #endif
   }
 
   if (init == 1) {

@@ -16,6 +16,26 @@
 
 #include "application.h"
 
+#define DATA_TYPE 2 // TODO: Understand why this works
+#if (DATA_TYPE==2)
+// typedef F16_DSP MFCC_IN_TYPE;
+// typedef F16_DSP OUT_TYPE;
+// typedef F16 MFCC_IN_TYPE;
+// typedef F16 OUT_TYPE;
+// typedef f16 MFCC_IN_TYPE;
+// typedef f16 OUT_TYPE;
+typedef float16 MFCC_IN_TYPE;
+typedef float16 OUT_TYPE;
+// typedef struct float16 MFCC_IN_TYPE;
+// typedef struct float16 OUT_TYPE;
+#elif (DATA_TYPE==3)
+typedef float MFCC_IN_TYPE;
+typedef float OUT_TYPE;
+#else
+typedef short int OUT_TYPE;  // Save MFCCs works 
+typedef short int MFCC_IN_TYPE; // Save MFCCs works
+#endif
+
 // L2
 #include "input.h"
 
@@ -47,6 +67,9 @@
 
 // Clean utterances
 #include "utterances.h"
+
+// Test utterances
+#include "tinytest.h"
 
 
 /* 
@@ -243,17 +266,61 @@ void input_wav(int save, int free, char* wavfile, int noise){
         pmsis_exit(1);
     }
     int num_samples = header_info.DataSize * 8 / (header_info.NumChannels * header_info.BitsPerSample);
-    MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
+
+    for (int i = 0; i < 5; i++){
+        PRINTF("inWav[%i] = %i, ", i, inWav[i]);
+    }
+    PRINTF("\n");
+
+    if (noise){
+        RecordedNoise = (MFCC_IN_TYPE *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
     
-    #if (DATA_TYPE==2) || (DATA_TYPE==3)
-        for (int i=0; i<AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
-            MfccInSig[i] = (MFCC_IN_TYPE) inWav[i] / (1<<15);
+        #if (DATA_TYPE==2) || (DATA_TYPE==3)
+            for (int i=0; i<AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
+                RecordedNoise[i] = (MFCC_IN_TYPE) inWav[i] / (1<<15);
+            }
+        #else
+            for (int i=0; i<AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
+                RecordedNoise[i] = (MFCC_IN_TYPE) gap_clip(((int) inWav[i]), 15);
+            }
+        #endif
+
+    }
+    else {
+        MfccInSig = NULL;
+        MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
+        if (MfccInSig == NULL){
+            printf("Failed allocating MfccInSig.\n");
+            pmsis_exit(-1);
         }
-    #else
-        for (int i=0; i<AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
-            MfccInSig[i] = (MFCC_IN_TYPE) gap_clip(((int) inWav[i]), 15);
-        }
-    #endif
+    
+        #if (DATA_TYPE==2) || (DATA_TYPE==3)
+            for (int i=0; i<AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
+                MfccInSig[i] = (MFCC_IN_TYPE) inWav[i] / (1<<15);
+                // int a = (int) inWav[i];
+                // printf("a: %d\n", a);
+                // float b = (float) inWav[i];
+                // printf("b: %f\n", b);
+                // float16 aaa = 0.5;
+                // printf("aaa: %f\n", aaa);
+                // MFCC_IN_TYPE bbb = 0.5;
+                // printf("bbb: %f\n", bbb);
+                // pmsis_exit(-1);
+                // printf("    MfccInSig[%d] = %f\n", i, MfccInSig[i]);
+                // MfccInSig[i] = MfccInSig[i] / 10.0;//((MFCC_IN_TYPE)(1<<15));
+                // MfccInSig[i] = (MFCC_IN_TYPE) inWav[i] * 1.0;
+                // printf("    inWav[%d] = %d\n", i, inWav[i]);
+                // printf("MfccInSig[%d] = %f\n", i, MfccInSig[i]);
+
+
+            }
+        #else
+            for (int i=0; i<AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
+                MfccInSig[i] = (MFCC_IN_TYPE) gap_clip(((int) inWav[i]), 15);
+            }
+        #endif
+    }
+    
 
     if (save){
      // Log WAV 
@@ -275,7 +342,7 @@ void compute_mfcc(){
     ******/
     out_feat = (OUT_TYPE *) pi_l2_malloc(49 * 10 * 4 * sizeof(OUT_TYPE));    
     feat_char = (char*) pi_l2_malloc(49 * 10 * sizeof(char));
-    printf("\n\n****** Computing MFCC ***** \n");
+    printf("\n\n********** Computing MFCC **********\n");
 
 
     // struct pi_cluster_task task_mfcc;
@@ -377,6 +444,18 @@ int application(void){
     printf("Cluster Opened\n");
     pi_freq_set(PI_FREQ_DOMAIN_CL, FREQ_CL*1000*1000);
 
+
+    // Configure User Button
+
+    /* set pad to gpio mode */
+    /* This will open the gpio automatically */
+    static const pi_gpio_e gpio_boot_pin_1 = PAD_GPIO_UPB;
+    pi_pad_function_set(gpio_boot_pin_1, PI_PAD_FUNC1);
+
+    /* configure gpio input */
+    pi_gpio_flags_e flags_upb = PI_GPIO_INPUT;
+    pi_gpio_pin_configure(gpio_boot_pin_1, flags_upb);
+
     // Dory init
     mem_init();
     network_initialize(); // Absent in L2-only
@@ -422,13 +501,16 @@ int application(void){
     int test_array[10] = {0, 1, 0, 1, 1, 0, 0}; // if 1 - update
 
     // Inference loop
-    while (1){
+
+    // while (1){ // DEMO: Infinite loop
+    for (int tinytestidx = 0; tinytestidx < 35; tinytestidx++){
 
         printf ("-----------------------------Loop iteration: %i-------------------------\n", test_idx);
 
         // Read from WAV
         if (input == "1") {
-            input_wav(0, 1, WavName, 0); // save, free, noise
+            printf("Tested input: %s\n", tinytestutter[tinytestidx]);
+            input_wav(0, 1, tinytestutter[tinytestidx], 0); // save, free, noise
         }
         // Read from MIC
         else if (input == "0") {
@@ -437,14 +519,40 @@ int application(void){
             pi_gpio_pin_write(gpio_pin_o, 1);
 #endif
         }
+        for (int i = 0; i < 5; i++){
+            PRINTF("MfccInSig[%i] = %f, ", i, MfccInSig[i]);
+        }
+        PRINTF("\n");
 
         compute_mfcc();
+
+        for (int i = 0; i < 5; i++){
+            PRINTF("out_feat[%i] = %f, ", i, out_feat[i]);
+        }
+        PRINTF("\n");
+        
        
         // Rescale data
         int k = 0;
         for (int i = 0; i < 1960;i++){                
             
-            feat_char[k] = (char) (((int) floor(out_feat[i] * pow(2, -1) * sqrt(0.05))) + 128); // 23.883617 QSNR w/ float
+            // feat_char[k] = (char) (((int) floor(out_feat[i] * pow(2, -1) * sqrt(0.05))) + 128); // 23.883617 QSNR w/ float
+            // printf("feat_char[%i] = %f, ", i, out_feat[i]);
+            // printf("\n");
+            // printf("feat_char[%i] = %f, ", i, out_feat[i] * pow(2, -1));
+            // printf("\n");
+            // printf("feat_char[%i] = %f, ", i, out_feat[i] * pow(2, -1) * sqrt(0.05) );
+            // printf("\n");
+            // printf("feat_char[%i] = %f, ", i, floor(out_feat[i] * pow(2, -1) * sqrt(0.05)));
+            // printf("\n");
+            // printf("feat_char[%i] = %i, ", i, (int) floor(out_feat[i] * pow(2, -1) * sqrt(0.05)) + 128);
+            // printf("\n");
+
+            feat_char[k] = (char) ((int) floor(out_feat[i] * pow(2, -1) * sqrt(0.05)) + 128);
+
+            // if (i == 5){
+            //     pmsis_exit(-1);
+            // }
 
             // Select 10 MFCC per window
             if (i == 40*(k/10) + 9){
@@ -467,13 +575,31 @@ int application(void){
             }
             else {
                 ((uint8_t *)l2_buffer)[i] = feat_char[i]; // Online computed MFCC
+
             }
         }
+
+        for (int i = 0; i < 5; i++){
+            PRINTF("feat_char[%i] = %i, ", i, feat_char[i]);
+        }
+        PRINTF("\n");
+
         pi_l2_free(feat_char, 49 * 10 * sizeof(char));
 
 
-        // UPDATE
-        if (test_array[test_idx] == 1){ // TODO: This should be a press of a button
+        // UPDATE - TEST
+        int button_was_pressed = 1; // active low
+        // while (1){
+        //     pi_gpio_pin_read(gpio_boot_pin_1, &button_was_pressed);
+        //     pi_time_wait_us(1000000);
+        //     printf("button_was_pressed: %i\n", button_was_pressed);
+        // }
+
+        if (0) { // Always inference
+        // if (test_array[test_idx] == 1){ // TODO: This should be a press of a button
+        // if (button_was_pressed == 0){ // active low
+            button_was_pressed = 0;
+
 
             if (input == "0"){
                 input_mic(0, 1, 1); // save, free, noise
@@ -486,7 +612,8 @@ int application(void){
             int sampleidx;
             int classidx;
             int samplestart;
-            for (int uttridx = 0; uttridx < 100; uttridx++){
+            // for (int uttridx = 0; uttridx < 100; uttridx++){
+            for (int uttridx = 0; uttridx < 2; uttridx++){ // simple, to speed test
 
                 sampleidx = uttridx / 10;
                 classidx = uttridx % 10;
@@ -580,7 +707,7 @@ int application(void){
                 // Extract backbone features
                 network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &L2_FC_weights_int8, 0); // L2_input_h extra-arg for L2-only
 
-                printf ("**********Run classifier*******************\n");
+                printf ("********** Run classifier **********\n");
 
                 pi_cluster_conf_init(&cl_conf);
                 pi_open_from_conf(&cluster_dev, &cl_conf);
@@ -604,9 +731,9 @@ int application(void){
 
             // Free noise buffer ONLY AFTER training is complete
             if (input == "0"){
-                pi_l2_free(MfccInSig, BUFF_SIZE);
+                pi_l2_free(RecordedNoise, BUFF_SIZE);
             } else if (input == "1") {
-                pi_l2_free(MfccInSig, AUDIO_BUFFER_SIZE * sizeof (MFCC_IN_TYPE));
+                pi_l2_free(RecordedNoise, AUDIO_BUFFER_SIZE * sizeof (MFCC_IN_TYPE));
             }
 
         }
@@ -615,7 +742,7 @@ int application(void){
         void *dump; // dump to copy FC weights, won't be used; TODO: Parametrize DORY
         network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &dump, 0); // L2_input_h extra-arg for L2-only
 
-        printf ("**********Run classifier*******************\n");
+        printf ("********** Run classifier **********\n");
 
         pi_cluster_conf_init(&cl_conf);
         pi_open_from_conf(&cluster_dev, &cl_conf);
@@ -635,7 +762,14 @@ int application(void){
 
         pi_cluster_close(&cluster_dev);
 
-        printf ("**********Task completed*******************\n");
+        // predict(l2_buffer, 12);
+
+
+        // for (int i = 0; i < 12; i++){
+        //   printf("((int  *) l2_buffer)[%i]=%i\n", i, ((int  *) l2_buffer)[i]);
+        // }
+
+        printf ("********** Task completed **********\n");
 
         // clean buffer
         // pi_l2_free(l2_buffer, L2_MEMORY_SIZE); // Not cleaning such that we don't reallocate
@@ -655,7 +789,7 @@ int application(void){
         chunk_in_cnt++;
 
         test_idx += 1;
-        if (test_idx > 7){
+        if (test_idx > 100){
             break;
         }
 

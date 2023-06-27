@@ -32,18 +32,30 @@
 
 #define L2_MEMORY_SIZE MODEL_L2_MEMORY // TODO: Read from CMake
 
-#if (DATA_TYPE==2)
-typedef f16 MFCC_IN_TYPE;
-typedef f16 OUT_TYPE;
-#elif (DATA_TYPE==3)
-typedef float MFCC_IN_TYPE;
-typedef float OUT_TYPE;
-#else
-typedef short int OUT_TYPE;  // Save MFCCs works 
-typedef short int MFCC_IN_TYPE; // Save MFCCs works
-#endif
+// typedef struct float16 MFCC_IN_TYPE;
+// typedef struct float16 OUT_TYPE;
+
+// #if (DATA_TYPE==2)
+// // typedef F16_DSP MFCC_IN_TYPE;
+// // typedef F16_DSP OUT_TYPE;
+// // typedef F16 MFCC_IN_TYPE;
+// // typedef F16 OUT_TYPE;
+// // typedef float16 MFCC_IN_TYPE;
+// // typedef float16 OUT_TYPE;
+// // typedef struct float16 MFCC_IN_TYPE;
+// // typedef struct float16 OUT_TYPE;
+// #elif (DATA_TYPE==3)
+// typedef float MFCC_IN_TYPE;
+// typedef float OUT_TYPE;
+// #else
+// typedef short int OUT_TYPE;  // Save MFCCs works 
+// typedef short int MFCC_IN_TYPE; // Save MFCCs works
+// #endif
 
 #define NORM 6
+
+// User Push Button
+#define PAD_GPIO_UPB    (PI_PAD_086)
 
 #ifdef SILENT
 # define PRINTF(...) ((void) 0)
