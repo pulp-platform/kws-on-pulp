@@ -74,6 +74,7 @@ char *input = NULL;
 // Arrays handling data movement
 short int *inWav;
 MFCC_IN_TYPE *MfccInSig;
+MFCC_IN_TYPE *RecordedNoise;
 OUT_TYPE *out_feat;
 char * feat_char;
 
@@ -81,6 +82,12 @@ SFU_uDMA_Channel_T *ChanOutCtxt_0;
 void * BufferInList;
 
 static int chunk_in_cnt;
+
+
+// Global declaration 
+struct pi_device cluster_dev;
+struct pi_cluster_conf cl_conf;
+struct pi_cluster_task cl_task;
 
 
 // Microphone handling
@@ -146,7 +153,7 @@ static void RunMFCC()
     #endif
 }
 
-void record(){
+void input_mic(int save, int free, int noise){
     /****
         Setup the SFU for PDM in/out
     ****/
@@ -185,7 +192,125 @@ void record(){
 
     printf("Finish rec!\n");
 
-    MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(BUFF_SIZE/3/2);
+    int outidx;
+
+    if (noise){
+        RecordedNoise = (MFCC_IN_TYPE *) pi_l2_malloc(BUFF_SIZE/3/2);
+        for(int i=0;i<BUFF_SIZE;i+=3){
+            // printf("BufferInList)[%i]=%f\n", i, ((int32_t*)BufferInList)[i]);
+            RecordedNoise[outidx] = (MFCC_IN_TYPE)(((float)((int32_t*)BufferInList)[i]) /((int)(1<<16)));
+            outidx++;
+            if (outidx == AUDIO_BUFFER_SIZE){
+                break;
+            }
+        } 
+    }
+    else {
+        MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(BUFF_SIZE/3/2);
+        // Scale data
+        for(int i=0;i<BUFF_SIZE;i+=3){
+            // printf("BufferInList)[%i]=%f\n", i, ((int32_t*)BufferInList)[i]);
+            MfccInSig[outidx] = (MFCC_IN_TYPE)(((float)((int32_t*)BufferInList)[i]) /((int)(1<<16)));
+            outidx++;
+            if (outidx == AUDIO_BUFFER_SIZE){
+                break;
+            }
+        }    
+    }
+
+    if (save) {
+        // Log WAV 
+        // dump_wav_open("test_gap.wav", 16, 16000, 1, sizeof(short)*AUDIO_BUFFER_SIZE);
+        // dump_wav_write(MfccInSig, sizeof(short)*AUDIO_BUFFER_SIZE);
+        dump_wav_open("test_gap.wav", 32, 48000, 1, BUFF_SIZE);
+        dump_wav_write(BufferInList, BUFF_SIZE);
+        dump_wav_close();
+        printf("Writing wav file to test_gap.wav completed successfully\n");
+    }
+
+    if (free){
+        pi_l2_free(BufferInList, BUFF_SIZE);
+    }
+}
+
+
+void input_wav(int save, int free, char* wavfile, int noise){
+    // Allocate L3 buffers for audio IN
+    inWav    = (short int *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(short));  
+    header_struct header_info;
+    if (ReadWavFromFile(wavfile, inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+        printf("Error reading wav file\n");
+        pmsis_exit(1);
+    }
+    int num_samples = header_info.DataSize * 8 / (header_info.NumChannels * header_info.BitsPerSample);
+    MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
+    
+    #if (DATA_TYPE==2) || (DATA_TYPE==3)
+        for (int i=0; i<AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
+            MfccInSig[i] = (MFCC_IN_TYPE) inWav[i] / (1<<15);
+        }
+    #else
+        for (int i=0; i<AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
+            MfccInSig[i] = (MFCC_IN_TYPE) gap_clip(((int) inWav[i]), 15);
+        }
+    #endif
+
+    if (save){
+     // Log WAV 
+        dump_wav_open("test_gap.wav", 16, 16000, 1, sizeof(short)*AUDIO_BUFFER_SIZE);
+        dump_wav_write(MfccInSig, sizeof(short)*AUDIO_BUFFER_SIZE);
+        dump_wav_close();
+        printf("Writing wav file to test_gap.wav completed successfully\n");
+    }
+    if (free){
+        pi_l2_free(inWav, AUDIO_BUFFER_SIZE * sizeof(short));
+    }
+    
+
+}
+
+void compute_mfcc(){
+    /******
+        Compute the MFCC
+    ******/
+    out_feat = (OUT_TYPE *) pi_l2_malloc(49 * 10 * 4 * sizeof(OUT_TYPE));    
+    feat_char = (char*) pi_l2_malloc(49 * 10 * sizeof(char));
+    printf("\n\n****** Computing MFCC ***** \n");
+
+
+    // struct pi_cluster_task task_mfcc;
+
+    struct pi_cluster_task* task_mfcc;
+    task_mfcc = pi_l2_malloc(sizeof(struct pi_cluster_task));
+    pi_cluster_task(task_mfcc, &RunMFCC, NULL);
+    pi_cluster_task_stacks(task_mfcc, NULL, SLAVE_STACK_SIZE);
+
+    pi_cluster_conf_init(&cl_conf);
+    pi_open_from_conf(&cluster_dev, &cl_conf);
+    if (pi_cluster_open(&cluster_dev))
+    {
+      return -1;
+    }
+    L1_Memory = pi_l1_malloc(&cluster_dev, _L1_Memory_SIZE);
+    if (L1_Memory==NULL){
+        printf("Error allocating L1\n");
+        pmsis_exit(-1);
+    }
+   
+    // pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(task_mfcc, RunMFCC, NULL));
+
+    pi_cluster_send_task_to_cl(&cluster_dev, task_mfcc);
+    pi_l2_free(task_mfcc, sizeof(struct pi_cluster_task));
+
+    pi_cluster_close(&cluster_dev);
+
+
+    if (input == "0"){
+        pi_l2_free(MfccInSig, BUFF_SIZE);
+    } else if (input == "1") {
+        pi_l2_free(MfccInSig, AUDIO_BUFFER_SIZE * sizeof (MFCC_IN_TYPE));
+    }
+
 }
 
 int application(void){
@@ -233,8 +358,7 @@ int application(void){
     /****
         Configure And open cluster. 
     ****/
-    struct pi_device cluster_dev;
-    struct pi_cluster_conf cl_conf;
+    
     pi_cluster_conf_init(&cl_conf);
     cl_conf.cc_stack_size = STACK_SIZE;
     cl_conf.id = 0;                /* Set cluster ID. */
@@ -269,7 +393,6 @@ int application(void){
     network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &L2_FC_weights_int8, 0); // L2_input_h extra-arg for L2-only
 
     // Run classifier
-    struct pi_cluster_task cl_task;
     pi_cluster_conf_init(&cl_conf);
     pi_open_from_conf(&cluster_dev, &cl_conf);
     if (pi_cluster_open(&cluster_dev))
@@ -305,153 +428,17 @@ int application(void){
 
         // Read from WAV
         if (input == "1") {
-            // Instead of listening from microphone, we read from WAV.
-            // Allocate L3 buffers for audio IN
-            inWav    = (short int *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(short));  
-            header_struct header_info;
-            if (ReadWavFromFile(WavName, inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
-                printf("Error reading wav file\n");
-                pmsis_exit(1);
-            }
-            int num_samples = header_info.DataSize * 8 / (header_info.NumChannels * header_info.BitsPerSample);
-            MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
-
+            input_wav(0, 1, WavName, 0); // save, free, noise
         }
-
         // Read from MIC
         else if (input == "0") {
-        
-            /****
-                Setup the SFU for PDM in/out
-            ****/
-            struct pi_device i2s_sai1;
-
-            // Configure PDM
-            if (open_i2s_PDM(&i2s_sai1, SAI1,   3072000, 3, 0)) return -1;
-
-            StartSFU(FREQ_SFU*1000*1000, 1);
-
-            ChanOutCtxt_0  = (SFU_uDMA_Channel_T *) pi_l2_malloc(sizeof(SFU_uDMA_Channel_T));
-            BufferInList = (void*) pi_l2_malloc(BUFF_SIZE);
-
-            // Get uDMA channels for Graph
-            SFU_Allocate_uDMA_Channel(ChanOutCtxt_0, 0, &SFU_RTD(Graph));
-            //Next API will have a value to replace this high number with -1
-            //To be able to 
-            SFU_Enqueue_uDMA_Channel(ChanOutCtxt_0, BufferInList, BUFF_SIZE);
-            // Connect Channels to SFU for Mic IN (PDM IN)
-            SFU_GraphConnectIO(SFU_Name(Graph, Out1), ChanOutCtxt_0->ChannelId, 0, &SFU_RTD(Graph));
-            SFU_GraphConnectIO(SFU_Name(Graph, In1), SAI1, 2, &SFU_RTD(Graph));
-            pi_l2_free(ChanOutCtxt_0, sizeof(SFU_uDMA_Channel_T));
-
-            printf("Start rec!\n");
-
-            //Starting In and Out Graphs
-            pi_i2s_ioctl(&i2s_sai1, PI_I2S_IOCTL_START, NULL);
-            // Let the microphone start
-            pi_time_wait_us(30000); 
-
-            chunk_in_cnt=0;
-            SFU_StartGraph(&SFU_RTD(Graph));
-            pi_time_wait_us(2000000);
-
-            pi_i2s_ioctl(&i2s_sai1, PI_I2S_IOCTL_STOP, NULL);
-
-            printf("Finish rec!\n");
-
-            MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(BUFF_SIZE/3/2);
-
+            input_mic(0, 1, 0); // save, free, noise
+#ifdef AUDIO_EVK
+            pi_gpio_pin_write(gpio_pin_o, 1);
+#endif
         }
 
-    #ifdef AUDIO_EVK
-        pi_gpio_pin_write(gpio_pin_o, 1);
-    #endif
-
-        if (input == "0") {
-            // Scale data
-            int outidx;
-            for(int i=0;i<BUFF_SIZE;i+=3){
-
-                // printf("BufferInList)[%i]=%f\n", i, ((int32_t*)BufferInList)[i]);
-                MfccInSig[outidx] = (MFCC_IN_TYPE)(((float)((int32_t*)BufferInList)[i]) /((int)(1<<16)));
-                outidx++;
-                if (outidx == AUDIO_BUFFER_SIZE){
-                    break;
-                }
-                
-            }          
-
-            // Log WAV 
-            // dump_wav_open("test_gap.wav", 16, 16000, 1, sizeof(short)*AUDIO_BUFFER_SIZE);
-            // dump_wav_write(MfccInSig, sizeof(short)*AUDIO_BUFFER_SIZE);
-            dump_wav_open("test_gap.wav", 32, 48000, 1, BUFF_SIZE);
-            dump_wav_write(BufferInList, BUFF_SIZE);
-            dump_wav_close();
-            printf("Writing wav file to test_gap.wav completed successfully\n");
-
-            pi_l2_free(BufferInList, BUFF_SIZE);
-        }
-        else if (input == "1"){
-            #if (DATA_TYPE==2) || (DATA_TYPE==3)
-                for (int i=0; i<AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
-                    MfccInSig[i] = (MFCC_IN_TYPE) inWav[i] / (1<<15);
-                }
-            #else
-                for (int i=0; i<AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
-                    MfccInSig[i] = (MFCC_IN_TYPE) gap_clip(((int) inWav[i]), 15);
-                }
-            #endif
-            pi_l2_free(inWav, AUDIO_BUFFER_SIZE * sizeof(short));
-
-             // Log WAV 
-            dump_wav_open("test_gap.wav", 16, 16000, 1, sizeof(short)*AUDIO_BUFFER_SIZE);
-            dump_wav_write(MfccInSig, sizeof(short)*AUDIO_BUFFER_SIZE);
-            dump_wav_close();
-            printf("Writing wav file to test_gap.wav completed successfully\n");
-
-        }
-
-        /******
-            Compute the MFCC
-        ******/
-        out_feat = (OUT_TYPE *) pi_l2_malloc(49 * 10 * 4 * sizeof(OUT_TYPE));    
-        feat_char = (char*) pi_l2_malloc(49 * 10 * sizeof(char));
-        printf("\n\n****** Computing MFCC ***** \n");
-
-
-        // struct pi_cluster_task task_mfcc;
-
-        struct pi_cluster_task* task_mfcc;
-        task_mfcc = pi_l2_malloc(sizeof(struct pi_cluster_task));
-        pi_cluster_task(task_mfcc, &RunMFCC, NULL);
-        pi_cluster_task_stacks(task_mfcc, NULL, SLAVE_STACK_SIZE);
-
-        pi_cluster_conf_init(&cl_conf);
-        pi_open_from_conf(&cluster_dev, &cl_conf);
-        if (pi_cluster_open(&cluster_dev))
-        {
-          return -1;
-        }
-        L1_Memory = pi_l1_malloc(&cluster_dev, _L1_Memory_SIZE);
-        if (L1_Memory==NULL){
-            printf("Error allocating L1\n");
-            pmsis_exit(-1);
-        }
-       
-        // pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(task_mfcc, RunMFCC, NULL));
-
-        pi_cluster_send_task_to_cl(&cluster_dev, task_mfcc);
-        pi_l2_free(task_mfcc, sizeof(struct pi_cluster_task));
-
-        pi_cluster_close(&cluster_dev);
-
-
-        if (input == "0"){
-            pi_l2_free(MfccInSig, BUFF_SIZE);
-        } else if (input == "1") {
-            pi_l2_free(MfccInSig, AUDIO_BUFFER_SIZE * sizeof (MFCC_IN_TYPE));
-        }
-
+        compute_mfcc();
        
         // Rescale data
         int k = 0;
@@ -488,103 +475,76 @@ int application(void){
         // UPDATE
         if (test_array[test_idx] == 1){ // TODO: This should be a press of a button
 
-            // TODO: Record
-            record();
+            if (input == "0"){
+                input_mic(0, 1, 1); // save, free, noise
+            }
+            else if (input == "1"){
+                input_wav(0, 1, WavName, 1); // save, free, NoiseName, noise
+            }
 
             // TODO: Augment utterances with recorded data
-
+            int sampleidx;
+            int classidx;
+            int samplestart;
             for (int uttridx = 0; uttridx < 100; uttridx++){
-                int sampleidx;
-                int classidx;
 
-                // TODO: Compute MFCCs
+                sampleidx = uttridx / 10;
+                classidx = uttridx % 10;
+                char *utterance;
+
+                switch (classidx){
+                    case 0:
+                        continue; // TODO: Get data 
+                        utterance = class_0[sampleidx];
+                        break;
+                    case 1:
+                        continue; // TODO: Get data 
+                        utterance = class_1[sampleidx];
+                        break;
+                    case 2:
+                        utterance = class_2[sampleidx];
+                        break;
+                    case 3:
+                        utterance = class_3[sampleidx];
+                        break;
+                    case 4:
+                        utterance = class_4[sampleidx];
+                        break;
+                    case 5:
+                        utterance = class_5[sampleidx];
+                        break;
+                    case 6:
+                        utterance = class_6[sampleidx];
+                        break;
+                    case 7:
+                        utterance = class_7[sampleidx];
+                        break;
+                    case 8:
+                        utterance = class_8[sampleidx];
+                        break;
+                    case 9:
+                        utterance = class_9[sampleidx];
+                        break;
+                    case 10:
+                        utterance = class_10[sampleidx];
+                        break;
+                    case 11:
+                        utterance = class_11[sampleidx];
+                        break;
+                }
+
+                // RecordedNoise
+                input_wav(0, 1, utterance, 0);  // save, free, utterance, noise
+
+                samplestart = 0; // TODO: random sample between (0, len(wav)-16000)
                 for (int samplepos = 0; samplepos < AUDIO_BUFFER_SIZE; samplepos++){
-                    // switch-case to determine class
-                    sampleidx = uttridx / 10;
-                    classidx = uttridx % 10;
-
-                    switch (classidx){
-                        case 0:
-                            continue; // TODO: Get data 
-                            MfccInSig[samplepos] = MfccInSig[samplepos] + class_0[sampleidx];
-                            break;
-                        case 1:
-                            continue; // TODO: Get data 
-                            MfccInSig[samplepos] = MfccInSig[samplepos] + class_1[sampleidx];
-                            break;
-                        case 2:
-                            MfccInSig[samplepos] = MfccInSig[samplepos] + class_2[sampleidx];
-                            break;
-                        case 3:
-                            MfccInSig[samplepos] = MfccInSig[samplepos] + class_3[sampleidx];
-                            break;
-                        case 4:
-                            MfccInSig[samplepos] = MfccInSig[samplepos] + class_4[sampleidx];
-                            break;
-                        case 5:
-                            MfccInSig[samplepos] = MfccInSig[samplepos] + class_5[sampleidx];
-                            break;
-                        case 6:
-                            MfccInSig[samplepos] = MfccInSig[samplepos] + class_6[sampleidx];
-                            break;
-                        case 7:
-                            MfccInSig[samplepos] = MfccInSig[samplepos] + class_7[sampleidx];
-                            break;
-                        case 8:
-                            MfccInSig[samplepos] = MfccInSig[samplepos] + class_8[sampleidx];
-                            break;
-                        case 9:
-                            MfccInSig[samplepos] = MfccInSig[samplepos] + class_9[sampleidx];
-                            break;
-                        case 10:
-                            MfccInSig[samplepos] = MfccInSig[samplepos] + class_10[sampleidx];
-                            break;
-                        case 11:
-                            MfccInSig[samplepos] = MfccInSig[samplepos] + class_11[sampleidx];
-                            break;
-
-                    }
-
-                    
+                    MfccInSig[samplepos] = MfccInSig[samplepos] + RecordedNoise[samplestart+samplepos];
                 }
 
-
-                // TODO: Create separate FUNCTION!!!
-                /******
-                    Compute the MFCC
-                ******/
-                out_feat = (OUT_TYPE *) pi_l2_malloc(49 * 10 * 4 * sizeof(OUT_TYPE));    
-                feat_char = (char*) pi_l2_malloc(49 * 10 * sizeof(char));
-                printf("\n\n****** Computing MFCC ***** \n");
+                // TODO: Create separate training function
+                compute_mfcc();
 
 
-                // struct pi_cluster_task task_mfcc;
-
-                struct pi_cluster_task* task_mfcc;
-                task_mfcc = pi_l2_malloc(sizeof(struct pi_cluster_task));
-                pi_cluster_task(task_mfcc, &RunMFCC, NULL);
-                pi_cluster_task_stacks(task_mfcc, NULL, SLAVE_STACK_SIZE);
-
-                pi_cluster_conf_init(&cl_conf);
-                pi_open_from_conf(&cluster_dev, &cl_conf);
-                if (pi_cluster_open(&cluster_dev))
-                {
-                  return -1;
-                }
-                L1_Memory = pi_l1_malloc(&cluster_dev, _L1_Memory_SIZE);
-                if (L1_Memory==NULL){
-                    printf("Error allocating L1\n");
-                    pmsis_exit(-1);
-                }
-               
-                // pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(task_mfcc, RunMFCC, NULL));
-
-                pi_cluster_send_task_to_cl(&cluster_dev, task_mfcc);
-                pi_l2_free(task_mfcc, sizeof(struct pi_cluster_task));
-
-                pi_cluster_close(&cluster_dev);
-
-               
                 // Rescale data
                 int k = 0;
                 for (int i = 0; i < 1960;i++){                
@@ -617,18 +577,10 @@ int application(void){
                 pi_l2_free(feat_char, 49 * 10 * sizeof(char));
 
 
-                // Pass LABEL to TrainLib
-
-
-
                 // Extract backbone features
                 network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &L2_FC_weights_int8, 0); // L2_input_h extra-arg for L2-only
 
                 printf ("**********Run classifier*******************\n");
-                // Run classifier
-                struct pi_device cluster_dev;
-                struct pi_cluster_conf cl_conf;
-                struct pi_cluster_task cl_task;
 
                 pi_cluster_conf_init(&cl_conf);
                 pi_open_from_conf(&cluster_dev, &cl_conf);
@@ -664,10 +616,6 @@ int application(void){
         network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &dump, 0); // L2_input_h extra-arg for L2-only
 
         printf ("**********Run classifier*******************\n");
-        // Run classifier
-        struct pi_device cluster_dev;
-        struct pi_cluster_conf cl_conf;
-        struct pi_cluster_task cl_task;
 
         pi_cluster_conf_init(&cl_conf);
         pi_open_from_conf(&cluster_dev, &cl_conf);

@@ -293,26 +293,6 @@ list(APPEND TARGET_PREPROCESSOR  # -DPERF
 
 )
 
-
-# Working well for small files
-# list(APPEND READFS_MRAM_FILES 
-
-# list(APPEND READFS_FILES 
-#                          ${CURDIR}DORY_network/hex/BNReluConvolution0_weights.hex
-#                          ${CURDIR}DORY_network/hex/BNReluConvolution1_weights.hex
-#                          ${CURDIR}DORY_network/hex/BNReluConvolution2_weights.hex
-#                          ${CURDIR}DORY_network/hex/BNReluConvolution3_weights.hex
-#                          ${CURDIR}DORY_network/hex/BNReluConvolution4_weights.hex
-#                          ${CURDIR}DORY_network/hex/BNReluConvolution5_weights.hex
-#                          ${CURDIR}DORY_network/hex/BNReluConvolution6_weights.hex
-#                          ${CURDIR}DORY_network/hex/BNReluConvolution7_weights.hex
-#                          ${CURDIR}DORY_network/hex/BNReluConvolution8_weights.hex
-#                          ${CURDIR}DORY_network/hex/FullyConnected10_weights.hex
-#                          ${CURDIR}DORY_network/hex/inputs.hex
-#                          ${WAV_FILE}
-# )
-
-
 set (UTTR_FILE /home/cioflanc/odda_gap9/tiny_denoiser/utterances.txt)
 
 FILE(STRINGS ${UTTR_FILE} UTTERANCES)
@@ -321,10 +301,21 @@ FILE(STRINGS ${UTTR_FILE} UTTERANCES)
 # Working well for small files
 # list(APPEND READFS_MRAM_FILES 
 
-# list(APPEND READFS_FILES 
-#                        ${UTTERANCES}
-#     )
-
+ list(APPEND READFS_FILES 
+                        ${CURDIR}DORY_network/hex/BNReluConvolution0_weights.hex
+                        ${CURDIR}DORY_network/hex/BNReluConvolution1_weights.hex
+                        ${CURDIR}DORY_network/hex/BNReluConvolution2_weights.hex
+                        ${CURDIR}DORY_network/hex/BNReluConvolution3_weights.hex
+                        ${CURDIR}DORY_network/hex/BNReluConvolution4_weights.hex
+                        ${CURDIR}DORY_network/hex/BNReluConvolution5_weights.hex
+                        ${CURDIR}DORY_network/hex/BNReluConvolution6_weights.hex
+                        ${CURDIR}DORY_network/hex/BNReluConvolution7_weights.hex
+                        ${CURDIR}DORY_network/hex/BNReluConvolution8_weights.hex
+                        ${CURDIR}DORY_network/hex/FullyConnected10_weights.hex
+                        ${CURDIR}DORY_network/hex/inputs.hex
+                        ${WAV_FILE}
+                        ${UTTERANCES}
+)
 
 
 project (${TARGET_NAME} C ASM)
