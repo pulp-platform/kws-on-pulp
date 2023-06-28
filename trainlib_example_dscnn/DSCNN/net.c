@@ -13,36 +13,25 @@
 
 
 
-int predict_float_local (void * array, int n_classes){
+int predict_unsigned_local (void * array, int n_classes){
 
     // Declare word list, determine recognized keyword
     // 'silence,unknown,yes,no,up,down,left,right,on,off,stop,go,'
-    float supraunitary = 0;
-    float subunitary = 1;
-    int supra_idx = 0;
-    int sub_idx = 0;
-    char prediction[10];
-    for (int i = 0; i < n_classes; i++){
-
-        printf ("d[%i] = %f\n", i, ((float*) array)[i]);
-  
-        if ( ((float *) array)[i] > supraunitary && ((float *) array)[i] > 1){
-            supraunitary = ((float *) array)[i];
-            supra_idx = i;
-        }
-        if (((float *) array)[i] < subunitary && ((float *) array)[i] < 1){
-            subunitary = ((float *) array)[i];
-            sub_idx = i;
-        }
-
-    }
 
     int idx;
+    unsigned int max_val = 0;
+    int max_idx = 0;
+    char prediction[10];
+    for (int i = 0; i < n_classes; i++){
+        // printf ("d[%i] = %u\n", i, ((unsigned int*) array)[i]);
 
-    if (subunitary < 1)
-        idx = sub_idx;
-    else
-        idx = supra_idx;
+        if (((unsigned int *) array)[i] > max_val){
+            max_val = ((unsigned int*) array)[i];
+            max_idx = i;
+        }
+    }
+
+    idx = max_idx;
 
     switch (idx){
         case 0:
@@ -266,7 +255,10 @@ void net_step(void *args)
         // printf ("d[%i] = %f\n", i, ((float) ((uint8_t  *) L2_weights)[i])/255 );
         // Dory operates INT8, must be converted to FLOAT
         // init_WGT_l0[i] = ((float) ((uint8_t  *) L2_weights)[i])/255.0;
-      init_WGT_l0[i] = ((float) ((uint8_t  *) L2_weights)[i])/255.0;
+
+      // init_WGT_l0[i] = ((float) ((uint8_t  *) L2_weights)[i])/255.0;
+      printf("%i, ", ((uint8_t  *) L2_weights)[i]);
+      init_WGT_l0[i] = (float) (((uint8_t  *) L2_weights)[i] - 128) / 255.0;
     }
 
     pi_l2_free(L2_weights, WGT_SIZE_L0 * sizeof(uint8_t));
@@ -283,7 +275,8 @@ void net_step(void *args)
   // L2 Dory to L1 TrainLib manual feature movement
   for (int i = 0; i < IN_SIZE; i++){
       // Dory operates INT8, must be converted to FLOAT
-      IN_DATA[i] = ((float) ((uint8_t  *) l2_buffer)[i])/255.0;
+      // IN_DATA[i] = ((float) ((uint8_t  *) l2_buffer)[i])/255.0;
+    IN_DATA[i] = (float) (((uint8_t  *) l2_buffer)[i]) / 255.0;
   }
 
 #ifdef VERBOSE
@@ -357,7 +350,7 @@ void net_step(void *args)
 
   // print_output();
 
-  predict_float_local(l0_out, OUT_SIZE);
+  predict_unsigned_local(l0_out, OUT_SIZE);
 
   // #ifdef VERBOSE 
   //   print_output();

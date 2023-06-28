@@ -575,9 +575,15 @@ int application(void){
             }
             else {
                 ((uint8_t *)l2_buffer)[i] = feat_char[i]; // Online computed MFCC
+                PRINTF("%i,", feat_char[i]);
 
             }
         }
+        printf("\n");
+
+
+
+
 
         for (int i = 0; i < 5; i++){
             PRINTF("feat_char[%i] = %i, ", i, feat_char[i]);
