@@ -273,14 +273,14 @@ void input_wav(int save, int free, char* wavfile, int noise){
     PRINTF("\n");
 
     if (noise){
-        RecordedNoise = (MFCC_IN_TYPE *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
+        RecordedNoise = (MFCC_IN_TYPE *) pi_l2_malloc(5*AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
     
         #if (DATA_TYPE==2) || (DATA_TYPE==3)
-            for (int i=0; i<AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
+            for (int i=0; i<5*AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
                 RecordedNoise[i] = (MFCC_IN_TYPE) inWav[i] / (1<<15);
             }
         #else
-            for (int i=0; i<AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
+            for (int i=0; i<5*AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
                 RecordedNoise[i] = (MFCC_IN_TYPE) gap_clip(((int) inWav[i]), 15);
             }
         #endif
@@ -330,7 +330,12 @@ void input_wav(int save, int free, char* wavfile, int noise){
         printf("Writing wav file to test_gap.wav completed successfully\n");
     }
     if (free){
-        pi_l2_free(inWav, AUDIO_BUFFER_SIZE * sizeof(short));
+        if (noise){
+            pi_l2_free(inWav, 5*AUDIO_BUFFER_SIZE * sizeof(short));
+        }
+        else{
+            pi_l2_free(inWav, AUDIO_BUFFER_SIZE * sizeof(short));
+        }
     }
     
 
@@ -501,9 +506,22 @@ int application(void){
     int test_array[10] = {0, 1, 0, 1, 1, 0, 0}; // if 1 - update
 
     // Inference loop
+    // Add noise
+    int addnoise = 1;
+
+    if (addnoise){
+        char noiseName[80] = "/home/cioflanc/odda_gap9/tiny_denoiser/restaurant_crop_ch01.wav";
+       if (input == "0"){
+            input_mic(0, 1, 1); // save, free, noise
+        }
+        else if (input == "1"){
+            input_wav(0, 1, noiseName, 1); // save, free, NoiseName, noise
+        }
+    }
 
     // while (1){ // DEMO: Infinite loop
-    for (int tinytestidx = 0; tinytestidx < 35; tinytestidx++){
+    for (int tinytestidx = 0; tinytestidx < 10; tinytestidx++){ // only non-unknown
+    // for (int tinytestidx = 0; tinytestidx < 35; tinytestidx++){
 
         printf ("-----------------------------Loop iteration: %i-------------------------\n", test_idx);
 
@@ -523,6 +541,13 @@ int application(void){
             PRINTF("MfccInSig[%i] = %f, ", i, MfccInSig[i]);
         }
         PRINTF("\n");
+
+
+        int noisesamplestart = 0; // TODO: random sample between (0, len(wav)-16000)
+        for (int samplepos = 0; samplepos < AUDIO_BUFFER_SIZE; samplepos++){
+            MfccInSig[samplepos] = MfccInSig[samplepos] + RecordedNoise[noisesamplestart+samplepos]*5;
+        }
+
 
         compute_mfcc();
 

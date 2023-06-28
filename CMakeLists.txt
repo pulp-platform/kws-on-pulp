@@ -303,6 +303,8 @@ FILE(STRINGS ${TINYTEST_FILE} TINYTEST_UTTR)
 # Working well for small files
 # list(APPEND READFS_MRAM_FILES 
 
+set (RESTAURANT_NOISE_WAV /home/cioflanc/odda_gap9/tiny_denoiser/restaurant_crop_ch01.wav)
+
  list(APPEND READFS_FILES 
                         ${CURDIR}DORY_network/hex/BNReluConvolution0_weights.hex
                         ${CURDIR}DORY_network/hex/BNReluConvolution1_weights.hex
@@ -318,6 +320,8 @@ FILE(STRINGS ${TINYTEST_FILE} TINYTEST_UTTR)
                         ${WAV_FILE}
                         ${UTTERANCES} 
                         ${TINYTEST_UTTR}
+                        ${RESTAURANT_NOISE_WAV}
+
 )
 
 

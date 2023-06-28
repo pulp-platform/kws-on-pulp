@@ -170,7 +170,8 @@ void compute_loss()
   loss_args.output = &layer0_out;
   loss_args.target = LABEL;
   loss_args.wr_loss = &loss;
-  pulp_MSELoss(&loss_args);
+  // pulp_MSELoss(&loss_args);
+  pulp_CrossEntropyLoss(&loss_args);
 }
 
 // Function to update the network
