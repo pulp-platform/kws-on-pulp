@@ -273,14 +273,14 @@ void input_wav(int save, int free, char* wavfile, int noise){
     PRINTF("\n");
 
     if (noise){
-        RecordedNoise = (MFCC_IN_TYPE *) pi_l2_malloc(5*AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
+        RecordedNoise = (MFCC_IN_TYPE *) pi_l2_malloc(10*AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
     
         #if (DATA_TYPE==2) || (DATA_TYPE==3)
-            for (int i=0; i<5*AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
+            for (int i=0; i<10*AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
                 RecordedNoise[i] = (MFCC_IN_TYPE) inWav[i] / (1<<15);
             }
         #else
-            for (int i=0; i<5*AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
+            for (int i=0; i<10*AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
                 RecordedNoise[i] = (MFCC_IN_TYPE) gap_clip(((int) inWav[i]), 15);
             }
         #endif
@@ -297,23 +297,7 @@ void input_wav(int save, int free, char* wavfile, int noise){
         #if (DATA_TYPE==2) || (DATA_TYPE==3)
             for (int i=0; i<AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
                 MfccInSig[i] = (MFCC_IN_TYPE) inWav[i] / (1<<15);
-                // int a = (int) inWav[i];
-                // printf("a: %d\n", a);
-                // float b = (float) inWav[i];
-                // printf("b: %f\n", b);
-                // float16 aaa = 0.5;
-                // printf("aaa: %f\n", aaa);
-                // MFCC_IN_TYPE bbb = 0.5;
-                // printf("bbb: %f\n", bbb);
-                // pmsis_exit(-1);
-                // printf("    MfccInSig[%d] = %f\n", i, MfccInSig[i]);
-                // MfccInSig[i] = MfccInSig[i] / 10.0;//((MFCC_IN_TYPE)(1<<15));
-                // MfccInSig[i] = (MFCC_IN_TYPE) inWav[i] * 1.0;
-                // printf("    inWav[%d] = %d\n", i, inWav[i]);
-                // printf("MfccInSig[%d] = %f\n", i, MfccInSig[i]);
-
-
-            }
+                            }
         #else
             for (int i=0; i<AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
                 MfccInSig[i] = (MFCC_IN_TYPE) gap_clip(((int) inWav[i]), 15);
@@ -331,7 +315,7 @@ void input_wav(int save, int free, char* wavfile, int noise){
     }
     if (free){
         if (noise){
-            pi_l2_free(inWav, 5*AUDIO_BUFFER_SIZE * sizeof(short));
+            pi_l2_free(inWav, 10*AUDIO_BUFFER_SIZE * sizeof(short));
         }
         else{
             pi_l2_free(inWav, AUDIO_BUFFER_SIZE * sizeof(short));
@@ -489,14 +473,14 @@ int application(void){
     if (L2_FC_weights_float == NULL) {
         printf("failed to allocate memory for L2_FC_weights_float\n");
     }
-    unsigned int args[5];
-    args[0] = (unsigned int) l2_buffer;
-    args[1] = (unsigned int) L2_FC_weights_int8; // Weights buffer
-    args[2] = (unsigned int) L2_FC_weights_float;
-    args[3] = (unsigned int) 0; // update = 0
-    args[4] = (unsigned int) 1; // init = 0
+    unsigned int args_init_classifier[5];
+    args_init_classifier[0] = (unsigned int) l2_buffer;
+    args_init_classifier[1] = (unsigned int) L2_FC_weights_int8; // Weights buffer
+    args_init_classifier[2] = (unsigned int) L2_FC_weights_float;
+    args_init_classifier[3] = (unsigned int) 0; // update = 0
+    args_init_classifier[4] = (unsigned int) 1; // init = 0
 
-    pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, args));
+    pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, args_init_classifier));
 
     pi_cluster_close(&cluster_dev);
 
@@ -518,6 +502,10 @@ int application(void){
             input_wav(0, 1, noiseName, 1); // save, free, NoiseName, noise
         }
     }
+
+
+    // UPDATE - TEST
+    int button_was_pressed = 1; // active low
 
     // while (1){ // DEMO: Infinite loop
     for (int tinytestidx = 0; tinytestidx < 10; tinytestidx++){ // only non-unknown
@@ -542,10 +530,11 @@ int application(void){
         }
         PRINTF("\n");
 
-
-        int noisesamplestart = 0; // TODO: random sample between (0, len(wav)-16000)
-        for (int samplepos = 0; samplepos < AUDIO_BUFFER_SIZE; samplepos++){
-            MfccInSig[samplepos] = MfccInSig[samplepos] + RecordedNoise[noisesamplestart+samplepos]*5;
+        if (addnoise) {
+            int noisesamplestart = 0; // TODO: random sample between (0, len(wav)-16000)
+            for (int samplepos = 0; samplepos < AUDIO_BUFFER_SIZE; samplepos++){
+                MfccInSig[samplepos] = MfccInSig[samplepos] + 10*RecordedNoise[noisesamplestart+samplepos];
+            }
         }
 
 
@@ -618,44 +607,51 @@ int application(void){
         pi_l2_free(feat_char, 49 * 10 * sizeof(char));
 
 
-        // UPDATE - TEST
-        int button_was_pressed = 1; // active low
+
         // while (1){
         //     pi_gpio_pin_read(gpio_boot_pin_1, &button_was_pressed);
         //     pi_time_wait_us(1000000);
         //     printf("button_was_pressed: %i\n", button_was_pressed);
         // }
 
-        if (0) { // Always inference
+        if (button_was_pressed) { // Always inference
         // if (test_array[test_idx] == 1){ // TODO: This should be a press of a button
         // if (button_was_pressed == 0){ // active low
             button_was_pressed = 0;
 
 
-            if (input == "0"){
-                input_mic(0, 1, 1); // save, free, noise
-            }
-            else if (input == "1"){
-                input_wav(0, 1, WavName, 1); // save, free, NoiseName, noise
-            }
+            // Noise already existing - TODO: Comment back in
+            // if (input == "0"){
+            //     input_mic(0, 1, 1); // save, free, noise
+            // }
+            // else if (input == "1"){
+            //     input_wav(0, 1, WavName, 1); // save, free, NoiseName, noise
+            // }
 
             // TODO: Augment utterances with recorded data
             int sampleidx;
             int classidx;
             int samplestart;
-            // for (int uttridx = 0; uttridx < 100; uttridx++){
-            for (int uttridx = 0; uttridx < 2; uttridx++){ // simple, to speed test
+
+
+            int nepochs = 1;
+
+            for (int epidx = 0; epidx < nepochs; epidx++){
+            // for (int uttridx = 0; uttridx < 2; uttridx++){ // simple, to speed test
+            for (int uttridx = 0; uttridx < 100; uttridx++){
 
                 sampleidx = uttridx / 10;
                 classidx = uttridx % 10;
+
+                classidx += 2; // no SILENCE, no UNKNOWN
                 char *utterance;
 
                 switch (classidx){
-                    case 0:
+                    case 0: // 0
                         continue; // TODO: Get data 
                         utterance = class_0[sampleidx];
                         break;
-                    case 1:
+                    case 1: // 0
                         continue; // TODO: Get data 
                         utterance = class_1[sampleidx];
                         break;
@@ -690,13 +686,16 @@ int application(void){
                         utterance = class_11[sampleidx];
                         break;
                 }
+                printf ("sampleidx: %i\n", sampleidx);
+                printf ("classidx: %i\n", classidx);
+                printf ("utterance: %s\n", utterance);
 
-                // RecordedNoise
+                // Load Utterance
                 input_wav(0, 1, utterance, 0);  // save, free, utterance, noise
 
                 samplestart = 0; // TODO: random sample between (0, len(wav)-16000)
                 for (int samplepos = 0; samplepos < AUDIO_BUFFER_SIZE; samplepos++){
-                    MfccInSig[samplepos] = MfccInSig[samplepos] + RecordedNoise[samplestart+samplepos];
+                    MfccInSig[samplepos] = MfccInSig[samplepos] + 10*RecordedNoise[samplestart+samplepos];
                 }
 
                 // TODO: Create separate training function
@@ -747,28 +746,34 @@ int application(void){
                   return -1;
                 }
 
-                unsigned int args[5];
-                args[0] = (unsigned int) l2_buffer;
-                args[1] = (unsigned int) L2_FC_weights_int8;
-                args[2] = (unsigned int) L2_FC_weights_float;
-                args[3] = (unsigned int) 1; // update = 0
-                args[4] = (unsigned int) 0; // init = 0
-                args[5] = (unsigned int) classidx;
+                unsigned int args_train_classifier[5];
+                args_train_classifier[0] = (unsigned int) l2_buffer;
+                args_train_classifier[1] = (unsigned int) L2_FC_weights_int8;
+                args_train_classifier[2] = (unsigned int) L2_FC_weights_float;
+                args_train_classifier[3] = (unsigned int) 1; // update = 0
+                if (uttridx == 0)
+                    args_train_classifier[4] = (unsigned int) 1; // init = 1
+                else
+                    args_train_classifier[4] = (unsigned int) 0; // init = 0   
+                
+                args_train_classifier[5] = (unsigned int) classidx;
 
-                pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, args));
+                pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, args_train_classifier));
 
                 pi_cluster_close(&cluster_dev);
             }
 
-            // Free noise buffer ONLY AFTER training is complete
-            if (input == "0"){
-                pi_l2_free(RecordedNoise, BUFF_SIZE);
-            } else if (input == "1") {
-                pi_l2_free(RecordedNoise, AUDIO_BUFFER_SIZE * sizeof (MFCC_IN_TYPE));
-            }
+            }//end epochs
+        
+
+            // // Free noise buffer ONLY AFTER training is complete
+            // if (input == "0"){
+            //     pi_l2_free(RecordedNoise, BUFF_SIZE);
+            // } else if (input == "1") {
+            //     pi_l2_free(RecordedNoise, AUDIO_BUFFER_SIZE * sizeof (MFCC_IN_TYPE));
+            // }
 
         }
-        
         // Extract backbone features
         void *dump; // dump to copy FC weights, won't be used; TODO: Parametrize DORY
         network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &dump, 0); // L2_input_h extra-arg for L2-only
@@ -782,14 +787,14 @@ int application(void){
           return -1;
         }
 
-        unsigned int args[5];
-        args[0] = (unsigned int) l2_buffer;
-        args[1] = (unsigned int) dump;
-        args[2] = (unsigned int) L2_FC_weights_float;
-        args[3] = (unsigned int) 0; // update = 0
-        args[4] = (unsigned int) 0; // init = 0
+        unsigned int args_inference_classifier[5];
+        args_inference_classifier[0] = (unsigned int) l2_buffer;
+        args_inference_classifier[1] = (unsigned int) dump;
+        args_inference_classifier[2] = (unsigned int) L2_FC_weights_float;
+        args_inference_classifier[3] = (unsigned int) 0; // update = 0
+        args_inference_classifier[4] = (unsigned int) 0; // init = 0
 
-        pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, args));
+        pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, args_inference_classifier));
 
         pi_cluster_close(&cluster_dev);
 

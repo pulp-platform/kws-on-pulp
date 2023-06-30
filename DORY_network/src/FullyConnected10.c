@@ -227,7 +227,7 @@ void FullyConnected10(
     pulp_nn_linear_out_32(
       x, b, y, W,
       x_tile_size_nif_exec, y_tile_size_nof
-      );
+    );
    // wait for DMA write/read
      pi_cl_team_barrier(0);
 
