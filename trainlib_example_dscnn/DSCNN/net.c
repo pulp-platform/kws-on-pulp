@@ -12,6 +12,10 @@
 #include "directional_allocator.h"
 
 
+#include "AutoTilerLibTypes.h"
+#include "DSP_Lib.h"
+
+
 
 int predict_unsigned_local (void * array, int n_classes){
 
@@ -23,10 +27,75 @@ int predict_unsigned_local (void * array, int n_classes){
     int max_idx = 0;
     char prediction[10];
     for (int i = 0; i < n_classes; i++){
-        // printf ("d[%i] = %u\n", i, ((unsigned int*) array)[i]);
+        printf ("d[%i] = %u\n", i, ((unsigned int*) array)[i]);
 
         if (((unsigned int *) array)[i] > max_val){
             max_val = ((unsigned int*) array)[i];
+            max_idx = i;
+        }
+    }
+
+    idx = max_idx;
+
+    switch (idx){
+        case 0:
+            strncpy(prediction, "silence", 10);
+            break;
+        case 1:
+            strncpy(prediction, "unknown", 10);
+            break;
+        case 2:
+            strncpy(prediction, "yes", 10);
+            break;
+        case 3:
+            strncpy(prediction, "no", 10);
+            break;
+        case 4:
+            strncpy(prediction, "up", 10);
+            break;
+        case 5:
+            strncpy(prediction, "down", 10);
+            break;
+        case 6:
+            strncpy(prediction, "left", 10);
+            break;
+        case 7:
+            strncpy(prediction, "right", 10);
+            break;
+        case 8:
+            strncpy(prediction, "on", 10);
+            break;
+        case 9:
+            strncpy(prediction, "off", 10);
+            break;
+        case 10:
+            strncpy(prediction, "stop", 10);
+            break;
+        case 11:
+            strncpy(prediction, "go", 10);
+            break;
+        default:
+            printf ("Undefined class!\n");
+    }
+
+    printf("The uttered keyword was: %s (%i).\n", prediction, idx);
+    return idx;
+}
+
+int predict_float_local (void * array, int n_classes){
+
+    // Declare word list, determine recognized keyword
+    // 'silence,unknown,yes,no,up,down,left,right,on,off,stop,go,'
+
+    int idx;
+    float max_val = -100.0;
+    int max_idx = 0;
+    char prediction[10];
+    for (int i = 0; i < n_classes; i++){
+        printf ("d[%i] = %f\n", i, ((float*) array)[i]);
+
+        if (((float *) array)[i] > max_val){
+            max_val = ((float*) array)[i];
             max_idx = i;
         }
     }
@@ -237,11 +306,14 @@ void net_step(void *args)
   int classidx = (int) real_args[5];
 
   // TODO: Discuss sample management per epoch
-  LABEL[0] = classidx;
+  
+
+  int dummy;
 
 
+  if (init == 1){
 
-  if (update == 1 || init == 1){
+    printf("INIT\n");
 
     // L2 Dory to L1 TrainLib manual weights movement
     // Weights size - 64 * 12 = WGT_SIZE_L0
@@ -253,14 +325,25 @@ void net_step(void *args)
     // L2 Dory to L1 TrainLib manual weights movement
     printf ("Training weights\n");
     for (int i = 0; i < WGT_SIZE_L0; i++){
-        // printf ("d[%i] = %f\n", i, ((float) ((uint8_t  *) L2_weights)[i])/255 );
-        // Dory operates INT8, must be converted to FLOAT
-        // init_WGT_l0[i] = ((float) ((uint8_t  *) L2_weights)[i])/255.0;
+  
+      // DORY to TrainLib
+      // UINT8 Weights
+      // init_WGT_l0[i] = (float) (((uint8_t  *) L2_weights)[i] - 128) / 255.0;
 
-      // init_WGT_l0[i] = ((float) ((uint8_t  *) L2_weights)[i])/255.0;
-      printf("%i, ", ((uint8_t  *) L2_weights)[i]);
-      init_WGT_l0[i] = (float) (((uint8_t  *) L2_weights)[i] - 128) / 255.0;
+      // UINT7 weights
+      // init_WGT_l0[i] = (float) (((uint8_t  *) L2_weights)[i] - 64) / 64.0;
+
+
+      // We use the float32 PyTorch init_WGT_l0 weights 
+      // We should find a way to restore the initial state
+      dummy = 1;
+
     }
+
+    // printf("Original weights:\n");
+    // for (int i = 0; i < 10; i++){
+    //   printf("W[%i] %f\n", i, init_WGT_l0[i]);
+    // }
 
     pi_l2_free(L2_weights, WGT_SIZE_L0 * sizeof(uint8_t));
 
@@ -271,13 +354,28 @@ void net_step(void *args)
         // Dory operates INT8, must be converted to FLOAT
         init_WGT_l0[i] = ((float *) L2_weights_curr_updated)[i];
     }
+    // printf("Latest weights:\n");
+    // for (int i = 0; i < 10; i++){
+    //   printf("W[%i] %f\n", i, init_WGT_l0[i]);
+    // }
   }
 
   // L2 Dory to L1 TrainLib manual feature movement
   for (int i = 0; i < IN_SIZE; i++){
-      // Dory operates INT8, must be converted to FLOAT
-      // IN_DATA[i] = ((float) ((uint8_t  *) l2_buffer)[i])/255.0;
-    IN_DATA[i] = (float) (((uint8_t  *) l2_buffer)[i]) / 255.0;
+
+    // Dory operates INT8, must be converted to FLOAT
+    // INT8
+    // IN_DATA[i] = (float) (((uint8_t  *) l2_buffer)[i]) / 255.0;
+
+    float eps_in = 0.1048; // biasremoved
+    // float eps_in = 0.1138; // nobias
+    IN_DATA[i] = ((float) (((uint8_t  *) l2_buffer)[i])) * eps_in;
+
+    // INT8 
+    // IN_DATA[i] = (float) (((uint8_t  *) l2_buffer)[i]) / 128.0;
+
+    // UINT8
+    // IN_DATA[i] = (float) (((uint8_t  *) l2_buffer)[i]) / 64.0;
   }
 
 #ifdef VERBOSE
@@ -295,12 +393,55 @@ void net_step(void *args)
     START_STATS();
     #endif
 
+    // onehot encoding
+    for (int labelidx = 0; labelidx<OUT_SIZE; labelidx++){
+      LABEL[labelidx] = 0.;
+    } 
+    LABEL[classidx] = 1.;
+
+    int start = 0;
+    int elapsed = 0;
     for (int epoch=0; epoch<EPOCHS; epoch++)
     {
+
+      gap_cl_starttimer();
+      gap_cl_resethwtimer();
+      start = gap_cl_readhwtimer();
+
       forward();
+      elapsed = gap_cl_readhwtimer() - start;
+      printf("forward: %d\n", elapsed);
+      gap_cl_starttimer();
+      gap_cl_resethwtimer();
+      start = gap_cl_readhwtimer();
+
+      // for (int i = 0; i < OUT_SIZE; i++){
+
+      //   double maxval = 1<<31 - 1;
+      //   printf("Out[%i]=%f\n", i, ((float *)layer0_out.data)[i]);
+      // }
+
       compute_loss();
+
+      elapsed = gap_cl_readhwtimer() - start;
+      printf("compute loss: %d\n", elapsed);
+      gap_cl_starttimer();
+      gap_cl_resethwtimer();
+      start = gap_cl_readhwtimer();
+
       backward();
+
+      elapsed = gap_cl_readhwtimer() - start;
+      printf("backward: %d\n", elapsed);
+      gap_cl_starttimer();
+      gap_cl_resethwtimer();
+      start = gap_cl_readhwtimer();
+
       update_weights();
+
+      elapsed = gap_cl_readhwtimer() - start;
+      printf("update_weights: %d\n", elapsed);
+
     }
 #ifdef VERBOSE    
     printf("Adapted weights:\n");
@@ -312,6 +453,14 @@ void net_step(void *args)
     for (int i = 0; i < WGT_SIZE_L0; i++){
      ((float*)L2_weights_curr_updated)[i] = layer0_wgt.data[i];
     }
+
+    // printf("Updating weights:\n");
+    // for (int i = 0; i < 10; i++){
+    //   printf("W[%i] %f\n", i,  layer0_wgt.data[i]);
+    //   printf("W[%i] %f\n", i, ((float*)L2_weights_curr_updated)[i]);
+    // }
+
+    
 
 
     #ifdef PROF_NET
@@ -345,13 +494,15 @@ void net_step(void *args)
 
     for (int i = 0; i < OUT_SIZE; i++){
       // ((uint8_t  *) l2_buffer)[i] = (uint8_t) ((l0_out[i])*255.0); 
-      ((int *) l2_buffer)[i] = ((uint16_t *)l0_out)[i]; 
+      // ((int *) l2_buffer)[i] = ((uint16_t *)l0_out)[i]; 
+      ((float *) l2_buffer)[i] = ((float *)l0_out)[i]; 
     }
 
 
   // print_output();
 
-  predict_unsigned_local(l0_out, OUT_SIZE);
+  // predict_unsigned_local(l0_out, OUT_SIZE);
+  predict_float_local(l0_out, OUT_SIZE);
 
   // #ifdef VERBOSE 
   //   print_output();

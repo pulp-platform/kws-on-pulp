@@ -85,13 +85,13 @@ add_custom_command (
 
 )
 
-add_custom_command (
-    
-    OUTPUT    ${MFCC_SRC_CODE}
-    COMMAND   ${MFCC_MODEL_GEN} -o ${BUILD_DIR} -c ${BUILD_DIR} ${MODEL_GEN_EXTRA_FLAGS}
-    DEPENDS   ${MFCC_MODEL_GEN}
-
-)
+# add_custom_command (
+#     
+#     OUTPUT    ${MFCC_SRC_CODE}
+#     COMMAND   ${MFCC_MODEL_GEN} -o ${BUILD_DIR} -c ${BUILD_DIR} ${MODEL_GEN_EXTRA_FLAGS}
+#     DEPENDS   ${MFCC_MODEL_GEN}
+# 
+# )
 
 add_custom_target (
     MFCC_HEAD
@@ -282,6 +282,7 @@ list(APPEND TARGET_PREPROCESSOR  # -DPERF
                                 # TrainLib
                                 -DFABRIC
                                 -DCLUSTER
+                                # -DDEBUG
                                 # -DPROF_NET
                                 -mhwloopalign
                                 # -DSTATS
