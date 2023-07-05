@@ -58,8 +58,10 @@ set(MATMUL_TYPE_IG_L0  0)         # Selects which optimized matmul to be used in
 set (NUM_MATMULS 24)
 
 
-set(GAP9_SDK_DIR        /home/cioflanc/odda_gap9/gap_sdk_private/)
-set(CURDIR              /home/cioflanc/odda_gap9/tiny_denoiser/)
+# set(GAP9_SDK_DIR        /home/cioflanc/odda_gap9/gap_sdk_private/)
+# set(CURDIR              /home/cioflanc/odda_gap9/tiny_denoiser/)
+set(GAP9_SDK_DIR        /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk_private/)
+set(CURDIR              /usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/)
 set(BUILD_DIR           ${CURDIR}/build)
 set(TRAINLIB_DIR        ${CURDIR}/trainlib_example_dscnn/DSCNN)
 set(DSP_DIR             ${GAP9_SDK_DIR}tools/autotiler_v3/DSP_Libraries/)
@@ -294,8 +296,15 @@ list(APPEND TARGET_PREPROCESSOR  # -DPERF
 
 )
 
-set (UTTR_FILE /home/cioflanc/odda_gap9/tiny_denoiser/utterances.txt)
-set (TINYTEST_FILE /home/cioflanc/odda_gap9/tiny_denoiser/tinytest.txt)
+# HOME
+# set (UTTR_FILE /home/cioflanc/odda_gap9/tiny_denoiser/res/utterances.txt)
+# set (TINYTEST_FILE /home/cioflanc/odda_gap9/tiny_denoiser/res/tinytest.txt)
+# set (RESTAURANT_NOISE_WAV /home/cioflanc/odda_gap9/tiny_denoiser/res/restaurant_crop_ch01.wav)
+
+# WORK
+set (UTTR_FILE /usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/utterances.txt)
+set (TINYTEST_FILE /usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/tinytest.txt)
+set (RESTAURANT_NOISE_WAV /usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/restaurant_crop_ch01.wav)
 
 FILE(STRINGS ${UTTR_FILE} UTTERANCES)
 FILE(STRINGS ${TINYTEST_FILE} TINYTEST_UTTR)
@@ -304,7 +313,7 @@ FILE(STRINGS ${TINYTEST_FILE} TINYTEST_UTTR)
 # Working well for small files
 # list(APPEND READFS_MRAM_FILES 
 
-set (RESTAURANT_NOISE_WAV /home/cioflanc/odda_gap9/tiny_denoiser/restaurant_crop_ch01.wav)
+
 
  list(APPEND READFS_FILES 
                         ${CURDIR}DORY_network/hex/BNReluConvolution0_weights.hex

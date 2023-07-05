@@ -494,7 +494,10 @@ int application(void){
     int addnoise = 1;
 
     if (addnoise){
-        char noiseName[80] = "/home/cioflanc/odda_gap9/tiny_denoiser/restaurant_crop_ch01.wav";
+        // HOME
+        // char noiseName[80] = "/home/cioflanc/odda_gap9/tiny_denoiser/restaurant_crop_ch01.wav";
+        // WORK
+        char noiseName[110] = "/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/restaurant_crop_ch01.wav";
        if (input == "0"){
             input_mic(0, 1, 1); // save, free, noise
         }
