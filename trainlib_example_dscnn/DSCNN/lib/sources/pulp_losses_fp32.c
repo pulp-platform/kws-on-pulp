@@ -24,6 +24,21 @@
 
 static void localsoftmax(float *input, size_t input_len) {
 
+  // find min
+  float min = input[0];
+  for (size_t i = 0; i < input_len; i++){
+    if (input[i] < min){
+      min = input[i];
+    }
+    // printf("Input[%d] is %f\n", i, input[i]);
+  }
+
+  for (size_t i = 0; i < input_len; i++){
+    input[i] = input[i] - min + 1e-6;
+    printf("Input[%d] is %f\n", i, input[i]);
+  }
+
+
   // float* output = pi_l1_malloc(input_len * sizeof(float));
   float output[input_len];
 
@@ -32,6 +47,10 @@ static void localsoftmax(float *input, size_t input_len) {
   args->output = output;
   args->dim = input_len;
 
+
+
+
+
   exponential(args);
 
   float sum = 0.0;
@@ -39,11 +58,20 @@ static void localsoftmax(float *input, size_t input_len) {
     sum += input[i];
   }
 
-
   float offset = logf(sum);
 
+  printf("Sum is: %f, offset is: %f\n", sum, offset);
+
   for (size_t i = 0; i < input_len; i++) {
-    input[i] = output[i]/sum;
+    output[i] = input[i]/sum;
+  }
+
+  for (size_t i = 0; i < input_len; i++){
+    printf("Input[%d] is %f\n", i, input[i]);
+  }
+
+  for (size_t i = 0; i < input_len; i++){
+    printf("Softmax[%d] is %f\n", i, output[i]);
   }
 
 }
