@@ -24,62 +24,27 @@
 
 static void localsoftmax(float *input, size_t input_len) {
 
+  // float* output = pi_l1_malloc(input_len * sizeof(float));
+  float output[input_len];
 
-  float m = input[0];
-  for (size_t i = 0; i < input_len; i++) {
-    if (input[i] > m) {
-      m = input[i];
-    }
-  }
+  struct softmax_args *args;
+  args->input = input;
+  args->output = output;
+  args->dim = input_len;
 
-  // float min = input[0];
-  // for (size_t i = 0; i < input_len; i++) {
-  //   if (input[i] < min) {
-  //     min = input[i];
-  //   }
-  // }
-
-
-  // for (size_t i = 0; i < input_len; i++) {
-  //   input[i] = input[i] - min;
-  // }
-
-  // for (int idx = 0; idx < 12; idx++){
-  //   printf("input[%i]=%f\n", idx, ((float *)input)[idx]);
-  // }
-
-
-  // m = -10000.;
-  // for (size_t i = 0; i < input_len; i++) {
-  //   if (input[i] > m) {
-  //     m = input[i];
-  //   }
-  // }
-
-  // m = 0.;
-
-
-  // float min = -10000.;
-  // for (size_t i = 0; i < input_len; i++) {
-  //   if (input[i] < min) {
-  //     min = input[i];
-  //   }
-  // }
+  exponential(args);
 
   float sum = 0.0;
   for (size_t i = 0; i < input_len; i++) {
-    sum += expf(input[i] - m);
-    // printf("Sum is: %f\n", sum);
+    sum += input[i];
   }
 
-  // float offset = m + logf(sum);
+
   float offset = logf(sum);
+
   for (size_t i = 0; i < input_len; i++) {
-    input[i] = expf(input[i] - offset);
+    input[i] = output[i]/sum;
   }
-  // for (int idx = 0; idx < 12; idx++){
-  //   // printf("input[%i]=%f\n", idx, ((float *)input)[idx]);
-  // }
 
 }
 
