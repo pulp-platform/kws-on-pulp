@@ -71,6 +71,8 @@ class DSCNN(torch.nn.Module):
         # self.soft = F.log_softmax(x, dim=1)
 
 
+        self.postavg = None
+
         # CONV2D replacing Block1 for evaluation purposes
         # self.pad2  = nn.ConstantPad2d((1, 1, 1, 1), value=0.)
         # self.conv2 = torch.nn.Conv2d(in_channels = 64, out_channels = 64, kernel_size = (3, 3), stride = (1, 1), groups = 1, bias = use_bias)
@@ -138,9 +140,12 @@ class DSCNN(torch.nn.Module):
             x = self.avg(x)
             npy_to_txt(9, x.int().cpu().detach().numpy())
             x = torch.flatten(x, 1) 
+            # print("Flattened")
+            # print (x)
+            self.postavg = x
             x = self.fc1(x)
             npy_to_txt(10, x.int().cpu().detach().numpy())
-            print (x.int().cpu().detach().numpy())
+            # print (x.int().cpu().detach().numpy())
 
         else:
 
@@ -183,7 +188,11 @@ class DSCNN(torch.nn.Module):
 
             x = self.avg(x)            
             x = torch.flatten(x, 1) 
+            # print("Flattened")
+            # print (x)
+            self.postavg = x
             x = self.fc1(x)
+            # print (x)
             
         return x # To be compatible with Dory
         # return F.log_softmax(x, dim=1)
