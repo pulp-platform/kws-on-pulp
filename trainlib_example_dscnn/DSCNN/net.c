@@ -184,11 +184,11 @@ PI_L1 struct loss_args loss_args;
 **/
 
 // DNN initialization function
-void DNN_init()
+void DNN_init(float * weights)
 {
     // Layer 0
     for(int i=0; i<Tin_C_l0*Tin_H_l0*Tin_W_l0; i++)			l0_in[i] = IN_DATA[i];
-    for(int i=0; i<Tin_C_l0*Tout_C_l0*Tker_H_l0*Tker_W_l0; i++)		l0_ker[i] = init_WGT_l0[i];
+    for(int i=0; i<Tin_C_l0*Tout_C_l0*Tker_H_l0*Tker_W_l0; i++)		l0_ker[i] = weights[i];
 
     // Connect tensors to blobs
     layer0_in.data = l0_in;
@@ -291,10 +291,9 @@ void check_post_training_output()
 // Call for a complete training step
 // void net_step(void *l2_buffer, void *L3_weights_curr)
 
-void net_step(void *args)
-{
+void net_step(void *args) {
 
-    // TODO: Move all in denoiser.c.
+    // TODO: Move all in application.c.
     // TODO: Add trainlib_example_dscnn back in .gitignore
 
     unsigned int * real_args = (unsigned int *) args;
@@ -307,96 +306,31 @@ void net_step(void *args)
 
     // TODO: Discuss sample management per epoch
     
-
-    int dummy;
-
-
-    if (init == 1){
-
-        printf("INIT\n");
-
-        // L2 Dory to L1 TrainLib manual weights movement
-        // Weights size - 64 * 12 = WGT_SIZE_L0
-        // Weights address - Wait for Dory to iterate and copy the data from there
-
-
-        // void *L2_weights = NULL;
-        // L2_weights = (uint8_t *) pi_l2_malloc(WGT_SIZE_L0 * sizeof(uint8_t));    
-        // cl_ram_read(L2_weights, L3_weights_curr, WGT_SIZE_L0);
-
-        // // L2 Dory to L1 TrainLib manual weights movement
-        // printf ("Training weights\n");
-
-        // for (int i = 0; i < WGT_SIZE_L0; i++){
-    
-        //     // DORY to TrainLib
-        //     // UINT8 Weights
-        //     // init_WGT_l0[i] = (float) (((uint8_t    *) L2_weights)[i] - 128) / 255.0;
-
-        //     // UINT7 weights
-        //     // init_WGT_l0[i] = (float) (((uint8_t    *) L2_weights)[i] - 64) / 64.0;
-
-
-        //     // We use the float32 PyTorch init_WGT_l0 weights 
-        //     // We should find a way to restore the initial state
-        //     dummy = 1;
-
-        // }
-
-        // printf("Original weights:\n");
-        // for (int i = 0; i < 10; i++){
-        //     printf("W[%i] %f\n", i, init_WGT_l0[i]);
-        // }
-
-        // pi_l2_free(L2_weights, WGT_SIZE_L0 * sizeof(uint8_t));
-
+    // TODO: INIT - take pretrained weights or used updated ones
+    float *L2_weights = (float *) pi_l2_malloc (WGT_SIZE_L0 * sizeof(float));
+    if (init == 1){        
+        for (int i = 0; i < WGT_SIZE_L0; i++){
+            L2_weights[i] = init_WGT_l0[i];
+        }
     }
-    else {
-
-        printf("NO INIT\n");
-        // for (int i = 0; i < WGT_SIZE_L0; i++){
-        //         // printf ("d[%i] = %f\n", i, ((float) ((uint8_t    *) L2_weights)[i])/255 );
-        //         // Dory operates INT8, must be converted to FLOAT
-        //         init_WGT_l0[i] = ((float *) L2_weights_curr_updated)[i];
-        // }
-        dummy = 1;
-
-
-        // printf("Latest weights:\n");
-        // for (int i = 0; i < 10; i++){
-        //     printf("W[%i] %f\n", i, init_WGT_l0[i]);
-        // }
+    else{
+        for (int i = 0; i < WGT_SIZE_L0; i++){
+            L2_weights[i] = (((float    *) L2_weights_curr_updated)[i]);
+        }
+        
     }
+
 
     // L2 Dory to L1 TrainLib manual feature movement
+    float eps_in = 0.1942;
     for (int i = 0; i < IN_SIZE; i++){
-
-        // Dory operates INT8, must be converted to FLOAT
-        // INT8
-        // IN_DATA[i] = (float) (((uint8_t    *) l2_buffer)[i]) / 255.0;
-
-        // float eps_in = 0.1048; // biasremoved
-        // float eps_in = 0.1138; // nobias
-        float eps_in = 0.1942;
-
-
-        // printf ("(((uint8_t    *) l2_buffer)[i]): %u\n", (((uint8_t    *) l2_buffer)[i])); // CORRECT
-
-
         IN_DATA[i] = ((float) (((uint8_t    *) l2_buffer)[i])) * eps_in;
-        // IN_DATA[i] = ((float) (((uint8_t    *) l2_buffer)[i])) / eps_in;
-
-        // INT8 
-        // IN_DATA[i] = (float) (((uint8_t    *) l2_buffer)[i]) / 128.0;
-
-        // UINT8
-        // IN_DATA[i] = (float) (((uint8_t    *) l2_buffer)[i]) / 64.0;
-        }
+    }
 
 #ifdef VERBOSE
-        for (int i = 0; i < 64; i++){
-            printf("IN_DATA[%i]=%f,\n ", i, IN_DATA[i]);
-        }
+    for (int i = 0; i < 64; i++){
+        printf("IN_DATA[%i]=%f,\n ", i, IN_DATA[i]);
+    }
 #endif
 
 #ifdef VERBOSE
@@ -405,14 +339,20 @@ void net_step(void *args)
         printf("W[%i] %f\n", i, init_WGT_l0[i]);
     }
 #endif
-    DNN_init();
 
-    if (update == 1){
-        #ifdef PROF_NET
+
+    DNN_init(L2_weights);
+    pi_l2_free(L2_weights, WGT_SIZE_L0 * sizeof(float));
+
+
+    // UPDATE
+    if (update == 1) {
+
+#ifdef PROF_NET
         INIT_STATS();
         PRE_START_STATS();
         START_STATS();
-        #endif
+#endif
 
         // onehot encoding
         for (int labelidx = 0; labelidx<OUT_SIZE; labelidx++){
@@ -422,8 +362,7 @@ void net_step(void *args)
 
         int start = 0;
         int elapsed = 0;
-        for (int epoch=0; epoch<EPOCHS; epoch++)
-        {
+        for (int epoch=0; epoch<EPOCHS; epoch++) {
 
             gap_cl_starttimer();
             gap_cl_resethwtimer();
@@ -436,13 +375,11 @@ void net_step(void *args)
             gap_cl_resethwtimer();
             start = gap_cl_readhwtimer();
 
-            for (int i = 0; i < OUT_SIZE; i++){
-
-                double maxval = 1<<31 - 1;
 #ifdef VERBOSE
+            for (int i = 0; i < OUT_SIZE; i++){
                 printf("Out[%i]=%f\n", i, ((float *)layer0_out.data)[i]);
-#endif
             }
+#endif
 
             compute_loss();
 
@@ -466,6 +403,7 @@ void net_step(void *args)
             printf("update_weights: %d\n", elapsed);
 
         }
+
 #ifdef VERBOSE        
         printf("Adapted weights:\n");
         for (int i = 0; i < 10; i++){
@@ -473,23 +411,17 @@ void net_step(void *args)
         }
 #endif
 
-        for (int i = 0; i < WGT_SIZE_L0; i++){
-                // printf ("((float*)L2_weights_curr_updated)[%i]: %f\n", i, ((float*)L2_weights_curr_updated)[i]);
-                // printf ("layer0_wgt.data[%i]: %f\n", i, layer0_wgt.data[i]);
+        // Return updated weights
+        for (int i = 0; i < WGT_SIZE_L0; i++) {
+            // printf ("((float*)L2_weights_curr_updated)[%i]: %f\n", i, ((float*)L2_weights_curr_updated)[i]);
+            // printf ("layer0_wgt.data[%i]: %f\n", i, layer0_wgt.data[i]);
 
-                ((float*)L2_weights_curr_updated)[i] = layer0_wgt.data[i];
+            ((float*)L2_weights_curr_updated)[i] = layer0_wgt.data[i];
         }
-
-        // printf("Updating weights:\n");
-        // for (int i = 0; i < 10; i++){
-        //     printf("W[%i] %f\n", i,    layer0_wgt.data[i]);
-        //     printf("W[%i] %f\n", i, ((float*)L2_weights_curr_updated)[i]);
-        // }
-
         
-        #ifdef PROF_NET
+#ifdef PROF_NET
         STOP_STATS();
-        #endif
+#endif
 
         // Check and print updated output
         printf ("Forward\n");
@@ -502,7 +434,6 @@ void net_step(void *args)
         print_output();
 #endif
     } // update
-
 
     else {
 #ifdef VERBOSE
@@ -528,22 +459,26 @@ void net_step(void *args)
         }
 
 
-    // print_output();
+        // print_output();
 
-    printf("Predicting local output\n");
+        printf("Predicting local output\n");
 
-    // predict_unsigned_local(l0_out, OUT_SIZE);
-    predict_float_local(l0_out, OUT_SIZE);
+        // predict_unsigned_local(l0_out, OUT_SIZE);
+        predict_float_local(l0_out, OUT_SIZE);
 
-    // #ifdef VERBOSE 
-    //     print_output();
-    // #endif
+        // #ifdef VERBOSE 
+        //     print_output();
+        // #endif
     }
 
-    if (init == 1) {
-        for (int i = 0; i < WGT_SIZE_L0; i++){
-         ((float*)L2_weights_curr_updated)[i] = layer0_wgt.data[i];
-        }
-    }
+    printf ("Checker\n");
 
+    // // TODO: INIT
+    // if (init == 1) {
+    //     for (int i = 0; i < WGT_SIZE_L0; i++){
+    //         ((float*)L2_weights_curr_updated)[i] = layer0_wgt.data[i];
+    //     }
+    // }
+
+    printf ("Checker\n");
 }
