@@ -344,6 +344,7 @@ void network_run_cluster(void *args) {
   }
 
   //memcpy(L2_output, l2_final_output, activations_out_size[10]); // BUGGY!
+  
   for (int i=0; i<activations_out_size[10]; i++)
     *((uint8_t*)(l2_final_output+i)) = *((uint8_t*)(L2_output+i));
 

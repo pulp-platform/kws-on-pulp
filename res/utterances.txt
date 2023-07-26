@@ -1,13 +1,3 @@
-
-
-
-
-
-
-
-
-
-
 /usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/wavsrc/yes_51055bda_nohash_2.wav
 /usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/wavsrc/yes_cd671b5f_nohash_2.wav
 /usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/wavsrc/yes_73f20b00_nohash_4.wav

@@ -58,8 +58,10 @@ set(MATMUL_TYPE_IG_L0  0)         # Selects which optimized matmul to be used in
 set (NUM_MATMULS 24)
 
 
+# HOME
 # set(GAP9_SDK_DIR        /home/cioflanc/odda_gap9/gap_sdk_private/)
 # set(CURDIR              /home/cioflanc/odda_gap9/tiny_denoiser/)
+# WORK
 set(GAP9_SDK_DIR        /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk_private/)
 set(CURDIR              /usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/)
 set(BUILD_DIR           ${CURDIR}/build)
