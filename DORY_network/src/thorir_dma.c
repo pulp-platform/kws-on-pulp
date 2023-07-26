@@ -38,13 +38,8 @@ void thorir_hwc_to_chw(DMA_copy *copy){
       dma_copy.dir = PI_CL_DMA_DIR_EXT2LOC;
     else
       dma_copy.dir = PI_CL_DMA_DIR_LOC2EXT;
-
-
-    // dory_dma_memcpy_async(&dma_copy);
-
     pi_cl_dma_memcpy_2d(&dma_copy);
     pi_cl_dma_wait(&dma_copy);
-
     // pi_cl_team_barrier(0);
     ext += 1; // next channel
     loc += copy->number_of_1d_copies * copy->number_of_2d_copies;

@@ -49,12 +49,6 @@ void FullyConnected10(
   /////////////////////
   volatile DMA_copy DMA_copy_k, DMA_copy_lambda;
   volatile DMA_copy DMA_copy_W, DMA_copy_x, DMA_copy_y;
-  volatile DMA_copy DMA_copy_bias;
-  DMA_copy_bias.hwc_to_chw = 0;
-  DMA_copy_bias.stride_2d = 0;
-  DMA_copy_bias.stride_1d = 0;
-  DMA_copy_bias.dir = 1;
-
   DMA_copy_k.hwc_to_chw = 0;
   DMA_copy_k.stride_2d = 0;
   DMA_copy_k.stride_1d = 0;
@@ -110,23 +104,13 @@ void FullyConnected10(
   // tile loop indeces
   int _i_nof_load=0, _i_nif_load=0, _i_h_load=0, _i_w_load=0;
   int _i_nof_exec=0, _i_nif_exec=0, _i_h_exec=0, _i_w_exec=0;
-  int has_bias = 1;
   volatile uint8_t *im2col;
-  im2col = l1_buffer + 968;
+  im2col = l1_buffer + 920;
   uint16_t out_shift = out_shift_in;
 
   ////////////////////////////
   // First tile transfering //
   ////////////////////////////
-  DMA_copy_bias.ext = (uint32_t) l2_W+768;
-  DMA_copy_bias.loc = (uint32_t) (l1_buffer + 920);
-  DMA_copy_bias.number_of_2d_copies = 1;
-  DMA_copy_bias.number_of_1d_copies = 1;
-  DMA_copy_bias.length_1d_copy = (uint16_t) 48;
-  thorir_dma(&DMA_copy_bias);
-  pi_cl_team_barrier(0);
-
-
 
   DMA_copy_x.ext = l2_x;
   DMA_copy_x.loc = (l1_buffer + 0) + 0;
@@ -198,7 +182,6 @@ void FullyConnected10(
     }
     // creation of the pointers to input, output, weights, lambda and k
     x = (uint8_t *) (l1_buffer + 0 + exec_db_x);
-    b = (uint8_t *) (l1_buffer + 920 + _i_nof_exec*48);
     W = (uint8_t *) (l1_buffer + 128 + exec_db_W);
     y = (uint8_t *) (l1_buffer + 72 + db_y);
     // parameter passed to the kernel. Input and output sizes
@@ -225,9 +208,9 @@ void FullyConnected10(
     pi_cl_team_barrier(0);
     asm volatile("": : :"memory");
     pulp_nn_linear_out_32(
-      x, b, y, W,
+      x, 0, y, W,
       x_tile_size_nif_exec, y_tile_size_nof
-    );
+      );
    // wait for DMA write/read
      pi_cl_team_barrier(0);
 

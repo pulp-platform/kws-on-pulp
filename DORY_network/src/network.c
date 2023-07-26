@@ -24,17 +24,20 @@
 #include "directional_allocator.h"
 #include "mem.h"
 #include <string.h>
-#include "BNReluConvolution3.h"
-#include "BNReluConvolution8.h"
-#include "BNReluConvolution1.h"
 #include "BNReluConvolution0.h"
-#include "BNReluConvolution4.h"
-#include "FullyConnected10.h"
-#include "BNReluConvolution5.h"
+#include "BNReluConvolution1.h"
 #include "BNReluConvolution6.h"
+#include "FullyConnected10.h"
+#include "BNReluConvolution3.h"
 #include "BNReluConvolution7.h"
-#include "ReluPooling9.h"
 #include "BNReluConvolution2.h"
+#include "ReluPooling9.h"
+#include "BNReluConvolution5.h"
+#include "BNReluConvolution8.h"
+#include "BNReluConvolution4.h"
+
+
+// #define VERBOSE 1
 
 #define L3_WEIGHTS_SIZE 4000000
 #define L3_INPUT_SIZE 1500000
@@ -44,7 +47,6 @@ static void *L3_input = NULL;
 static void *L3_output = NULL; 
 static void *L1_buffer = NULL;
 int cycle_network_execution;
-
 /* Moves the weights and the biases from hyperflash to hyperram */
 void network_initialize() {
 
@@ -143,19 +145,16 @@ void network_run(void *l2_buffer, size_t l2_buffer_size, void *l2_final_output, 
   //cluster_task.stack_size = 3800;
   //cluster_task.slave_stack_size = 3600;
   pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task); 
-  pi_cl_l1_free((void *) 0, L1_buffer, 99000);
+  // pi_cl_l1_free((void *) 0, L1_buffer, 35000);
+  pi_cl_l1_free((void *) 0, L1_buffer, 99000); // ODDA
   pi_cluster_close(&cluster_dev);
-
-#ifdef VERBOSE
   print_perf("Final", cycle_network_execution, 2656768);
-#endif
 
   // 9 layers with weights have been processed before FC layer  
   *L3_final_weights_curr = L3_weights;
   for (int i = 0; i < 9; i++){
     *L3_final_weights_curr += L3_weights_size[i]; 
   }
-
 }
 
 void network_run_cluster(void *args) {
@@ -174,7 +173,7 @@ void network_run_cluster(void *args) {
   void *L2_output = NULL;
   void *L2_input = NULL;
   void *L2_weights = NULL;
-  void *L3_weights_curr = L3_weights; // Declaration moved above, passed as arg
+  void *L3_weights_curr = L3_weights;
   void *bypass_activations = NULL;
 
   int dir = 1;
@@ -209,7 +208,6 @@ void network_run_cluster(void *args) {
 /* -------- SECTION 2 BEGIN --------- */
 /* ---------------------------------- */
   int weight_l_cnt = 0; // count how many layers with weights we have processed to increment the weights_L3 pointer
-
 
   // int n_inf_layers = 11; // Inference
   int n_inf_layers = 10; // Training
@@ -276,8 +274,8 @@ void network_run_cluster(void *args) {
 
 #ifdef VERBOSE
     print_perf(Layers_name[i], perf_cyc, NODEs_MACS[i]);
-#endif
-    
+#endif 
+
     // TODO: What error?
     // prevents error from compiler
     asm volatile("": : :"memory");
@@ -346,10 +344,8 @@ void network_run_cluster(void *args) {
   }
 
   //memcpy(L2_output, l2_final_output, activations_out_size[10]); // BUGGY!
-
-  for (int i=0; i<activations_out_size[10]; i++) // 10 should become 64, as we stop before FC
+  for (int i=0; i<activations_out_size[10]; i++)
     *((uint8_t*)(l2_final_output+i)) = *((uint8_t*)(L2_output+i));
-
 
 /* ---------------------------------- */
 /* --------- SECTION 2 END ---------- */
