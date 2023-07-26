@@ -66,7 +66,7 @@ class DSCNN(torch.nn.Module):
         self.relu9 = torch.nn.ReLU()
 
         self.avg   = torch.nn.AvgPool2d(kernel_size=(25, 5), stride=1)
-        self.fc1   = torch.nn.Linear(64, 12, bias=use_bias)
+        self.fc1   = torch.nn.Linear(64, 12, bias=False)
         # self.soft  = torch.nn.Softmax(dim=1)
         # self.soft = F.log_softmax(x, dim=1)
 
@@ -79,8 +79,13 @@ class DSCNN(torch.nn.Module):
         # self.bn2   = torch.nn.BatchNorm2d(64)
         # self.relu2 = torch.nn.ReLU()
         
-    def forward(self, x, save = False):
+    def forward(self, x, save = False, integer=False):
         if (save):
+
+            if (integer):
+                npy_to_txt(12, x.int().cpu().detach().numpy())
+            else:
+                npy_to_txt(12, x.cpu().detach().numpy())
 
             x = self.pad1 (x)
             x = self.conv1(x)
@@ -140,8 +145,10 @@ class DSCNN(torch.nn.Module):
             x = self.avg(x)
             npy_to_txt(9, x.int().cpu().detach().numpy())
             x = torch.flatten(x, 1) 
-            # print("Flattened")
-            # print (x)
+            if (integer):
+                npy_to_txt(11, x.int().cpu().detach().numpy())
+            else:
+                npy_to_txt(11, x.cpu().detach().numpy())
             self.postavg = x
             x = self.fc1(x)
             npy_to_txt(10, x.int().cpu().detach().numpy())

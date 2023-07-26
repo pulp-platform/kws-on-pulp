@@ -56,8 +56,8 @@ tinytrain_size = audio_processor.get_size('tinytrain')
 print("Dataset split (Train/valid/test/tinytrain): "+ str(train_size) +"/"+str(valid_size) + "/" + str(test_size) + "/" + str(tinytrain_size))
 
 # Model generation and analysis
-model = DSCNN(use_bias = False) # Put to FALSE to reproduce FC layer
-# model = DSCNN(use_bias = True) # Put to TRUE to reproduce model_bias layer
+# model = DSCNN(use_bias = False) # Put to FALSE to reproduce FC layer
+model = DSCNN(use_bias = True) # Put to TRUE to reproduce model_bias layer
 model.to(device)
 summary(model,(1,49,data_processing_parameters['feature_bin_count']))
 dummy_input = torch.rand(1, 1,49,data_processing_parameters['feature_bin_count']).to(device)
@@ -70,8 +70,10 @@ trainining_environment = Train(audio_processor, training_parameters, model, devi
 remove_txt()
 
 # ###### Load model before to finetune - GVSOC ###### 
-model.load_state_dict(torch.load('./model_nobias_pretrain.pth', map_location=torch.device('cpu')))
-model = model.to(device)
+# model.load_state_dict(torch.load('./model_nobias_pretrain.pth', map_location=torch.device('cpu')))
+# model = model.to(device)
+
+
 print ("Pretrain validation acc")
 acc = trainining_environment.validate(model, mode='validation', statistics=False)
 
@@ -94,6 +96,8 @@ print('Finished Training on GPU in {:.2f} seconds'.format(time.clock_gettime(0)-
 # Ignoring training, load pretrained model
 # model.load_state_dict(torch.load('./model.pth', map_location=torch.device('cuda')))
 # model.load_state_dict(torch.load('./best_model_nobias.pth', map_location=torch.device('cuda')))
+model.load_state_dict(torch.load('./model_nobias_pretrain_40eps_partial.pth', map_location=torch.device('cuda')))
+
 
 dummy_input = torch.randn(1, 1, 49, 10, requires_grad=True).to(device)
 # Export the model
@@ -289,20 +293,22 @@ with quantized_model.statistics_act():
 quantized_model.reset_alpha_act()
 
 # Remove biases after FQ stage
-# quantized_model.remove_bias()
+quantized_model.remove_bias()
 
 print("\nFakeQuantized @ 8b accuracy (calibrated):")
 # acc = trainining_environment.validate(model=quantized_model, mode='tinytest', batch_size=-1)
 acc = trainining_environment.validate(model=quantized_model, mode='testing', batch_size=-1)
 
-# Save FC weights after FQ
+# Save FC weights
 f = open("fcweights_nobias_pretrain.txt", "w")
 weights = model.fc1.weight.data.cpu().numpy()
 weights_reshaped = np.reshape(weights, -1)
 for weight in weights_reshaped:
-
   f.write(str(weight)+", ")
 f.close()
+
+
+acc = trainining_environment.validate(model=quantized_model.to(device), mode='tinytest', batch_size=1, integer=False, save=True)
 
 
 quantized_model.qd_stage(eps_in=255./255)  # The activations are already in 0-255
@@ -382,3 +388,5 @@ print (eps_avg)
 nemo.utils.export_onnx('model_nobias_pretrain_int.onnx', quantized_model, quantized_model, (1, 49, 10))
 # Saving the activations for comparison within Dory
 acc = trainining_environment.validate(model=quantized_model, mode='tinytest', batch_size=1, integer=True, save=True)
+
+acc = trainining_environment.validate(model=model, mode='tinytest', batch_size=1, integer=False, save=True)

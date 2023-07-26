@@ -40,10 +40,10 @@ class Train():
 
         # Training hyperparameters
         self.criterion = torch.nn.CrossEntropyLoss()
-        # intitial_lr = 0.001 # ORIGINAL
-        intitial_lr = 0.0001 # GVSOC
-        # self.optimizer = torch.optim.Adam(model.parameters(), lr = intitial_lr) # ORIGINAL
-        self.optimizer = torch.optim.SGD(model.parameters(), lr = intitial_lr) # GVSOC
+        intitial_lr = 0.001 # ORIGINAL
+        # intitial_lr = 0.0001 # GVSOC
+        self.optimizer = torch.optim.Adam(model.parameters(), lr = intitial_lr) # ORIGINAL
+        # self.optimizer = torch.optim.SGD(model.parameters(), lr = intitial_lr) # GVSOC
         lambda_lr = lambda epoch: 1 if epoch<15 else 1/5 if epoch < 25 else 1/10 if epoch<35 else 1/20 # ORIGINAL
         self.scheduler = torch.optim.lr_scheduler.LambdaLR(self.optimizer, lambda_lr)
 
@@ -142,50 +142,81 @@ class Train():
 
                 batched_inputs, batched_labels = inputs[indices].to(self.device), labels[indices].to(self.device)
 
-                if (save):
-                    f = open('batched_inputs_float.txt', "a")
-                    for elem in torch.flatten(batched_inputs).cpu().detach().numpy():
-                        f.write (str(elem) + ",\\\n")
-                    f.write ("--------------------------------------------------"+ "\\\n")
-                    f.close()
 
                 if (integer):
+
+                    if (save):
+                        f = open('batched_inputs_int_float.txt', "a")
+                        for elem in torch.flatten(batched_inputs).cpu().detach().numpy():
+                            f.write (str(elem) + ",\\\n")
+                        f.write ("--------------------------------------------------"+ "\\\n")
+                        f.close()
+
                     model = model.cpu()
                     batched_inputs = batched_inputs * 255./255 
-                    batched_inputs = batched_inputs.type(torch.uint8).type(torch.float).cpu()           
-
-                if (save):
-                    model = model.cpu()
                     batched_inputs = batched_inputs.type(torch.uint8).type(torch.float).cpu()
-
-                    f = open('batched_inputs_int.txt', "a")
-                    for elem in torch.flatten(batched_inputs).cpu().detach().numpy():
-                        f.write (str(elem) + ",\\\n")
-                    f.write ("--------------------------------------------------"+ "\\\n")
-                    f.close()
+                        
+                    if (save):
+                        
+                        f = open('batched_inputs_int.txt', "a")
+                        for elem in torch.flatten(batched_inputs).cpu().detach().numpy():
+                            f.write (str(elem) + ",\\\n")
+                        f.write ("--------------------------------------------------"+ "\\\n")
+                        f.close()
 
                     batched_outputs = model(batched_inputs, save)
 
-                    f = open('batched_outputs_int.txt', "a")
-                    for elem in torch.flatten(batched_outputs).cpu().detach().numpy():
-                        f.write (str(elem) + ",\\\n")
-                    f.write ("--------------------------------------------------"+ "\\\n")
-                    f.close()
+                    if (save):
+                        f = open('batched_outputs_int.txt', "a")
+                        for elem in torch.flatten(batched_outputs).cpu().detach().numpy():
+                            f.write (str(elem) + ",\\\n")
+                        f.write ("--------------------------------------------------"+ "\\\n")
+                        f.close()
 
                     outputs = F.softmax(batched_outputs, dim=1)
-
-                    f = open('batched_outputs_softmax_int.txt', "a")
-                    for elem in torch.flatten(outputs).cpu().detach().numpy():
-                        f.write (str(elem) + ",\\\n")
-                    f.write ("--------------------------------------------------"+ "\\\n")
-                    f.close()
-
                     outputs = outputs.to(self.device)
-                    npy_to_txt(-1, batched_inputs.int().cpu().detach().numpy())
+
+                    if (save):
+                        f = open('batched_outputs_softmax_int.txt', "a")
+                        for elem in torch.flatten(outputs).cpu().detach().numpy():
+                            f.write (str(elem) + ",\\\n")
+                        f.write ("--------------------------------------------------"+ "\\\n")
+                        f.close()
+
+                    if (save):
+                        npy_to_txt(-1, batched_inputs.int().cpu().detach().numpy())
+
                 else:
 
-                    outputs = F.softmax(model(batched_inputs), dim=1)
+                    if (save):
+                        f = open('batched_inputs_float.txt', "a")
+                        for elem in torch.flatten(batched_inputs).cpu().detach().numpy():
+                            f.write (str(elem) + ",\\\n")
+                        f.write ("--------------------------------------------------"+ "\\\n")
+                        f.close()
+
+                    model = model.to(self.device)
+                    batched_inputs = batched_inputs.type(torch.float).to(self.device)
+
+                    batched_outputs = model(batched_inputs, save, integer=False)
+
+                    if (save):
+                        f = open('batched_outputs_float.txt', "a")
+                        for elem in torch.flatten(batched_outputs).cpu().detach().numpy():
+                            f.write (str(elem) + ",\\\n")
+                        f.write ("--------------------------------------------------"+ "\\\n")
+                        f.close()
+
+                    outputs = F.softmax(batched_outputs, dim=1)
                     outputs = outputs.to(self.device)
+
+                    if (save):
+                        f = open('batched_outputs_softmax_float.txt', "a")
+                        for elem in torch.flatten(outputs).cpu().detach().numpy():
+                            f.write (str(elem) + ",\\\n")
+                        f.write ("--------------------------------------------------"+ "\\\n")
+                        f.close()
+
 
                 _, predicted = torch.max(outputs, 1)
 
@@ -306,15 +337,21 @@ class Train():
             # Save best performing network
             if (val_acc > best_acc):
                 best_acc = val_acc
-                if (self.training_parameters['freezebb']):
-                    PATH = './model_finetune_tinytrain_freezebb_nobias_acc_' + str(best_acc) + '.pth'
-                else:
-                    PATH = './model_finetune_tinytrain_nobias_acc_' + str(best_acc) + '.pth'
+                # if (self.training_parameters['freezebb']):
+                #     PATH = './model_finetune_tinytrain_freezebb_nobias_acc_' + str(best_acc) + '.pth'
+                # else:
+                #     PATH = './model_finetune_tinytrain_nobias_acc_' + str(best_acc) + '.pth'
+
+                PATH = './model_nobias_pretrain_40eps_partial_acc_' + str(best_acc) + '.pth'
+
                 torch.save(model.state_dict(), PATH)
 
-        if (self.training_parameters['freezebb']):
-            PATH = './model_finetune_tinytrain_freezebb_nobias.pth'
-        else:
-            PATH = './model_finetune_tinytrain_nobias.pth'
+        # if (self.training_parameters['freezebb']):
+        #     PATH = './model_finetune_tinytrain_freezebb_nobias.pth'
+        # else:
+        #     PATH = './model_finetune_tinytrain_nobias.pth'
+
+        PATH = './model_nobias_pretrain_40eps_partial.pth'
+
         torch.save(model.state_dict(), PATH)
         

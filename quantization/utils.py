@@ -112,10 +112,10 @@ def parameter_generation():
     # 'data_dir':'/usr/scratch/wetterhorn/cioflanc/kws-on-pulp/kws-on-pulp/wavsrc', # GVSOC
     'data_dir':'/usr/scratch/sassauna2/cioflanc/dolphinGSC/speech_commands_v0.02',
     'data_url':'https://storage.googleapis.com/download.tensorflow.org/data/speech_commands_v0.02.tar.gz',
-    'epochs':1,
-    'batch_size':1,  # GVSOC # GAP9
+    'epochs':40,
+    # 'batch_size':1,  # GVSOC # GAP9
     # 'batch_size':64,  # GVSOC # 10 if only a dozen samples are available
-    # 'batch_size':128,
+    'batch_size':128,
     'silence_percentage':0.0,
     'unknown_percentage':0.0,
     'validation_percentage':10.0,
@@ -124,7 +124,7 @@ def parameter_generation():
     'background_volume':0,  # GVSOC
     # 'background_frequency':0.8,
     # 'background_volume':0.2,
-    'freezebb':True
+    'freezebb':False # quantization
     }
     target_words='yes,no,up,down,left,right,on,off,stop,go,'  # GSCv2 - 12 words
     # Selecting 35 words
