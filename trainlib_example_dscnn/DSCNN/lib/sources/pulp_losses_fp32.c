@@ -33,8 +33,14 @@ static void localsoftmax(float *input, size_t input_len) {
     // printf("Input[%d] is %f\n", i, input[i]);
   }
 
+  // for (size_t i = 0; i < input_len; i++){
+  //   input[i] = input[i] - min + 1e-6;
+  //   printf("Input[%d] is %f\n", i, input[i]);
+  // }
+
+
   for (size_t i = 0; i < input_len; i++){
-    input[i] = input[i] - min + 1e-6;
+    input[i] = input[i] + 1e-6;
     printf("Input[%d] is %f\n", i, input[i]);
   }
 
@@ -47,31 +53,39 @@ static void localsoftmax(float *input, size_t input_len) {
   args->output = output;
   args->dim = input_len;
 
-
-
-
-
   exponential(args);
+
+
+
+  for (size_t i = 0; i < input_len; i++) {
+
+    output[i] = exp(input[i]);
+#ifdef VERBOSE
+    printf("Exponential[%d] is %f\n", i, output[i]);
+#endif
+  }
 
   float sum = 0.0;
   for (size_t i = 0; i < input_len; i++) {
-    sum += input[i];
+    sum += output[i];
   }
 
   float offset = logf(sum);
-
   printf("Sum is: %f, offset is: %f\n", sum, offset);
 
   for (size_t i = 0; i < input_len; i++) {
-    output[i] = input[i]/sum;
+    output[i] = output[i]/sum;
   }
 
+#ifdef VERBOSE
   for (size_t i = 0; i < input_len; i++){
     printf("Input[%d] is %f\n", i, input[i]);
   }
+#endif
 
   for (size_t i = 0; i < input_len; i++){
     printf("Softmax[%d] is %f\n", i, output[i]);
+    input[i] = output[i];
   }
 
 }
@@ -91,22 +105,22 @@ void pulp_CrossEntropyLoss ( void * loss_args )
 
   localsoftmax(outData, 12);
 
-  // for (int idx = 0; idx < 12; idx++){
-  //   printf("Out[%i]=%f\n", idx, ((float *)outData)[idx]);
-  // }
+  for (int idx = 0; idx < 12; idx++){
+    printf("Out[%i]=%f\n", idx, ((float *)outData)[idx]);
+  }
 
-  // printf("SIZE IS: %i\n", size);
 
   float delta = 0.000001;
   for(int i=0; i<size; i++){
-    // printf("Loss is %f\n", loss);
     loss += -target[i]*logf(outData[i] + delta);
-    
+  }
+  
     #ifdef DEBUG
       printf("target: %f, out_diff: %f, out_data:%f\n", target[i], outDiff[i], outData[i]);
       printf("loss:%f \n",loss);
     #endif
-  }
+
+  printf("Loss is %f\n", loss);
 
   // Skip printf profiling in debug mode
   #ifdef DEBUG
