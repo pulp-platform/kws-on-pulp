@@ -90,14 +90,14 @@ if training_parameters['freezebb']:
       print ("For ", str(name), " we require grad? ", str(param.requires_grad))
 
 start=time.clock_gettime(0)
-# trainining_environment.train(model, mode='training') # TRAIN
+trainining_environment.train(model, mode='training') # TRAIN
 # trainining_environment.train(model, mode='tinytrain') # FINETUNE
 print('Finished Training on GPU in {:.2f} seconds'.format(time.clock_gettime(0)-start))
 
 # Ignoring training, load pretrained model
 # model.load_state_dict(torch.load('./model.pth', map_location=torch.device('cuda')))
 # model.load_state_dict(torch.load('./best_model_nobias.pth', map_location=torch.device('cuda')))
-model.load_state_dict(torch.load('./best_model_bbias_fcnob_tf_sil.pth', map_location=torch.device('cuda')))
+model.load_state_dict(torch.load('./model_bbbias_fcnob_librosa_sil.pth', map_location=torch.device('cuda')))
 
 
 dummy_input = torch.randn(1, 1, 49, 10, requires_grad=True).to(device)
@@ -308,8 +308,10 @@ for weight in weights_reshaped:
   f.write(str(weight)+", ")
 f.close()
 
-
-acc = trainining_environment.validate(model=quantized_model.to(device), mode='tinytest', batch_size=1, integer=False, save=True)
+if (training_parameters['exportall']):
+  acc = trainining_environment.validate(model=quantized_model.to(device), mode='tinytest', batch_size=1, integer=False, save=True)
+else:
+  acc = trainining_environment.validate(model=quantized_model.to(device), mode='tinytest', batch_size=1, integer=False, save=False)
 
 
 quantized_model.qd_stage(eps_in=255./255)  # The activations are already in 0-255
@@ -338,4 +340,7 @@ nemo.utils.export_onnx('best_model_bbias_fcnob_tf_sil.onnx', quantized_model, qu
 # Saving the activations for comparison within Dory
 acc = trainining_environment.validate(model=quantized_model, mode='tinytest', batch_size=1, integer=True, save=True)
 
-acc = trainining_environment.validate(model=model, mode='tinytest', batch_size=1, integer=False, save=True)
+if (training_parameters['exportall']):
+  acc = trainining_environment.validate(model=model, mode='tinytest', batch_size=1, integer=False, save=True)
+else:
+  acc = trainining_environment.validate(model=model, mode='tinytest', batch_size=1, integer=False, save=False)

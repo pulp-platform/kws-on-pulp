@@ -330,21 +330,10 @@ class Train():
             # Save best performing network
             if (val_acc > best_acc):
                 best_acc = val_acc
-                # if (self.training_parameters['freezebb']):
-                #     PATH = './model_finetune_tinytrain_freezebb_nobias_acc_' + str(best_acc) + '.pth'
-                # else:
-                #     PATH = './model_finetune_tinytrain_nobias_acc_' + str(best_acc) + '.pth'
-
                 PATH = './model_bbbias_fcnob_librosa_sil_acc_' + str(best_acc) + '.pth'
-
                 torch.save(model.state_dict(), PATH)
 
-        # if (self.training_parameters['freezebb']):
-        #     PATH = './model_finetune_tinytrain_freezebb_nobias.pth'
-        # else:
-        #     PATH = './model_finetune_tinytrain_nobias.pth'
 
         PATH = './model_bbbias_fcnob_librosa_sil.pth'
-
         torch.save(model.state_dict(), PATH)
         
