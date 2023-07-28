@@ -183,6 +183,14 @@ class Train():
                         f.write ("--------------------------------------------------"+ "\\\n")
                         f.close()
 
+                    loss = self.criterion(outputs, batched_labels)
+                    if (save):
+                        f = open('batched_loss_int.txt', "a")
+                        for elem in torch.flatten(loss).cpu().detach().numpy():
+                            f.write (str(elem) + ",\\\n")
+                        f.write ("--------------------------------------------------"+ "\\\n")
+                        f.close()
+
                     if (save):
                         npy_to_txt(-1, batched_inputs.int().cpu().detach().numpy())
 
@@ -210,12 +218,23 @@ class Train():
                     outputs = F.softmax(batched_outputs, dim=1)
                     outputs = outputs.to(self.device)
 
+
+
                     if (save):
                         f = open('batched_outputs_softmax_float.txt', "a")
                         for elem in torch.flatten(outputs).cpu().detach().numpy():
                             f.write (str(elem) + ",\\\n")
                         f.write ("--------------------------------------------------"+ "\\\n")
                         f.close()
+
+                    loss = self.criterion(outputs, batched_labels)
+                    if (save):
+                        f = open('batched_loss_float.txt', "a")
+                        for elem in torch.flatten(loss).cpu().detach().numpy():
+                            f.write (str(elem) + ",\\\n")
+                        f.write ("--------------------------------------------------"+ "\\\n")
+                        f.close()
+
 
 
                 _, predicted = torch.max(outputs, 1)
@@ -272,11 +291,11 @@ class Train():
 
                 batched_inputs, batched_labels = inputs[indices].to(self.device), labels[indices].to(self.device)
 
-                f = open('batched_inputs.txt', "a")
-                for elem in torch.flatten(batched_inputs).cpu().detach().numpy():
-                    f.write (str(elem) + ",\\\n")
-                f.write ("--------------------------------------------------"+ "\\\n")
-                f.close()
+                # f = open('batched_inputs.txt', "a")
+                # for elem in torch.flatten(batched_inputs).cpu().detach().numpy():
+                #     f.write (str(elem) + ",\\\n")
+                # f.write ("--------------------------------------------------"+ "\\\n")
+                # f.close()
 
                 # Zero out the parameter gradients after each mini-batch
                 self.optimizer.zero_grad()
@@ -287,30 +306,30 @@ class Train():
                 # save output
                 batched_outputs = model(batched_inputs)
 
-                f = open('batched_outputs.txt', "a")
-                for elem in torch.flatten(batched_outputs).cpu().detach().numpy():
-                    f.write (str(elem) + ",\\\n")
-                f.write ("--------------------------------------------------"+ "\\\n")
-                f.close()
+                # f = open('batched_outputs.txt', "a")
+                # for elem in torch.flatten(batched_outputs).cpu().detach().numpy():
+                #     f.write (str(elem) + ",\\\n")
+                # f.write ("--------------------------------------------------"+ "\\\n")
+                # f.close()
 
 
                 # save softmax
                 outputs = F.softmax(model(batched_inputs), dim=1)
 
-                f = open('batched_softmax_outputs.txt', "a")
-                for elem in torch.flatten(outputs).cpu().detach().numpy():
-                    f.write (str(elem) + ",\\\n")
-                f.write ("--------------------------------------------------"+ "\\\n")
-                f.close()
+                # f = open('batched_softmax_outputs.txt', "a")
+                # for elem in torch.flatten(outputs).cpu().detach().numpy():
+                #     f.write (str(elem) + ",\\\n")
+                # f.write ("--------------------------------------------------"+ "\\\n")
+                # f.close()
 
                 loss = self.criterion(outputs, batched_labels)
 
 
-                # save loss
-                f = open('batched_loss_outputs.txt', "a")
-                f.write (str(loss.cpu().detach().numpy()) + ",\\\n")
-                f.write ("--------------------------------------------------"+ "\\\n")
-                f.close()
+                # # save loss
+                # f = open('batched_loss_outputs.txt', "a")
+                # f.write (str(loss.cpu().detach().numpy()) + ",\\\n")
+                # f.write ("--------------------------------------------------"+ "\\\n")
+                # f.close()
 
                 loss.backward()
                 self.optimizer.step()
@@ -342,7 +361,7 @@ class Train():
                 # else:
                 #     PATH = './model_finetune_tinytrain_nobias_acc_' + str(best_acc) + '.pth'
 
-                PATH = './model_nobias_pretrain_40eps_partial_acc_' + str(best_acc) + '.pth'
+                PATH = './model_bbbias_fcnob_librosa_sil_acc_' + str(best_acc) + '.pth'
 
                 torch.save(model.state_dict(), PATH)
 
@@ -351,7 +370,7 @@ class Train():
         # else:
         #     PATH = './model_finetune_tinytrain_nobias.pth'
 
-        PATH = './model_nobias_pretrain_40eps_partial.pth'
+        PATH = './model_bbbias_fcnob_librosa_sil.pth'
 
         torch.save(model.state_dict(), PATH)
         

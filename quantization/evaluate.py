@@ -148,6 +148,8 @@ def main():
 # MSE:  6.384423298651575
 # NMSE:  0.14014344072534501
 
+
+
 # _________________________
 
 
@@ -162,11 +164,24 @@ def main():
 
 # ___________________________
 
+
+# FILE: /usr/scratch/wetterhorn/cioflanc/kws-on-pulp/kws-on-pulp/quantization/tinytest/yes_e49428d9_nohash_3.wav
+
 # TODO: Loss
+# GVSOC: loss: 0.422480
+# FQ: 1.9580157
+# FP: 1.6258786,
+
 
 # TODO: Gradients
 
 # TODO: New weights
+
+# TODO: MFCCs
+
+# TODO: BB with MFCCs
+
+# TODO: CL with MFCCs
 
 
 

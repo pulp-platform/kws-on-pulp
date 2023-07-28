@@ -65,7 +65,11 @@ class DSCNN(torch.nn.Module):
         self.bn9   = torch.nn.BatchNorm2d(64)
         self.relu9 = torch.nn.ReLU()
 
+        # Default
         self.avg   = torch.nn.AvgPool2d(kernel_size=(25, 5), stride=1)
+        # Reduced Librosa
+        # self.avg   = torch.nn.AvgPool2d(kernel_size=(21, 5), stride=1)
+        
         self.fc1   = torch.nn.Linear(64, 12, bias=False)
         # self.soft  = torch.nn.Softmax(dim=1)
         # self.soft = F.log_softmax(x, dim=1)

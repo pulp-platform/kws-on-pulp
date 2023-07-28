@@ -59,6 +59,7 @@ print("Dataset split (Train/valid/test/tinytrain): "+ str(train_size) +"/"+str(v
 # model = DSCNN(use_bias = False) # Put to FALSE to reproduce FC layer
 model = DSCNN(use_bias = True) # Put to TRUE to reproduce model_bias layer
 model.to(device)
+# Tensorflow
 summary(model,(1,49,data_processing_parameters['feature_bin_count']))
 dummy_input = torch.rand(1, 1,49,data_processing_parameters['feature_bin_count']).to(device)
 count_ops(model, dummy_input)
@@ -96,7 +97,7 @@ print('Finished Training on GPU in {:.2f} seconds'.format(time.clock_gettime(0)-
 # Ignoring training, load pretrained model
 # model.load_state_dict(torch.load('./model.pth', map_location=torch.device('cuda')))
 # model.load_state_dict(torch.load('./best_model_nobias.pth', map_location=torch.device('cuda')))
-model.load_state_dict(torch.load('./model_nobias_pretrain_40eps_partial.pth', map_location=torch.device('cuda')))
+model.load_state_dict(torch.load('./best_model_bbias_fcnob_librosa_sil.pth', map_location=torch.device('cuda')))
 
 
 dummy_input = torch.randn(1, 1, 49, 10, requires_grad=True).to(device)
@@ -385,7 +386,7 @@ print (eps_avg)
 
 
 # Saving the model
-nemo.utils.export_onnx('model_nobias_pretrain_int.onnx', quantized_model, quantized_model, (1, 49, 10))
+nemo.utils.export_onnx('best_model_bbias_fcnob_librosa_sil.onnx', quantized_model, quantized_model, (1, 49, 10))
 # Saving the activations for comparison within Dory
 acc = trainining_environment.validate(model=quantized_model, mode='tinytest', batch_size=1, integer=True, save=True)
 
