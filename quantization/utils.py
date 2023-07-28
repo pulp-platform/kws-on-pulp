@@ -107,6 +107,9 @@ def parameter_generation():
     data_processing_parameters['window_stride_samples'] = window_stride_samples
     data_processing_parameters['window_size_samples'] = window_size_samples
 
+    data_processing_parameters['mfcc'] = 'tensorflow' # tensorflow, pytorch, librosa
+    data_processing_parameters['mode']
+
     # Training parameters
     training_parameters = {
     # 'data_dir':'/usr/scratch/wetterhorn/cioflanc/kws-on-pulp/kws-on-pulp/wavsrc', # GVSOC
@@ -124,7 +127,8 @@ def parameter_generation():
     'background_volume':0,  # GVSOC
     # 'background_frequency':0.8,
     # 'background_volume':0.2,
-    'freezebb':False # quantization
+    'freezebb':False, # quantization
+    'noisyft': False # augment with restaurant noise
     }
     target_words='yes,no,up,down,left,right,on,off,stop,go,'  # GSCv2 - 12 words
     # Selecting 35 words

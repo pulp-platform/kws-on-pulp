@@ -97,10 +97,11 @@ print('Finished Training on GPU in {:.2f} seconds'.format(time.clock_gettime(0)-
 # Ignoring training, load pretrained model
 # model.load_state_dict(torch.load('./model.pth', map_location=torch.device('cuda')))
 # model.load_state_dict(torch.load('./best_model_nobias.pth', map_location=torch.device('cuda')))
-model.load_state_dict(torch.load('./best_model_bbias_fcnob_librosa_sil.pth', map_location=torch.device('cuda')))
+model.load_state_dict(torch.load('./best_model_bbias_fcnob_tf_sil.pth', map_location=torch.device('cuda')))
 
 
 dummy_input = torch.randn(1, 1, 49, 10, requires_grad=True).to(device)
+
 # Export the model
 # torch.onnx.export(model,               # model being run
 #                   dummy_input,                         # model input (or a tuple for multiple inputs)
@@ -324,32 +325,6 @@ print("\nIntegerDeployable @ mixed-precision accuracy:")
 # acc = trainining_environment.validate(model=quantized_model, mode='tinytest', batch_size=-1, integer=True)
 acc = trainining_environment.validate(model=quantized_model, mode='testing', batch_size=-1, integer=True)
 
-
-# intavgmodel = quantized_model.postavg
-# # model_bias
-# # intavglog = [10.,  5.,  4.,  3.,  6.,  6.,  7.,  6.,  7.,  9., 11.,  8.,  8.,  8.,
-# #           9., 11.,  7., 11., 10., 14.,  7.,  8.,  7.,  6.,  9.,  6., 10.,  5.,
-# #           5., 12., 15., 10., 10., 12., 16.,  6.,  8.,  8., 13.,  5.,  8.,  6.,
-# #           7.,  2., 10.,  9.,  8.,  4., 11.,  5.,  9.,  4., 10.,  4., 13.,  4.,
-# #           6.,  6.,  1.,  7.,  8., 11., 11.,  9.]
-
-# # model
-# floatlog = [1.2891, 1.1325, 0.7934, 0.8711, 1.5614, 0.6453, 2.3204, 1.6178, 1.0879,
-#          1.1957, 1.5591, 0.6227, 0.2808, 0.5643, 1.1200, 1.1179, 0.6563, 1.2392,
-#          0.3207, 2.2530, 0.9251, 1.0823, 0.3515, 1.5727, 0.7494, 0.4947, 0.8007,
-#          0.6926, 1.2692, 0.6857, 0.7056, 0.9667, 1.6910, 1.7396, 0.1724, 0.7312,
-#          1.4514, 1.4013, 0.8520, 0.6831, 0.3204, 1.3741, 0.4185, 0.3420, 1.1421,
-#          0.6119, 0.6184, 1.4712, 0.6477, 0.3082, 1.3002, 0.5070, 1.5846, 1.0176,
-#          0.6457, 1.4625, 0.6278, 0.4942, 0.8052, 0.4375, 0.3354, 0.4915, 1.1417,
-#          0.5416]
-
-# intavglog = [11.,  9.,  8.,  5., 14.,  6., 15., 10., 10.,  9., 13.,  5.,  4.,  8.,
-#           7., 11.,  5., 11.,  2., 18.,  7., 10.,  2., 12.,  7.,  4.,  6.,  6.,
-#          10.,  8.,  7.,  8., 12., 14.,  2.,  9., 10.,  9.,  9.,  8.,  4., 12.,
-#           3.,  4., 11.,  4.,  4., 12.,  5.,  2., 13.,  3., 11.,  7.,  5., 11.,
-#           3.,  3.,  9.,  3.,  2.,  4., 10.,  7.]
-
-
 l = len(list(quantized_model.named_modules()))
 eps = OrderedDict([])
 for i,(n,l) in enumerate(quantized_model.named_modules()):
@@ -361,32 +336,8 @@ eps_avg = eps['avg']
 
 print (eps_avg)
 
-# requant = []
-# err = 0.
-# summation = 0.
-# for elem in intavglog:
-#   requant.append(eps_avg.cpu().numpy()[0] * elem)
-
-# floatavgarr = floatavg.cpu().numpy()[0]
-
-
-# for idx in range (0 , len(floatavgarr)):
-#   err = err + (requant[idx] - floatavgarr[idx])*(requant[idx] - floatavgarr[idx])
-#   summation += floatavgarr[idx]*floatavgarr[idx]
-
-# avgerr = err / len(floatavgarr)
-# relerr = err / summation
-
-
-# print ("requantized: ")
-# print (requant)
-# print ("error is: ",err)
-# print ("AVG error is: ",avgerr)
-# print ("REL error is: ",relerr)
-
-
 # Saving the model
-nemo.utils.export_onnx('best_model_bbias_fcnob_librosa_sil.onnx', quantized_model, quantized_model, (1, 49, 10))
+nemo.utils.export_onnx('best_model_bbias_fcnob_tf_sil.onnx', quantized_model, quantized_model, (1, 49, 10))
 # Saving the activations for comparison within Dory
 acc = trainining_environment.validate(model=quantized_model, mode='tinytest', batch_size=1, integer=True, save=True)
 

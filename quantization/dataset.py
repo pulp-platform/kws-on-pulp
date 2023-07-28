@@ -340,84 +340,66 @@ class AudioProcessor(object):
     background_add = torch.add(background_mul, sliced_foreground)
 
 
-    ##### FINETUNING - RESTAURANT noise ##### 
-    # sf_loader, _ = sf.read('restaurant_crop_ch01.wav')
-    # noise = torch.Tensor(np.array([sf_loader]))
-    # background_mul = torch.mul(torch.Tensor(noise[:,0:16000]), 5) 
-    # background_add = torch.add(background_mul, sliced_foreground)
-
-    # Compute MFCCs - PyTorch
-    # melkwargs={ 'n_fft':1024, 'win_length':self.data_processing_parameters['window_size_samples'], 'hop_length':self.data_processing_parameters['window_stride_samples'],
-    #        'f_min':20, 'f_max':4000, 'n_mels':40}
-    # mfcc_transformation = torchaudio.transforms.MFCC(n_mfcc=self.data_processing_parameters['feature_bin_count'], sample_rate=self.data_processing_parameters['desired_samples'], melkwargs=melkwargs, log_mels=True, norm='ortho')
-    # data = mfcc_transformation(background_add)
-    # data_placeholder[i] = data[:,:self.data_processing_parameters['spectrogram_length']].numpy().transpose()
-
-    # # Compute MFCCs - TensorFlow (matching C-based implementation)
-    # tf_data = tf.convert_to_tensor(background_add.numpy(), dtype=tf.float32)
-    # tf_stfts = tf.signal.stft(tf_data, frame_length=self.data_processing_parameters['window_size_samples'], frame_step=self.data_processing_parameters['window_stride_samples'], fft_length=1024)
-    # tf_spectrograms = tf.abs(tf_stfts)
-    # power = True
-    # if power:
-    #     tf_spectrograms = tf_spectrograms ** 2
-    # num_spectrogram_bins = tf_stfts.shape[-1]
-    # linear_to_mel_weight_matrix = tf.signal.linear_to_mel_weight_matrix(40, num_spectrogram_bins, self.data_processing_parameters['desired_samples'], 20, 4000)
-    # tf_spectrograms = tf.cast(tf_spectrograms, tf.float32)
-    # tf_mel_spectrograms = tf.tensordot(tf_spectrograms, linear_to_mel_weight_matrix, 1)
-    # tf_mel_spectrograms.set_shape(tf_spectrograms.shape[:-1].concatenate(
-    #             linear_to_mel_weight_matrix.shape[-1:]))
-    # tf_log_mel = tf.math.log(tf_mel_spectrograms + 1e-6)
-    # tf_mfccs = tf.signal.mfccs_from_log_mel_spectrograms(tf_log_mel)[..., :self.data_processing_parameters['feature_bin_count']]
-    # mfcc = torch.Tensor(tf_mfccs.numpy())
-    # data_placeholder = mfcc
-
-    # print ("data_placeholder")
-    # print (np.mean(tf_mfccs.numpy()))
-    # print (np.std(tf_mfccs.numpy()))
-    # print (np.max(tf_mfccs.numpy()))
-    # print (np.min(tf_mfccs.numpy()))
-    # print (np.shape(tf_mfccs.numpy()))
-    # print (tf_mfccs.numpy())
-
-    import librosa
-    import scipy
-    from librosa.filters import get_window
-    from librosa import util
-    from librosa.core.spectrum import power_to_db
-
-    librosa_fft_window = get_window("hann", self.data_processing_parameters['window_size_samples'], fftbins=True)
-    # Pad the window out to n_fft size
-    librosa_fft_window = util.pad_center(librosa_fft_window, 1024)
-    use_power = True
-    stft = librosa.core.spectrum.stft(background_add.numpy(), 1024, 320, 640, center=True, pad_mode="constant")
-    spect = np.abs(stft) ** (1 if not use_power else 2)
-    mel_basis = librosa.filters.mel(16000, 1024, 40, 20, 4000)
-    mel_spect = np.dot(mel_basis, spect)
-    logmel = power_to_db(mel_spect, top_db=None)
-    # logmel = mel_spect
-    data_placeholder = scipy.fftpack.dct(logmel, axis=0, type=2, norm=None)#[..., :self.data_processing_parameters['feature_bin_count']]   
-    data_placeholder = np.transpose(data_placeholder)[1:50, :self.data_processing_parameters['feature_bin_count']]
-
-    # scale in (-128, 128)
-    norm = np.max(data_placeholder) - np.min(data_placeholder)
-    data_placeholder = (data_placeholder-np.min(data_placeholder))/norm * (255) - 128
+    if (training_parameters['noisyft']):
+      #### FINETUNING - RESTAURANT noise ##### 
+      sf_loader, _ = sf.read('restaurant_crop_ch01.wav')
+      noise = torch.Tensor(np.array([sf_loader]))
+      background_mul = torch.mul(torch.Tensor(noise[:,0:16000]), 5) 
+      background_add = torch.add(background_mul, sliced_foreground)
 
 
-    # print ("data_placeholder")
-    # print (np.mean(data_placeholder))
-    # print (np.std(data_placeholder))
-    # print (np.max(data_placeholder))
-    # print (np.min(data_placeholder))
-    # print (np.shape(data_placeholder))
-    # print (data_placeholder)
-    # return
+    if (self.data_processing_parameters['mfcc'] == 'pytorch'):
+      # Compute MFCCs - PyTorch
+      melkwargs={ 'n_fft':1024, 'win_length':self.data_processing_parameters['window_size_samples'], 'hop_length':self.data_processing_parameters['window_stride_samples'],
+             'f_min':20, 'f_max':4000, 'n_mels':40}
+      mfcc_transformation = torchaudio.transforms.MFCC(n_mfcc=self.data_processing_parameters['feature_bin_count'], sample_rate=self.data_processing_parameters['desired_samples'], melkwargs=melkwargs, log_mels=True, norm='ortho')
+      data = mfcc_transformation(background_add)
+      data_placeholder[i] = data[:,:self.data_processing_parameters['spectrogram_length']].numpy().transpose()
 
+    elif (self.data_processing_parameters['mfcc'] == 'tensorflow'):
+      # Compute MFCCs - TensorFlow (matching C-based implementation)
+      tf_data = tf.convert_to_tensor(background_add.numpy(), dtype=tf.float32)
+      tf_stfts = tf.signal.stft(tf_data, frame_length=self.data_processing_parameters['window_size_samples'], frame_step=self.data_processing_parameters['window_stride_samples'], fft_length=1024)
+      tf_spectrograms = tf.abs(tf_stfts)
+      power = True
+      if power:
+          tf_spectrograms = tf_spectrograms ** 2
+      num_spectrogram_bins = tf_stfts.shape[-1]
+      linear_to_mel_weight_matrix = tf.signal.linear_to_mel_weight_matrix(40, num_spectrogram_bins, self.data_processing_parameters['desired_samples'], 20, 4000)
+      tf_spectrograms = tf.cast(tf_spectrograms, tf.float32)
+      tf_mel_spectrograms = tf.tensordot(tf_spectrograms, linear_to_mel_weight_matrix, 1)
+      tf_mel_spectrograms.set_shape(tf_spectrograms.shape[:-1].concatenate(
+                  linear_to_mel_weight_matrix.shape[-1:]))
+      tf_log_mel = tf.math.log(tf_mel_spectrograms + 1e-6)
+      tf_mfccs = tf.signal.mfccs_from_log_mel_spectrograms(tf_log_mel)[..., :self.data_processing_parameters['feature_bin_count']]
+      mfcc = torch.Tensor(tf_mfccs.numpy())
+      data_placeholder = mfcc
 
+    elif (self.data_processing_parameters['mfcc'] == 'librosa'):
 
-    # data_placeholder = librosa.feature.mfcc(y=background_add.numpy(), sr=16000, n_fft=1024,
-    #                                 n_mfcc=40, n_mels=40,
-    #                                 hop_length=320,
-    #                                 fmin=20, fmax=4000, htk=False)                          
+      # Compute MFCCs - Librosa
+      import librosa
+      import scipy
+      from librosa.filters import get_window
+      from librosa import util
+      from librosa.core.spectrum import power_to_db
+
+      librosa_fft_window = get_window("hann", self.data_processing_parameters['window_size_samples'], fftbins=True)
+      # Pad the window out to n_fft size
+      librosa_fft_window = util.pad_center(librosa_fft_window, 1024)
+      use_power = True
+      stft = librosa.core.spectrum.stft(background_add.numpy(), 1024, 320, 640, center=True, pad_mode="constant")
+      spect = np.abs(stft) ** (1 if not use_power else 2)
+      mel_basis = librosa.filters.mel(16000, 1024, 40, 20, 4000)
+      mel_spect = np.dot(mel_basis, spect)
+      logmel = power_to_db(mel_spect, top_db=None)
+      # logmel = mel_spect
+      data_placeholder = scipy.fftpack.dct(logmel, axis=0, type=2, norm=None)#[..., :self.data_processing_parameters['feature_bin_count']]   
+      data_placeholder = np.transpose(data_placeholder)[1:50, :self.data_processing_parameters['feature_bin_count']]
+
+      # scale in (-128, 128)
+      norm = np.max(data_placeholder) - np.min(data_placeholder)
+      data_placeholder = (data_placeholder-np.min(data_placeholder))/norm * (255) - 128
 
 
     # Shift data in [0, 255] interval to match Dory request for uint8 inputs
@@ -426,7 +408,8 @@ class AudioProcessor(object):
 
 
     ##### NO FINETUNING #####
-    data_placeholder = np.reshape(data_placeholder, (1, data_placeholder.shape[0], data_placeholder.shape[1]))
+    if (training_parameters['noisyft'] == False):
+      data_placeholder = np.reshape(data_placeholder, (1, data_placeholder.shape[0], data_placeholder.shape[1]))
 
 
     label_index = self.word_to_index[sample['label']]
