@@ -11,3 +11,5 @@ application/DORY_network/
 *__pycache__*
 logs/
 wavsrc/*
+*slm
+*hex

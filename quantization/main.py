@@ -298,8 +298,7 @@ quantized_model.reset_alpha_act()
 quantized_model.remove_bias()
 
 print("\nFakeQuantized @ 8b accuracy (calibrated):")
-# acc = trainining_environment.validate(model=quantized_model, mode='tinytest', batch_size=-1)
-acc = trainining_environment.validate(model=quantized_model, mode='testing', batch_size=-1)
+acc = trainining_environment.validate(model=quantized_model, mode='testing', batch_size=128)
 
 # Save FC weights
 f = open("fcweights_nobias_pretrain.txt", "w")
@@ -316,14 +315,12 @@ acc = trainining_environment.validate(model=quantized_model.to(device), mode='ti
 quantized_model.qd_stage(eps_in=255./255)  # The activations are already in 0-255
 
 print("\nQuantizedDeployable @ mixed-precision accuracy:")
-# acc = trainining_environment.validate(model=quantized_model, mode='tinytest', batch_size=-1)
-acc = trainining_environment.validate(model=quantized_model, mode='testing', batch_size=-1)
+acc = trainining_environment.validate(model=quantized_model, mode='testing', batch_size=128)
 
 quantized_model.id_stage()
 
 print("\nIntegerDeployable @ mixed-precision accuracy:")
-# acc = trainining_environment.validate(model=quantized_model, mode='tinytest', batch_size=-1, integer=True)
-acc = trainining_environment.validate(model=quantized_model, mode='testing', batch_size=-1, integer=True)
+acc = trainining_environment.validate(model=quantized_model, mode='testing', batch_size=128, integer=True)
 
 l = len(list(quantized_model.named_modules()))
 eps = OrderedDict([])

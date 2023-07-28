@@ -1,0 +1,115 @@
+// flag_DW                        0
+// out_mult                       22
+// out_mult2                      0
+// out_shift                      21
+// FLAG_BATCHNORM                 1
+// FLAG_RELU                      1
+// weight_T                       0
+// to_compute_acc_in              0
+// to_compute_acc_out             0
+// test_location                  L3
+// tile_dim_h                     4
+// tile_dim_w                     8
+// optional                       conv
+// conv_order                     PULP-NN
+// type                           char
+// func_name                      layerConvBNRelu6
+// l1_x_offset                    0
+// l1_y_offset                    8196
+// l1_W_offset                    14600
+// l1_k_offset                    40212
+// l1_lambda_offset               40472
+// k_size_byte                    256
+// lambda_size_byte               512
+// k_tile_size_byte               200
+// lambda_tile_size_byte          400
+// tile_dim_nof                   2
+// tile_dim_nif                   1
+// border                         0
+// nof                            128
+// nif                            128
+// h                              32
+// w                              32
+// fs1                            1
+// fs2                            1
+// conv_overlap1                  0
+// conv_overlap2                  0
+// has_bias                       0
+// padding                        0
+// stride                         1
+// x_h                            32
+// x_w                            32
+// x_data_size_byte               1
+// x_tile_size_nif                128
+// x_tile_size_h                  8
+// x_tile_size_w                  4
+// x_tile_size_byte               4096
+// x_stride_w_byte                4096
+// x_stride_c_byte                128
+// x_length_nif_px                128
+// x_length_nif_byte              128
+// x_length_h_px                  8
+// x_length_w_byte                4
+// x_tile_size_nif_last           128
+// x_tile_size_h_last             8
+// x_tile_size_w_last             4
+// x_length_nif_px_last           128
+// x_length_nif_byte_last         128
+// x_length_h_px_last             8
+// x_length_w_byte_last           4
+// x_tile_size_byte_first         4096
+// x_length_nif_px_first          128
+// x_length_nif_byte_first        128
+// x_length_h_px_first            8
+// x_length_w_byte_first          4
+// W_nof                          128
+// b_tile_size_byte               100
+// W_nif                          128
+// W_data_size_byte               1
+// W_tile_size_nof                100
+// W_tile_size_nif                128
+// W_tile_size_byte               12800
+// W_stride_nof_byte              128
+// W_stride_hw_byte               128
+// W_length_nif_byte              128
+// W_tile_size_nof_last           28
+// W_tile_size_nif_last           128
+// W_length_nif_byte_last         128
+// W_tile_size_byte_first         12800
+// W_length_nif_byte_first        128
+// b_size_byte                    128
+// l2_off_k                       16384
+// l2_off_lambda                  16640
+// y_h                            32
+// y_w                            32
+// y_data_size_byte               1
+// y_tile_size_nof                100
+// y_tile_size_h                  8
+// y_tile_size_w                  4
+// y_tile_size_byte               3200
+// y_stride_w_byte                4096
+// y_stride_c_byte                128
+// y_length_nof_px                100
+// y_length_nof_byte              100
+// y_length_h_px                  8
+// y_length_w_byte                4
+// y_tile_size_nof_last           28
+// y_tile_size_h_last             8
+// y_tile_size_w_last             4
+// y_length_nof_px_last           28
+// y_length_w_byte_last           4
+// y_length_nof_byte_last         28
+
+
+#include "pulp.h"
+#include "dory.h"
+#include "stats.h"
+
+void  layerConvBNRelu6(
+  unsigned int l2_x,
+  unsigned int l2_y,
+  unsigned int l2_W,
+  unsigned int l1_buffer,
+  unsigned int out_mult_in,
+  unsigned int out_shift_in
+);
