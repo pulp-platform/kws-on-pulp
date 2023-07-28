@@ -10,3 +10,4 @@ application/DORY_network/
 *.pth
 *__pycache__*
 logs/
+wavsrc/*
