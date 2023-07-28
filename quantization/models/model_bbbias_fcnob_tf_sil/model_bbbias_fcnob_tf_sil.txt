@@ -1,0 +1,824 @@
+Unable to import torch.fx, you pytorch version may be too old.
+1.4.0
+cuda
+Dataset split (Train/valid/test/tinytrain): 30769/3703/4074/100
+----------------------------------------------------------------
+        Layer (type)               Output Shape         Param #
+================================================================
+     ConstantPad2d-1            [-1, 1, 59, 12]               0
+            Conv2d-2            [-1, 64, 25, 5]           2,624
+       BatchNorm2d-3            [-1, 64, 25, 5]             128
+              ReLU-4            [-1, 64, 25, 5]               0
+     ConstantPad2d-5            [-1, 64, 27, 7]               0
+            Conv2d-6            [-1, 64, 25, 5]             640
+       BatchNorm2d-7            [-1, 64, 25, 5]             128
+              ReLU-8            [-1, 64, 25, 5]               0
+            Conv2d-9            [-1, 64, 25, 5]           4,160
+      BatchNorm2d-10            [-1, 64, 25, 5]             128
+             ReLU-11            [-1, 64, 25, 5]               0
+    ConstantPad2d-12            [-1, 64, 27, 7]               0
+           Conv2d-13            [-1, 64, 25, 5]             640
+      BatchNorm2d-14            [-1, 64, 25, 5]             128
+             ReLU-15            [-1, 64, 25, 5]               0
+           Conv2d-16            [-1, 64, 25, 5]           4,160
+      BatchNorm2d-17            [-1, 64, 25, 5]             128
+             ReLU-18            [-1, 64, 25, 5]               0
+    ConstantPad2d-19            [-1, 64, 27, 7]               0
+           Conv2d-20            [-1, 64, 25, 5]             640
+      BatchNorm2d-21            [-1, 64, 25, 5]             128
+             ReLU-22            [-1, 64, 25, 5]               0
+           Conv2d-23            [-1, 64, 25, 5]           4,160
+      BatchNorm2d-24            [-1, 64, 25, 5]             128
+             ReLU-25            [-1, 64, 25, 5]               0
+    ConstantPad2d-26            [-1, 64, 27, 7]               0
+           Conv2d-27            [-1, 64, 25, 5]             640
+      BatchNorm2d-28            [-1, 64, 25, 5]             128
+             ReLU-29            [-1, 64, 25, 5]               0
+           Conv2d-30            [-1, 64, 25, 5]           4,160
+      BatchNorm2d-31            [-1, 64, 25, 5]             128
+             ReLU-32            [-1, 64, 25, 5]               0
+        AvgPool2d-33             [-1, 64, 1, 1]               0
+           Linear-34                   [-1, 12]             768
+================================================================
+Total params: 23,744
+Trainable params: 23,744
+Non-trainable params: 0
+----------------------------------------------------------------
+Input size (MB): 0.00
+Forward/backward pass size (MB): 2.02
+Params size (MB): 0.09
+Estimated Total Size (MB): 2.12
+----------------------------------------------------------------
+FX is unsupported on your pytorch version, falling back to JIT
+Operation                                         OPS      
+------------------------------------------------  -------  
+DSCNN/Conv2d[conv1]/onnx::Conv                    320000   
+DSCNN/BatchNorm2d[bn1]/onnx::BatchNormalization   16000    
+DSCNN/ReLU[relu1]/onnx::Relu                      16000    
+DSCNN/Conv2d[conv2]/onnx::Conv                    72000    
+DSCNN/BatchNorm2d[bn2]/onnx::BatchNormalization   16000    
+DSCNN/ReLU[relu2]/onnx::Relu                      16000    
+DSCNN/Conv2d[conv3]/onnx::Conv                    512000   
+DSCNN/BatchNorm2d[bn3]/onnx::BatchNormalization   16000    
+DSCNN/ReLU[relu3]/onnx::Relu                      16000    
+DSCNN/Conv2d[conv4]/onnx::Conv                    72000    
+DSCNN/BatchNorm2d[bn4]/onnx::BatchNormalization   16000    
+DSCNN/ReLU[relu4]/onnx::Relu                      16000    
+DSCNN/Conv2d[conv5]/onnx::Conv                    512000   
+DSCNN/BatchNorm2d[bn5]/onnx::BatchNormalization   16000    
+DSCNN/ReLU[relu5]/onnx::Relu                      16000    
+DSCNN/Conv2d[conv6]/onnx::Conv                    72000    
+DSCNN/BatchNorm2d[bn6]/onnx::BatchNormalization   16000    
+DSCNN/ReLU[relu6]/onnx::Relu                      16000    
+DSCNN/Conv2d[conv7]/onnx::Conv                    512000   
+DSCNN/BatchNorm2d[bn7]/onnx::BatchNormalization   16000    
+DSCNN/ReLU[relu7]/onnx::Relu                      16000    
+DSCNN/Conv2d[conv8]/onnx::Conv                    72000    
+DSCNN/BatchNorm2d[bn8]/onnx::BatchNormalization   16000    
+DSCNN/ReLU[relu8]/onnx::Relu                      16000    
+DSCNN/Conv2d[conv9]/onnx::Conv                    512000   
+DSCNN/BatchNorm2d[bn9]/onnx::BatchNormalization   16000    
+DSCNN/ReLU[relu9]/onnx::Relu                      16000    
+DSCNN/AvgPool2d[avg]/onnx::AveragePool            8000     
+DSCNN/Linear[fc1]/onnx::MatMul                    768      
+-----------------------------------------------   ------   
+Input size: (1, 1, 49, 10)
+2,952,768 FLOPs or approx. 0.00 GFLOPs
+Pretrain validation acc
+[  0 /  28]   accuracy: 0.000
+[ 20 /  28]   accuracy: 0.000
+Accuracy of the network on the validation set: 0.00 %
+Epoch:  0
+[  0 / 240] loss: 0.249  accuracy: 0.781
+[ 20 / 240] loss: 4.958  accuracy: 13.616
+[ 40 / 240] loss: 4.907  accuracy: 18.216
+[ 60 / 240] loss: 4.811  accuracy: 21.926
+[ 80 / 240] loss: 4.714  accuracy: 24.923
+[100 / 240] loss: 4.591  accuracy: 27.738
+[120 / 240] loss: 4.556  accuracy: 29.765
+[140 / 240] loss: 4.457  accuracy: 31.893
+[160 / 240] loss: 4.395  accuracy: 33.856
+[180 / 240] loss: 4.342  accuracy: 35.553
+[200 / 240] loss: 4.290  accuracy: 37.045
+[220 / 240] loss: 4.246  accuracy: 38.387
+[240 / 240] loss: 4.222  accuracy: 39.689
+[  0 /  28]   accuracy: 32.031
+[ 20 /  28]   accuracy: 35.231
+Accuracy of the network on the validation set: 34.65 %
+Epoch:  1
+[  0 / 240] loss: 0.202  accuracy: 70.312
+[ 20 / 240] loss: 4.154  accuracy: 61.979
+[ 40 / 240] loss: 4.121  accuracy: 62.614
+[ 60 / 240] loss: 4.064  accuracy: 64.331
+[ 80 / 240] loss: 3.965  accuracy: 66.464
+[100 / 240] loss: 3.877  accuracy: 68.889
+[120 / 240] loss: 3.804  accuracy: 71.326
+[140 / 240] loss: 3.773  accuracy: 72.972
+[160 / 240] loss: 3.738  accuracy: 74.292
+[180 / 240] loss: 3.685  accuracy: 75.388
+[200 / 240] loss: 3.685  accuracy: 76.275
+[220 / 240] loss: 3.687  accuracy: 76.920
+[240 / 240] loss: 3.654  accuracy: 77.549
+[  0 /  28]   accuracy: 66.406
+[ 20 /  28]   accuracy: 70.982
+Accuracy of the network on the validation set: 70.56 %
+Epoch:  2
+[  0 / 240] loss: 0.177  accuracy: 92.188
+[ 20 / 240] loss: 3.608  accuracy: 87.202
+[ 40 / 240] loss: 3.625  accuracy: 86.471
+[ 60 / 240] loss: 3.601  accuracy: 86.360
+[ 80 / 240] loss: 3.583  accuracy: 86.622
+[100 / 240] loss: 3.568  accuracy: 86.765
+[120 / 240] loss: 3.575  accuracy: 86.796
+[140 / 240] loss: 3.563  accuracy: 86.907
+[160 / 240] loss: 3.544  accuracy: 87.141
+[180 / 240] loss: 3.573  accuracy: 87.055
+[200 / 240] loss: 3.537  accuracy: 87.236
+[220 / 240] loss: 3.557  accuracy: 87.295
+[240 / 240] loss: 3.535  accuracy: 87.383
+[  0 /  28]   accuracy: 81.250
+[ 20 /  28]   accuracy: 85.826
+Accuracy of the network on the validation set: 85.61 %
+Epoch:  3
+[  0 / 240] loss: 0.173  accuracy: 94.531
+[ 20 / 240] loss: 3.499  accuracy: 90.625
+[ 40 / 240] loss: 3.534  accuracy: 89.348
+[ 60 / 240] loss: 3.540  accuracy: 88.755
+[ 80 / 240] loss: 3.495  accuracy: 89.024
+[100 / 240] loss: 3.499  accuracy: 89.001
+[120 / 240] loss: 3.506  accuracy: 88.979
+[140 / 240] loss: 3.490  accuracy: 89.135
+[160 / 240] loss: 3.502  accuracy: 89.116
+[180 / 240] loss: 3.513  accuracy: 89.024
+[200 / 240] loss: 3.498  accuracy: 89.066
+[220 / 240] loss: 3.508  accuracy: 89.084
+[240 / 240] loss: 3.496  accuracy: 89.129
+[  0 /  28]   accuracy: 77.344
+[ 20 /  28]   accuracy: 83.482
+Accuracy of the network on the validation set: 82.99 %
+Epoch:  4
+[  0 / 240] loss: 0.171  accuracy: 92.969
+[ 20 / 240] loss: 3.491  accuracy: 89.397
+[ 40 / 240] loss: 3.490  accuracy: 89.482
+[ 60 / 240] loss: 3.495  accuracy: 89.344
+[ 80 / 240] loss: 3.471  accuracy: 89.554
+[100 / 240] loss: 3.463  accuracy: 89.821
+[120 / 240] loss: 3.462  accuracy: 89.973
+[140 / 240] loss: 3.469  accuracy: 90.076
+[160 / 240] loss: 3.475  accuracy: 90.115
+[180 / 240] loss: 3.460  accuracy: 90.211
+[200 / 240] loss: 3.469  accuracy: 90.244
+[220 / 240] loss: 3.477  accuracy: 90.215
+[240 / 240] loss: 3.456  accuracy: 90.260
+[  0 /  28]   accuracy: 85.156
+[ 20 /  28]   accuracy: 89.472
+Accuracy of the network on the validation set: 89.50 %
+Epoch:  5
+[  0 / 240] loss: 0.169  accuracy: 95.312
+[ 20 / 240] loss: 3.444  accuracy: 91.890
+[ 40 / 240] loss: 3.482  accuracy: 90.644
+[ 60 / 240] loss: 3.489  accuracy: 90.100
+[ 80 / 240] loss: 3.450  accuracy: 90.413
+[100 / 240] loss: 3.438  accuracy: 90.733
+[120 / 240] loss: 3.450  accuracy: 90.819
+[140 / 240] loss: 3.437  accuracy: 91.035
+[160 / 240] loss: 3.462  accuracy: 90.979
+[180 / 240] loss: 3.460  accuracy: 90.979
+[200 / 240] loss: 3.448  accuracy: 90.986
+[220 / 240] loss: 3.445  accuracy: 91.024
+[240 / 240] loss: 3.449  accuracy: 91.095
+[  0 /  28]   accuracy: 84.375
+[ 20 /  28]   accuracy: 88.170
+Accuracy of the network on the validation set: 87.44 %
+Epoch:  6
+[  0 / 240] loss: 0.170  accuracy: 93.750
+[ 20 / 240] loss: 3.457  accuracy: 90.551
+[ 40 / 240] loss: 3.463  accuracy: 90.263
+[ 60 / 240] loss: 3.463  accuracy: 90.126
+[ 80 / 240] loss: 3.427  accuracy: 90.644
+[100 / 240] loss: 3.425  accuracy: 90.919
+[120 / 240] loss: 3.462  accuracy: 90.799
+[140 / 240] loss: 3.457  accuracy: 90.758
+[160 / 240] loss: 3.443  accuracy: 90.785
+[180 / 240] loss: 3.450  accuracy: 90.798
+[200 / 240] loss: 3.461  accuracy: 90.753
+[220 / 240] loss: 3.422  accuracy: 90.918
+[240 / 240] loss: 3.422  accuracy: 91.001
+[  0 /  28]   accuracy: 86.719
+[ 20 /  28]   accuracy: 89.249
+Accuracy of the network on the validation set: 89.01 %
+Epoch:  7
+[  0 / 240] loss: 0.168  accuracy: 96.094
+[ 20 / 240] loss: 3.425  accuracy: 92.560
+[ 40 / 240] loss: 3.429  accuracy: 92.130
+[ 60 / 240] loss: 3.470  accuracy: 91.381
+[ 80 / 240] loss: 3.416  accuracy: 91.609
+[100 / 240] loss: 3.417  accuracy: 91.762
+[120 / 240] loss: 3.441  accuracy: 91.632
+[140 / 240] loss: 3.412  accuracy: 91.739
+[160 / 240] loss: 3.425  accuracy: 91.722
+[180 / 240] loss: 3.432  accuracy: 91.670
+[200 / 240] loss: 3.424  accuracy: 91.702
+[220 / 240] loss: 3.403  accuracy: 91.806
+[240 / 240] loss: 3.410  accuracy: 91.872
+[  0 /  28]   accuracy: 85.938
+[ 20 /  28]   accuracy: 89.955
+Accuracy of the network on the validation set: 89.90 %
+Epoch:  8
+[  0 / 240] loss: 0.166  accuracy: 96.875
+[ 20 / 240] loss: 3.407  accuracy: 92.708
+[ 40 / 240] loss: 3.439  accuracy: 91.864
+[ 60 / 240] loss: 3.446  accuracy: 91.483
+[ 80 / 240] loss: 3.404  accuracy: 91.840
+[100 / 240] loss: 3.402  accuracy: 92.033
+[120 / 240] loss: 3.424  accuracy: 92.033
+[140 / 240] loss: 3.409  accuracy: 92.082
+[160 / 240] loss: 3.435  accuracy: 92.008
+[180 / 240] loss: 3.438  accuracy: 91.937
+[200 / 240] loss: 3.421  accuracy: 91.958
+[220 / 240] loss: 3.402  accuracy: 92.067
+[240 / 240] loss: 3.414  accuracy: 92.063
+[  0 /  28]   accuracy: 87.500
+[ 20 /  28]   accuracy: 91.109
+Accuracy of the network on the validation set: 91.14 %
+Epoch:  9
+[  0 / 240] loss: 0.169  accuracy: 95.312
+[ 20 / 240] loss: 3.403  accuracy: 92.894
+[ 40 / 240] loss: 3.400  accuracy: 92.931
+[ 60 / 240] loss: 3.397  accuracy: 92.905
+[ 80 / 240] loss: 3.396  accuracy: 92.959
+[100 / 240] loss: 3.407  accuracy: 92.930
+[120 / 240] loss: 3.396  accuracy: 92.962
+[140 / 240] loss: 3.394  accuracy: 93.002
+[160 / 240] loss: 3.419  accuracy: 92.833
+[180 / 240] loss: 3.436  accuracy: 92.628
+[200 / 240] loss: 3.397  accuracy: 92.704
+[220 / 240] loss: 3.397  accuracy: 92.746
+[240 / 240] loss: 3.415  accuracy: 92.665
+[  0 /  28]   accuracy: 84.375
+[ 20 /  28]   accuracy: 87.723
+Accuracy of the network on the validation set: 88.12 %
+Epoch:  10
+[  0 / 240] loss: 0.167  accuracy: 95.312
+[ 20 / 240] loss: 3.390  accuracy: 93.899
+[ 40 / 240] loss: 3.406  accuracy: 93.236
+[ 60 / 240] loss: 3.403  accuracy: 93.058
+[ 80 / 240] loss: 3.394  accuracy: 92.978
+[100 / 240] loss: 3.402  accuracy: 92.853
+[120 / 240] loss: 3.380  accuracy: 92.988
+[140 / 240] loss: 3.398  accuracy: 93.035
+[160 / 240] loss: 3.436  accuracy: 92.731
+[180 / 240] loss: 3.397  accuracy: 92.787
+[200 / 240] loss: 3.408  accuracy: 92.751
+[220 / 240] loss: 3.398  accuracy: 92.764
+[240 / 240] loss: 3.377  accuracy: 92.873
+[  0 /  28]   accuracy: 88.281
+[ 20 /  28]   accuracy: 91.034
+Accuracy of the network on the validation set: 90.79 %
+Epoch:  11
+[  0 / 240] loss: 0.167  accuracy: 95.312
+[ 20 / 240] loss: 3.373  accuracy: 93.862
+[ 40 / 240] loss: 3.423  accuracy: 92.797
+[ 60 / 240] loss: 3.409  accuracy: 92.636
+[ 80 / 240] loss: 3.387  accuracy: 92.805
+[100 / 240] loss: 3.382  accuracy: 93.000
+[120 / 240] loss: 3.401  accuracy: 92.878
+[140 / 240] loss: 3.390  accuracy: 92.913
+[160 / 240] loss: 3.409  accuracy: 92.847
+[180 / 240] loss: 3.380  accuracy: 92.908
+[200 / 240] loss: 3.393  accuracy: 92.934
+[220 / 240] loss: 3.409  accuracy: 92.870
+[240 / 240] loss: 3.413  accuracy: 92.762
+[  0 /  28]   accuracy: 82.812
+[ 20 /  28]   accuracy: 90.439
+Accuracy of the network on the validation set: 89.90 %
+Epoch:  12
+[  0 / 240] loss: 0.167  accuracy: 96.875
+[ 20 / 240] loss: 3.379  accuracy: 94.159
+[ 40 / 240] loss: 3.424  accuracy: 92.912
+[ 60 / 240] loss: 3.415  accuracy: 92.687
+[ 80 / 240] loss: 3.397  accuracy: 92.718
+[100 / 240] loss: 3.380  accuracy: 92.837
+[120 / 240] loss: 3.384  accuracy: 93.033
+[140 / 240] loss: 3.397  accuracy: 93.019
+[160 / 240] loss: 3.387  accuracy: 93.061
+[180 / 240] loss: 3.396  accuracy: 93.046
+[200 / 240] loss: 3.392  accuracy: 93.039
+[220 / 240] loss: 3.378  accuracy: 93.121
+[240 / 240] loss: 3.391  accuracy: 93.107
+[  0 /  28]   accuracy: 87.500
+[ 20 /  28]   accuracy: 90.811
+Accuracy of the network on the validation set: 90.60 %
+Epoch:  13
+[  0 / 240] loss: 0.165  accuracy: 98.438
+[ 20 / 240] loss: 3.384  accuracy: 93.750
+[ 40 / 240] loss: 3.403  accuracy: 93.007
+[ 60 / 240] loss: 3.397  accuracy: 92.982
+[ 80 / 240] loss: 3.404  accuracy: 92.872
+[100 / 240] loss: 3.368  accuracy: 93.154
+[120 / 240] loss: 3.389  accuracy: 93.143
+[140 / 240] loss: 3.362  accuracy: 93.390
+[160 / 240] loss: 3.398  accuracy: 93.323
+[180 / 240] loss: 3.400  accuracy: 93.267
+[200 / 240] loss: 3.373  accuracy: 93.338
+[220 / 240] loss: 3.397  accuracy: 93.287
+[240 / 240] loss: 3.366  accuracy: 93.350
+[  0 /  28]   accuracy: 87.500
+[ 20 /  28]   accuracy: 91.034
+Accuracy of the network on the validation set: 90.98 %
+Epoch:  14
+[  0 / 240] loss: 0.165  accuracy: 96.875
+[ 20 / 240] loss: 3.358  accuracy: 94.978
+[ 40 / 240] loss: 3.382  accuracy: 94.131
+[ 60 / 240] loss: 3.375  accuracy: 94.083
+[ 80 / 240] loss: 3.352  accuracy: 94.252
+[100 / 240] loss: 3.340  accuracy: 94.446
+[120 / 240] loss: 3.353  accuracy: 94.544
+[140 / 240] loss: 3.335  accuracy: 94.736
+[160 / 240] loss: 3.366  accuracy: 94.677
+[180 / 240] loss: 3.349  accuracy: 94.700
+[200 / 240] loss: 3.331  accuracy: 94.838
+[220 / 240] loss: 3.331  accuracy: 94.948
+[240 / 240] loss: 3.361  accuracy: 94.901
+[  0 /  28]   accuracy: 89.062
+[ 20 /  28]   accuracy: 93.266
+Accuracy of the network on the validation set: 93.41 %
+Epoch:  15
+[  0 / 240] loss: 0.165  accuracy: 98.438
+[ 20 / 240] loss: 3.354  accuracy: 95.126
+[ 40 / 240] loss: 3.372  accuracy: 94.569
+[ 60 / 240] loss: 3.364  accuracy: 94.416
+[ 80 / 240] loss: 3.341  accuracy: 94.743
+[100 / 240] loss: 3.343  accuracy: 94.841
+[120 / 240] loss: 3.339  accuracy: 94.990
+[140 / 240] loss: 3.344  accuracy: 95.030
+[160 / 240] loss: 3.365  accuracy: 94.958
+[180 / 240] loss: 3.374  accuracy: 94.825
+[200 / 240] loss: 3.338  accuracy: 94.889
+[220 / 240] loss: 3.332  accuracy: 94.959
+[240 / 240] loss: 3.340  accuracy: 95.011
+[  0 /  28]   accuracy: 89.062
+[ 20 /  28]   accuracy: 93.118
+Accuracy of the network on the validation set: 93.11 %
+Epoch:  16
+[  0 / 240] loss: 0.166  accuracy: 96.094
+[ 20 / 240] loss: 3.337  accuracy: 95.722
+[ 40 / 240] loss: 3.354  accuracy: 95.332
+[ 60 / 240] loss: 3.363  accuracy: 94.967
+[ 80 / 240] loss: 3.340  accuracy: 95.129
+[100 / 240] loss: 3.347  accuracy: 95.057
+[120 / 240] loss: 3.346  accuracy: 95.119
+[140 / 240] loss: 3.335  accuracy: 95.207
+[160 / 240] loss: 3.358  accuracy: 95.152
+[180 / 240] loss: 3.343  accuracy: 95.166
+[200 / 240] loss: 3.331  accuracy: 95.243
+[220 / 240] loss: 3.338  accuracy: 95.291
+[240 / 240] loss: 3.327  accuracy: 95.369
+[  0 /  28]   accuracy: 90.625
+[ 20 /  28]   accuracy: 93.415
+Accuracy of the network on the validation set: 93.46 %
+Epoch:  17
+[  0 / 240] loss: 0.164  accuracy: 99.219
+[ 20 / 240] loss: 3.326  accuracy: 96.168
+[ 40 / 240] loss: 3.362  accuracy: 95.389
+[ 60 / 240] loss: 3.346  accuracy: 95.325
+[ 80 / 240] loss: 3.351  accuracy: 95.226
+[100 / 240] loss: 3.345  accuracy: 95.282
+[120 / 240] loss: 3.333  accuracy: 95.390
+[140 / 240] loss: 3.339  accuracy: 95.418
+[160 / 240] loss: 3.361  accuracy: 95.327
+[180 / 240] loss: 3.342  accuracy: 95.334
+[200 / 240] loss: 3.338  accuracy: 95.355
+[220 / 240] loss: 3.339  accuracy: 95.383
+[240 / 240] loss: 3.347  accuracy: 95.382
+[  0 /  28]   accuracy: 92.188
+[ 20 /  28]   accuracy: 93.601
+Accuracy of the network on the validation set: 93.46 %
+Epoch:  18
+[  0 / 240] loss: 0.163  accuracy: 100.000
+[ 20 / 240] loss: 3.331  accuracy: 96.094
+[ 40 / 240] loss: 3.338  accuracy: 95.941
+[ 60 / 240] loss: 3.360  accuracy: 95.543
+[ 80 / 240] loss: 3.331  accuracy: 95.669
+[100 / 240] loss: 3.334  accuracy: 95.692
+[120 / 240] loss: 3.338  accuracy: 95.706
+[140 / 240] loss: 3.344  accuracy: 95.656
+[160 / 240] loss: 3.338  accuracy: 95.696
+[180 / 240] loss: 3.353  accuracy: 95.623
+[200 / 240] loss: 3.347  accuracy: 95.596
+[220 / 240] loss: 3.325  accuracy: 95.641
+[240 / 240] loss: 3.327  accuracy: 95.677
+[  0 /  28]   accuracy: 89.062
+[ 20 /  28]   accuracy: 93.676
+Accuracy of the network on the validation set: 93.57 %
+Epoch:  19
+[  0 / 240] loss: 0.165  accuracy: 98.438
+[ 20 / 240] loss: 3.343  accuracy: 95.647
+[ 40 / 240] loss: 3.346  accuracy: 95.675
+[ 60 / 240] loss: 3.352  accuracy: 95.543
+[ 80 / 240] loss: 3.326  accuracy: 95.669
+[100 / 240] loss: 3.323  accuracy: 95.869
+[120 / 240] loss: 3.330  accuracy: 95.939
+[140 / 240] loss: 3.325  accuracy: 95.988
+[160 / 240] loss: 3.328  accuracy: 96.026
+[180 / 240] loss: 3.342  accuracy: 95.982
+[200 / 240] loss: 3.335  accuracy: 95.981
+[220 / 240] loss: 3.327  accuracy: 96.027
+[240 / 240] loss: 3.325  accuracy: 96.054
+[  0 /  28]   accuracy: 89.844
+[ 20 /  28]   accuracy: 93.527
+Accuracy of the network on the validation set: 93.57 %
+Epoch:  20
+[  0 / 240] loss: 0.166  accuracy: 96.875
+[ 20 / 240] loss: 3.314  accuracy: 96.689
+[ 40 / 240] loss: 3.333  accuracy: 96.303
+[ 60 / 240] loss: 3.356  accuracy: 95.722
+[ 80 / 240] loss: 3.332  accuracy: 95.833
+[100 / 240] loss: 3.329  accuracy: 95.893
+[120 / 240] loss: 3.327  accuracy: 95.945
+[140 / 240] loss: 3.326  accuracy: 95.988
+[160 / 240] loss: 3.345  accuracy: 95.895
+[180 / 240] loss: 3.337  accuracy: 95.900
+[200 / 240] loss: 3.331  accuracy: 95.872
+[220 / 240] loss: 3.320  accuracy: 95.945
+[240 / 240] loss: 3.328  accuracy: 95.937
+[  0 /  28]   accuracy: 89.844
+[ 20 /  28]   accuracy: 93.824
+Accuracy of the network on the validation set: 93.49 %
+Epoch:  21
+[  0 / 240] loss: 0.163  accuracy: 99.219
+[ 20 / 240] loss: 3.329  accuracy: 96.205
+[ 40 / 240] loss: 3.340  accuracy: 95.865
+[ 60 / 240] loss: 3.342  accuracy: 95.722
+[ 80 / 240] loss: 3.332  accuracy: 95.766
+[100 / 240] loss: 3.326  accuracy: 95.862
+[120 / 240] loss: 3.336  accuracy: 95.874
+[140 / 240] loss: 3.329  accuracy: 95.872
+[160 / 240] loss: 3.352  accuracy: 95.759
+[180 / 240] loss: 3.337  accuracy: 95.770
+[200 / 240] loss: 3.320  accuracy: 95.861
+[220 / 240] loss: 3.327  accuracy: 95.892
+[240 / 240] loss: 3.321  accuracy: 95.954
+[  0 /  28]   accuracy: 92.969
+[ 20 /  28]   accuracy: 93.862
+Accuracy of the network on the validation set: 93.65 %
+Epoch:  22
+[  0 / 240] loss: 0.166  accuracy: 96.875
+[ 20 / 240] loss: 3.321  accuracy: 96.540
+[ 40 / 240] loss: 3.335  accuracy: 96.170
+[ 60 / 240] loss: 3.335  accuracy: 96.132
+[ 80 / 240] loss: 3.335  accuracy: 96.103
+[100 / 240] loss: 3.318  accuracy: 96.225
+[120 / 240] loss: 3.319  accuracy: 96.275
+[140 / 240] loss: 3.331  accuracy: 96.254
+[160 / 240] loss: 3.339  accuracy: 96.167
+[180 / 240] loss: 3.336  accuracy: 96.137
+[200 / 240] loss: 3.314  accuracy: 96.195
+[220 / 240] loss: 3.321  accuracy: 96.228
+[240 / 240] loss: 3.326  accuracy: 96.243
+[  0 /  28]   accuracy: 88.281
+[ 20 /  28]   accuracy: 93.564
+Accuracy of the network on the validation set: 93.41 %
+Epoch:  23
+[  0 / 240] loss: 0.168  accuracy: 94.531
+[ 20 / 240] loss: 3.321  accuracy: 96.317
+[ 40 / 240] loss: 3.334  accuracy: 96.056
+[ 60 / 240] loss: 3.327  accuracy: 96.119
+[ 80 / 240] loss: 3.325  accuracy: 96.132
+[100 / 240] loss: 3.324  accuracy: 96.163
+[120 / 240] loss: 3.314  accuracy: 96.281
+[140 / 240] loss: 3.319  accuracy: 96.321
+[160 / 240] loss: 3.340  accuracy: 96.191
+[180 / 240] loss: 3.325  accuracy: 96.202
+[200 / 240] loss: 3.311  accuracy: 96.296
+[220 / 240] loss: 3.330  accuracy: 96.274
+[240 / 240] loss: 3.338  accuracy: 96.214
+[  0 /  28]   accuracy: 91.406
+[ 20 /  28]   accuracy: 93.638
+Accuracy of the network on the validation set: 93.44 %
+Epoch:  24
+[  0 / 240] loss: 0.166  accuracy: 96.094
+[ 20 / 240] loss: 3.319  accuracy: 96.652
+[ 40 / 240] loss: 3.324  accuracy: 96.551
+[ 60 / 240] loss: 3.325  accuracy: 96.555
+[ 80 / 240] loss: 3.324  accuracy: 96.480
+[100 / 240] loss: 3.325  accuracy: 96.481
+[120 / 240] loss: 3.330  accuracy: 96.442
+[140 / 240] loss: 3.320  accuracy: 96.459
+[160 / 240] loss: 3.320  accuracy: 96.477
+[180 / 240] loss: 3.322  accuracy: 96.474
+[200 / 240] loss: 3.314  accuracy: 96.498
+[220 / 240] loss: 3.322  accuracy: 96.497
+[240 / 240] loss: 3.325  accuracy: 96.470
+[  0 /  28]   accuracy: 91.406
+[ 20 /  28]   accuracy: 93.452
+Accuracy of the network on the validation set: 93.28 %
+Epoch:  25
+[  0 / 240] loss: 0.163  accuracy: 99.219
+[ 20 / 240] loss: 3.316  accuracy: 96.801
+[ 40 / 240] loss: 3.318  accuracy: 96.723
+[ 60 / 240] loss: 3.326  accuracy: 96.452
+[ 80 / 240] loss: 3.317  accuracy: 96.470
+[100 / 240] loss: 3.327  accuracy: 96.450
+[120 / 240] loss: 3.306  accuracy: 96.610
+[140 / 240] loss: 3.311  accuracy: 96.642
+[160 / 240] loss: 3.333  accuracy: 96.550
+[180 / 240] loss: 3.335  accuracy: 96.491
+[200 / 240] loss: 3.302  accuracy: 96.603
+[220 / 240] loss: 3.317  accuracy: 96.628
+[240 / 240] loss: 3.325  accuracy: 96.587
+[  0 /  28]   accuracy: 90.625
+[ 20 /  28]   accuracy: 93.601
+Accuracy of the network on the validation set: 93.46 %
+Epoch:  26
+[  0 / 240] loss: 0.163  accuracy: 99.219
+[ 20 / 240] loss: 3.308  accuracy: 97.359
+[ 40 / 240] loss: 3.316  accuracy: 96.970
+[ 60 / 240] loss: 3.330  accuracy: 96.709
+[ 80 / 240] loss: 3.307  accuracy: 96.856
+[100 / 240] loss: 3.324  accuracy: 96.805
+[120 / 240] loss: 3.321  accuracy: 96.804
+[140 / 240] loss: 3.315  accuracy: 96.836
+[160 / 240] loss: 3.326  accuracy: 96.797
+[180 / 240] loss: 3.326  accuracy: 96.715
+[200 / 240] loss: 3.306  accuracy: 96.774
+[220 / 240] loss: 3.311  accuracy: 96.790
+[240 / 240] loss: 3.316  accuracy: 96.792
+[  0 /  28]   accuracy: 89.844
+[ 20 /  28]   accuracy: 93.824
+Accuracy of the network on the validation set: 93.65 %
+Epoch:  27
+[  0 / 240] loss: 0.164  accuracy: 98.438
+[ 20 / 240] loss: 3.311  accuracy: 97.098
+[ 40 / 240] loss: 3.318  accuracy: 96.989
+[ 60 / 240] loss: 3.319  accuracy: 96.798
+[ 80 / 240] loss: 3.304  accuracy: 96.962
+[100 / 240] loss: 3.323  accuracy: 96.860
+[120 / 240] loss: 3.310  accuracy: 96.894
+[140 / 240] loss: 3.309  accuracy: 96.881
+[160 / 240] loss: 3.329  accuracy: 96.797
+[180 / 240] loss: 3.335  accuracy: 96.664
+[200 / 240] loss: 3.310  accuracy: 96.700
+[220 / 240] loss: 3.318  accuracy: 96.688
+[240 / 240] loss: 3.296  accuracy: 96.769
+[  0 /  28]   accuracy: 91.406
+[ 20 /  28]   accuracy: 93.899
+Accuracy of the network on the validation set: 93.76 %
+Epoch:  28
+[  0 / 240] loss: 0.167  accuracy: 96.094
+[ 20 / 240] loss: 3.297  accuracy: 97.731
+[ 40 / 240] loss: 3.326  accuracy: 96.989
+[ 60 / 240] loss: 3.326  accuracy: 96.798
+[ 80 / 240] loss: 3.313  accuracy: 96.788
+[100 / 240] loss: 3.314  accuracy: 96.836
+[120 / 240] loss: 3.318  accuracy: 96.836
+[140 / 240] loss: 3.321  accuracy: 96.781
+[160 / 240] loss: 3.330  accuracy: 96.695
+[180 / 240] loss: 3.325  accuracy: 96.659
+[200 / 240] loss: 3.313  accuracy: 96.653
+[220 / 240] loss: 3.324  accuracy: 96.606
+[240 / 240] loss: 3.309  accuracy: 96.649
+[  0 /  28]   accuracy: 91.406
+[ 20 /  28]   accuracy: 93.638
+Accuracy of the network on the validation set: 93.60 %
+Epoch:  29
+[  0 / 240] loss: 0.164  accuracy: 98.438
+[ 20 / 240] loss: 3.318  accuracy: 96.763
+[ 40 / 240] loss: 3.324  accuracy: 96.665
+[ 60 / 240] loss: 3.328  accuracy: 96.478
+[ 80 / 240] loss: 3.319  accuracy: 96.499
+[100 / 240] loss: 3.316  accuracy: 96.542
+[120 / 240] loss: 3.316  accuracy: 96.591
+[140 / 240] loss: 3.309  accuracy: 96.720
+[160 / 240] loss: 3.318  accuracy: 96.710
+[180 / 240] loss: 3.319  accuracy: 96.689
+[200 / 240] loss: 3.302  accuracy: 96.770
+[220 / 240] loss: 3.310  accuracy: 96.794
+[240 / 240] loss: 3.315  accuracy: 96.786
+[  0 /  28]   accuracy: 90.625
+[ 20 /  28]   accuracy: 93.899
+Accuracy of the network on the validation set: 93.60 %
+Epoch:  30
+[  0 / 240] loss: 0.163  accuracy: 99.219
+[ 20 / 240] loss: 3.310  accuracy: 97.098
+[ 40 / 240] loss: 3.318  accuracy: 96.932
+[ 60 / 240] loss: 3.317  accuracy: 96.913
+[ 80 / 240] loss: 3.319  accuracy: 96.836
+[100 / 240] loss: 3.326  accuracy: 96.713
+[120 / 240] loss: 3.307  accuracy: 96.836
+[140 / 240] loss: 3.309  accuracy: 96.869
+[160 / 240] loss: 3.324  accuracy: 96.812
+[180 / 240] loss: 3.317  accuracy: 96.832
+[200 / 240] loss: 3.313  accuracy: 96.809
+[220 / 240] loss: 3.308  accuracy: 96.854
+[240 / 240] loss: 3.318  accuracy: 96.877
+[  0 /  28]   accuracy: 90.625
+[ 20 /  28]   accuracy: 93.564
+Accuracy of the network on the validation set: 93.46 %
+Epoch:  31
+[  0 / 240] loss: 0.163  accuracy: 100.000
+[ 20 / 240] loss: 3.312  accuracy: 97.024
+[ 40 / 240] loss: 3.329  accuracy: 96.570
+[ 60 / 240] loss: 3.313  accuracy: 96.644
+[ 80 / 240] loss: 3.305  accuracy: 96.836
+[100 / 240] loss: 3.312  accuracy: 96.883
+[120 / 240] loss: 3.313  accuracy: 96.894
+[140 / 240] loss: 3.317  accuracy: 96.886
+[160 / 240] loss: 3.318  accuracy: 96.860
+[180 / 240] loss: 3.326  accuracy: 96.789
+[200 / 240] loss: 3.300  accuracy: 96.863
+[220 / 240] loss: 3.310  accuracy: 96.886
+[240 / 240] loss: 3.315  accuracy: 96.857
+[  0 /  28]   accuracy: 90.625
+[ 20 /  28]   accuracy: 93.601
+Accuracy of the network on the validation set: 93.36 %
+Epoch:  32
+[  0 / 240] loss: 0.167  accuracy: 96.094
+[ 20 / 240] loss: 3.322  accuracy: 96.577
+[ 40 / 240] loss: 3.314  accuracy: 96.742
+[ 60 / 240] loss: 3.311  accuracy: 96.901
+[ 80 / 240] loss: 3.315  accuracy: 96.933
+[100 / 240] loss: 3.321  accuracy: 96.883
+[120 / 240] loss: 3.309  accuracy: 96.914
+[140 / 240] loss: 3.312  accuracy: 96.897
+[160 / 240] loss: 3.319  accuracy: 96.831
+[180 / 240] loss: 3.322  accuracy: 96.823
+[200 / 240] loss: 3.305  accuracy: 96.883
+[220 / 240] loss: 3.325  accuracy: 96.840
+[240 / 240] loss: 3.311  accuracy: 96.841
+[  0 /  28]   accuracy: 90.625
+[ 20 /  28]   accuracy: 93.527
+Accuracy of the network on the validation set: 93.36 %
+Epoch:  33
+[  0 / 240] loss: 0.166  accuracy: 98.438
+[ 20 / 240] loss: 3.308  accuracy: 97.284
+[ 40 / 240] loss: 3.329  accuracy: 96.742
+[ 60 / 240] loss: 3.316  accuracy: 96.683
+[ 80 / 240] loss: 3.309  accuracy: 96.817
+[100 / 240] loss: 3.307  accuracy: 96.836
+[120 / 240] loss: 3.303  accuracy: 96.952
+[140 / 240] loss: 3.315  accuracy: 96.936
+[160 / 240] loss: 3.315  accuracy: 96.928
+[180 / 240] loss: 3.328  accuracy: 96.849
+[200 / 240] loss: 3.311  accuracy: 96.848
+[220 / 240] loss: 3.310  accuracy: 96.857
+[240 / 240] loss: 3.314  accuracy: 96.841
+[  0 /  28]   accuracy: 90.625
+[ 20 /  28]   accuracy: 93.862
+Accuracy of the network on the validation set: 93.73 %
+Epoch:  34
+[  0 / 240] loss: 0.164  accuracy: 99.219
+[ 20 / 240] loss: 3.309  accuracy: 97.396
+[ 40 / 240] loss: 3.308  accuracy: 97.275
+[ 60 / 240] loss: 3.317  accuracy: 97.157
+[ 80 / 240] loss: 3.319  accuracy: 96.991
+[100 / 240] loss: 3.308  accuracy: 97.045
+[120 / 240] loss: 3.303  accuracy: 97.075
+[140 / 240] loss: 3.302  accuracy: 97.135
+[160 / 240] loss: 3.312  accuracy: 97.089
+[180 / 240] loss: 3.311  accuracy: 97.078
+[200 / 240] loss: 3.306  accuracy: 97.085
+[220 / 240] loss: 3.308  accuracy: 97.080
+[240 / 240] loss: 3.312  accuracy: 97.055
+[  0 /  28]   accuracy: 89.844
+[ 20 /  28]   accuracy: 93.676
+Accuracy of the network on the validation set: 93.52 %
+Epoch:  35
+[  0 / 240] loss: 0.163  accuracy: 98.438
+[ 20 / 240] loss: 3.305  accuracy: 97.247
+[ 40 / 240] loss: 3.310  accuracy: 97.199
+[ 60 / 240] loss: 3.307  accuracy: 97.182
+[ 80 / 240] loss: 3.295  accuracy: 97.338
+[100 / 240] loss: 3.313  accuracy: 97.254
+[120 / 240] loss: 3.306  accuracy: 97.275
+[140 / 240] loss: 3.311  accuracy: 97.224
+[160 / 240] loss: 3.330  accuracy: 97.079
+[180 / 240] loss: 3.309  accuracy: 97.095
+[200 / 240] loss: 3.306  accuracy: 97.093
+[220 / 240] loss: 3.311  accuracy: 97.091
+[240 / 240] loss: 3.306  accuracy: 97.130
+[  0 /  28]   accuracy: 91.406
+[ 20 /  28]   accuracy: 93.936
+Accuracy of the network on the validation set: 93.79 %
+Epoch:  36
+[  0 / 240] loss: 0.163  accuracy: 99.219
+[ 20 / 240] loss: 3.295  accuracy: 97.991
+[ 40 / 240] loss: 3.298  accuracy: 97.885
+[ 60 / 240] loss: 3.315  accuracy: 97.618
+[ 80 / 240] loss: 3.313  accuracy: 97.415
+[100 / 240] loss: 3.307  accuracy: 97.355
+[120 / 240] loss: 3.306  accuracy: 97.366
+[140 / 240] loss: 3.301  accuracy: 97.396
+[160 / 240] loss: 3.316  accuracy: 97.346
+[180 / 240] loss: 3.311  accuracy: 97.285
+[200 / 240] loss: 3.286  accuracy: 97.361
+[220 / 240] loss: 3.300  accuracy: 97.356
+[240 / 240] loss: 3.315  accuracy: 97.325
+[  0 /  28]   accuracy: 90.625
+[ 20 /  28]   accuracy: 93.750
+Accuracy of the network on the validation set: 93.63 %
+Epoch:  37
+[  0 / 240] loss: 0.165  accuracy: 96.875
+[ 20 / 240] loss: 3.306  accuracy: 97.507
+[ 40 / 240] loss: 3.318  accuracy: 97.180
+[ 60 / 240] loss: 3.314  accuracy: 97.080
+[ 80 / 240] loss: 3.312  accuracy: 97.029
+[100 / 240] loss: 3.307  accuracy: 97.030
+[120 / 240] loss: 3.298  accuracy: 97.166
+[140 / 240] loss: 3.299  accuracy: 97.235
+[160 / 240] loss: 3.323  accuracy: 97.142
+[180 / 240] loss: 3.310  accuracy: 97.130
+[200 / 240] loss: 3.305  accuracy: 97.151
+[220 / 240] loss: 3.304  accuracy: 97.161
+[240 / 240] loss: 3.306  accuracy: 97.150
+[  0 /  28]   accuracy: 91.406
+[ 20 /  28]   accuracy: 94.010
+Accuracy of the network on the validation set: 93.84 %
+Epoch:  38
+[  0 / 240] loss: 0.165  accuracy: 97.656
+[ 20 / 240] loss: 3.307  accuracy: 97.321
+[ 40 / 240] loss: 3.320  accuracy: 96.951
+[ 60 / 240] loss: 3.316  accuracy: 96.952
+[ 80 / 240] loss: 3.312  accuracy: 96.943
+[100 / 240] loss: 3.313  accuracy: 96.952
+[120 / 240] loss: 3.304  accuracy: 97.004
+[140 / 240] loss: 3.298  accuracy: 97.080
+[160 / 240] loss: 3.318  accuracy: 97.006
+[180 / 240] loss: 3.316  accuracy: 97.004
+[200 / 240] loss: 3.292  accuracy: 97.093
+[220 / 240] loss: 3.309  accuracy: 97.080
+[240 / 240] loss: 3.313  accuracy: 97.046
+[  0 /  28]   accuracy: 90.625
+[ 20 /  28]   accuracy: 93.973
+Accuracy of the network on the validation set: 93.87 %
+Epoch:  39
+[  0 / 240] loss: 0.163  accuracy: 99.219
+[ 20 / 240] loss: 3.310  accuracy: 97.098
+[ 40 / 240] loss: 3.314  accuracy: 97.046
+[ 60 / 240] loss: 3.303  accuracy: 97.336
+[ 80 / 240] loss: 3.304  accuracy: 97.367
+[100 / 240] loss: 3.300  accuracy: 97.409
+[120 / 240] loss: 3.308  accuracy: 97.443
+[140 / 240] loss: 3.298  accuracy: 97.468
+[160 / 240] loss: 3.323  accuracy: 97.326
+[180 / 240] loss: 3.315  accuracy: 97.281
+[200 / 240] loss: 3.291  accuracy: 97.365
+[220 / 240] loss: 3.298  accuracy: 97.377
+[240 / 240] loss: 3.303  accuracy: 97.390
+[  0 /  28]   accuracy: 90.625
+[ 20 /  28]   accuracy: 93.787
+Accuracy of the network on the validation set: 93.79 %
+Finished Training on GPU in 35467.83 seconds
+[  0 /  28]   accuracy: 92.188
+[ 20 /  28]   accuracy: 93.378
+Accuracy of the network on the validation set: 93.06 %
+
+FakeQuantized @ 8b accuracy (calibrated):
+[  0 /  31]   accuracy: 95.312
+[ 20 /  31]   accuracy: 93.155
+Accuracy of the network on the testing set: 92.76 %
+Sum:  tensor(1082, device='cuda:0')
+Sum:  tensor(1018, device='cuda:0')
+Sum:  tensor(1286, device='cuda:0')
+Sum:  tensor(964, device='cuda:0')
+Sum:  tensor(1153, device='cuda:0')
+Sum:  tensor(1148, device='cuda:0')
+Sum:  tensor(731, device='cuda:0')
+Sum:  tensor(631, device='cuda:0')
+Sum:  tensor(2768, device='cuda:0')
+[  0 /   0]   accuracy: 100.000
+Accuracy of the network on the tinytest set: 100.00 %
+
+QuantizedDeployable @ mixed-precision accuracy:
+[  0 /  31]   accuracy: 92.969
+[ 20 /  31]   accuracy: 93.304
+Accuracy of the network on the testing set: 92.83 %
+
+IntegerDeployable @ mixed-precision accuracy:
+[  0 /  31]   accuracy: 93.750
+[ 20 /  31]   accuracy: 92.932
+Accuracy of the network on the testing set: 92.37 %
+OrderedDict([('', tensor([0.1053])), ('pad1', []), ('conv1', tensor(1.)), ('bn1', tensor([0.0080], device='cuda:0', grad_fn=<MulBackward0>)), ('relu1', tensor([2.2146e-07], device='cuda:0', grad_fn=<MulBackward0>)), ('pad2', tensor([0.0231])), ('conv2', tensor([0.0231])), ('bn2', tensor([0.0002], device='cuda:0', grad_fn=<MulBackward0>)), ('relu2', tensor([2.2763e-06], device='cuda:0', grad_fn=<MulBackward0>)), ('conv3', tensor([0.0413])), ('bn3', tensor([0.0002], device='cuda:0', grad_fn=<MulBackward0>)), ('relu3', tensor([3.5646e-07], device='cuda:0', grad_fn=<MulBackward0>)), ('pad4', tensor([0.0411])), ('conv4', tensor([0.0411])), ('bn4', tensor([0.0003], device='cuda:0', grad_fn=<MulBackward0>)), ('relu4', tensor([1.2298e-06], device='cuda:0', grad_fn=<MulBackward0>)), ('conv5', tensor([0.0587])), ('bn5', tensor([0.0003], device='cuda:0', grad_fn=<MulBackward0>)), ('relu5', tensor([4.2211e-07], device='cuda:0', grad_fn=<MulBackward0>)), ('pad6', tensor([0.0385])), ('conv6', tensor([0.0385])), ('bn6', tensor([0.0003], device='cuda:0', grad_fn=<MulBackward0>)), ('relu6', tensor([1.0212e-06], device='cuda:0', grad_fn=<MulBackward0>)), ('conv7', tensor([0.0454])), ('bn7', tensor([0.0003], device='cuda:0', grad_fn=<MulBackward0>)), ('relu7', tensor([3.3023e-07], device='cuda:0', grad_fn=<MulBackward0>)), ('pad8', tensor([0.0298])), ('conv8', tensor([0.0298])), ('bn8', tensor([0.0003], device='cuda:0', grad_fn=<MulBackward0>)), ('relu8', tensor([3.6521e-06], device='cuda:0', grad_fn=<MulBackward0>)), ('conv9', tensor([0.0829])), ('bn9', tensor([0.0005], device='cuda:0', grad_fn=<MulBackward0>)), ('relu9', tensor([1.2009e-06], device='cuda:0', grad_fn=<MulBackward0>)), ('avg', tensor([0.1053])), ('fc1', [])])
+tensor([0.1053])
+Sum:  tensor(123015)
+Sum:  tensor(64696)
+Sum:  tensor(71089)
+Sum:  tensor(43853)
+Sum:  tensor(71074)
+Sum:  tensor(61559)
+Sum:  tensor(66360)
+Sum:  tensor(25216)
+Sum:  tensor(39169)
+[  0 /   0]   accuracy: 100.000
+Accuracy of the network on the tinytest set: 100.00 %
+Sum:  tensor(1122, device='cuda:0')
+Sum:  tensor(1126, device='cuda:0')
+Sum:  tensor(1336, device='cuda:0')
+Sum:  tensor(1103, device='cuda:0')
+Sum:  tensor(1244, device='cuda:0')
+Sum:  tensor(1342, device='cuda:0')
+Sum:  tensor(845, device='cuda:0')
+Sum:  tensor(945, device='cuda:0')
+Sum:  tensor(3738, device='cuda:0')
+[  0 /   0]   accuracy: 100.000
+Accuracy of the network on the tinytest set: 100.00 %
