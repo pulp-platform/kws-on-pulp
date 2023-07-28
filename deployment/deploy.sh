@@ -30,20 +30,28 @@ if [ "$1" == "-h" ] ; then
 fi
 
 
-export PATH=/usr/pack/gcc-4.9.1-af/x86_64-rhe6-linux/bin:$PATH
-export LD_LIBRARY_PATH=/usr/pack/gcc-4.9.1-af/x86_64-rhe6-linux/lib64/:$LD_LIBRARY_PATH
-export LD_LIBRARY_PATH=/usr/pack/gcc-4.9.1-af/x86_64-rhe6-linux/lib/:$LD_LIBRARY_PATH
+# export PATH=/usr/pack/gcc-4.9.1-af/x86_64-rhe6-linux/bin:$PATH
+# export LD_LIBRARY_PATH=/usr/pack/gcc-4.9.1-af/x86_64-rhe6-linux/lib64/:$LD_LIBRARY_PATH
+# export LD_LIBRARY_PATH=/usr/pack/gcc-4.9.1-af/x86_64-rhe6-linux/lib/:$LD_LIBRARY_PATH
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/scratch/wetterhorn/cioflanc/miniconda3/pkgs/mpfr-4.0.2-hb69a4c5_1/lib/
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/scratch/wetterhorn/cioflanc/mlonmcu_exercise6/exercise6/local_libs/
 
+export CC=gcc-9.2.1
+export CXX=g++-9.2.1
+
+
+export CUR_DIR=$PWD
 export GAP_SDK_DIR=/usr/scratch/wetterhorn/cioflanc/tools/gap_sdk/
-# export AUDIO_SAMPLE=/usr/scratch/wetterhorn/cioflanc/kws-on-pulp/kws-on-pulp/dataset/train/right/aa48c94a_nohash_2.wav
-export AUDIO_SAMPLE=aa48c94a_nohash_2.wav
+export AUDIO_SAMPLE=/usr/scratch/wetterhorn/cioflanc/kws-on-pulp/dataset/train/right/aa48c94a_nohash_2.wav
 export SDK=$1
 export MEMORY=$2
 export PLATFORM=$3
 export MFCC=$4
-export NETWORD_DIR=DSCNN
-export CUR_DIR=$PWD
+export NETWORK_DIR=DSCNN
+export NETWORK_SRC_DIR=DSCNN
+
+
+
 
 if [[ $SDK == "pulp_sdk" ]]
 then
@@ -62,18 +70,19 @@ then
 else
   export GAP_RISCV_GCC_TOOLCHAIN=/usr/scratch/wetterhorn/cioflanc/tools/gap_riscv_toolchain/
   # Select target
-  source /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk/sourceme.sh
+  # source /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk/sourceme.sh
+  source /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk_mar23/gap_sdk/sourceme.sh #newest
 fi
 
 # Copy model and it's activations to Dory
 cd dory/
-mkdir -p $NETWORD_DIR
-rm $NETWORD_DIR/model.onnx
-rm $NETWORD_DIR/out_layer*.txt
-rm $NETWORD_DIR/input.txt
-cp $CUR_DIR/quantization/input.txt $NETWORD_DIR/
-cp $CUR_DIR/quantization/model.onnx  $NETWORD_DIR/
-cp $CUR_DIR/quantization/out_layer*.txt $NETWORD_DIR/
+mkdir -p $NETWORK_DIR
+rm $NETWORK_DIR/model.onnx
+rm $NETWORK_DIR/out_layer*.txt
+rm $NETWORK_DIR/input.txt
+cp $CUR_DIR/$NETWORK_SRC_DIR/input.txt $NETWORK_DIR/
+cp $CUR_DIR/$NETWORK_SRC_DIR/model.onnx  $NETWORK_DIR/
+cp $CUR_DIR/$NETWORK_SRC_DIR/out_layer*.txt $NETWORK_DIR/
 
 # TODO: Fix target's SDK (e.g., dory/dory/Hardware_targets/GAP8/GAP8_gvsoc/HW_description.json)
 
@@ -81,14 +90,14 @@ cp $CUR_DIR/quantization/out_layer*.txt $NETWORD_DIR/
 # We use 64 bits for the BatchNorm and ReLU
 if [[ $MEMORY == "3" ]]
 then
-  python network_generate.py NEMO GAP8.GAP8_gvsoc ../config_NEMO_DSCNN.json --app_dir $NETWORD_DIR/ --perf_layer Yes
+  # python network_generate.py NEMO GAP8.GAP8_gvsoc $CUR_DIR/$NETWORK_SRC_DIR/config_DSCNN.json --app_dir $NETWORK_DIR/ --perf_layer Yes # origin/l2_pulp_sdk
+  python network_generate.py NEMO PULP.PULP_gvsoc $CUR_DIR/$NETWORK_SRC_DIR/config_DSCNN.json --app_dir $NETWORK_DIR/ --perf_layer Yes # master
 else
-  python network_generate.py NEMO GAP8.GAP8_board_L2 ../config_NEMO_DSCNN.json --app_dir $NETWORD_DIR/ --perf_layer Yes
+  python network_generate.py NEMO PULP.GAP8_L2 $CUR_DIR/$NETWORK_SRC_DIR/config_DSCNN.json --app_dir $NETWORK_DIR/ --perf_layer Yes
 fi
 
 # Copy the files into our directory, preparing the MFCC integration
-# mkdir -p $CUR_DIR/application/ && cp -r $NETWORD_DIR/DORY_network/ "$_"
-mkdir -p $CUR_DIR/application/ && cp -r $NETWORD_DIR/DORY_network/ $CUR_DIR/application/
+mkdir -p $CUR_DIR/application/ && cp -r $NETWORK_DIR/* $CUR_DIR/application/
 if [[ $MEMORY == "2" ]]
 then
   # Save .WAV as .h for L2
@@ -125,3 +134,7 @@ if [[ $PLATFORM == "rtl" ]]
 # screen -L /dev/ttyUSB2 115200
 # ./openocd -f openocd-zcu102-digilent-jtag-hs2.cfg
 # /usr/scratch/wetterhorn/cioflanc/tools/pulp_riscv_toolchain/v1.0.16-pulp-riscv-gcc-centos-7/bin/riscv32-unknown-elf-gdb executable
+
+
+# DSCNN - all good :) with l2_pulp_sdk
+
