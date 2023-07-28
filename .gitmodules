@@ -1,0 +1,3 @@
+[submodule "deployment/dory"]
+	path = deployment/dory
+	url = https://github.com/pulp-platform/dory.git
