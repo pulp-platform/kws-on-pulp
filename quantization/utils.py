@@ -107,18 +107,28 @@ def parameter_generation():
     data_processing_parameters['window_stride_samples'] = window_stride_samples
     data_processing_parameters['window_size_samples'] = window_size_samples
 
+    data_processing_parameters['mfcc'] = 'tensorflow' # tensorflow, pytorch, librosa
+    data_processing_parameters['mode']
+
     # Training parameters
     training_parameters = {
+    # 'data_dir':'/usr/scratch/wetterhorn/cioflanc/kws-on-pulp/kws-on-pulp/wavsrc', # GVSOC
     'data_dir':'/usr/scratch/sassauna2/cioflanc/dolphinGSC/speech_commands_v0.02',
     'data_url':'https://storage.googleapis.com/download.tensorflow.org/data/speech_commands_v0.02.tar.gz',
-    'epochs':1,
+    'epochs':40,
+    # 'batch_size':1,  # GVSOC # GAP9
+    # 'batch_size':64,  # GVSOC # 10 if only a dozen samples are available
     'batch_size':128,
-    'silence_percentage':10.0,
-    'unknown_percentage':10.0,
+    'silence_percentage':0.0,
+    'unknown_percentage':0.0,
     'validation_percentage':10.0,
     'testing_percentage':10.0,
-    'background_frequency':0.8,
-    'background_volume':0.2,
+    'background_frequency':0,  # GVSOC
+    'background_volume':0,  # GVSOC
+    # 'background_frequency':0.8,
+    # 'background_volume':0.2,
+    'freezebb':False, # quantization
+    'noisyft': False # augment with restaurant noise
     }
     target_words='yes,no,up,down,left,right,on,off,stop,go,'  # GSCv2 - 12 words
     # Selecting 35 words

@@ -1,0 +1,144 @@
+Unable to import torch.fx, you pytorch version may be too old.
+1.4.0
+cuda
+Dataset split (Train/valid/test/tinytrain): 30769/3703/4074/100
+----------------------------------------------------------------
+        Layer (type)               Output Shape         Param #
+================================================================
+     ConstantPad2d-1            [-1, 1, 59, 12]               0
+            Conv2d-2            [-1, 64, 25, 5]           2,624
+       BatchNorm2d-3            [-1, 64, 25, 5]             128
+              ReLU-4            [-1, 64, 25, 5]               0
+     ConstantPad2d-5            [-1, 64, 27, 7]               0
+            Conv2d-6            [-1, 64, 25, 5]             640
+       BatchNorm2d-7            [-1, 64, 25, 5]             128
+              ReLU-8            [-1, 64, 25, 5]               0
+            Conv2d-9            [-1, 64, 25, 5]           4,160
+      BatchNorm2d-10            [-1, 64, 25, 5]             128
+             ReLU-11            [-1, 64, 25, 5]               0
+    ConstantPad2d-12            [-1, 64, 27, 7]               0
+           Conv2d-13            [-1, 64, 25, 5]             640
+      BatchNorm2d-14            [-1, 64, 25, 5]             128
+             ReLU-15            [-1, 64, 25, 5]               0
+           Conv2d-16            [-1, 64, 25, 5]           4,160
+      BatchNorm2d-17            [-1, 64, 25, 5]             128
+             ReLU-18            [-1, 64, 25, 5]               0
+    ConstantPad2d-19            [-1, 64, 27, 7]               0
+           Conv2d-20            [-1, 64, 25, 5]             640
+      BatchNorm2d-21            [-1, 64, 25, 5]             128
+             ReLU-22            [-1, 64, 25, 5]               0
+           Conv2d-23            [-1, 64, 25, 5]           4,160
+      BatchNorm2d-24            [-1, 64, 25, 5]             128
+             ReLU-25            [-1, 64, 25, 5]               0
+    ConstantPad2d-26            [-1, 64, 27, 7]               0
+           Conv2d-27            [-1, 64, 25, 5]             640
+      BatchNorm2d-28            [-1, 64, 25, 5]             128
+             ReLU-29            [-1, 64, 25, 5]               0
+           Conv2d-30            [-1, 64, 25, 5]           4,160
+      BatchNorm2d-31            [-1, 64, 25, 5]             128
+             ReLU-32            [-1, 64, 25, 5]               0
+        AvgPool2d-33             [-1, 64, 1, 1]               0
+           Linear-34                   [-1, 12]             768
+================================================================
+Total params: 23,744
+Trainable params: 23,744
+Non-trainable params: 0
+----------------------------------------------------------------
+Input size (MB): 0.00
+Forward/backward pass size (MB): 2.02
+Params size (MB): 0.09
+Estimated Total Size (MB): 2.12
+----------------------------------------------------------------
+FX is unsupported on your pytorch version, falling back to JIT
+Operation                                         OPS      
+------------------------------------------------  -------  
+DSCNN/Conv2d[conv1]/onnx::Conv                    320000   
+DSCNN/BatchNorm2d[bn1]/onnx::BatchNormalization   16000    
+DSCNN/ReLU[relu1]/onnx::Relu                      16000    
+DSCNN/Conv2d[conv2]/onnx::Conv                    72000    
+DSCNN/BatchNorm2d[bn2]/onnx::BatchNormalization   16000    
+DSCNN/ReLU[relu2]/onnx::Relu                      16000    
+DSCNN/Conv2d[conv3]/onnx::Conv                    512000   
+DSCNN/BatchNorm2d[bn3]/onnx::BatchNormalization   16000    
+DSCNN/ReLU[relu3]/onnx::Relu                      16000    
+DSCNN/Conv2d[conv4]/onnx::Conv                    72000    
+DSCNN/BatchNorm2d[bn4]/onnx::BatchNormalization   16000    
+DSCNN/ReLU[relu4]/onnx::Relu                      16000    
+DSCNN/Conv2d[conv5]/onnx::Conv                    512000   
+DSCNN/BatchNorm2d[bn5]/onnx::BatchNormalization   16000    
+DSCNN/ReLU[relu5]/onnx::Relu                      16000    
+DSCNN/Conv2d[conv6]/onnx::Conv                    72000    
+DSCNN/BatchNorm2d[bn6]/onnx::BatchNormalization   16000    
+DSCNN/ReLU[relu6]/onnx::Relu                      16000    
+DSCNN/Conv2d[conv7]/onnx::Conv                    512000   
+DSCNN/BatchNorm2d[bn7]/onnx::BatchNormalization   16000    
+DSCNN/ReLU[relu7]/onnx::Relu                      16000    
+DSCNN/Conv2d[conv8]/onnx::Conv                    72000    
+DSCNN/BatchNorm2d[bn8]/onnx::BatchNormalization   16000    
+DSCNN/ReLU[relu8]/onnx::Relu                      16000    
+DSCNN/Conv2d[conv9]/onnx::Conv                    512000   
+DSCNN/BatchNorm2d[bn9]/onnx::BatchNormalization   16000    
+DSCNN/ReLU[relu9]/onnx::Relu                      16000    
+DSCNN/AvgPool2d[avg]/onnx::AveragePool            8000     
+DSCNN/Linear[fc1]/onnx::MatMul                    768      
+-----------------------------------------------   ------   
+Input size: (1, 1, 49, 10)
+2,952,768 FLOPs or approx. 0.00 GFLOPs
+Pretrain validation acc
+[  0 /  28]   accuracy: 3.125
+[ 20 /  28]   accuracy: 9.152
+Accuracy of the network on the validation set: 9.45 %
+Finished Training on GPU in 0.00 seconds
+[  0 /  28]   accuracy: 90.625
+[ 20 /  28]   accuracy: 93.638
+Accuracy of the network on the validation set: 93.41 %
+
+FakeQuantized @ 8b accuracy (calibrated):
+[  0 /  31]   accuracy: 96.094
+[ 20 /  31]   accuracy: 92.969
+Accuracy of the network on the testing set: 92.76 %
+Sum:  tensor(1121, device='cuda:0')
+Sum:  tensor(1006, device='cuda:0')
+Sum:  tensor(1280, device='cuda:0')
+Sum:  tensor(919, device='cuda:0')
+Sum:  tensor(1101, device='cuda:0')
+Sum:  tensor(1184, device='cuda:0')
+Sum:  tensor(722, device='cuda:0')
+Sum:  tensor(672, device='cuda:0')
+Sum:  tensor(2774, device='cuda:0')
+[  0 /   0]   accuracy: 100.000
+Accuracy of the network on the tinytest set: 100.00 %
+
+QuantizedDeployable @ mixed-precision accuracy:
+[  0 /  31]   accuracy: 96.094
+[ 20 /  31]   accuracy: 93.341
+Accuracy of the network on the testing set: 92.88 %
+
+IntegerDeployable @ mixed-precision accuracy:
+[  0 /  31]   accuracy: 95.312
+[ 20 /  31]   accuracy: 93.415
+Accuracy of the network on the testing set: 92.81 %
+OrderedDict([('', tensor([0.1063])), ('pad1', []), ('conv1', tensor(1.)), ('bn1', tensor([0.0080], device='cuda:0', grad_fn=<MulBackward0>)), ('relu1', tensor([2.2053e-07], device='cuda:0', grad_fn=<MulBackward0>)), ('pad2', tensor([0.0228])), ('conv2', tensor([0.0228])), ('bn2', tensor([0.0002], device='cuda:0', grad_fn=<MulBackward0>)), ('relu2', tensor([2.2231e-06], device='cuda:0', grad_fn=<MulBackward0>)), ('conv3', tensor([0.0398])), ('bn3', tensor([0.0002], device='cuda:0', grad_fn=<MulBackward0>)), ('relu3', tensor([3.4591e-07], device='cuda:0', grad_fn=<MulBackward0>)), ('pad4', tensor([0.0407])), ('conv4', tensor([0.0407])), ('bn4', tensor([0.0003], device='cuda:0', grad_fn=<MulBackward0>)), ('relu4', tensor([1.2218e-06], device='cuda:0', grad_fn=<MulBackward0>)), ('conv5', tensor([0.0584])), ('bn5', tensor([0.0003], device='cuda:0', grad_fn=<MulBackward0>)), ('relu5', tensor([4.2298e-07], device='cuda:0', grad_fn=<MulBackward0>)), ('pad6', tensor([0.0378])), ('conv6', tensor([0.0378])), ('bn6', tensor([0.0003], device='cuda:0', grad_fn=<MulBackward0>)), ('relu6', tensor([9.9115e-07], device='cuda:0', grad_fn=<MulBackward0>)), ('conv7', tensor([0.0408])), ('bn7', tensor([0.0003], device='cuda:0', grad_fn=<MulBackward0>)), ('relu7', tensor([2.9659e-07], device='cuda:0', grad_fn=<MulBackward0>)), ('pad8', tensor([0.0299])), ('conv8', tensor([0.0299])), ('bn8', tensor([0.0003], device='cuda:0', grad_fn=<MulBackward0>)), ('relu8', tensor([3.4825e-06], device='cuda:0', grad_fn=<MulBackward0>)), ('conv9', tensor([0.0707])), ('bn9', tensor([0.0004], device='cuda:0', grad_fn=<MulBackward0>)), ('relu9', tensor([1.0223e-06], device='cuda:0', grad_fn=<MulBackward0>)), ('avg', tensor([0.1063])), ('fc1', [])])
+tensor([0.1063])
+Sum:  tensor(125360)
+Sum:  tensor(68401)
+Sum:  tensor(72233)
+Sum:  tensor(43742)
+Sum:  tensor(73366)
+Sum:  tensor(69807)
+Sum:  tensor(67761)
+Sum:  tensor(30460)
+Sum:  tensor(40562)
+[  0 /   0]   accuracy: 100.000
+Accuracy of the network on the tinytest set: 100.00 %
+Sum:  tensor(1121, device='cuda:0')
+Sum:  tensor(1117, device='cuda:0')
+Sum:  tensor(1324, device='cuda:0')
+Sum:  tensor(1087, device='cuda:0')
+Sum:  tensor(1249, device='cuda:0')
+Sum:  tensor(1324, device='cuda:0')
+Sum:  tensor(839, device='cuda:0')
+Sum:  tensor(954, device='cuda:0')
+Sum:  tensor(3610, device='cuda:0')
+[  0 /   0]   accuracy: 100.000
+Accuracy of the network on the tinytest set: 100.00 %

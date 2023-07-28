@@ -65,11 +65,17 @@ class DSCNN(torch.nn.Module):
         self.bn9   = torch.nn.BatchNorm2d(64)
         self.relu9 = torch.nn.ReLU()
 
+        # Default
         self.avg   = torch.nn.AvgPool2d(kernel_size=(25, 5), stride=1)
-        self.fc1   = torch.nn.Linear(64, 12, bias=use_bias)
+        # Reduced Librosa
+        # self.avg   = torch.nn.AvgPool2d(kernel_size=(21, 5), stride=1)
+        
+        self.fc1   = torch.nn.Linear(64, 12, bias=False)
         # self.soft  = torch.nn.Softmax(dim=1)
         # self.soft = F.log_softmax(x, dim=1)
 
+
+        self.postavg = None
 
         # CONV2D replacing Block1 for evaluation purposes
         # self.pad2  = nn.ConstantPad2d((1, 1, 1, 1), value=0.)
@@ -77,8 +83,13 @@ class DSCNN(torch.nn.Module):
         # self.bn2   = torch.nn.BatchNorm2d(64)
         # self.relu2 = torch.nn.ReLU()
         
-    def forward(self, x, save = False):
+    def forward(self, x, save = False, integer=False):
         if (save):
+
+            if (integer):
+                npy_to_txt(12, x.int().cpu().detach().numpy())
+            else:
+                npy_to_txt(12, x.cpu().detach().numpy())
 
             x = self.pad1 (x)
             x = self.conv1(x)
@@ -138,9 +149,14 @@ class DSCNN(torch.nn.Module):
             x = self.avg(x)
             npy_to_txt(9, x.int().cpu().detach().numpy())
             x = torch.flatten(x, 1) 
+            if (integer):
+                npy_to_txt(11, x.int().cpu().detach().numpy())
+            else:
+                npy_to_txt(11, x.cpu().detach().numpy())
+            self.postavg = x
             x = self.fc1(x)
             npy_to_txt(10, x.int().cpu().detach().numpy())
-            print (x.int().cpu().detach().numpy())
+            # print (x.int().cpu().detach().numpy())
 
         else:
 
@@ -183,7 +199,11 @@ class DSCNN(torch.nn.Module):
 
             x = self.avg(x)            
             x = torch.flatten(x, 1) 
+            # print("Flattened")
+            # print (x)
+            self.postavg = x
             x = self.fc1(x)
+            # print (x)
             
         return x # To be compatible with Dory
         # return F.log_softmax(x, dim=1)
