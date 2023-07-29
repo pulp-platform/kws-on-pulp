@@ -1,6 +1,5 @@
 dory_input_features/
 dory_update/
-nemo/
 quantization/*.txt
 quantization/*.onnx
 application/BUILD/
@@ -12,3 +11,9 @@ logs/
 wavsrc/*
 *slm
 *hex
+temp/*
+tinytest/*
+*.sh
+quantization/models/
+
+
