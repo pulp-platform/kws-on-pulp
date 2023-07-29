@@ -106,7 +106,7 @@ def parameter_generation():
     data_processing_parameters['spectrogram_length'] = spectrogram_length
     data_processing_parameters['window_stride_samples'] = window_stride_samples
     data_processing_parameters['window_size_samples'] = window_size_samples
-    data_processing_parameters['mfcc'] = 'librosa' # tensorflow, pytorch, librosa
+    data_processing_parameters['mfcc'] = 'tensorflow' # tensorflow, pytorch, librosa
 
     # Training parameters
     training_parameters = {
@@ -127,7 +127,7 @@ def parameter_generation():
     # 'background_volume':0.2,
     'freezebb':False, # quantization
     'noisyft': False, # augment with restaurant noise
-    'exportall': True
+    'exportall': False
     }
     target_words='yes,no,up,down,left,right,on,off,stop,go,'  # GSCv2 - 12 words
     # Selecting 35 words

@@ -164,6 +164,8 @@ class Train():
                         f.write ("--------------------------------------------------"+ "\\\n")
                         f.close()
 
+                    model = model.to(self.device)
+                    batched_inputs = batched_inputs.to(self.device)
                     batched_outputs = model(batched_inputs, save)
 
                     if (save):
@@ -330,10 +332,10 @@ class Train():
             # Save best performing network
             if (val_acc > best_acc):
                 best_acc = val_acc
-                PATH = './model_bbbias_fcnob_librosa_sil_acc_' + str(best_acc) + '.pth'
+                PATH = './model_bbbias_fcnob_tensorflow_sil_acc_' + str(best_acc) + '.pth'
                 torch.save(model.state_dict(), PATH)
 
 
-        PATH = './model_bbbias_fcnob_librosa_sil.pth'
+        PATH = './model_bbbias_fcnob_tensorflow_sil.pth'
         torch.save(model.state_dict(), PATH)
         

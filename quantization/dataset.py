@@ -179,16 +179,16 @@ class AudioProcessor(object):
 
 
     self.data_set['tinytest'] = [
-      {'speaker': 1, 'label': 'yes', 'file': '/usr/scratch/wetterhorn/cioflanc/kws-on-pulp/kws-on-pulp/quantization/tinytest/yes_e49428d9_nohash_3.wav'},
-      {'speaker': 1, 'label': 'no', 'file': '/usr/scratch/wetterhorn/cioflanc/kws-on-pulp/kws-on-pulp/quantization/tinytest/no_e49428d9_nohash_3.wav'},
-      {'speaker': 1, 'label': 'up', 'file': '/usr/scratch/wetterhorn/cioflanc/kws-on-pulp/kws-on-pulp/quantization/tinytest/up_0cb74144_nohash_2.wav'},
-      {'speaker': 1, 'label': 'down', 'file': '/usr/scratch/wetterhorn/cioflanc/kws-on-pulp/kws-on-pulp/quantization/tinytest/down_1b88bf70_nohash_0.wav'},
-      {'speaker': 1, 'label': 'left', 'file': '/usr/scratch/wetterhorn/cioflanc/kws-on-pulp/kws-on-pulp/quantization/tinytest/left_e1469561_nohash_1.wav'},
-      {'speaker': 1, 'label': 'right', 'file': '/usr/scratch/wetterhorn/cioflanc/kws-on-pulp/kws-on-pulp/quantization/tinytest/right_e49428d9_nohash_3.wav'},
-      {'speaker': 1, 'label': 'on', 'file': '/usr/scratch/wetterhorn/cioflanc/kws-on-pulp/kws-on-pulp/quantization/tinytest/on_e49428d9_nohash_3.wav'},
-      {'speaker': 1, 'label': 'off', 'file': '/usr/scratch/wetterhorn/cioflanc/kws-on-pulp/kws-on-pulp/quantization/tinytest/off_3659fc1c_nohash_1.wav'},
-      {'speaker': 1, 'label': 'stop', 'file': '/usr/scratch/wetterhorn/cioflanc/kws-on-pulp/kws-on-pulp/quantization/tinytest/stop_3659fc1c_nohash_1.wav'},
-      {'speaker': 1, 'label': 'go', 'file': '/usr/scratch/wetterhorn/cioflanc/kws-on-pulp/kws-on-pulp/quantization/tinytest/go_b7e9f841_nohash_1.wav'}
+      {'speaker': 1, 'label': 'yes', 'file': '/usr/scratch/wetterhorn/cioflanc/kws-on-pulp/quantization/tinytest/yes_e49428d9_nohash_3.wav'},
+      {'speaker': 1, 'label': 'no', 'file': '/usr/scratch/wetterhorn/cioflanc/kws-on-pulp/quantization/tinytest/no_e49428d9_nohash_3.wav'},
+      {'speaker': 1, 'label': 'up', 'file': '/usr/scratch/wetterhorn/cioflanc/kws-on-pulp/quantization/tinytest/up_0cb74144_nohash_2.wav'},
+      {'speaker': 1, 'label': 'down', 'file': '/usr/scratch/wetterhorn/cioflanc/kws-on-pulp/quantization/tinytest/down_1b88bf70_nohash_0.wav'},
+      {'speaker': 1, 'label': 'left', 'file': '/usr/scratch/wetterhorn/cioflanc/kws-on-pulp/quantization/tinytest/left_e1469561_nohash_1.wav'},
+      {'speaker': 1, 'label': 'right', 'file': '/usr/scratch/wetterhorn/cioflanc/kws-on-pulp/quantization/tinytest/right_e49428d9_nohash_3.wav'},
+      {'speaker': 1, 'label': 'on', 'file': '/usr/scratch/wetterhorn/cioflanc/kws-on-pulp/quantization/tinytest/on_e49428d9_nohash_3.wav'},
+      {'speaker': 1, 'label': 'off', 'file': '/usr/scratch/wetterhorn/cioflanc/kws-on-pulp/quantization/tinytest/off_3659fc1c_nohash_1.wav'},
+      {'speaker': 1, 'label': 'stop', 'file': '/usr/scratch/wetterhorn/cioflanc/kws-on-pulp/quantization/tinytest/stop_3659fc1c_nohash_1.wav'},
+      {'speaker': 1, 'label': 'go', 'file': '/usr/scratch/wetterhorn/cioflanc/kws-on-pulp/quantization/tinytest/go_b7e9f841_nohash_1.wav'}
     ]
 
     # Make sure the ordering is random.

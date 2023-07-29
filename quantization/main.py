@@ -97,7 +97,7 @@ print('Finished Training on GPU in {:.2f} seconds'.format(time.clock_gettime(0)-
 # Ignoring training, load pretrained model
 # model.load_state_dict(torch.load('./model.pth', map_location=torch.device('cuda')))
 # model.load_state_dict(torch.load('./best_model_nobias.pth', map_location=torch.device('cuda')))
-model.load_state_dict(torch.load('./model_bbbias_fcnob_librosa_sil.pth', map_location=torch.device('cuda')))
+model.load_state_dict(torch.load('./model_bbbias_fcnob_tensorflow_sil.pth', map_location=torch.device('cuda')))
 
 
 dummy_input = torch.randn(1, 1, 49, 10, requires_grad=True).to(device)
@@ -301,8 +301,16 @@ print("\nFakeQuantized @ 8b accuracy (calibrated):")
 acc = trainining_environment.validate(model=quantized_model, mode='testing', batch_size=128)
 
 # Save FC weights
-f = open("fcweights_nobias_pretrain.txt", "w")
+f = open("batched_fcweights_float32_pretrain.txt", "w")
 weights = model.fc1.weight.data.cpu().numpy()
+weights_reshaped = np.reshape(weights, -1)
+for weight in weights_reshaped:
+  f.write(str(weight)+", ")
+f.close()
+
+# Save FC weights
+f = open("batched_fcweights_fq_pretrain.txt", "w")
+weights = quantized_model.fc1.weight.data.cpu().numpy()
 weights_reshaped = np.reshape(weights, -1)
 for weight in weights_reshaped:
   f.write(str(weight)+", ")
@@ -336,7 +344,7 @@ eps_avg = eps['avg']
 print (eps_avg)
 
 # Saving the model
-nemo.utils.export_onnx('best_model_bbias_fcnob_tf_sil.onnx', quantized_model, quantized_model, (1, 49, 10))
+nemo.utils.export_onnx('model_bbbias_fcnob_tensorflow_sil.onnx', quantized_model, quantized_model, (1, 49, 10))
 # Saving the activations for comparison within Dory
 acc = trainining_environment.validate(model=quantized_model, mode='tinytest', batch_size=1, integer=True, save=True)
 
