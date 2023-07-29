@@ -19,3 +19,4 @@ quantization/models/
 quantization/tinytest/
 deployment/DSCNN_LIBROSA_SRC
 *vars.mk
+*gap8_to_gap9/SRC*
