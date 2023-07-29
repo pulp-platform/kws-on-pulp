@@ -15,5 +15,4 @@ temp/*
 tinytest/*
 *.sh
 quantization/models/
-
-
+quantization/tinytest/
