@@ -8,6 +8,7 @@ set(MAIN                "application.c")
 
 # Cmake pre-inits
 
+# set(CMAKE_VERBOSE_MAKEFILE ON)
 
 set(CONFIG_GAP_SDK_HOME $ENV{GAP_SDK_HOME})
 include ($ENV{GAP_SDK_HOME}/utils/cmake/setup.cmake)
@@ -77,7 +78,8 @@ set(DSP_GEN_DIR         ${GAP9_SDK_DIR}/tools/autotiler_v3/DSP_Generators/)
 set(MFCC_SRCG                    ${GAP9_SDK_DIR}/tools/autotiler_v3/DSP_Generators/DSP_Generators.c)
 set(MFCC_MODEL_GEN               ${BUILD_DIR}/GenMFCC)
 set(MFCC_HEAD                    ${BUILD_DIR}/MFCC_params.h)
-set(MFCC_PARAMS_JSON             ${CURDIR}/MfccConfig.json)
+set(MFCC_PARAMS_JSON             ${CURDIR}/MfccConfigLibrosa.json)
+# set(MFCC_PARAMS_JSON             ${CURDIR}/MfccConfigTF.json)
 set(MFCC_SRC_CODE                ${BUILD_DIR}/MfccKernels.c)
 
 # Application
@@ -91,9 +93,9 @@ add_custom_command (
 
 add_custom_command (
  
- OUTPUT    ${MFCC_SRC_CODE}
- COMMAND   ${MFCC_MODEL_GEN} -o ${BUILD_DIR} -c ${BUILD_DIR} ${MODEL_GEN_EXTRA_FLAGS}
- DEPENDS   ${MFCC_MODEL_GEN}
+    OUTPUT    ${MFCC_SRC_CODE}
+    COMMAND   ${MFCC_MODEL_GEN} -o ${BUILD_DIR} -c ${BUILD_DIR} ${MODEL_GEN_EXTRA_FLAGS}
+    DEPENDS   ${MFCC_MODEL_GEN}
 
 )
 
@@ -111,15 +113,8 @@ add_custom_target (
     WORKING_DIRECTORY    ${BUILD_DIR}
     COMMAND              gcc -g -o ${MFCC_MODEL_GEN} -I${BUILD_DIR} -I${DSP_GEN_DIR} -I${TILER_INC} -I${TILER_EMU_INC} ${CURDIR}/MfccModel.c ${MFCC_SRCG} ${TILER_LIB} ${TABLE_CFLAGS} ${COMPILE_MODEL_EXTRA_FLAGS} -DUSE_POWER=${USE_POWER} ${SDL_FLAGS}
     BYPRODUCTS           ${MFCC_MODEL_GEN}   
-    DEPENDS              ${MFCC_HEAD}          
+    DEPENDS              ${MFCC_HEAD}         
 
-)
-
-add_custom_target (
-    mfcc_src
-    WORKING_DIRECTORY    ${BUILD_DIR}
-    COMMAND              
-    DEPENDS              ${MFCC_MODEL_GEN}
 )
 
 

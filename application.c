@@ -36,6 +36,11 @@ typedef short int OUT_TYPE;  // Save MFCCs works
 typedef short int MFCC_IN_TYPE; // Save MFCCs works
 #endif
 
+
+// #define DATA_TYPE 1
+// typedef short int OUT_TYPE;  // Save MFCCs works 
+// typedef short int MFCC_IN_TYPE; // Save MFCCs works
+
 // L2
 #include "input.h"
 
@@ -697,16 +702,25 @@ int application(void){
                             utterance = class_11[sampleidx];
                             break;
                     }
+
+                    // DEBUG
+                    utterance = "/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/tinytest/yes_e49428d9_nohash_3.wav";
+                    classidx = 2;
+
                     printf ("sampleidx: %i\n", sampleidx);
                     printf ("classidx: %i\n", classidx);
                     printf ("utterance: %s\n", utterance);
 
+
                     // Load Utterance
                     input_wav(0, 1, utterance, 0);  // save, free, utterance, noise
 
-                    samplestart = 0; // TODO: random sample between (0, len(wav)-16000)
-                    for (int samplepos = 0; samplepos < AUDIO_BUFFER_SIZE; samplepos++){
-                        MfccInSig[samplepos] = MfccInSig[samplepos] + 10*RecordedNoise[samplestart+samplepos];
+                    int localaddnoise = 0;
+                    if (localaddnoise){
+                        samplestart = 0; // TODO: random sample between (0, len(wav)-16000)
+                        for (int samplepos = 0; samplepos < AUDIO_BUFFER_SIZE; samplepos++){
+                            MfccInSig[samplepos] = MfccInSig[samplepos] + 1*RecordedNoise[samplestart+samplepos];
+                        }
                     }
 
                     // TODO: Create separate training function
@@ -719,12 +733,23 @@ int application(void){
                         
                         feat_char[k] = (char) (((int) floor(out_feat[i] * pow(2, -1) * sqrt(0.05))) + 128); // 23.883617 QSNR w/ float
 
+                        // feat_char[k] = (char) (((int) floor(out_feat[i] * pow(2, -4) * sqrt(0.2))) + 128); // kws-on-pulp
+
+                        
+
                         // Select 10 MFCC per window
                         if (i == 40*(k/10) + 9){
                             i = 40*(k/10) + 39;
                         }
                         k++;
                     } 
+                    // feat_char[479] = feat_char[0]; // patch
+
+
+                    for (int i = 0; i < 490; i++){
+                        printf("feat_char: %i\n", feat_char[i]);
+                    }
+
                     pi_l2_free(out_feat, 49*10*4*sizeof(OUT_TYPE));
 
                     // Fill input buffer
