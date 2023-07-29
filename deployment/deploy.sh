@@ -26,6 +26,7 @@ if [ "$1" == "-h" ] ; then
     echo "MEMORY: (L)2, (L)3"
     echo "PLATFORM: gvsoc, fpga, rtl"
     echo "MFCC computation: 0 (offline), 1 (online)"
+    echo "Model directory"
     exit 0
 fi
 
@@ -47,8 +48,8 @@ export SDK=$1
 export MEMORY=$2
 export PLATFORM=$3
 export MFCC=$4
-export NETWORK_DIR=DSCNN
-export NETWORK_SRC_DIR=DSCNN
+export NETWORK_DIR=$5
+export NETWORK_SRC_DIR=$5_SRC
 
 
 
@@ -76,13 +77,6 @@ fi
 
 # Copy model and it's activations to Dory
 cd dory/
-mkdir -p $NETWORK_DIR
-rm $NETWORK_DIR/model.onnx
-rm $NETWORK_DIR/out_layer*.txt
-rm $NETWORK_DIR/input.txt
-cp $CUR_DIR/$NETWORK_SRC_DIR/input.txt $NETWORK_DIR/
-cp $CUR_DIR/$NETWORK_SRC_DIR/model.onnx  $NETWORK_DIR/
-cp $CUR_DIR/$NETWORK_SRC_DIR/out_layer*.txt $NETWORK_DIR/
 
 # TODO: Fix target's SDK (e.g., dory/dory/Hardware_targets/GAP8/GAP8_gvsoc/HW_description.json)
 
@@ -90,10 +84,10 @@ cp $CUR_DIR/$NETWORK_SRC_DIR/out_layer*.txt $NETWORK_DIR/
 # We use 64 bits for the BatchNorm and ReLU
 if [[ $MEMORY == "3" ]]
 then
-  # python network_generate.py NEMO GAP8.GAP8_gvsoc $CUR_DIR/$NETWORK_SRC_DIR/config_DSCNN.json --app_dir $NETWORK_DIR/ --perf_layer Yes # origin/l2_pulp_sdk
-  python network_generate.py NEMO PULP.PULP_gvsoc $CUR_DIR/$NETWORK_SRC_DIR/config_DSCNN.json --app_dir $NETWORK_DIR/ --perf_layer Yes # master
+  python network_generate.py NEMO PULP.GAP8 $CUR_DIR/$NETWORK_SRC_DIR/config_DSCNN.json --app_dir $NETWORK_DIR/ --perf_layer
+  # python network_generate.py NEMO PULP.PULP_gvsoc $CUR_DIR/$NETWORK_SRC_DIR/config_DSCNN.json --app_dir $NETWORK_DIR/ --perf_layer
 else
-  python network_generate.py NEMO PULP.GAP8_L2 $CUR_DIR/$NETWORK_SRC_DIR/config_DSCNN.json --app_dir $NETWORK_DIR/ --perf_layer Yes
+  python network_generate.py NEMO PULP.GAP8_L2 $CUR_DIR/$NETWORK_SRC_DIR/config_DSCNN.json --app_dir $NETWORK_DIR/ --perf_layer
 fi
 
 # Copy the files into our directory, preparing the MFCC integration

@@ -14,116 +14,40 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-# SPDX-License-Identifier: Apache-2.0
-#
 
 
-MFCCBUILD_DIR ?= $(CURDIR)/BUILD_MFCC
-DSP_DIR ?= $(GAP_SDK_DIR)tools/autotiler_v3/DSP_Libraries/
-AUTOTILER_DIR ?= $(GAP_SDK_DIR)tools/autotiler_v3/Autotiler/
-DSP_LUT_DIR ?= $(GAP_SDK_DIR)tools/autotiler_v3/DSP_Libraries/LUT_Tables/
-
-ifeq '$(TARGET_CHIP_FAMILY)' 'GAP8'
-	COMPILE_MODEL_EXTRA_FLAGS += -DNO_FLOAT16
-endif
-
-WAV_FILE = $(sample)
-SDK      = $(sdk)
-MEMORY   = $(memory)
-MFCC     = $(mfcc)
-PULP_SDK_STR = pulp_sdk
-L3_STR = 3
-
-include $(CURDIR)/MfccModel.mk
-clean:: clean_mfcc_code
-all:: $(MFCCBUILD_DIR)/MFCCKernels.c
+CORE ?= 1
 
 APP = main
-APP_SRCS = DORY_network/src/mem_controller.c
-APP_SRCS+=DORY_network/src/dory.c
-APP_SRCS+=DORY_network/src/pulp_nn_add.c
-APP_SRCS+=DORY_network/src/pulp_nn_avgpool.c
-APP_SRCS+=DORY_network/src/pulp_nn_conv_Co_parallel.c
-APP_SRCS+=DORY_network/src/pulp_nn_conv_Ho_parallel.c
-APP_SRCS+=DORY_network/src/pulp_nn_conv_HoWo_parallel.c
-APP_SRCS+=DORY_network/src/pulp_nn_depthwise_3x3_s1.c
-APP_SRCS+=DORY_network/src/pulp_nn_depthwise_generic.c
-APP_SRCS+=DORY_network/src/pulp_nn_depthwise_generic_less_4_weights.c
-APP_SRCS+=DORY_network/src/pulp_nn_linear.c
-APP_SRCS+=DORY_network/src/pulp_nn_linear_out_32.c
-APP_SRCS+=DORY_network/src/pulp_nn_matmul.c
-APP_SRCS+=DORY_network/src/pulp_nn_maxpool.c
-APP_SRCS+=DORY_network/src/pulp_nn_pointwise_Co_parallel.c
-APP_SRCS+=DORY_network/src/pulp_nn_pointwise_Ho_parallel.c
-APP_SRCS+=DORY_network/src/pulp_nn_pointwise_HoWo_parallel.c
-APP_SRCS+=DORY_network/src/pulp_nn_utils.c
-APP_SRCS+=DORY_network/src/BNReluConvolution0.c
-APP_SRCS+=DORY_network/src/BNReluConvolution1.c
-APP_SRCS+=DORY_network/src/BNReluConvolution2.c
-APP_SRCS+=DORY_network/src/BNReluConvolution3.c
-APP_SRCS+=DORY_network/src/BNReluConvolution4.c
-APP_SRCS+=DORY_network/src/BNReluConvolution5.c
-APP_SRCS+=DORY_network/src/BNReluConvolution6.c
-APP_SRCS+=DORY_network/src/BNReluConvolution7.c
-APP_SRCS+=DORY_network/src/BNReluConvolution8.c
-APP_SRCS+=DORY_network/src/ReluPooling9.c
-APP_SRCS+=DORY_network/src/FullyConnected10.c
-APP_SRCS+=DORY_network/src/network.c
+APP_SRCS := $(wildcard src/*.c)
+# -O2 with -fno-indirect-inlining is just as fast as -O3 and reduces code size considerably
+# by not inlining of small functions in the management code
+APP_CFLAGS += -DNUM_CORES=$(CORE) -Iinc -O2 -fno-indirect-inlining -flto -w
+APP_LDFLAGS += -lm -Wl,--print-memory-usage -flto
 
+GAP9_DEFAULT_FLASH_TYPE = DEFAULT_FLASH
+GAP9_DEFAULT_RAM_TYPE = DEFAULT_RAM
 
-APP_SRCS        += $(CURDIR)/main.c $(MFCCBUILD_DIR)/MFCCKernels.c $(DSP_LUT_DIR)TwiddlesDef.c $(DSP_LUT_DIR)RFFTTwiddlesDef.c $(DSP_LUT_DIR)SwapTablesDef.c
-APP_SRCS        += $(DSP_DIR)MfccBasicKernels.c $(DSP_DIR)FFT_Library.c $(DSP_DIR)math_funcs.c $(DSP_DIR)CmplxFunctions.c $(DSP_DIR)PreProcessing.c 
-APP_SRCS        += $(CURDIR)/mfcc_utils.c
+GAP8_DEFAULT_FLASH_TYPE = HYPERFLASH
+GAP8_DEFAULT_RAM_TYPE = HYPERRAM
 
-ifndef CORE
-CORE=1
-else
-CORE= $(CORE)
+PULP_DEFAULT_FLASH_TYPE = HYPERFLASH
+PULP_DEFAULT_RAM_TYPE = HYPERRAM
+
+FLASH_TYPE ?= $($(TARGET_CHIP_FAMILY)_DEFAULT_FLASH_TYPE)
+RAM_TYPE ?= $($(TARGET_CHIP_FAMILY)_DEFAULT_RAM_TYPE)
+
+APP_CFLAGS += -DGAP_SDK=1
+APP_CFLAGS += -DTARGET_CHIP_FAMILY_$(TARGET_CHIP_FAMILY)
+
+ifeq '$(FLASH_TYPE)' 'MRAM'
+READFS_FLASH = target/chip/soc/mram
 endif
 
-ifeq ($(USE_ABS), 1)
-	APP_CFLAGS += -DUSE_ABS
-endif
-ifeq ($(USE_HIGH_PREC), 1)
-	APP_CFLAGS += -DHIGH_PREC_FFT
-endif
 
-# TODO: Comment back in the WAV_FILE
-APP_CFLAGS      += -DAT_WAV=$(WAV_FILE) -DSDK=$(SDK) -DMEMORY=$(MEMORY) -DMFCC=$(MFCC) # -DPERF -DPRINT_INOUT -DPRINTDEB 
-APP_CFLAGS      += -I. -I$(MFCCBUILD_DIR) -I$(DSP_DIR) -I$(DSP_LUT_DIR) -I$(AUTOTILER_DIR) 
-# APP_CFLAGS      += -I$(BSP_DIR)
+APP_CFLAGS += -DFLASH_TYPE=$(FLASH_TYPE) -DUSE_$(FLASH_TYPE) -DUSE_$(RAM_TYPE)
+APP_CFLAGS += -DALWAYS_BLOCK_DMA_TRANSFERS
 
-
-ifeq ($(SDK), $(PULP_SDK_STR))
-	APP_CFLAGS += -DNUM_CORES=$(CORE) -DPULP_SDK=1 -IDORY_network/inc -O3 -w -fno-tree-loop-distribute-patterns -flto # -mno-fdiv -mabi=ilp32 
-	APP_CFLAGS += -I$(GAP_SDK_DIR)tools/autotiler_v3/Emulation 
-else
-	APP_CFLAGS += -DNUM_CORES=$(CORE) -DGAP_SDK=1 -IDORY_network/inc -O3 -w -fno-tree-loop-distribute-patterns -flto 
-endif
-
-APP_LDFLAGS += -lm -flto # -mno-fdiv -mabi=ilp32
-
-
-ifeq ($(MEMORY), $(L3_STR))
-	CONFIG_HYPERRAM = 1
-	CONFIG_HYPERFLASH = 1
-
-	FLASH_FILES = DORY_network/BNReluConvolution0_weights.hex
-	FLASH_FILES += DORY_network/BNReluConvolution1_weights.hex
-	FLASH_FILES += DORY_network/BNReluConvolution2_weights.hex
-	FLASH_FILES += DORY_network/BNReluConvolution3_weights.hex
-	FLASH_FILES += DORY_network/BNReluConvolution4_weights.hex
-	FLASH_FILES += DORY_network/BNReluConvolution5_weights.hex
-	FLASH_FILES += DORY_network/BNReluConvolution6_weights.hex
-	FLASH_FILES += DORY_network/BNReluConvolution7_weights.hex
-	FLASH_FILES += DORY_network/BNReluConvolution8_weights.hex
-	FLASH_FILES += DORY_network/FullyConnected10_weights.hex
-	FLASH_FILES += DORY_network/inputs.hex
-	FLASH_FILES += DORY_network/aa48c94a_nohash_2.wav
-	READFS_FILES := $(FLASH_FILES)
-endif
-
-PLPBRIDGE_FLAGS += -f
+include vars.mk
 
 include $(RULES_DIR)/pmsis_rules.mk
