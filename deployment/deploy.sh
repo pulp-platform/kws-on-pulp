@@ -91,6 +91,7 @@ else
 fi
 
 # Copy the files into our directory, preparing the MFCC integration
+# TODO: Only copy source files (excl. main) and use originial Makefile
 mkdir -p $CUR_DIR/application/ && cp -r $NETWORK_DIR/* $CUR_DIR/application/
 if [[ $MEMORY == "2" ]]
 then
