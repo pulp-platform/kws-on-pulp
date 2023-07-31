@@ -705,7 +705,7 @@ int application(void){
 
                     // DEBUG
                     utterance = "/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/tinytest/yes_e49428d9_nohash_3.wav";
-                    classidx = 2;
+                    classidx = 3;
 
                     printf ("sampleidx: %i\n", sampleidx);
                     printf ("classidx: %i\n", classidx);
@@ -719,7 +719,7 @@ int application(void){
                     if (localaddnoise){
                         samplestart = 0; // TODO: random sample between (0, len(wav)-16000)
                         for (int samplepos = 0; samplepos < AUDIO_BUFFER_SIZE; samplepos++){
-                            MfccInSig[samplepos] = MfccInSig[samplepos] + 1*RecordedNoise[samplestart+samplepos];
+                            MfccInSig[samplepos] = MfccInSig[samplepos] + 5*RecordedNoise[samplestart+samplepos];
                         }
                     }
 
@@ -744,12 +744,17 @@ int application(void){
                         }
                         k++;
                     } 
-                    // feat_char[479] = feat_char[0]; // patch
+                    
+
+                    // PATCH
+                    for (int i = 0; i < 10; i++){
+                        feat_char[i+480] = feat_char[i];  
+                    }                    
 
 
-                    for (int i = 0; i < 490; i++){
-                        printf("feat_char: %i\n", feat_char[i]);
-                    }
+                    // for (int i = 0; i < 490; i++){
+                    //     printf("feat_char: %i\n", feat_char[i]);
+                    // }
 
                     pi_l2_free(out_feat, 49*10*4*sizeof(OUT_TYPE));
 
