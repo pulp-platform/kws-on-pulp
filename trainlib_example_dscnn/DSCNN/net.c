@@ -323,7 +323,7 @@ void net_step(void *args) {
 
     // L2 Dory to L1 TrainLib manual feature movement
     // Librosa
-    float eps_in = 0.1142;
+    // float eps_in = 0.1142;
     // Tensorflow
     float eps_in = 0.1247;
 
