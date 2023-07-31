@@ -732,9 +732,10 @@ int application(void){
                     for (int i = 0; i < 1960;i++){                
                         
                         feat_char[k] = (char) (((int) floor(out_feat[i] * pow(2, -1) * sqrt(0.05))) + 128); // 23.883617 QSNR w/ float
-
                         // feat_char[k] = (char) (((int) floor(out_feat[i] * pow(2, -4) * sqrt(0.2))) + 128); // kws-on-pulp
 
+
+                        // TODO: Determine Librosa scaling
                         
 
                         // Select 10 MFCC per window

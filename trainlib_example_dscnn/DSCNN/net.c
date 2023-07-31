@@ -322,7 +322,11 @@ void net_step(void *args) {
 
 
     // L2 Dory to L1 TrainLib manual feature movement
-    float eps_in = 0.1942;
+    // Librosa
+    float eps_in = 0.1142;
+    // Tensorflow
+    float eps_in = 0.1247;
+
     for (int i = 0; i < IN_SIZE; i++){
         IN_DATA[i] = ((float) (((uint8_t    *) l2_buffer)[i])) * eps_in;
     }

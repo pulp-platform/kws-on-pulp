@@ -78,8 +78,8 @@ set(DSP_GEN_DIR         ${GAP9_SDK_DIR}/tools/autotiler_v3/DSP_Generators/)
 set(MFCC_SRCG                    ${GAP9_SDK_DIR}/tools/autotiler_v3/DSP_Generators/DSP_Generators.c)
 set(MFCC_MODEL_GEN               ${BUILD_DIR}/GenMFCC)
 set(MFCC_HEAD                    ${BUILD_DIR}/MFCC_params.h)
-set(MFCC_PARAMS_JSON             ${CURDIR}/MfccConfigLibrosa.json)
-# set(MFCC_PARAMS_JSON             ${CURDIR}/MfccConfigTF.json)
+# set(MFCC_PARAMS_JSON             ${CURDIR}/MfccConfigLibrosa.json)
+set(MFCC_PARAMS_JSON             ${CURDIR}/MfccConfigTF.json)
 set(MFCC_SRC_CODE                ${BUILD_DIR}/MfccKernels.c)
 
 # Application
