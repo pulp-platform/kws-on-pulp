@@ -59,7 +59,7 @@ print("Dataset split (Train/valid/test/tinytrain): "+ str(train_size) +"/"+str(v
 # model = DSCNN(use_bias = False) # Put to FALSE to reproduce FC layer
 model = DSCNN(use_bias = True) # Put to TRUE to reproduce model_bias layer
 model.to(device)
-# Tensorflow
+
 summary(model,(1,49,data_processing_parameters['feature_bin_count']))
 dummy_input = torch.rand(1, 1,49,data_processing_parameters['feature_bin_count']).to(device)
 count_ops(model, dummy_input)
@@ -90,14 +90,14 @@ if training_parameters['freezebb']:
       print ("For ", str(name), " we require grad? ", str(param.requires_grad))
 
 start=time.clock_gettime(0)
-trainining_environment.train(model, mode='training') # TRAIN
+# trainining_environment.train(model, mode='training') # TRAIN
 # trainining_environment.train(model, mode='tinytrain') # FINETUNE
 print('Finished Training on GPU in {:.2f} seconds'.format(time.clock_gettime(0)-start))
 
 # Ignoring training, load pretrained model
 # model.load_state_dict(torch.load('./model.pth', map_location=torch.device('cuda')))
 # model.load_state_dict(torch.load('./best_model_nobias.pth', map_location=torch.device('cuda')))
-model.load_state_dict(torch.load('./model_bbbias_fcnob_tensorflow_sil.pth', map_location=torch.device('cuda')))
+model.load_state_dict(torch.load('./best_model_bbbias_fcnob_tensorflow_sil.pth', map_location=torch.device('cuda')))
 
 
 dummy_input = torch.randn(1, 1, 49, 10, requires_grad=True).to(device)
@@ -308,14 +308,6 @@ for weight in weights_reshaped:
   f.write(str(weight)+", ")
 f.close()
 
-# Save FC weights
-f = open("batched_fcweights_fq_pretrain.txt", "w")
-weights = quantized_model.fc1.weight.data.cpu().numpy()
-weights_reshaped = np.reshape(weights, -1)
-for weight in weights_reshaped:
-  f.write(str(weight)+", ")
-f.close()
-
 if (training_parameters['exportall']):
   acc = trainining_environment.validate(model=quantized_model.to(device), mode='tinytest', batch_size=1, integer=False, save=True)
 else:
@@ -323,6 +315,14 @@ else:
 
 
 quantized_model.qd_stage(eps_in=255./255)  # The activations are already in 0-255
+
+# Save FC weights
+f = open("batched_fcweights_fq_pretrain.txt", "w")
+weights = quantized_model.fc1.weight.data.cpu().numpy()
+weights_reshaped = np.reshape(weights, -1)
+for weight in weights_reshaped:
+  f.write(str(weight)+", ")
+f.close()
 
 print("\nQuantizedDeployable @ mixed-precision accuracy:")
 acc = trainining_environment.validate(model=quantized_model, mode='testing', batch_size=128)
@@ -344,7 +344,7 @@ eps_avg = eps['avg']
 print (eps_avg)
 
 # Saving the model
-nemo.utils.export_onnx('model_bbbias_fcnob_tensorflow_sil.onnx', quantized_model, quantized_model, (1, 49, 10))
+nemo.utils.export_onnx('best_model_bbbias_fcnob_tensorflow_sil.onnx', quantized_model, quantized_model, (1, 49, 10))
 # Saving the activations for comparison within Dory
 acc = trainining_environment.validate(model=quantized_model, mode='tinytest', batch_size=1, integer=True, save=True)
 

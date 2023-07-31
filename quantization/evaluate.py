@@ -1,189 +1,70 @@
-
+import argparse
 
 def main():
 
-    # read file(s)
-    # out_layer10 - CL
-    # out_layer11 - BB
+    parser = argparse.ArgumentParser(
+                        prog='ProgramName',
+                        description='What the program does',
+                        epilog='Text at the bottom of help')
+
+    parser.add_argument('--file1', type=str, default='None', required=True, help='Source file')
+    parser.add_argument('--file2', type=str, default='None', required=True, help='Destination file')
+
+    parser.add_argument('--f1_sp', type=int, default=0, help='Starting position in source file',)
+    parser.add_argument('--f2_sp', type=int, default=0, help='Starting position in destination file')
+    parser.add_argument('--len', type=int, default=0, required=True, help='Number of elements to compare')
+
+    parser.add_argument('--f1_skip', type=int, default=0, help='Suffixes source file')
+    parser.add_argument('--f2_skip', type=int, default=0, help='Suffixes destination file') 
+
+    parser.add_argument('--eps_in', type=float, default=0, help='Scaling factor for int-float comparisons') 
 
 
-    # # read file(s)
+    args = parser.parse_args()
 
-    with open("out_layer10.txt") as file_in:
-        lines = []
+    # read files
+    with open(args.file1+".txt") as file_in:
+        lines_f1 = []
         for line in file_in:
-            if (line.startswith('#')):
+            if (line.startswith('#') or line.startswith('------')):
                 continue
-            lines.append(line[:-3]) # out_layer10
-            # lines.append(line[:-5]) # out_layer11
+            skip_f1 = -args.f1_skip
+            lines_f1.append(line[:skip_f1])
 
-    with open("batched_outputs_float.txt") as file_in:
-        fllines = []
+    with open(args.file2+".txt") as file_in:
+        lines_f2 = []
         for line in file_in:
-            if (line.startswith('--------')):
+            if (line.startswith('#') or line.startswith('------')):
                 continue
-            fllines.append(line[:-3])
+            skip_f2 = -args.f2_skip
+            lines_f2.append(line[:skip_f2])
 
-
-    with open("out_layer11_gvsoc_fp32W.txt") as file_in:
-        gvlines = []
-        for line in file_in:
-            gvlines.append(line[:-2])
-
-
-    with open("batched_outputs_softmax_float.txt") as file_in:
-        softmax_float = []
-        for line in file_in:
-            if (line.startswith('--------')):
-                continue
-            softmax_float.append(line[:-3])
-
-
-    with open("batched_outputs_softmax_gvsoc.txt") as file_in:
-        softmax_gvsoc = []
-        for line in file_in:
-            if (line.startswith('--------')):
-                continue
-            softmax_gvsoc.append(line[:-3])
-
-
-
-    # # read file(s)
-    # with open("out_layer10_gvsoc_fp32W.txt") as file_in:
-    #     gvlines = []
-    #     for line in file_in:
-    #         gvlines.append(line[:-2])
-
-
-
-
-    # Note: 0 - FQ | 1 - INT | 2 - FP
-
-    # array 1
-    array1 = lines[0*12:1*12]
-
-
-    # array 2
-    array2 = gvlines[0*12:1*12] # gvsoc
-
-
-    # array3
-    array3 = fllines[1*12:2*12] # 0 FQ | 1 FP
-
-
-    array4 = softmax_gvsoc[0*12:1*12]
-    array5 = softmax_float[0*12:1*12]
-
+    # select lines
+    array1 = lines_f1[args.f1_sp*args.len:(args.f1_sp+1)*args.len]
+    array2 = lines_f2[args.f2_sp*args.len:(args.f2_sp+1)*args.len]
 
     # scaling factor
-    eps_in = 0.1942
-
+    eps_in = args.eps_in
 
     # compute MSE
     err = 0
     norm = 0
-    for idx in range (len(array5)):
-        err += (float(array5[idx]) - float(array4[idx])) * (float(array5[idx]) - float(array4[idx]))
-        norm += float(array5[idx]) * float(array4[idx])
+    for idx in range (len(array1)):
+        if (args.eps_in == 0):
+            err += (float(array1[idx]) - float(array2[idx])) * (float(array1[idx]) - float(array2[idx]))
+            norm += float(array1[idx]) * float(array2[idx])
+        else:
+            err += (float(array1[idx])*args.eps_in - float(array2[idx])) * (float(array1[idx])*args.eps_in - float(array2[idx]))
+            norm += float(array1[idx])*args.eps_in * float(array2[idx])
 
-    mse = err/float(len(array5))
+    mse = err/float(len(array1))
 
 
     # compute normalized MSE
     nmse = err/norm
 
-    print ("FQ-SoftMax vs GVSOC-SoftMax")
     print ("MSE: ", mse)
     print ("NMSE: ", nmse)
-
-# PyTorch measurements on BACKBONE
-
-# FP-BB vs FQ-BB
-# MSE:  0.11716845548557767
-# NMSE:  0.27780802193609766
-
-# FP-BB vs INT-BB
-# MSE:  0.12920379190728018
-# NMSE:  0.31534926847469114
-
-# FQ-BB vs INT-BB
-# MSE:  0.008065017685228751
-# NMSE:  0.014003023156131302
-
-
-# FP-BB vs GVSOC-INT-BB
-# MSE:  0.12920379190728015
-# NMSE:  0.31534926847469114
-
-# _________________________
-
-
-# PyTorch measurements on CLASSIFIER
-
-# FQ-CL (.int()) vs FP-CL (.int())
-# MSE:  6.75
-# NMSE:  0.164969450101833
-
-# FQ-CL (.int()) vs INT-CL
-# MSE:  264350.9964237934
-# NMSE:  68.93994335804855
-
-# FP-CL (.int()) vs INT-CL
-# MSE:  266213.87629046
-# NMSE:  92.0190588281399
-
-# FP-CL (.int()) vs GVSOC-INT-CL
-# MSE:  7.6710902422750005
-# NMSE:  0.18190747562378196
-
-# FQ-CL (.int()) vs GVSOC-INT-CL
-# MSE:  0.3279419089416668
-# NMSE:  0.005868310904889207
-
-# FQ-CL vs GVSOC-INT-CL
-# MSE:  0.19665940869110343
-# NMSE:  0.0033570744967253174
-
-# FP-CL vs GVSOC-INT-CL
-# MSE:  6.384423298651575
-# NMSE:  0.14014344072534501
-
-
-
-# _________________________
-
-
-# FQ-SoftMax vs GVSOC-SoftMax - Exponential of Davide
-# MSE:  0.05401336115718131
-# NMSE:  -44.30015041012826
-
-
-# FQ-SoftMax vs GVSOC-SoftMax - C Exponential 
-# MSE:  0.00027199657666113577
-# NMSE:  0.0067581038109658185
-
-# ___________________________
-
-
-# FILE: /usr/scratch/wetterhorn/cioflanc/kws-on-pulp/kws-on-pulp/quantization/tinytest/yes_e49428d9_nohash_3.wav
-
-# TODO: Loss
-# GVSOC: loss: 0.422480
-# FQ: 1.9580157
-# FP: 1.6258786,
-
-
-# TODO: Gradients
-
-# TODO: New weights
-
-# TODO: MFCCs
-
-# TODO: BB with MFCCs
-
-# TODO: CL with MFCCs
-
-
 
 
 
