@@ -8,3 +8,4 @@ test.pgm
 BUILD*
 build*
 *.log
+logs/
