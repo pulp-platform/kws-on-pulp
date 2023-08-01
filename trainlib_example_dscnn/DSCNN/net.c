@@ -460,12 +460,17 @@ void net_step(void *args) {
             ((float *) l2_buffer)[i] = ((float *)l0_out)[i]; 
         }
 
+        // onehot encoding
+        for (int labelidx = 0; labelidx<OUT_SIZE; labelidx++){
+            LABEL[labelidx] = 0.;
+        } 
+        if (classidx != 100){
+            LABEL[classidx] = 1.;     
+        }
+        
 
-        // print_output();
-
+        compute_loss();
         printf("Predicting local output\n");
-
-        // predict_unsigned_local(l0_out, OUT_SIZE);
         predict_float_local(l0_out, OUT_SIZE);
 
         // #ifdef VERBOSE 

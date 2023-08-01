@@ -106,6 +106,10 @@ MFCC_IN_TYPE *RecordedNoise;
 OUT_TYPE *out_feat;
 char * feat_char;
 
+void *l2_buffer;
+void * L2_FC_weights_float;
+void *L2_FC_weights_int8;
+
 SFU_uDMA_Channel_T *ChanOutCtxt_0;
 void * BufferInList;
 
@@ -375,6 +379,134 @@ void compute_mfcc(){
 
 }
 
+
+void evaluate_tinytest(){
+
+    for (int tinytestidx = 0; tinytestidx < 10; tinytestidx++){ // only non-unknown
+
+        printf ("-----------------------------Loop evaluation (itteration %i)-------------------------\n", tinytestidx);
+
+        // Read from WAV
+        if (input == "1") {
+            printf("Tested input: %s\n", tinytestutter[tinytestidx]);
+            input_wav(0, 1, tinytestutter[tinytestidx], 0); // save, free, noise
+        }
+        // Read from MIC
+        else if (input == "0") {
+            input_mic(0, 1, 0); // save, free, noise
+#ifdef AUDIO_EVK
+            pi_gpio_pin_write(gpio_pin_o, 1);
+#endif
+        }
+        for (int i = 0; i < 5; i++){
+            PRINTF("MfccInSig[%i] = %f, ", i, MfccInSig[i]);
+        }
+        PRINTF("\n");
+
+        int addnoise = 1;
+        if (addnoise) {
+            int noisesamplestart = 0; // TODO: random sample between (0, len(wav)-16000)
+            for (int samplepos = 0; samplepos < AUDIO_BUFFER_SIZE; samplepos++){
+                MfccInSig[samplepos] = MfccInSig[samplepos] + 5*RecordedNoise[noisesamplestart+samplepos];
+            }
+        }
+
+        compute_mfcc();
+
+        for (int i = 0; i < 5; i++){
+            PRINTF("out_feat[%i] = %f, ", i, out_feat[i]);
+        }
+        PRINTF("\n");
+        
+       
+        // Rescale data
+        int k = 0;
+        for (int i = 0; i < 1960;i++){                
+            
+            feat_char[k] = (char) ((int) floor(out_feat[i] * pow(2, -1) * sqrt(0.05)) + 128);
+
+            // Select 10 MFCC per window
+            if (i == 40*(k/10) + 9){
+                i = 40*(k/10) + 39;
+            }
+            k++;
+        } 
+        pi_l2_free(out_feat, 49*10*4*sizeof(OUT_TYPE));
+
+        // Fill input buffer
+        for (int i = 0; i < 490; i++){
+            if (mfcc == "1"){
+                ((uint8_t *)l2_buffer)[i] = L2_input_h[i]; // Precomputed MFCC
+            }
+            else {
+                ((uint8_t *)l2_buffer)[i] = feat_char[i]; // Online computed MFCC
+                PRINTF("%i,", feat_char[i]);
+
+            }
+        }
+        printf("\n");
+
+        for (int i = 0; i < 5; i++){
+            PRINTF("feat_char[%i] = %i, ", i, feat_char[i]);
+        }
+        PRINTF("\n");
+
+        pi_l2_free(feat_char, 49 * 10 * sizeof(char));
+
+
+        // while (1){
+        //     pi_gpio_pin_read(gpio_boot_pin_1, &button_was_pressed);
+        //     pi_time_wait_us(1000000);
+        //     printf("button_was_pressed: %i\n", button_was_pressed);
+        // }
+
+
+        // Extract backbone features
+        void *dump; // dump to copy FC weights, won't be used; TODO: Parametrize DORY
+        network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &dump, 0); // L2_input_h extra-arg for L2-only
+
+        for (int i=0; i < 64; i++){
+            PRINTF("%i, ", ((uint8_t *) l2_buffer)[i]);
+        }
+        PRINTF("\n");
+
+        printf ("********** Run classifier **********\n");
+
+        pi_cluster_conf_init(&cl_conf);
+        pi_open_from_conf(&cluster_dev, &cl_conf);
+        if (pi_cluster_open(&cluster_dev))
+        {
+          return -1;
+        }
+
+        unsigned int args_inference_classifier[5];
+        args_inference_classifier[0] = (unsigned int) l2_buffer;
+        args_inference_classifier[1] = (unsigned int) dump;
+        args_inference_classifier[2] = (unsigned int) L2_FC_weights_float;
+        args_inference_classifier[3] = (unsigned int) 0; // update = 0
+        args_inference_classifier[4] = (unsigned int) 1; // init = 1
+        args_inference_classifier[5] = (unsigned int) tinytestidx + 2; // tinytest already ordered
+
+        pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, args_inference_classifier));
+        pi_cluster_close(&cluster_dev);
+
+        printf ("********** Task completed **********\n");
+
+        
+    #ifdef  AUDIO_EVK
+        // block until next input audio frame is ready
+        pi_gpio_pin_write(gpio_pin_o, 0);
+    #endif
+        chunk_in_cnt++;
+
+
+        // TODO: Buffer the recording and the inference
+        // TODO: Trigger inference every 250 ms
+
+    }
+}
+
+
 int application(void){
 
     printf ("Environment setup");
@@ -460,12 +592,10 @@ int application(void){
 
     // TODO: Comment in
     // DORY - TrainLib FC weights copy
-    void *l2_buffer = NULL;
     l2_buffer = pi_l2_malloc(L2_MEMORY_SIZE);
     if (l2_buffer == NULL) {
         printf("failed to allocate memory for l2_buffer\n");
     }
-    void *L2_FC_weights_int8 = NULL;
     network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &L2_FC_weights_int8, 0); // L2_input_h extra-arg for L2-only
 
     // Run classifier
@@ -477,17 +607,19 @@ int application(void){
     }
     
     printf ("----------------------------- Initializing classifier ---------------------------\n");
-    void * L2_FC_weights_float = NULL;
+
     L2_FC_weights_float = pi_l2_malloc (768 * 4);
     if (L2_FC_weights_float == NULL) {
         printf("failed to allocate memory for L2_FC_weights_float\n");
     }
+
     unsigned int args_init_classifier[5];
     args_init_classifier[0] = (unsigned int) l2_buffer;
     args_init_classifier[1] = (unsigned int) L2_FC_weights_int8; // Weights buffer
     args_init_classifier[2] = (unsigned int) L2_FC_weights_float;
     args_init_classifier[3] = (unsigned int) 0; // update = 0
     args_init_classifier[4] = (unsigned int) 1; // init = 0
+    args_init_classifier[5] = (unsigned int) 100; // dummy class
 
     pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, args_init_classifier));
 
@@ -512,6 +644,8 @@ int application(void){
         }
     }
 
+
+    evaluate_tinytest();
 
     // UPDATE - TEST
     int button_was_pressed = 1; // active low
