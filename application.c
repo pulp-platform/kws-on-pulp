@@ -484,7 +484,7 @@ void evaluate_tinytest(){
         args_inference_classifier[1] = (unsigned int) dump;
         args_inference_classifier[2] = (unsigned int) L2_FC_weights_float;
         args_inference_classifier[3] = (unsigned int) 0; // update = 0
-        args_inference_classifier[4] = (unsigned int) 1; // init = 1
+        args_inference_classifier[4] = (unsigned int) 0; // init = 1
         args_inference_classifier[5] = (unsigned int) tinytestidx + 2; // tinytest already ordered
 
         pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, args_inference_classifier));
@@ -504,6 +504,172 @@ void evaluate_tinytest(){
         // TODO: Trigger inference every 250 ms
 
     }
+}
+
+
+void train_wavsrc(){
+
+    // TODO: Augment utterances with recorded data
+    int sampleidx;
+    int classidx;
+    int samplestart;
+
+
+    int nepochs = 1;
+
+    for (int epidx = 0; epidx < nepochs; epidx++) {
+        // for (int uttridx = 0; uttridx < 2; uttridx++){ // simple, to speed test
+        for (int uttridx = 0; uttridx < 100; uttridx++){
+
+        sampleidx = uttridx / 10;
+        classidx = uttridx % 10;
+
+        classidx += 2; // no SILENCE, no UNKNOWN
+        char *utterance;
+
+        switch (classidx) {
+            case 0: // 0
+                continue; // TODO: Get data 
+                utterance = class_0[sampleidx];
+                break;
+            case 1: // 0
+                continue; // TODO: Get data 
+                utterance = class_1[sampleidx];
+                break;
+            case 2:
+                utterance = class_2[sampleidx];
+                break;
+            case 3:
+                utterance = class_3[sampleidx];
+                break;
+            case 4:
+                utterance = class_4[sampleidx];
+                break;
+            case 5:
+                utterance = class_5[sampleidx];
+                break;
+            case 6:
+                utterance = class_6[sampleidx];
+                break;
+            case 7:
+                utterance = class_7[sampleidx];
+                break;
+            case 8:
+                utterance = class_8[sampleidx];
+                break;
+            case 9:
+                utterance = class_9[sampleidx];
+                break;
+            case 10:
+                utterance = class_10[sampleidx];
+                break;
+            case 11:
+                utterance = class_11[sampleidx];
+                break;
+        }
+
+        printf ("sampleidx: %i\n", sampleidx);
+        printf ("classidx: %i\n", classidx);
+        printf ("utterance: %s\n", utterance);
+
+
+        // Load Utterance
+        input_wav(0, 1, utterance, 0);  // save, free, utterance, noise
+
+        int localaddnoise = 1;
+        if (localaddnoise){
+            samplestart = 0; // TODO: random sample between (0, len(wav)-16000)
+            for (int samplepos = 0; samplepos < AUDIO_BUFFER_SIZE; samplepos++){
+                MfccInSig[samplepos] = MfccInSig[samplepos] + 5*RecordedNoise[samplestart+samplepos];
+            }
+        }
+
+        // TODO: Create separate training function
+        compute_mfcc();
+
+
+        // Rescale data
+        int k = 0;
+        for (int i = 0; i < 1960;i++){                
+            
+            feat_char[k] = (char) (((int) floor(out_feat[i] * pow(2, -1) * sqrt(0.05))) + 128); // 23.883617 QSNR w/ float
+            // feat_char[k] = (char) (((int) floor(out_feat[i] * pow(2, -4) * sqrt(0.2))) + 128); // kws-on-pulp
+
+
+            // TODO: Determine Librosa scaling
+            
+
+            // Select 10 MFCC per window
+            if (i == 40*(k/10) + 9){
+                i = 40*(k/10) + 39;
+            }
+            k++;
+        } 
+        
+
+        // PATCH
+        for (int i = 0; i < 10; i++){
+            feat_char[i+480] = feat_char[i];  
+        }                    
+
+
+        // for (int i = 0; i < 490; i++){
+        //     printf("feat_char: %i\n", feat_char[i]);
+        // }
+
+        pi_l2_free(out_feat, 49*10*4*sizeof(OUT_TYPE));
+
+        // Fill input buffer
+
+        // l2_buffer = pi_l2_malloc(L2_MEMORY_SIZE);
+        if (l2_buffer == NULL) {
+            printf("failed to allocate memory for l2_buffer\n");
+        }
+
+        for (int i = 0; i < 490; i++){
+            if (mfcc == "1"){
+                ((uint8_t *)l2_buffer)[i] = L2_input_h[i]; // Precomputed MFCC
+            }
+            else {
+                ((uint8_t *)l2_buffer)[i] = feat_char[i]; // Online computed MFCC
+            }
+        }
+        pi_l2_free(feat_char, 49 * 10 * sizeof(char));
+
+
+        // Extract backbone features
+        network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &L2_FC_weights_int8, 0); // L2_input_h extra-arg for L2-only
+
+        printf ("********** Run classifier **********\n");
+
+        pi_cluster_conf_init(&cl_conf);
+        pi_open_from_conf(&cluster_dev, &cl_conf);
+        if (pi_cluster_open(&cluster_dev))
+        {
+          return -1;
+        }
+
+        unsigned int args_train_classifier[5];
+        args_train_classifier[0] = (unsigned int) l2_buffer;
+        args_train_classifier[1] = (unsigned int) L2_FC_weights_int8;
+        args_train_classifier[2] = (unsigned int) L2_FC_weights_float;
+        args_train_classifier[3] = (unsigned int) 1; // update = 0
+        if (uttridx == 0)
+            args_train_classifier[4] = (unsigned int) 1; // init = 1
+        else
+            args_train_classifier[4] = (unsigned int) 0; // init = 0   
+        
+        args_train_classifier[5] = (unsigned int) classidx;
+
+        pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, args_train_classifier));
+        printf ("Finished task...\n");
+
+        pi_cluster_close(&cluster_dev);
+
+        }
+
+    } // samples per epoch
+
 }
 
 
@@ -644,352 +810,26 @@ int application(void){
         }
     }
 
-
+    // evaluate before training
     evaluate_tinytest();
 
-    // UPDATE - TEST
-    int button_was_pressed = 1; // active low
+    // train model with noisy data
+    train_wavsrc();
 
-    for (int tinytestidx = 0; tinytestidx < 10; tinytestidx++){ // only non-unknown
+    // evaluate improvement
+    evaluate_tinytest();
 
-        printf ("-----------------------------Loop evaluation (itteration %i)-------------------------\n", test_idx);
 
-        // Read from WAV
-        if (input == "1") {
-            printf("Tested input: %s\n", tinytestutter[tinytestidx]);
-            input_wav(0, 1, tinytestutter[tinytestidx], 0); // save, free, noise
-        }
-        // Read from MIC
-        else if (input == "0") {
-            input_mic(0, 1, 0); // save, free, noise
-#ifdef AUDIO_EVK
-            pi_gpio_pin_write(gpio_pin_o, 1);
+    printf ("********** Task completed **********\n");
+
+    // block until next input audio frame is ready
+#ifdef  AUDIO_EVK
+    pi_gpio_pin_write(gpio_pin_o, 0);
 #endif
-        }
-        for (int i = 0; i < 5; i++){
-            PRINTF("MfccInSig[%i] = %f, ", i, MfccInSig[i]);
-        }
-        PRINTF("\n");
+    chunk_in_cnt++;
 
-
-        if (1) { // add noise during evaluation
-            int noisesamplestart = 0; // TODO: random sample between (0, len(wav)-16000)
-            for (int samplepos = 0; samplepos < AUDIO_BUFFER_SIZE; samplepos++){
-                MfccInSig[samplepos] = MfccInSig[samplepos] + 10*RecordedNoise[noisesamplestart+samplepos];
-            }
-        }
-
-
-        compute_mfcc();
-
-        for (int i = 0; i < 5; i++){
-            PRINTF("out_feat[%i] = %f, ", i, out_feat[i]);
-        }
-        PRINTF("\n");
-        
-       
-        // Rescale data
-        int k = 0;
-        for (int i = 0; i < 1960;i++){                
-            
-            feat_char[k] = (char) ((int) floor(out_feat[i] * pow(2, -1) * sqrt(0.05)) + 128);
-
-            // Select 10 MFCC per window
-            if (i == 40*(k/10) + 9){
-                i = 40*(k/10) + 39;
-            }
-            k++;
-        } 
-        pi_l2_free(out_feat, 49*10*4*sizeof(OUT_TYPE));
-
-        // Fill input buffer
-
-        // l2_buffer = pi_l2_malloc(L2_MEMORY_SIZE);
-        if (l2_buffer == NULL) {
-            printf("failed to allocate memory for l2_buffer\n");
-        }
-
-        for (int i = 0; i < 490; i++){
-            if (mfcc == "1"){
-                ((uint8_t *)l2_buffer)[i] = L2_input_h[i]; // Precomputed MFCC
-            }
-            else {
-                ((uint8_t *)l2_buffer)[i] = feat_char[i]; // Online computed MFCC
-                PRINTF("%i,", feat_char[i]);
-
-            }
-        }
-        printf("\n");
-
-
-
-
-
-        for (int i = 0; i < 5; i++){
-            PRINTF("feat_char[%i] = %i, ", i, feat_char[i]);
-        }
-        PRINTF("\n");
-
-        pi_l2_free(feat_char, 49 * 10 * sizeof(char));
-
-
-
-        // while (1){
-        //     pi_gpio_pin_read(gpio_boot_pin_1, &button_was_pressed);
-        //     pi_time_wait_us(1000000);
-        //     printf("button_was_pressed: %i\n", button_was_pressed);
-        // }
-
-
-
-
-
-
-
-        if (button_was_pressed) { // Always inference
-        // if (test_array[test_idx] == 1){ // TODO: This should be a press of a button
-        // if (button_was_pressed == 0){ // active low
-            button_was_pressed = 0;
-
-
-            // Noise already existing - TODO: Comment back in
-            // if (input == "0"){
-            //     input_mic(0, 1, 1); // save, free, noise
-            // }
-            // else if (input == "1"){
-            //     input_wav(0, 1, WavName, 1); // save, free, NoiseName, noise
-            // }
-
-            // TODO: Augment utterances with recorded data
-            int sampleidx;
-            int classidx;
-            int samplestart;
-
-
-            int nepochs = 1;
-
-            for (int epidx = 0; epidx < nepochs; epidx++) {
-                // for (int uttridx = 0; uttridx < 2; uttridx++){ // simple, to speed test
-                for (int uttridx = 0; uttridx < 100; uttridx++){
-
-                    sampleidx = uttridx / 10;
-                    classidx = uttridx % 10;
-
-                    classidx += 2; // no SILENCE, no UNKNOWN
-                    char *utterance;
-
-                    switch (classidx) {
-                        case 0: // 0
-                            continue; // TODO: Get data 
-                            utterance = class_0[sampleidx];
-                            break;
-                        case 1: // 0
-                            continue; // TODO: Get data 
-                            utterance = class_1[sampleidx];
-                            break;
-                        case 2:
-                            utterance = class_2[sampleidx];
-                            break;
-                        case 3:
-                            utterance = class_3[sampleidx];
-                            break;
-                        case 4:
-                            utterance = class_4[sampleidx];
-                            break;
-                        case 5:
-                            utterance = class_5[sampleidx];
-                            break;
-                        case 6:
-                            utterance = class_6[sampleidx];
-                            break;
-                        case 7:
-                            utterance = class_7[sampleidx];
-                            break;
-                        case 8:
-                            utterance = class_8[sampleidx];
-                            break;
-                        case 9:
-                            utterance = class_9[sampleidx];
-                            break;
-                        case 10:
-                            utterance = class_10[sampleidx];
-                            break;
-                        case 11:
-                            utterance = class_11[sampleidx];
-                            break;
-                    }
-
-                    printf ("sampleidx: %i\n", sampleidx);
-                    printf ("classidx: %i\n", classidx);
-                    printf ("utterance: %s\n", utterance);
-
-
-                    // Load Utterance
-                    input_wav(0, 1, utterance, 0);  // save, free, utterance, noise
-
-                    int localaddnoise = 1;
-                    if (localaddnoise){
-                        samplestart = 0; // TODO: random sample between (0, len(wav)-16000)
-                        for (int samplepos = 0; samplepos < AUDIO_BUFFER_SIZE; samplepos++){
-                            MfccInSig[samplepos] = MfccInSig[samplepos] + 5*RecordedNoise[samplestart+samplepos];
-                        }
-                    }
-
-                    // TODO: Create separate training function
-                    compute_mfcc();
-
-
-                    // Rescale data
-                    int k = 0;
-                    for (int i = 0; i < 1960;i++){                
-                        
-                        feat_char[k] = (char) (((int) floor(out_feat[i] * pow(2, -1) * sqrt(0.05))) + 128); // 23.883617 QSNR w/ float
-                        // feat_char[k] = (char) (((int) floor(out_feat[i] * pow(2, -4) * sqrt(0.2))) + 128); // kws-on-pulp
-
-
-                        // TODO: Determine Librosa scaling
-                        
-
-                        // Select 10 MFCC per window
-                        if (i == 40*(k/10) + 9){
-                            i = 40*(k/10) + 39;
-                        }
-                        k++;
-                    } 
-                    
-
-                    // PATCH
-                    for (int i = 0; i < 10; i++){
-                        feat_char[i+480] = feat_char[i];  
-                    }                    
-
-
-                    // for (int i = 0; i < 490; i++){
-                    //     printf("feat_char: %i\n", feat_char[i]);
-                    // }
-
-                    pi_l2_free(out_feat, 49*10*4*sizeof(OUT_TYPE));
-
-                    // Fill input buffer
-
-                    // l2_buffer = pi_l2_malloc(L2_MEMORY_SIZE);
-                    if (l2_buffer == NULL) {
-                        printf("failed to allocate memory for l2_buffer\n");
-                    }
-
-                    for (int i = 0; i < 490; i++){
-                        if (mfcc == "1"){
-                            ((uint8_t *)l2_buffer)[i] = L2_input_h[i]; // Precomputed MFCC
-                        }
-                        else {
-                            ((uint8_t *)l2_buffer)[i] = feat_char[i]; // Online computed MFCC
-                        }
-                    }
-                    pi_l2_free(feat_char, 49 * 10 * sizeof(char));
-
-
-                    // Extract backbone features
-                    network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &L2_FC_weights_int8, 0); // L2_input_h extra-arg for L2-only
-
-                    printf ("********** Run classifier **********\n");
-
-                    pi_cluster_conf_init(&cl_conf);
-                    pi_open_from_conf(&cluster_dev, &cl_conf);
-                    if (pi_cluster_open(&cluster_dev))
-                    {
-                      return -1;
-                    }
-
-                    unsigned int args_train_classifier[5];
-                    args_train_classifier[0] = (unsigned int) l2_buffer;
-                    args_train_classifier[1] = (unsigned int) L2_FC_weights_int8;
-                    args_train_classifier[2] = (unsigned int) L2_FC_weights_float;
-                    args_train_classifier[3] = (unsigned int) 1; // update = 0
-                    if (uttridx == 0)
-                        args_train_classifier[4] = (unsigned int) 1; // init = 1
-                    else
-                        args_train_classifier[4] = (unsigned int) 0; // init = 0   
-                    
-                    args_train_classifier[5] = (unsigned int) classidx;
-
-                    pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, args_train_classifier));
-                    printf ("Finished task...\n");
-
-                    pi_cluster_close(&cluster_dev);
-
-                } // samples per epoch
-
-            } // training epochs
-        
-
-            // // Free noise buffer ONLY AFTER training is complete
-            // if (input == "0"){
-            //     pi_l2_free(RecordedNoise, BUFF_SIZE);
-            // } else if (input == "1") {
-            //     pi_l2_free(RecordedNoise, AUDIO_BUFFER_SIZE * sizeof (MFCC_IN_TYPE));
-            // }
-
-        }
-        // Extract backbone features
-        void *dump; // dump to copy FC weights, won't be used; TODO: Parametrize DORY
-        network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &dump, 0); // L2_input_h extra-arg for L2-only
-
-        printf ("********** Run classifier **********\n");
-
-        pi_cluster_conf_init(&cl_conf);
-        pi_open_from_conf(&cluster_dev, &cl_conf);
-        if (pi_cluster_open(&cluster_dev))
-        {
-          return -1;
-        }
-
-        unsigned int args_inference_classifier[5];
-        args_inference_classifier[0] = (unsigned int) l2_buffer;
-        args_inference_classifier[1] = (unsigned int) dump;
-        args_inference_classifier[2] = (unsigned int) L2_FC_weights_float;
-        args_inference_classifier[3] = (unsigned int) 0; // update = 0
-        args_inference_classifier[4] = (unsigned int) 0; // init = 0
-
-        pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, args_inference_classifier));
-
-        pi_cluster_close(&cluster_dev);
-
-        // predict(l2_buffer, 12);
-
-
-        // for (int i = 0; i < 12; i++){
-        //   printf("((int  *) l2_buffer)[%i]=%i\n", i, ((int  *) l2_buffer)[i]);
-        // }
-
-        printf ("********** Task completed **********\n");
-
-        // clean buffer
-        // pi_l2_free(l2_buffer, L2_MEMORY_SIZE); // Not cleaning such that we don't reallocate
-
-
-
-        // // Move weights from TrainLib to Dory
-        // void *L2_FC_weights_float;
-        // L2_FC_weights_float = pi_l2_malloc(784 * sizeof(float));
-
-        // break;
-
-        // block until next input audio frame is ready
-    #ifdef  AUDIO_EVK
-        pi_gpio_pin_write(gpio_pin_o, 0);
-    #endif
-        chunk_in_cnt++;
-
-        test_idx += 1;
-        if (test_idx > 100){
-            break;
-        }
-
-        // TODO: Buffer the recording and the inference
-        // TODO: Trigger inference every 250 ms
-
-
-    }
+    // TODO: Buffer the recording and the inference
+    // TODO: Trigger inference every 250 ms
 
     pmsis_exit(0);
     return 0;
