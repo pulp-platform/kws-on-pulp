@@ -33,8 +33,8 @@ void __attribute__ ((noinline)) pulp_nn_pointwise_Ho_parallel(
   const int8_t *  bias,
   uint8_t *       pOutBuffer,
   const int8_t *  pWeight,
-  int32_t *       k,
-  int32_t *       lambda,
+  int64_t *       k,
+  int64_t *       lambda,
   const uint16_t  out_mult,
   const uint16_t  out_shift,
   const uint16_t  dim_in_x,
@@ -98,8 +98,8 @@ void __attribute__ ((noinline)) pulp_nn_pointwise_Ho_parallel(
     if (i_out_x != dim_out_x)
     {
       const int8_t *pA = pWeight;
-      int32_t *k1 = k;
-      int32_t *lambda1 = lambda;
+      int64_t *k1 = k;
+      int64_t *lambda1 = lambda;
       for (int i = 0; i < ch_out; i++)
       {
         int sum = 0;
@@ -156,5 +156,6 @@ void __attribute__ ((noinline)) pulp_nn_pointwise_Ho_parallel(
       }
     }
   }
+
   pi_cl_team_barrier(0);
 }

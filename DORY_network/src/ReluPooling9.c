@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 // first_layer                    0
-// node                           <dory.Parsers.HW_node.HW_node object at 0x7fc734be3dd8>
+// node                           <dory.Parsers.HW_node.HW_node object at 0x7f23f27177f0>
 // sdk                            gap_sdk
 // number_of_clusters             1
 // optional_type                  8bit
@@ -37,6 +37,8 @@
 // stride                         1
 // g                              1
 // nif                            64
+// out_mul                        4125
+// out_add                        0
 // out_shift                      12
 // data_type_x                    uint
 // data_type_y                    uint
@@ -44,7 +46,7 @@
 // data_type_weights              int
 // nof                            64
 // factor                         1
-// double_buffering               2
+// double_buffering               1
 // x_h                            25
 // x_w                            5
 // x_data_size_byte               8
@@ -83,6 +85,8 @@
 // lambda_tile_size_byte          0
 // k_size_byte                    0
 // lambda_size_byte               0
+// k_tile_size_byte_transfer      0
+// lambda_tile_size_byte_transfer 0
 // l1_x_offset                    0
 // l1_y_offset                    8008
 // y_tile_size_nof_last           64
@@ -115,25 +119,21 @@ void ReluPooling9(
   unsigned int hyperram =(unsigned int)  real_arg[8];
   unsigned int out_shift_in = (unsigned int) real_arg[10];
   int p_r, p_l, p_t, p_b;
-  int last_nof_exec;
-  int last_nif_exec;
-  int last_h_exec;
-  int last_w_exec;
+  unsigned short x_tile_size_nif;
+  unsigned short x_tile_size_h;
+  unsigned short x_tile_size_w;
+  unsigned short x_tile_size_byte;
+  unsigned short x_length_h_px;
+  unsigned short x_length_nif_byte;
+  int pad_offset_h, pad_offset_w;
   uint8_t *x;
   uint8_t *y;
-  int x_tile_size_nif_exec;
-  int x_tile_size_h_exec;
-  int x_tile_size_w_exec;
   int y_tile_size_nof;
   int y_tile_size_h;
   int y_tile_size_w;
   int y_tile_size_byte;
   int y_length_h_px;
   int y_length_nof_byte;
-  int db_x;
-  int db_y;
-  int exec_db_x;
-  int exec_db_W;
  uint8_t *im2col;
   im2col = l1_buffer + 8104;
   volatile DMA_copy DMA_copy_x, DMA_copy_y;
@@ -150,95 +150,62 @@ void ReluPooling9(
   DMA_copy_y.stride_1d = 64;
   DMA_copy_y.dir = 0;
 
-  DMA_copy_x.ext = l2_x;
-  DMA_copy_x.loc = (l1_buffer + 0) + 0;
-  DMA_copy_x.number_of_2d_copies = 25;
-  DMA_copy_x.number_of_1d_copies = 5;
-  DMA_copy_x.length_1d_copy = 64;
-  thorir_dma(&DMA_copy_x);
-  pi_cl_team_barrier(0);
   // tile loop indeces
   int _i_nof_load=0, _i_nif_load=0, _i_h_load=0, _i_w_load=0;
-  int _i_nof_exec=0, _i_nif_exec=0, _i_h_exec=0, _i_w_exec=0;
-
-  // double buffering state
-  int db_state_x=0;
-  int db_state_y=1;
-  int db_state_acc_out=1;
-  int flag_first_ch_out;
 
   // last-tile flags
-  int last_nof_load = (1 == 1) ? 1 : 0;
-  int last_nif_load = (1 == 1) ? 1 : 0;
-  int last_h_load = (1 == 1) ? 1 : 0;
-  int last_w_load = (1 == 1) ? 1 : 0;
+  int last_nof, last_nif, last_h, last_w;
   int iter;
   // tile loop nest
   for(iter=0; iter<1*1*1; iter++) {
-    // loop nest is nof,h,w,(nif=0)
-    _i_w_load += 1;
-    if(_i_w_load==1)
-    {
-      _i_w_load = 0;
-      _i_h_load += 1;
-      if(_i_h_load==1)
-      {
-        _i_h_load = 0;
-        _i_nif_load += 1;
-        _i_nof_load += 1;
-      }
-    }
-    if (_i_nof_exec==0)
-      flag_first_ch_out = 1;
-    else
-      flag_first_ch_out = 0;
-    // wait for x,W read
-    // check if last in any dimension
-    last_nof_exec = last_nof_load;
-    last_nif_exec = last_nif_load;
-    last_h_exec = last_h_load;
-    last_w_exec = last_w_load;
-    last_nof_load = (_i_nof_load+1 == 1) ? 1 : 0;
-    last_nif_load = (_i_nof_load+1 == 1) ? 1 : 0;
-    last_h_load = (_i_h_load+1 == 1) ? 1 : 0;
-    last_w_load = (_i_w_load+1 == 1) ? 1 : 0;
+    last_nof = (_i_nof_load+1 == 1) ? 1 : 0;
+    last_nif = (_i_nof_load+1 == 1) ? 1 : 0;
+    last_h = (_i_h_load+1 == 1) ? 1 : 0;
+    last_w = (_i_w_load+1 == 1) ? 1 : 0;
 
-    // compute double buffering offsets and update db state
-    db_x = !db_state_x ? 8000 : 0;
-    db_y = !db_state_y ? 64 : 0;
-    exec_db_x = 0;
-    db_state_x = ! db_state_x;
+    x_tile_size_nif = (last_nif) ? 64 : 64;
+    x_tile_size_h   = (last_h)   ? 25 : 25;
+    x_tile_size_w   = (last_w)   ? 5 : 5;
+    x_tile_size_byte = x_tile_size_nif*x_tile_size_h*x_tile_size_w*8/8;
+    x_length_nif_byte = (last_nif)   ? 64 : 64;
+    // additionally overlap by padding for the first tile after a border one
+    //this because in the first tile we use less pixels from x_buffer, since we have the ones of padding
+    pad_offset_h=0, pad_offset_w=0;
+    if(_i_h_load > 0)
+      pad_offset_h = 0;
+    if(_i_w_load > 0)
+      pad_offset_w = 0;
 
-    //switch all double buffering offset and y only after that all n_input_features have been analyzed: we need to pass all n_in to produce a single filter_out
-    db_state_y = ! db_state_y;
-    if(iter<1*1*1-1)
-    {
-      y_tile_size_h   = (last_h_load)   ? 1 : 1;
-      y_tile_size_w   = (last_w_load)   ? 1 : 1;
-    }
-    x = (uint8_t *) (l1_buffer + 0 + exec_db_x);
-    y = (uint8_t *) (l1_buffer + 8008 + db_y);
+    DMA_copy_x.ext = dory_get_tile_3d(l2_x, _i_h_load, _i_w_load, _i_nif_load, 25, 5, 64, 5, 64,  24, 4,0, pad_offset_h, pad_offset_w, 0, 8);
+    DMA_copy_x.loc = (l1_buffer + 0);
+    DMA_copy_x.number_of_2d_copies = x_tile_size_h;
+    DMA_copy_x.number_of_1d_copies = x_tile_size_w;
+    DMA_copy_x.length_1d_copy = x_length_nif_byte;
+    thorir_dma(&DMA_copy_x);
+    pi_cl_team_barrier(0);
+    y_tile_size_h   = (last_h)   ? 1 : 1;
+    y_tile_size_w   = (last_w)   ? 1 : 1;
 
-    x_tile_size_nif_exec = (last_nif_exec) ? 64 : 64;
-    x_tile_size_h_exec   = (last_h_exec)   ? 25 : 25;
-    x_tile_size_w_exec   = (last_w_exec)   ? 5 : 5;
+    x = (uint8_t *) (l1_buffer + 0);
+    y = (uint8_t *) (l1_buffer + 8008);
 
-    y_tile_size_nof = (last_nof_exec) ? 64 : 64;
-    y_tile_size_h   = (last_h_exec)   ? 1 : 1;
-    y_tile_size_w   = (last_w_exec)   ? 1 : 1;
+
+    y_tile_size_nof = (last_nof) ? 64 : 64;
+    y_tile_size_h   = (last_h)   ? 1 : 1;
+    y_tile_size_w   = (last_w)   ? 1 : 1;
     y_tile_size_byte = y_tile_size_nof*y_tile_size_h*y_tile_size_w*8/8;
-    y_length_nof_byte = (last_nof_exec)   ? 64 : 64;
+    y_length_nof_byte = (last_nof)   ? 64 : 64;
     p_r = 0;
     p_l = 0;
     p_t = 0;
     p_b = 0;
-    if (_i_h_exec == 0)
+    if (_i_h_load == 0)
       p_t = 0;
-    if (_i_w_exec == 0)
+    if (_i_w_load == 0)
       p_l = 0;
-    if (_i_h_exec == 1-1)
+    if (_i_h_load == 1-1)
       p_b = 0;
-    if (_i_w_exec == 1-1)
+    if (_i_w_load == 1-1)
       p_r = 0;
     pi_cl_team_barrier(0);
 
@@ -248,9 +215,9 @@ void ReluPooling9(
     4125,
     12,
     0,
-    x_tile_size_w_exec,
-    x_tile_size_h_exec,
-    x_tile_size_nif_exec,
+    x_tile_size_w,
+    x_tile_size_h,
+    x_tile_size_nif,
     y_tile_size_w,
     y_tile_size_h,
     5,
@@ -264,22 +231,28 @@ void ReluPooling9(
     1
     );
     pi_cl_team_barrier(0);
-
-
     // transfering of output to L2
-    DMA_copy_y.ext = dory_get_tile_3d(l2_y, _i_h_exec, _i_w_exec, _i_nof_exec, 1, 1, 64, 1, 64, 0, 0, 0, 0, 0, 0, 8);
-    DMA_copy_y.loc = (l1_buffer + 8008) + db_y;
+    DMA_copy_y.ext = dory_get_tile_3d(l2_y, _i_h_load, _i_w_load, _i_nof_load, 1, 1, 64, 1, 64, 0, 0, 0, 0, 0, 0, 8);
+    DMA_copy_y.loc = (l1_buffer + 8008);
     DMA_copy_y.number_of_2d_copies = y_tile_size_h;
     DMA_copy_y.number_of_1d_copies = y_tile_size_w;
     DMA_copy_y.length_1d_copy = y_length_nof_byte;
     thorir_dma(&DMA_copy_y);
-    // update prev iterators
-    _i_nof_exec = _i_nof_load;
-    _i_nif_exec = _i_nif_load;
-    _i_h_exec = _i_h_load;
-    _i_w_exec = _i_w_load;
+    pi_cl_team_barrier(0);
+
+    // loop nest is nof,h,w,(nif=0)
+    _i_w_load += 1;
+    if(_i_w_load==1)
+    {
+      _i_w_load = 0;
+      _i_h_load += 1;
+      if(_i_h_load==1)
+      {
+        _i_h_load = 0;
+        _i_nif_load += 1;
+        _i_nof_load += 1;
+      }
+    }
     pi_cl_team_barrier(0);
   }
-  // wait for final write
-    pi_cl_team_barrier(0);
 }

@@ -20,18 +20,18 @@
 #include "pulp_nn_utils.h"
 #include "pulp_nn_kernels.h"
 
-#define clip8(x) __builtin_pulp_clipu_r(x, 255)
 #define log2(x) __builtin_pulp_fl1(x)
-#define bitext_u(x,size,off) __builtin_pulp_bextractu(x,size,off)
+#define clip8(x) __builtin_pulp_clipu_r(x, 255)
+#define bitext_u(x, size, off) __builtin_pulp_bextractu(x, size, off)
 #define mins32(a, b) __builtin_pulp_minsi(a, b)
 #define maxs32(a, b) __builtin_pulp_maxsi(a, b)
 
 void __attribute__ ((noinline))  pulp_nn_avgpool(
   uint8_t *  Im_in,
   uint8_t * Im_out,
-  int32_t   lambda,
+  int64_t   lambda,
   uint16_t  out_shift,
-  int32_t   out_add,
+  int64_t   out_add,
   uint16_t  dim_im_in_x,
   uint16_t  dim_im_in_y,
   uint16_t  ch_im_in,
@@ -103,7 +103,7 @@ void __attribute__ ((noinline))  pulp_nn_avgpool(
                         sum[0] += (uint32_t) bitext_u((unsigned int) cur_chans, 8, 0);
                     }
                 }
-                int32_t out_large;
+                int64_t out_large;
                 if (flag_requant) {
                   out_large = (sum[0] * lambda / kernel_size_tot + out_add) >> out_shift;
                   out_el = clip8(out_large);

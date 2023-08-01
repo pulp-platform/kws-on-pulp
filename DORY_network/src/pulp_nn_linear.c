@@ -31,8 +31,8 @@ void pulp_nn_linear(
       int8_t *bias,
       uint8_t *pOutBuffer,
       int8_t *pWeights,
-      int32_t *k,
-      int32_t *lambda,
+      int64_t *k,
+      int64_t *lambda,
       uint16_t out_mult,
       int8_t out_shift,
       uint16_t dim_vec,
@@ -52,8 +52,8 @@ void pulp_nn_linear(
 
   uint8_t *pOut = (uint8_t *) pOutBuffer + start;
 
-  int32_t *k1 = k + start;
-  int32_t *lambda1 = lambda + start;
+  int64_t *k1 = k + start;
+  int64_t *lambda1 = lambda + start;
 
   for(int i=start; i<stop; i++)
   {
@@ -106,6 +106,5 @@ void pulp_nn_linear(
       }
     }
   }
-  
   pi_cl_team_barrier(0);
 }

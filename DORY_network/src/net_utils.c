@@ -1,5 +1,6 @@
 #include "net_utils.h" 
-#include "pmsis.h"
+#include "pmsis.h"#include "pmsis.h"
+
 void print_perf(const char *name, const int cycles, const int macs) {
   float perf = (float) macs / cycles;
   printf("\n%s performance:\n", name);

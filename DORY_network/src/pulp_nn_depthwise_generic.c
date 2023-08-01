@@ -28,33 +28,33 @@
 #define clip8(x) __builtin_pulp_clipu_r(x, 255)
 
 void pulp_nn_depthwise_generic(
-                               const uint8_t * Im_in,
-                               uint8_t *       bufferC,
-                               const int8_t *  bias,
-                               uint8_t *       Im_out,
-                               const int8_t *  wt,
-                               uint8_t *       bufferB,
-                               int32_t *       k,
-                               int32_t *       lambda,
-                               uint16_t        out_mult,
-                               uint16_t        out_shift,
-                               const uint16_t  dim_im_in_x,
-                               const uint16_t  dim_im_in_y,
-                               const uint16_t  ch_im_in,
-                               const uint16_t  dim_im_out_x,
-                               const uint16_t  dim_im_out_y,
-                               const uint16_t  ch_im_out,
-                               const uint16_t  dim_kernel_x,
-                               const uint16_t  dim_kernel_y,
-                               const uint16_t  padding_y_top,
-                               const uint16_t  padding_y_bottom,
-                               const uint16_t  padding_x_left,
-                               const uint16_t  padding_x_right,
-                               const uint16_t  stride_x,
-                               const uint16_t  stride_y,
-                               int8_t          FLAG_RELU,
-                               int8_t          FLAG_BATCH_NORM
-  ){
+  const uint8_t * Im_in,
+  uint8_t *       bufferC,
+  const int8_t *  bias,
+  uint8_t *       Im_out,
+  const int8_t *  wt,
+  uint8_t *       bufferB,
+  int64_t *       k,
+  int64_t *       lambda,
+  uint16_t        out_mult,
+  uint16_t        out_shift,
+  const uint16_t  dim_im_in_x,
+  const uint16_t  dim_im_in_y,
+  const uint16_t  ch_im_in,
+  const uint16_t  dim_im_out_x,
+  const uint16_t  dim_im_out_y,
+  const uint16_t  ch_im_out,
+  const uint16_t  dim_kernel_x,
+  const uint16_t  dim_kernel_y,
+  const uint16_t  padding_y_top,
+  const uint16_t  padding_y_bottom,
+  const uint16_t  padding_x_left,
+  const uint16_t  padding_x_right,
+  const uint16_t  stride_x,
+  const uint16_t  stride_y,
+  int8_t          FLAG_RELU,
+  int8_t          FLAG_BATCH_NORM)
+{
   int core_id = pi_core_id();
   int chunk = (ch_im_out >> log2(NUM_CORES)) + ((ch_im_out & (NUM_CORES - 1)) != 0);
   int start_channel = MIN(chunk * core_id, ch_im_out);
@@ -302,7 +302,7 @@ void pulp_nn_depthwise_generic(
       do
       {
         int i = 0;
-        int idx = 0;
+        int idx = 0;        
         int p_decr = 0; // this will decrease the pBuffer when we have padding in our window, or if the kernel size is not a multiple of 4 (vector load is 4 Bytes).
         int dim_incr_padding = 0; // this will decrease the pBuffer when we have padding in our window. The 0-padded Bytes will be added later
         do
@@ -314,7 +314,7 @@ void pulp_nn_depthwise_generic(
         }while(i<dim_kernel_x_size_padded);
         base_ptr+=dim_im_in_x;
         dim_incr_padding = MAX(-(dim_im_in_x-(i_out_x*stride_x)-1) + dim_kernel_x/2, 0);
-        p_decr = (dim_incr + dim_incr_padding); 
+        p_decr = (dim_incr + dim_incr_padding);
         pBuffer-=p_decr;        
         for(int j=0; j<dim_incr_padding; j++)
         {

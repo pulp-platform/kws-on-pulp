@@ -33,8 +33,8 @@ void __attribute__ ((noinline)) pulp_nn_pointwise_Co_parallel(
   const int8_t *  bias,
   uint8_t *       pOutBuffer,
   const int8_t *  pWeight,
-  int32_t *       k,
-  int32_t *       lambda,
+  int64_t *       k,
+  int64_t *       lambda,
   const uint16_t  out_mult,
   const uint16_t  out_shift,
   const uint16_t  dim_in_x,
@@ -71,8 +71,8 @@ void __attribute__ ((noinline)) pulp_nn_pointwise_Co_parallel(
 
   int8_t *pW = pWeight + (start_channel * ch_in);
 
-  int32_t *k0 = k + start_channel;
-  int32_t *lambda0 = lambda + start_channel;
+  int64_t *k0 = k + start_channel;
+  int64_t *lambda0 = lambda + start_channel;
 
   if(eff_chunk)
   {
@@ -82,25 +82,25 @@ void __attribute__ ((noinline)) pulp_nn_pointwise_Co_parallel(
 
       uint8_t *pOut = pOutBuffer + start_channel + (i_out_y * dim_out_x * ch_out);
 
-      for (int n = 0; n < (dim_out_x >> 1); n++)
+      for (int n = 0; n < dim_out_x; n++)
       {
-          uint8_t *pB = (pInBuffer + (i_out_x * ch_in) + (i_out_y * dim_in_x * ch_in));
-          pOut = ((ch_out - eff_chunk) << 1) + pulp_nn_matmul(
-            pW,
-            pB,
-            eff_chunk,
-            ch_in,
-            out_shift,
-            out_mult,
-            k0,
-            lambda0,
-            bias,
-            pOut,
-            pOut + ch_out,
-            flag_relu,
-            flag_batch_norm
-          );
-          i_out_x+=2;
+        uint8_t *pB = (pInBuffer + (i_out_x * ch_in) + (i_out_y * dim_in_x * ch_in));
+        pOut = ((ch_out - eff_chunk) << 1) + pulp_nn_matmul(
+          pW,
+          pB,
+          eff_chunk,
+          ch_in,
+          out_shift,
+          out_mult,
+          k0,
+          lambda0,
+          bias,
+          pOut,
+          pOut + ch_out,
+          flag_relu,
+          flag_batch_norm
+        );
+        i_out_x+=2;
       }
       /* check if there is left-over for compute */
       if (i_out_x != dim_out_x)
@@ -116,7 +116,7 @@ void __attribute__ ((noinline)) pulp_nn_pointwise_Co_parallel(
             sum = ((int)(bias[i]));
           }
 
-          uint8_t *pB = (pInBuffer + (i_out_x * ch_in) + (i_out_y * dim_in_x * ch_in));
+          uint8_t *pB = (pInBuffer + (i_out_x * ch_in) + (i_out_y * dim_in_x * ch_in));;
           /* basically each time it process 4 entries */
           uint16_t  col_cnt_im2col = ch_in >> 2;
 

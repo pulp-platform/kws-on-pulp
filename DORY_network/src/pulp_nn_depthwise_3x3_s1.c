@@ -36,8 +36,8 @@ void __attribute__ ((noinline)) pulp_nn_depthwise_3x3_s1(
       int8_t  * Kernel,
       int8_t out_shift,
       uint16_t out_mult,
-      int32_t * kappa,
-      int32_t * lambda,
+      int64_t * kappa,
+      int64_t * lambda,
       int flag_relu,
       int flag_batch_norm,
       unsigned int * memory_chan

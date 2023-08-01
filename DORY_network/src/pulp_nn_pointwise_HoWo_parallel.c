@@ -28,32 +28,32 @@
 #define clip8(x)                __builtin_pulp_clipu_r(x, 255)
 
 void __attribute__ ((noinline)) pulp_nn_pointwise_HoWo_parallel(
-  const uint8_t * pInBuffer,
-  uint8_t *       pIm2ColBuffer,
-  const int8_t *  bias,
-  uint8_t *       pOutBuffer,
-  const int8_t *  pWeight,
-  int32_t *       k,
-  int32_t *       lambda,
-  const uint16_t  out_mult,
-  const uint16_t  out_shift,
-  const uint16_t  dim_in_x,
-  const uint16_t  dim_in_y,
-  const uint16_t  ch_in,
-  const uint16_t  dim_out_x,
-  const uint16_t  dim_out_y,
-  const uint16_t  ch_out,
-  const uint16_t  dim_kernel_x,
-  const uint16_t  dim_kernel_y,
-  const uint16_t  padding_y_top,
-  const uint16_t  padding_y_bottom,
-  const uint16_t  padding_x_left,
-  const uint16_t  padding_x_right,
-  const uint16_t  stride_x,
-  const uint16_t  stride_y,
-  int             flag_relu,
-  int             flag_batch_norm
-) {
+                                                                const uint8_t * pInBuffer,
+                                                                uint8_t *       pIm2ColBuffer,
+                                                                const int8_t *  bias,
+                                                                uint8_t *       pOutBuffer,
+                                                                const int8_t *  pWeight,
+                                                                int64_t *       k,
+                                                                int64_t *       lambda,
+                                                                const uint16_t  out_mult,
+                                                                const uint16_t  out_shift,
+                                                                const uint16_t  dim_in_x,
+                                                                const uint16_t  dim_in_y,
+                                                                const uint16_t  ch_in,
+                                                                const uint16_t  dim_out_x,
+                                                                const uint16_t  dim_out_y,
+                                                                const uint16_t  ch_out,
+                                                                const uint16_t  dim_kernel_x,
+                                                                const uint16_t  dim_kernel_y,
+                                                                const uint16_t  padding_y_top,
+                                                                const uint16_t  padding_y_bottom,
+                                                                const uint16_t  padding_x_left,
+                                                                const uint16_t  padding_x_right,
+                                                                const uint16_t  stride_x,
+                                                                const uint16_t  stride_y,
+                                                                int             flag_relu,
+                                                                int             flag_batch_norm)
+  {
    int core_id = pi_core_id();
 
   // local vars
@@ -122,8 +122,8 @@ void __attribute__ ((noinline)) pulp_nn_pointwise_HoWo_parallel(
     if (((dim_out_x_r + (section * flag_dim_out_x_odd)) & 0x0001))
     {
       const int8_t *pA = pWeight;
-      int32_t *k1 = k;
-      int32_t *lambda1 = lambda;
+      int64_t *k1 = k;
+      int64_t *lambda1 = lambda;
       for (int i = 0; i < ch_out; i++)
       {
         int sum = 0;
