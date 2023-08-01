@@ -428,9 +428,7 @@ void net_step(void *args) {
 #endif
 
         // Check and print updated output
-        printf ("Forward\n");
         forward();
-        printf ("Forward done\n");
 
 #ifdef VERBOSE
         printf("Checking updated output..\n");
@@ -475,7 +473,7 @@ void net_step(void *args) {
         // #endif
     }
 
-    printf ("Checker\n");
+
 
     // // TODO: INIT
     // if (init == 1) {
@@ -483,6 +481,4 @@ void net_step(void *args) {
     //         ((float*)L2_weights_curr_updated)[i] = layer0_wgt.data[i];
     //     }
     // }
-
-    printf ("Checker\n");
 }

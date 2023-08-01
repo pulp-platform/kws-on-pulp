@@ -516,13 +516,9 @@ int application(void){
     // UPDATE - TEST
     int button_was_pressed = 1; // active low
 
-    // while (1){ // DEMO: Infinite loop
-    for (int tinytestidx = 0; tinytestidx < 1; tinytestidx++) { // only one
-    // for (int tinytestidx = 0; tinytestidx < 10; tinytestidx++){ // only non-unknown
-    // for (int tinytestidx = 0; tinytestidx < 35; tinytestidx++){
+    for (int tinytestidx = 0; tinytestidx < 10; tinytestidx++){ // only non-unknown
 
-
-        printf ("-----------------------------Loop iteration: %i-------------------------\n", test_idx);
+        printf ("-----------------------------Loop evaluation (itteration %i)-------------------------\n", test_idx);
 
         // Read from WAV
         if (input == "1") {
@@ -541,7 +537,8 @@ int application(void){
         }
         PRINTF("\n");
 
-        if (addnoise) {
+
+        if (1) { // add noise during evaluation
             int noisesamplestart = 0; // TODO: random sample between (0, len(wav)-16000)
             for (int samplepos = 0; samplepos < AUDIO_BUFFER_SIZE; samplepos++){
                 MfccInSig[samplepos] = MfccInSig[samplepos] + 10*RecordedNoise[noisesamplestart+samplepos];
@@ -687,10 +684,6 @@ int application(void){
                             utterance = class_11[sampleidx];
                             break;
                     }
-
-                    // DEBUG
-                    utterance = "/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/tinytest/yes_e49428d9_nohash_3.wav";
-                    classidx = 2;
 
                     printf ("sampleidx: %i\n", sampleidx);
                     printf ("classidx: %i\n", classidx);
