@@ -481,9 +481,9 @@ void net_step(void *args) {
 
 
     // // TODO: INIT
-    // if (init == 1) {
-    //     for (int i = 0; i < WGT_SIZE_L0; i++){
-    //         ((float*)L2_weights_curr_updated)[i] = layer0_wgt.data[i];
-    //     }
-    // }
+    if (init == 1) {
+        for (int i = 0; i < WGT_SIZE_L0; i++){
+            ((float*)L2_weights_curr_updated)[i] = layer0_wgt.data[i];
+        }
+    }
 }

@@ -431,6 +431,12 @@ void evaluate_tinytest(){
             }
             k++;
         } 
+
+        // PATCH
+        for (int i = 0; i < 10; i++){
+            feat_char[i+480] = feat_char[i];  
+        }     
+
         pi_l2_free(out_feat, 49*10*4*sizeof(OUT_TYPE));
 
         // Fill input buffer
@@ -515,7 +521,7 @@ void train_wavsrc(){
     int samplestart;
 
 
-    int nepochs = 1;
+    int nepochs = 10;
 
     for (int epidx = 0; epidx < nepochs; epidx++) {
         // for (int uttridx = 0; uttridx < 2; uttridx++){ // simple, to speed test
@@ -654,7 +660,7 @@ void train_wavsrc(){
         args_train_classifier[1] = (unsigned int) L2_FC_weights_int8;
         args_train_classifier[2] = (unsigned int) L2_FC_weights_float;
         args_train_classifier[3] = (unsigned int) 1; // update = 0
-        if (uttridx == 0)
+        if (uttridx == 0 && epidx == 0)
             args_train_classifier[4] = (unsigned int) 1; // init = 1
         else
             args_train_classifier[4] = (unsigned int) 0; // init = 0   
