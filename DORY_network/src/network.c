@@ -24,17 +24,17 @@
 #include "directional_allocator.h"
 #include "mem.h"
 #include <string.h>
-#include "BNReluConvolution0.h"
-#include "BNReluConvolution1.h"
-#include "BNReluConvolution6.h"
-#include "FullyConnected10.h"
-#include "BNReluConvolution3.h"
-#include "BNReluConvolution7.h"
-#include "BNReluConvolution2.h"
-#include "ReluPooling9.h"
 #include "BNReluConvolution5.h"
+#include "BNReluConvolution7.h"
+#include "BNReluConvolution1.h"
+#include "ReluPooling9.h"
+#include "BNReluConvolution6.h"
+#include "BNReluConvolution2.h"
+#include "BNReluConvolution3.h"
+#include "FullyConnected10.h"
 #include "BNReluConvolution8.h"
 #include "BNReluConvolution4.h"
+#include "BNReluConvolution0.h"
 
 
 // #define VERBOSE 1
@@ -124,7 +124,7 @@ void network_run(void *l2_buffer, size_t l2_buffer_size, void *l2_final_output, 
   struct pi_cluster_task cluster_task = {0};
   // First open the cluster
   pi_cluster_conf_init(&conf); 
-  conf.cc_stack_size = 3800;
+  conf.cc_stack_size = 3500;
   conf.id=0; 
   conf.icache_conf = PI_CLUSTER_MASTER_CORE_ICACHE_ENABLE | PI_CLUSTER_ICACHE_PREFETCH_ENABLE | PI_CLUSTER_ICACHE_ENABLE;
   unsigned int args[4];
@@ -140,15 +140,18 @@ void network_run(void *l2_buffer, size_t l2_buffer_size, void *l2_final_output, 
   pi_cluster_task(&cluster_task, network_run_cluster, args);
   int stacks_size = 3600 * pi_cl_cluster_nb_pe_cores();
   void *stacks = pi_cl_l1_scratch_alloc(&cluster_dev, &cluster_task, stacks_size);
-  pi_cluster_task_stacks(&cluster_task, stacks, 3600);
+  pi_cluster_task_stacks(&cluster_task, stacks, 3400);
   // Then offload an entry point, this will get executed on the cluster controller
-  //cluster_task.stack_size = 3800;
-  //cluster_task.slave_stack_size = 3600;
+  //cluster_task.stack_size = 3500;
+  //cluster_task.slave_stack_size = 3400;
   pi_cluster_send_task_to_cl(&cluster_dev, &cluster_task); 
-  // pi_cl_l1_free((void *) 0, L1_buffer, 35000);
-  pi_cl_l1_free((void *) 0, L1_buffer, 99000); // ODDA
+  pi_cl_l1_free((void *) 0, L1_buffer, 36700);
   pi_cluster_close(&cluster_dev);
+
+
+#ifdef VERBOSE
   print_perf("Final", cycle_network_execution, 2656768);
+#endif
 
   // 9 layers with weights have been processed before FC layer  
   *L3_final_weights_curr = L3_weights;
@@ -208,7 +211,7 @@ void network_run_cluster(void *args) {
 /* -------- SECTION 2 BEGIN --------- */
 /* ---------------------------------- */
   int weight_l_cnt = 0; // count how many layers with weights we have processed to increment the weights_L3 pointer
-
+  
   // int n_inf_layers = 11; // Inference
   int n_inf_layers = 10; // Training
 
@@ -274,7 +277,7 @@ void network_run_cluster(void *args) {
 
 #ifdef VERBOSE
     print_perf(Layers_name[i], perf_cyc, NODEs_MACS[i]);
-#endif 
+#endif
 
     // TODO: What error?
     // prevents error from compiler
@@ -344,7 +347,6 @@ void network_run_cluster(void *args) {
   }
 
   //memcpy(L2_output, l2_final_output, activations_out_size[10]); // BUGGY!
-  
   for (int i=0; i<activations_out_size[10]; i++)
     *((uint8_t*)(l2_final_output+i)) = *((uint8_t*)(L2_output+i));
 

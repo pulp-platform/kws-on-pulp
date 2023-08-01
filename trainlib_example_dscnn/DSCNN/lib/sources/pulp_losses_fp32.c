@@ -84,7 +84,7 @@ static void localsoftmax(float *input, size_t input_len) {
 // #endif
 
   for (size_t i = 0; i < input_len; i++){
-    printf("Softmax[%d] is %f\n", i, output[i]);
+    // printf("Softmax[%d] is %f\n", i, output[i]);
     input[i] = output[i];
   }
 

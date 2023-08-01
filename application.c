@@ -278,6 +278,7 @@ void input_wav(int save, int free, char* wavfile, int noise){
     PRINTF("\n");
 
     if (noise){
+        // TODO: Understand why 10
         RecordedNoise = (MFCC_IN_TYPE *) pi_l2_malloc(10*AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
     
         #if (DATA_TYPE==2) || (DATA_TYPE==3)
@@ -499,10 +500,10 @@ int application(void){
 
     // Inference loop
     // Add noise
-    int addnoise = 0;
+    int addnoise = 1;
 
     if (addnoise){
-        char noiseName[80] = "/home/cioflanc/odda_gap9/tiny_denoiser/restaurant_crop_ch01.wav";
+        char noiseName[130] = "/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/restaurant_crop_ch01.wav";
         if (input == "0"){
             input_mic(0, 1, 1); // save, free, noise
         }
@@ -560,23 +561,7 @@ int application(void){
         int k = 0;
         for (int i = 0; i < 1960;i++){                
             
-            // feat_char[k] = (char) (((int) floor(out_feat[i] * pow(2, -1) * sqrt(0.05))) + 128); // 23.883617 QSNR w/ float
-            // printf("feat_char[%i] = %f, ", i, out_feat[i]);
-            // printf("\n");
-            // printf("feat_char[%i] = %f, ", i, out_feat[i] * pow(2, -1));
-            // printf("\n");
-            // printf("feat_char[%i] = %f, ", i, out_feat[i] * pow(2, -1) * sqrt(0.05) );
-            // printf("\n");
-            // printf("feat_char[%i] = %f, ", i, floor(out_feat[i] * pow(2, -1) * sqrt(0.05)));
-            // printf("\n");
-            // printf("feat_char[%i] = %i, ", i, (int) floor(out_feat[i] * pow(2, -1) * sqrt(0.05)) + 128);
-            // printf("\n");
-
             feat_char[k] = (char) ((int) floor(out_feat[i] * pow(2, -1) * sqrt(0.05)) + 128);
-
-            // if (i == 5){
-            //     pmsis_exit(-1);
-            // }
 
             // Select 10 MFCC per window
             if (i == 40*(k/10) + 9){
@@ -705,7 +690,7 @@ int application(void){
 
                     // DEBUG
                     utterance = "/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/tinytest/yes_e49428d9_nohash_3.wav";
-                    classidx = 3;
+                    classidx = 2;
 
                     printf ("sampleidx: %i\n", sampleidx);
                     printf ("classidx: %i\n", classidx);
@@ -715,7 +700,7 @@ int application(void){
                     // Load Utterance
                     input_wav(0, 1, utterance, 0);  // save, free, utterance, noise
 
-                    int localaddnoise = 0;
+                    int localaddnoise = 1;
                     if (localaddnoise){
                         samplestart = 0; // TODO: random sample between (0, len(wav)-16000)
                         for (int samplepos = 0; samplepos < AUDIO_BUFFER_SIZE; samplepos++){
