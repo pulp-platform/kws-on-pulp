@@ -1,6 +1,5 @@
 dory_input_features/
 dory_update/
-quantization/*.txt
 *.onnx
 *BUILD/
 *BUILD_MFCC/
