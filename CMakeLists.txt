@@ -301,7 +301,7 @@ list(APPEND TARGET_PREPROCESSOR  # -DPERF
 # WORK
 set (UTTR_FILE /usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/utterances.txt)
 set (TINYTEST_FILE /usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/tinytest.txt)
-set (RESTAURANT_NOISE_WAV /usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/restaurant_crop_ch01.wav)
+set (RESTAURANT_NOISE_WAV /usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/dude_miaowing_1s.wav)
 
 FILE(STRINGS ${UTTR_FILE} UTTERANCES)
 FILE(STRINGS ${TINYTEST_FILE} TINYTEST_UTTR)
@@ -325,16 +325,10 @@ FILE(STRINGS ${TINYTEST_FILE} TINYTEST_UTTR)
                         ${CURDIR}DORY_network/hex/FullyConnected10_weights.hex
                         ${CURDIR}DORY_network/hex/inputs.hex
                         ${WAV_FILE}
+                        ${RESTAURANT_NOISE_WAV}
                         ${UTTERANCES} 
                         ${TINYTEST_UTTR}
-                        ${RESTAURANT_NOISE_WAV}
-
 )
-
-
-# tinytest
-
-
 
 
 project (${TARGET_NAME} C ASM)

@@ -76,6 +76,8 @@ typedef short int MFCC_IN_TYPE; // Save MFCCs works
 // Test utterances
 #include "tinytest.h"
 
+#include "noise_meeting.h"
+
 
 /* 
      global variables
@@ -268,30 +270,68 @@ void input_mic(int save, int free, int noise){
 
 void input_wav(int save, int free, char* wavfile, int noise){
     // Allocate L3 buffers for audio IN
-    inWav    = (short int *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(short));  
+
+    int noise_seconds = 1;
+     
     header_struct header_info;
-    if (ReadWavFromFile(wavfile, inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
-        printf("Error reading wav file\n");
-        pmsis_exit(1);
+    if (noise){
+        inWav = NULL;
+        inWav    = (short int *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(short)); 
+        if (inWav == NULL){
+            printf("Failed allocating inWav.\n");
+            pmsis_exit(-1);
+        }
+        printf("File is: %s\n", wavfile);
+        if (ReadWavFromFile(wavfile, inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+            printf("Error reading wav file\n");
+            pmsis_exit(1);
+        }
     }
-    int num_samples = header_info.DataSize * 8 / (header_info.NumChannels * header_info.BitsPerSample);
+    else{
+        inWav    = (short int *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(short)); 
+        if (ReadWavFromFile(wavfile, inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+            printf("Error reading wav file\n");
+            pmsis_exit(1);
+        }
+    }
 
     for (int i = 0; i < 5; i++){
         PRINTF("inWav[%i] = %i, ", i, inWav[i]);
     }
     PRINTF("\n");
 
+    // for (int i = 0; i < 16000; i++){
+    //     printf("inWav[%i] = %i, ", i, inWav[i]);
+    // }
+    printf("\n");
+
     if (noise){
-        // TODO: Understand why 10
-        RecordedNoise = (MFCC_IN_TYPE *) pi_l2_malloc(10*AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
-    
+        
+        // for (int i = 0; i < noise_seconds * AUDIO_BUFFER_SIZE; i++){
+        //     inWav[i] = inWav[i] / 1024;
+        //     // printf("inWav[%i] = %i, ", i, inWav[i]);
+        // }
+        // PRINTF("\n");
+
+        RecordedNoise = NULL;
+        RecordedNoise = (MFCC_IN_TYPE *) pi_l2_malloc(noise_seconds*AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
+        if (RecordedNoise == NULL){
+            printf("Failed allocating RecordedNoise.\n");
+            pmsis_exit(-1);
+        }
         #if (DATA_TYPE==2) || (DATA_TYPE==3)
-            for (int i=0; i<10*AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
-                RecordedNoise[i] = (MFCC_IN_TYPE) inWav[i] / (1<<15);
+            for (int i=0; i<noise_seconds*AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
+                // READ WAV
+                // RecordedNoise[i] = (MFCC_IN_TYPE) inWav[i] / (1<<15);
+                // READ TEXT
+                RecordedNoise[i] = (MFCC_IN_TYPE) noisemeeting[i] / (1<<15);
             }
         #else
-            for (int i=0; i<10*AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
-                RecordedNoise[i] = (MFCC_IN_TYPE) gap_clip(((int) inWav[i]), 15);
+            for (int i=0; i<noise_seconds*AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
+                // READ WAV
+                // RecordedNoise[i] = (MFCC_IN_TYPE) gap_clip(((int) inWav[i]), 15);
+                // READ TEXT
+                RecordedNoise[i] = (MFCC_IN_TYPE) gap_clip(((int) noisemeeting[i]), 15);
             }
         #endif
 
@@ -307,7 +347,7 @@ void input_wav(int save, int free, char* wavfile, int noise){
         #if (DATA_TYPE==2) || (DATA_TYPE==3)
             for (int i=0; i<AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
                 MfccInSig[i] = (MFCC_IN_TYPE) inWav[i] / (1<<15);
-                            }
+            }
         #else
             for (int i=0; i<AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
                 MfccInSig[i] = (MFCC_IN_TYPE) gap_clip(((int) inWav[i]), 15);
@@ -318,14 +358,23 @@ void input_wav(int save, int free, char* wavfile, int noise){
 
     if (save){
      // Log WAV 
-        dump_wav_open("test_gap.wav", 16, 16000, 1, sizeof(short)*AUDIO_BUFFER_SIZE);
-        dump_wav_write(MfccInSig, sizeof(short)*AUDIO_BUFFER_SIZE);
-        dump_wav_close();
-        printf("Writing wav file to test_gap.wav completed successfully\n");
+        if (noise){
+            dump_wav_open("test_gap.wav", 16, 16000, 1, noise_seconds*sizeof(short)*AUDIO_BUFFER_SIZE);
+            dump_wav_write(inWav, noise_seconds*sizeof(short)*AUDIO_BUFFER_SIZE);
+            dump_wav_close();
+            printf("Writing wav file to test_gap.wav completed successfully\n");
+        }
+        else{   
+            dump_wav_open("test_gap.wav", 16, 16000, 1, sizeof(short)*AUDIO_BUFFER_SIZE);
+            dump_wav_write(inWav, sizeof(short)*AUDIO_BUFFER_SIZE);
+            dump_wav_close();
+            printf("Writing wav file to test_gap.wav completed successfully\n");
+        }
+        
     }
     if (free){
         if (noise){
-            pi_l2_free(inWav, 10*AUDIO_BUFFER_SIZE * sizeof(short));
+            pi_l2_free(inWav, noise_seconds*AUDIO_BUFFER_SIZE * sizeof(short));
         }
         else{
             pi_l2_free(inWav, AUDIO_BUFFER_SIZE * sizeof(short));
@@ -407,7 +456,7 @@ void evaluate_tinytest(){
         if (addnoise) {
             int noisesamplestart = 0; // TODO: random sample between (0, len(wav)-16000)
             for (int samplepos = 0; samplepos < AUDIO_BUFFER_SIZE; samplepos++){
-                MfccInSig[samplepos] = MfccInSig[samplepos] + 5*RecordedNoise[noisesamplestart+samplepos];
+                MfccInSig[samplepos] = MfccInSig[samplepos] + 1*RecordedNoise[noisesamplestart+samplepos];
             }
         }
 
@@ -432,10 +481,10 @@ void evaluate_tinytest(){
             k++;
         } 
 
-        // PATCH
-        for (int i = 0; i < 10; i++){
-            feat_char[i+480] = feat_char[i];  
-        }     
+        // // PATCH
+        // for (int i = 0; i < 10; i++){
+        //     feat_char[i+480] = feat_char[i];  
+        // }     
 
         pi_l2_free(out_feat, 49*10*4*sizeof(OUT_TYPE));
 
@@ -586,7 +635,7 @@ void train_wavsrc(){
         if (localaddnoise){
             samplestart = 0; // TODO: random sample between (0, len(wav)-16000)
             for (int samplepos = 0; samplepos < AUDIO_BUFFER_SIZE; samplepos++){
-                MfccInSig[samplepos] = MfccInSig[samplepos] + 5*RecordedNoise[samplestart+samplepos];
+                MfccInSig[samplepos] = MfccInSig[samplepos] + 1*RecordedNoise[samplestart+samplepos];
             }
         }
 
@@ -613,10 +662,10 @@ void train_wavsrc(){
         } 
         
 
-        // PATCH
-        for (int i = 0; i < 10; i++){
-            feat_char[i+480] = feat_char[i];  
-        }                    
+        // // PATCH
+        // for (int i = 0; i < 10; i++){
+        //     feat_char[i+480] = feat_char[i];  
+        // }                    
 
 
         // for (int i = 0; i < 490; i++){
@@ -807,12 +856,13 @@ int application(void){
     int addnoise = 1;
 
     if (addnoise){
-        char noiseName[130] = "/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/restaurant_crop_ch01.wav";
+        // char noiseName[130] = "/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/dude_miaowing_1s.wav";
+        char noiseName[130] = "/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/tinytest/backward_18f8afd5_nohash_1.wav";
         if (input == "0"){
             input_mic(0, 1, 1); // save, free, noise
         }
         else if (input == "1"){
-            input_wav(0, 1, noiseName, 1); // save, free, NoiseName, noise
+            input_wav(1, 1, noiseName, 1); // save, free, NoiseName, noise
         }
     }
 
