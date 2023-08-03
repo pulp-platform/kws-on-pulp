@@ -848,16 +848,15 @@ int application(void){
 
     // pi_l2_free(l2_buffer, L2_MEMORY_SIZE);
 
-    int test_idx = 0;
-    int test_array[10] = {0, 1, 0, 1, 1, 0, 0}; // if 1 - update
 
-    // Inference loop
     // Add noise
     int addnoise = 1;
 
     if (addnoise){
-        // char noiseName[130] = "/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/dude_miaowing_1s.wav";
-        char noiseName[130] = "/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/tinytest/backward_18f8afd5_nohash_1.wav";
+
+        char noiseName[130] = "/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/dude_miaowing_1s.wav";
+        // char noiseName[130] = "/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/tinytest/backward_18f8afd5_nohash_1.wav";
+
         if (input == "0"){
             input_mic(0, 1, 1); // save, free, noise
         }
@@ -865,6 +864,7 @@ int application(void){
             input_wav(1, 1, noiseName, 1); // save, free, NoiseName, noise
         }
     }
+
 
     // evaluate before training
     evaluate_tinytest();
