@@ -2,7 +2,7 @@
 
 def main():
 
-    with open("loss_lr00001_x1meeting_evaltrain_nopatch.txt") as file:
+    with open("loss_lr001_x1meeting_evaltrain_nopatch.txt") as file:
         lines = []
         for line in file:
             if (line.startswith('Loss is ')):
