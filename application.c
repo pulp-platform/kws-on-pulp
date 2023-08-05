@@ -306,12 +306,6 @@ void input_wav(int save, int free, char* wavfile, int noise){
     printf("\n");
 
     if (noise){
-        
-        // for (int i = 0; i < noise_seconds * AUDIO_BUFFER_SIZE; i++){
-        //     inWav[i] = inWav[i] / 1024;
-        //     // printf("inWav[%i] = %i, ", i, inWav[i]);
-        // }
-        // PRINTF("\n");
 
         RecordedNoise = NULL;
         RecordedNoise = (MFCC_IN_TYPE *) pi_l2_malloc(noise_seconds*AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
@@ -322,14 +316,14 @@ void input_wav(int save, int free, char* wavfile, int noise){
         #if (DATA_TYPE==2) || (DATA_TYPE==3)
             for (int i=0; i<noise_seconds*AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
                 // READ WAV
-                // RecordedNoise[i] = (MFCC_IN_TYPE) inWav[i] / (1<<15);
+                RecordedNoise[i] = (MFCC_IN_TYPE) inWav[i] / (1<<15);
                 // READ TEXT
-                RecordedNoise[i] = (MFCC_IN_TYPE) noisemeeting[i] / (1<<15);
+                // RecordedNoise[i] = (MFCC_IN_TYPE) noisemeeting[i] / (1<<15);
             }
         #else
             for (int i=0; i<noise_seconds*AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
                 // READ WAV
-                // RecordedNoise[i] = (MFCC_IN_TYPE) gap_clip(((int) inWav[i]), 15);
+                RecordedNoise[i] = (MFCC_IN_TYPE) gap_clip(((int) inWav[i]), 15);
                 // READ TEXT
                 RecordedNoise[i] = (MFCC_IN_TYPE) gap_clip(((int) noisemeeting[i]), 15);
             }
@@ -854,8 +848,7 @@ int application(void){
 
     if (addnoise){
 
-        char noiseName[130] = "/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/dude_miaowing_1s.wav";
-        // char noiseName[130] = "/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/tinytest/backward_18f8afd5_nohash_1.wav";
+        char noiseName[130] = "/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/restaurant_ch01_mancrop.wav";
 
         if (input == "0"){
             input_mic(0, 1, 1); // save, free, noise

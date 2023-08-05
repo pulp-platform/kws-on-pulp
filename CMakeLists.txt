@@ -301,7 +301,7 @@ list(APPEND TARGET_PREPROCESSOR  # -DPERF
 # WORK
 set (UTTR_FILE /usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/utterances.txt)
 set (TINYTEST_FILE /usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/tinytest.txt)
-set (RESTAURANT_NOISE_WAV /usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/dude_miaowing_1s.wav)
+set (RESTAURANT_NOISE_WAV /usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/restaurant_ch01_mancrop.wav)
 
 FILE(STRINGS ${UTTR_FILE} UTTERANCES)
 FILE(STRINGS ${TINYTEST_FILE} TINYTEST_UTTR)
