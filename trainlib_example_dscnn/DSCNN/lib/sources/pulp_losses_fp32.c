@@ -41,7 +41,9 @@ static void localsoftmax(float *input, size_t input_len) {
 
   for (size_t i = 0; i < input_len; i++){
     input[i] = input[i] + 1e-6;
+    #ifdef VERBOSE
     printf("Input[%d] is %f\n", i, input[i]);
+    #endif
   }
 
 
@@ -105,9 +107,11 @@ void pulp_CrossEntropyLoss ( void * loss_args )
 
   localsoftmax(outData, 12);
 
+  #ifdef VERBOSE
   for (int idx = 0; idx < 12; idx++){
     printf("Out[%i]=%f\n", idx, ((float *)outData)[idx]);
   }
+  #endif
 
 
   float delta = 0.000001;

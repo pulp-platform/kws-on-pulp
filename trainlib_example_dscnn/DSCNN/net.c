@@ -27,7 +27,9 @@ int predict_unsigned_local (void * array, int n_classes){
         int max_idx = 0;
         char prediction[10];
         for (int i = 0; i < n_classes; i++){
+                #ifdef VERBOSE
                 printf ("d[%i] = %u\n", i, ((unsigned int*) array)[i]);
+                #endif
 
                 if (((unsigned int *) array)[i] > max_val){
                         max_val = ((unsigned int*) array)[i];
@@ -92,7 +94,10 @@ int predict_float_local (void * array, int n_classes){
         int max_idx = 0;
         char prediction[10];
         for (int i = 0; i < n_classes; i++){
+                
+                #ifdef VERBOSE
                 printf ("d[%i] = %f\n", i, ((float*) array)[i]);
+                #endif
 
                 if (((float *) array)[i] > max_val){
                         max_val = ((float*) array)[i];
@@ -470,7 +475,6 @@ void net_step(void *args) {
         
 
         compute_loss();
-        printf("Predicting local output\n");
         predict_float_local(l0_out, OUT_SIZE);
 
         // #ifdef VERBOSE 

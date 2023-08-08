@@ -564,7 +564,8 @@ void train_wavsrc(){
     int samplestart;
 
 
-    int nepochs = 10;
+    // int nepochs = 10; 
+    int nepochs = 1; // 
 
     for (int epidx = 0; epidx < nepochs; epidx++) {
         // for (int uttridx = 0; uttridx < 2; uttridx++){ // simple, to speed test
