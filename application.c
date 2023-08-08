@@ -855,7 +855,10 @@ int application(void){
             input_mic(0, 1, 1); // save, free, noise
         }
         else if (input == "1"){
-            input_wav(1, 1, noiseName, 1); // save, free, NoiseName, noise
+            // Forcefully recording noise from recording
+
+            input_mic(1, 1, 1); // save, free, noise
+            // input_wav(1, 1, noiseName, 1); // save, free, NoiseName, noise
         }
     }
 
