@@ -244,20 +244,18 @@ void input_mic(int save, int free, int noise){
         } 
     }
     else {
-        MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(BUFF_SIZE/3/2);
-        // Scale data
-        for(int i=0;i<BUFF_SIZE;i+=3){
-            // printf("BufferInList)[%i]=%f\n", i, ((int32_t*)BufferInList)[i]);
 
-            // TODO: use MfccInSig_int16 for saving
-            // TODO: listen to saved version
-            // TODO: use in inference 
-            MfccInSig[outidx] = (MFCC_IN_TYPE)(((float)((int32_t*)BufferInList)[i]) /((int)(1<<16)));
+        MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(BUFF_SIZE/3/2);
+        MfccInSig_int16 = (int16_t *) pi_l2_malloc(sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+        for(int i=0;i<BUFF_SIZE;i+=3){
+            MfccInSig[outidx] = (MFCC_IN_TYPE) (((float)((int32_t *)BufferInList)[i]) / (float)(1<<31 - 1));
+            MfccInSig_int16[outidx] = (int16_t) (MfccInSig[outidx] * (1<<15));
+
             outidx++;
             if (outidx == AUDIO_BUFFER_SIZE){
                 break;
             }
-        }    
+        }
     }
 
     if (save) {
@@ -267,10 +265,10 @@ void input_mic(int save, int free, int noise){
         dump_wav_write(RecordedNoise_int16, sizeof(int16_t) *AUDIO_BUFFER_SIZE);
 
         // Dumping the buffer
-        // dump_wav_open("test_gap.wav", 32, 48000, 1, BUFF_SIZE);
+        // dump_wav_open("recording.wav", 32, 48000, 1, BUFF_SIZE);
         // dump_wav_write(BufferInList, BUFF_SIZE);
         dump_wav_close();
-        printf("Writing wav file to test_gap.wav completed successfully\n");
+        printf("Writing wav file to recording.wav completed successfully\n");
     }
 
     if (free){
@@ -359,13 +357,13 @@ void input_wav(int save, int free, char* wavfile, int noise){
             dump_wav_open("noise_file.wav", 16, 16000, 1, noise_seconds*sizeof(short)*AUDIO_BUFFER_SIZE);
             dump_wav_write(inWav, noise_seconds*sizeof(short)*AUDIO_BUFFER_SIZE);
             dump_wav_close();
-            printf("Writing wav file to test_gap.wav completed successfully\n");
+            printf("Writing wav file to noise_file.wav completed successfully\n");
         }
         else{   
             dump_wav_open("utter_file.wav", 16, 16000, 1, sizeof(short)*AUDIO_BUFFER_SIZE);
             dump_wav_write(inWav, sizeof(short)*AUDIO_BUFFER_SIZE);
             dump_wav_close();
-            printf("Writing wav file to test_gap.wav completed successfully\n");
+            printf("Writing wav file to utter_file.wav completed successfully\n");
         }
         
     }
@@ -439,7 +437,7 @@ void evaluate_tinytest(){
         }
         // Read from MIC
         else if (input == "0") {
-            input_mic(0, 1, 0); // save, free, noise
+            input_mic(1, 1, 0); // save, free, noise
 #ifdef AUDIO_EVK
             pi_gpio_pin_write(gpio_pin_o, 1);
 #endif
