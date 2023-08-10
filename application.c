@@ -587,8 +587,8 @@ void train_wavsrc(){
     int samplestart;
 
 
-    // int nepochs = 10; 
-    int nepochs = 1; // 
+    int nepochs = 10; // GVSOC - DEMO
+    // int nepochs = 1; // BOARD - QUICK DEMO
 
     for (int epidx = 0; epidx < nepochs; epidx++) {
         // for (int uttridx = 0; uttridx < 2; uttridx++){ // simple, to speed test
@@ -871,10 +871,9 @@ int application(void){
             input_mic(0, 1, 1); // save, free, noise
         }
         else if (input == "1"){
-            // Forcefully recording noise from recording
-
-            input_mic(1, 1, 1); // save, free, noise
-            // input_wav(1, 1, noiseName, 1); // save, free, NoiseName, noise
+            
+            // input_mic(1, 1, 1); // save, free, noise // Forcefully recording noise from recording
+            input_wav(1, 1, noiseName, 1); // save, free, NoiseName, noise
         }
     }
 
