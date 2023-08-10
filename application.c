@@ -263,7 +263,7 @@ void input_mic(int save, int free, int noise){
     if (save) {
 
         // Dumping the treated buffer
-        dump_wav_open("test_gap.wav", 16, 16000, 1, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+        dump_wav_open("recording.wav", 16, 16000, 1, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
         dump_wav_write(RecordedNoise_int16, sizeof(int16_t) *AUDIO_BUFFER_SIZE);
 
         // Dumping the buffer
@@ -356,13 +356,13 @@ void input_wav(int save, int free, char* wavfile, int noise){
         // Log WAV 
         // TODO: use *_int16 for saving
         if (noise){
-            dump_wav_open("test_gap.wav", 16, 16000, 1, noise_seconds*sizeof(short)*AUDIO_BUFFER_SIZE);
+            dump_wav_open("noise_file.wav", 16, 16000, 1, noise_seconds*sizeof(short)*AUDIO_BUFFER_SIZE);
             dump_wav_write(inWav, noise_seconds*sizeof(short)*AUDIO_BUFFER_SIZE);
             dump_wav_close();
             printf("Writing wav file to test_gap.wav completed successfully\n");
         }
         else{   
-            dump_wav_open("test_gap_utter.wav", 16, 16000, 1, sizeof(short)*AUDIO_BUFFER_SIZE);
+            dump_wav_open("utter_file.wav", 16, 16000, 1, sizeof(short)*AUDIO_BUFFER_SIZE);
             dump_wav_write(inWav, sizeof(short)*AUDIO_BUFFER_SIZE);
             dump_wav_close();
             printf("Writing wav file to test_gap.wav completed successfully\n");
