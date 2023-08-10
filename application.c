@@ -104,9 +104,9 @@ char *input = NULL;
 // Arrays handling data movement
 short int *inWav;
 MFCC_IN_TYPE *MfccInSig;
-int16_t *MfccInSig_int16;
+int16_t *MfccInSig_int16; // for saving
 MFCC_IN_TYPE *RecordedNoise;
-int16_t *RecordedNoise_int16;
+int16_t *RecordedNoise_int16; // for saving
 OUT_TYPE *out_feat;
 char * feat_char;
 
@@ -234,14 +234,9 @@ void input_mic(int save, int free, int noise){
         RecordedNoise = (MFCC_IN_TYPE *) pi_l2_malloc(BUFF_SIZE/3/2);
         RecordedNoise_int16 = (int16_t *) pi_l2_malloc(sizeof(int16_t) * AUDIO_BUFFER_SIZE);
         for(int i=0;i<BUFF_SIZE;i+=3){
-            // printf("BufferInList)[%i]=%f\n", i, ((int32_t*)BufferInList)[i]);
-            // printf("BufferInList)[%i]=%i, %f\n", i, ((int32_t*)BufferInList)[i], (MFCC_IN_TYPE)(((float)((int32_t*)BufferInList)[i]) /((int)(1<<16))));
-            RecordedNoise[outidx] = (MFCC_IN_TYPE)(((float)((int32_t*)BufferInList)[i]) /((int)(1<<16))); // original
-            RecordedNoise_int16[outidx] = (int16_t) RecordedNoise[outidx];
-            // printf("RecordedNoise_int16[%i] = %i\n", i, RecordedNoise_int16[outidx]);
+            RecordedNoise[outidx] = (MFCC_IN_TYPE) (((float)((int32_t *)BufferInList)[i]) / (float)(1<<31 - 1));
+            RecordedNoise_int16[outidx] = (int16_t) (RecordedNoise[outidx] * (1<<15));
 
-            // RecordedNoise[outidx] = (MFCC_IN_TYPE)((float)((int32_t*)BufferInList)[i]/((float)(1<<25)));
-            // printf("RecordedNoise[%i] = %f\n", outidx, RecordedNoise[outidx]);
             outidx++;
             if (outidx == AUDIO_BUFFER_SIZE){
                 break;
@@ -253,6 +248,10 @@ void input_mic(int save, int free, int noise){
         // Scale data
         for(int i=0;i<BUFF_SIZE;i+=3){
             // printf("BufferInList)[%i]=%f\n", i, ((int32_t*)BufferInList)[i]);
+
+            // TODO: use MfccInSig_int16 for saving
+            // TODO: listen to saved version
+            // TODO: use in inference 
             MfccInSig[outidx] = (MFCC_IN_TYPE)(((float)((int32_t*)BufferInList)[i]) /((int)(1<<16)));
             outidx++;
             if (outidx == AUDIO_BUFFER_SIZE){
@@ -286,25 +285,18 @@ void input_wav(int save, int free, char* wavfile, int noise){
     int noise_seconds = 1;
      
     header_struct header_info;
-    if (noise){
+
         inWav = NULL;
         inWav    = (short int *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(short)); 
         if (inWav == NULL){
             printf("Failed allocating inWav.\n");
             pmsis_exit(-1);
         }
-        printf("File is: %s\n", wavfile);
-        if (ReadWavFromFile(wavfile, inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
-            printf("Error reading wav file\n");
-            pmsis_exit(1);
-        }
-    }
-    else{
-        inWav    = (short int *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(short)); 
-        if (ReadWavFromFile(wavfile, inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
-            printf("Error reading wav file\n");
-            pmsis_exit(1);
-        }
+    printf("File is: %s\n", wavfile);
+
+    if (ReadWavFromFile(wavfile, inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+        printf("Error reading wav file\n");
+        pmsis_exit(1);
     }
 
     for (int i = 0; i < 5; i++){
@@ -318,7 +310,6 @@ void input_wav(int save, int free, char* wavfile, int noise){
     printf("\n");
 
     if (noise){
-
         RecordedNoise = NULL;
         RecordedNoise = (MFCC_IN_TYPE *) pi_l2_malloc(noise_seconds*AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
         if (RecordedNoise == NULL){
@@ -337,7 +328,7 @@ void input_wav(int save, int free, char* wavfile, int noise){
                 // READ WAV
                 RecordedNoise[i] = (MFCC_IN_TYPE) gap_clip(((int) inWav[i]), 15);
                 // READ TEXT
-                RecordedNoise[i] = (MFCC_IN_TYPE) gap_clip(((int) noisemeeting[i]), 15);
+                // RecordedNoise[i] = (MFCC_IN_TYPE) gap_clip(((int) noisemeeting[i]), 15);
             }
         #endif
 
@@ -361,9 +352,9 @@ void input_wav(int save, int free, char* wavfile, int noise){
         #endif
     }
     
-
     if (save){
-     // Log WAV 
+        // Log WAV 
+        // TODO: use *_int16 for saving
         if (noise){
             dump_wav_open("test_gap.wav", 16, 16000, 1, noise_seconds*sizeof(short)*AUDIO_BUFFER_SIZE);
             dump_wav_write(inWav, noise_seconds*sizeof(short)*AUDIO_BUFFER_SIZE);
@@ -454,7 +445,7 @@ void evaluate_tinytest(){
 #endif
         }
         for (int i = 0; i < 10; i++){
-            printf("MfccInSig[%i] = %f, ", i, MfccInSig[i]);
+            PRINTF("MfccInSig[%i] = %f, ", i, MfccInSig[i]);
         }
         PRINTF("\n");
 
@@ -465,47 +456,28 @@ void evaluate_tinytest(){
             MfccInSig_int16 = (int16_t *) pi_l2_malloc (sizeof(int16_t) * AUDIO_BUFFER_SIZE);
             for (int i = 0; i < AUDIO_BUFFER_SIZE; i++){
                 MfccInSig_int16[i] = (int16_t) (MfccInSig[i] * (1<<15));
-
-
             }
-            // Dumping the treated buffer
-            dump_wav_open("test_gap_prerec.wav", 16, 16000, 1, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+            // Save the noise-augmented recording
+            dump_wav_open("utter.wav", 16, 16000, 1, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
             dump_wav_write(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
-
-            // Dumping the buffer
-            // dump_wav_open("test_gap.wav", 32, 48000, 1, BUFF_SIZE);
-            // dump_wav_write(BufferInList, BUFF_SIZE);
             dump_wav_close();
-            printf("Writing wav file to test_gap.wav completed successfully\n");
+            printf("Writing wav file to utter.wav completed successfully\n");
             for (int samplepos = 0; samplepos < AUDIO_BUFFER_SIZE; samplepos++){
-
-                // MfccInSig has float16 values, RecordedNoise has int16 values
-                // We trained our model with float16 values
-                // TODO: scale RecordedNoise
-
-                MfccInSig[samplepos] = MfccInSig[samplepos] + 1*RecordedNoise[noisesamplestart+samplepos]/(1<<15);
+                MfccInSig[samplepos] = MfccInSig[samplepos] + 1*RecordedNoise[noisesamplestart+samplepos];
             }
-
 
             for (int i = 0; i < AUDIO_BUFFER_SIZE; i++){
-                // MfccInSig has float16 values, RecordedNoise has int16 values
-                // We save int16 wavs
-                // TODO: scale MfccInSig
-                MfccInSig_int16[i] = (int16_t) ((MfccInSig[i] * (1<<15)) + 1*RecordedNoise[i]);
+                MfccInSig_int16[i] = (int16_t)(MfccInSig[i] * (1<<15)) + 1*RecordedNoise_int16[i];
             }
 
-            // Dumping the treated buffer
-            dump_wav_open("test_gap_comb.wav", 16, 16000, 1, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+            // Save the noise-augmented recording
+            dump_wav_open("utter_noise.wav", 16, 16000, 1, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
             dump_wav_write(MfccInSig_int16, sizeof(int16_t) *AUDIO_BUFFER_SIZE);
-
-            // Dumping the buffer
-            // dump_wav_open("test_gap.wav", 32, 48000, 1, BUFF_SIZE);
-            // dump_wav_write(BufferInList, BUFF_SIZE);
             dump_wav_close();
 
             pi_l2_free(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
 
-            printf("Writing wav file to test_gap.wav completed successfully\n");
+            printf("Writing wav file to utter_noise.wav completed successfully\n");
         }
 
         compute_mfcc();
@@ -612,7 +584,6 @@ void evaluate_tinytest(){
 
 void train_wavsrc(){
 
-    // TODO: Augment utterances with recorded data
     int sampleidx;
     int classidx;
     int samplestart;
@@ -684,13 +655,11 @@ void train_wavsrc(){
         if (localaddnoise){
             samplestart = 0; // TODO: random sample between (0, len(wav)-16000)
             for (int samplepos = 0; samplepos < AUDIO_BUFFER_SIZE; samplepos++){
-                MfccInSig[samplepos] = MfccInSig[samplepos] + 1*RecordedNoise[samplestart+samplepos];
+                MfccInSig[samplepos] = MfccInSig[samplepos] + 1*RecordedNoise[samplestart+samplepos]; 
             }
         }
 
-        // TODO: Create separate training function
         compute_mfcc();
-
 
         // Rescale data
         int k = 0;
@@ -715,11 +684,6 @@ void train_wavsrc(){
         // for (int i = 0; i < 10; i++){
         //     feat_char[i+480] = feat_char[i];  
         // }                    
-
-
-        // for (int i = 0; i < 490; i++){
-        //     printf("feat_char: %i\n", feat_char[i]);
-        // }
 
         pi_l2_free(out_feat, 49*10*4*sizeof(OUT_TYPE));
 
