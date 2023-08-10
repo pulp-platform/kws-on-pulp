@@ -11,3 +11,4 @@ build*
 logs/
 *.wav
 *.txt
+screenlog.*
