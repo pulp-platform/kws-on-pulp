@@ -330,7 +330,7 @@ void net_step(void *args) {
     // Librosa
     // float eps_in = 0.1142;
     // Tensorflow
-    float eps_in = 0.1247;
+    float eps_in = 0.1247; // TODO: should be passed as an argument
 
     for (int i = 0; i < IN_SIZE; i++){
         IN_DATA[i] = ((float) (((uint8_t    *) l2_buffer)[i])) * eps_in;
