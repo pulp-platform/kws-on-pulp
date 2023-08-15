@@ -4,7 +4,7 @@ import numpy as np
 def main():
 
     # Using readlines()
-    file = open('loss_lr001_x1washing_nlkws.txt', 'r')
+    file = open('loss_lr001_x1metro_nakws_2.txt', 'r')
     lines = file.readlines()
 
     margin = 0
@@ -24,8 +24,10 @@ def main():
     finetune = losses[10:]
 
 
-    print ("Pretrain loss: ", np.average(pretrain))
-    print ("Finetune loss: ", np.average(finetune))
+    print ("Pretrain loss avg: ", np.average(pretrain))
+    print ("Finetune loss avg: ", np.average(finetune))
+    print ("Pretrain loss med: ", np.median(pretrain))
+    print ("Finetune loss med: ", np.median(finetune))
     print ("Diff loss:", np.average(np.subtract(pretrain, finetune)))
 
 

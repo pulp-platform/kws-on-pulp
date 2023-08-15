@@ -2,7 +2,7 @@
 
 def main():
 
-    with open("loss_lr001_x1meeting_evaltrain_nopatch.txt") as file:
+    with open("loss_lr001_x1washing_nakws.txt") as file:
         lines = []
         for line in file:
             if (line.startswith('Loss is ')):
@@ -23,6 +23,7 @@ def main():
 
     print ("pretraining: ", pretraining/10)
     print ("finetuning: ", finetuning/10)
+    print ("loss diff: ", pretraining/10-finetuning/10)
 
 
 
