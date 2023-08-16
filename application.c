@@ -556,7 +556,7 @@ void evaluate_tinytest(){
         args_inference_classifier[0] = (unsigned int) l2_buffer;
         args_inference_classifier[1] = (unsigned int) dump;
         args_inference_classifier[2] = (unsigned int) L2_FC_weights_float;
-        args_inference_classifier[3] = (unsigned int) 0; // update = 0
+        args_inference_classifier[3] = (unsigned int) 0; // update = 1
         args_inference_classifier[4] = (unsigned int) 0; // init = 1
         args_inference_classifier[5] = (unsigned int) tinytestidx + 2; // tinytest already ordered
 
@@ -719,7 +719,7 @@ void train_wavsrc(){
         args_train_classifier[0] = (unsigned int) l2_buffer;
         args_train_classifier[1] = (unsigned int) L2_FC_weights_int8;
         args_train_classifier[2] = (unsigned int) L2_FC_weights_float;
-        args_train_classifier[3] = (unsigned int) 1; // update = 0
+        args_train_classifier[3] = (unsigned int) 1; // update = 1
         if (uttridx == 0 && epidx == 0)
             args_train_classifier[4] = (unsigned int) 1; // init = 1
         else
@@ -741,7 +741,7 @@ void train_wavsrc(){
 
 int application(void){
 
-    printf ("Environment setup");
+    printf ("----------------------------- Initializing environment ---------------------------\n");
 
     // Voltage-Frequency settings
     uint32_t voltage =VOLTAGE;
@@ -859,45 +859,160 @@ int application(void){
 
     // pi_l2_free(l2_buffer, L2_MEMORY_SIZE);
 
+    
 
-    // Add noise
-    int addnoise = 1;
+    printf ("----------------------------- Starting application ---------------------------\n");
 
-    if (addnoise){
+    int button_pressed = 0;
+    while (1) {
 
-        char noiseName[130] = "/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/meeting_ch01_mancrop1.wav";
+        char utterName[130] = "/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/meeting_ch01_mancrop1.wav";
 
         if (input == "0"){
-            input_mic(0, 1, 1); // save, free, noise
+            input_mic(1, 1, 0); // save, free, noise
         }
         else if (input == "1"){
-
-            // input_mic(1, 1, 1); // save, free, noise // Forcefully recording noise from recording
-            input_wav(1, 1, noiseName, 1); // save, free, NoiseName, noise
+            input_wav(1, 1, utterName, 0); // save, free, utterName, noise
         }
+
+        compute_mfcc();
+
+        for (int i = 0; i < 5; i++){
+            PRINTF("out_feat[%i] = %f, ", i, out_feat[i]);
+        }
+        PRINTF("\n");
+        
+       
+        // Rescale data
+        int k = 0;
+        for (int i = 0; i < 1960;i++){                
+            
+            feat_char[k] = (char) ((int) floor(out_feat[i] * pow(2, -1) * sqrt(0.05)) + 128);
+
+            // Select 10 MFCC per window
+            if (i == 40*(k/10) + 9){
+                i = 40*(k/10) + 39;
+            }
+            k++;
+        } 
+
+        pi_l2_free(out_feat, 49*10*4*sizeof(OUT_TYPE));
+
+        // Fill input buffer
+        for (int i = 0; i < 490; i++){
+            if (mfcc == "1"){
+                ((uint8_t *)l2_buffer)[i] = L2_input_h[i]; // Precomputed MFCC
+            }
+            else {
+                ((uint8_t *)l2_buffer)[i] = feat_char[i]; // Online computed MFCC
+                PRINTF("%i,", feat_char[i]);
+
+            }
+        }
+        printf("\n");
+
+        for (int i = 0; i < 5; i++){
+            PRINTF("feat_char[%i] = %i, ", i, feat_char[i]);
+        }
+        PRINTF("\n");
+
+        pi_l2_free(feat_char, 49 * 10 * sizeof(char));
+
+
+        // while (1){
+        //     pi_gpio_pin_read(gpio_boot_pin_1, &button_was_pressed);
+        //     pi_time_wait_us(1000000);
+        //     printf("button_was_pressed: %i\n", button_was_pressed);
+        // }
+
+
+        // Extract backbone features
+        void *dump; // dump to copy FC weights, won't be used; TODO: Parametrize DORY
+        network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &dump, 0); // L2_input_h extra-arg for L2-only
+
+        for (int i=0; i < 64; i++){
+            PRINTF("%i, ", ((uint8_t *) l2_buffer)[i]);
+        }
+        PRINTF("\n");
+
+        printf ("********** Run classifier **********\n");
+
+        pi_cluster_conf_init(&cl_conf);
+        pi_open_from_conf(&cluster_dev, &cl_conf);
+        if (pi_cluster_open(&cluster_dev))
+        {
+          return -1;
+        }
+
+        unsigned int args_inference_classifier[5];
+        args_inference_classifier[0] = (unsigned int) l2_buffer;
+        args_inference_classifier[1] = (unsigned int) dump;
+        args_inference_classifier[2] = (unsigned int) L2_FC_weights_float;
+        args_inference_classifier[3] = (unsigned int) 0; // update = 1
+        args_inference_classifier[4] = (unsigned int) 0; // init = 1
+        args_inference_classifier[5] = (unsigned int) 0; // tinytest already ordered
+
+        pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, args_inference_classifier));
+        pi_cluster_close(&cluster_dev);
+
+        
+        #ifdef  AUDIO_EVK
+            // block until next input audio frame is ready
+            pi_gpio_pin_write(gpio_pin_o, 0);
+        #endif
+        chunk_in_cnt++;
+
+
+        // TODO: read button
+        // button_pressed = read_button();
+        button_pressed = 0;
+
+        if (button_pressed){
+
+            // Add noise
+            int addnoise = 1;
+
+            if (addnoise){
+
+                char noiseName[130] = "/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/meeting_ch01_mancrop1.wav";
+
+                if (input == "0"){
+                    input_mic(0, 1, 1); // save, free, noise
+                }
+                else if (input == "1"){
+
+                    // input_mic(1, 1, 1); // save, free, noise // Forcefully recording noise from recording
+                    input_wav(1, 1, noiseName, 1); // save, free, NoiseName, noise
+                }
+            }
+
+            printf ("----------------------------- Started updating ---------------------------\n");
+            // evaluate before training
+            evaluate_tinytest();
+
+            // train model with noisy data
+            train_wavsrc();
+
+            // evaluate improvement
+            evaluate_tinytest();
+        }
+
+
+        printf ("----------------------------- Round completed ---------------------------\n");
+
+
+        // block until next input audio frame is ready
+        #ifdef  AUDIO_EVK
+            pi_gpio_pin_write(gpio_pin_o, 0);
+        #endif
+        chunk_in_cnt++;
+
+        // TODO: Trigger inference every 250 ms
+        pi_time_wait_us(250000); // microseconds
+
     }
 
-
-    // evaluate before training
-    evaluate_tinytest();
-
-    // train model with noisy data
-    train_wavsrc();
-
-    // evaluate improvement
-    evaluate_tinytest();
-
-
-    printf ("********** Task completed **********\n");
-
-    // block until next input audio frame is ready
-#ifdef  AUDIO_EVK
-    pi_gpio_pin_write(gpio_pin_o, 0);
-#endif
-    chunk_in_cnt++;
-
-    // TODO: Buffer the recording and the inference
-    // TODO: Trigger inference every 250 ms
+    printf ("----------------------------- Application completed ---------------------------\n");
 
     pmsis_exit(0);
     return 0;
