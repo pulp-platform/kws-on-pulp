@@ -587,7 +587,7 @@ void train_wavsrc(){
     int samplestart;
 
 
-    int nepochs = 10; // GVSOC - DEMO
+    int nepochs = 10; // GVSOC - DEMO (mem leak?)
     // int nepochs = 1; // BOARD - QUICK DEMO
 
     for (int epidx = 0; epidx < nepochs; epidx++) {
@@ -865,13 +865,13 @@ int application(void){
 
     if (addnoise){
 
-        char noiseName[130] = "/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/restaurant_ch01_mancrop.wav";
+        char noiseName[130] = "/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/meeting_ch01_mancrop1.wav";
 
         if (input == "0"){
             input_mic(0, 1, 1); // save, free, noise
         }
         else if (input == "1"){
-            
+
             // input_mic(1, 1, 1); // save, free, noise // Forcefully recording noise from recording
             input_wav(1, 1, noiseName, 1); // save, free, NoiseName, noise
         }

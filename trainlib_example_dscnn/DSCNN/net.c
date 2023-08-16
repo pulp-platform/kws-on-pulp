@@ -330,7 +330,27 @@ void net_step(void *args) {
     // Librosa
     // float eps_in = 0.1142;
     // Tensorflow
-    float eps_in = 0.1247; // TODO: should be passed as an argument
+    // float eps_in = 0.1247; // TODO: should be passed as an argument
+
+
+
+
+
+    // // NA-KWS CAFETERIA
+    // float eps_in = 0.1640; // TODO: should be passed as an argument
+    // // NA-KWS MEETING
+    // float eps_in = 0.1706; // TODO: should be passed as an argument
+    // // NA-KWS METRO
+    // float eps_in = 0.1503; // TODO: should be passed as an argument
+    // // NA-KWS RESTAURANT
+    // float eps_in = 0.1440; // TODO: should be passed as an argument
+    // NA-KWS WASHING
+    // float eps_in = 0.1852; // TODO: should be passed as an argument
+    // // NL-KWS
+    float eps_in = 0.1802; // TODO: should be passed as an argument
+
+
+
 
     for (int i = 0; i < IN_SIZE; i++){
         IN_DATA[i] = ((float) (((uint8_t    *) l2_buffer)[i])) * eps_in;

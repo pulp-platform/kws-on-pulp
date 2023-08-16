@@ -289,19 +289,17 @@ list(APPEND TARGET_PREPROCESSOR  # -DPERF
                                 -DMATMUL_TYPE_WG_L0=${MATMUL_TYPE_WG_L0}
                                 -DMATMUL_TYPE_IG_L0=${MATMUL_TYPE_IG_L0}
 
-
-
 )
 
 # HOME
 # set (UTTR_FILE /home/cioflanc/odda_gap9/tiny_denoiser/res/utterances.txt)
 # set (TINYTEST_FILE /home/cioflanc/odda_gap9/tiny_denoiser/res/tinytest.txt)
-# set (RESTAURANT_NOISE_WAV /home/cioflanc/odda_gap9/tiny_denoiser/res/restaurant_crop_ch01.wav)
+# set (RESTAURANT_NOISE_WAV /home/cioflanc/odda_gap9/tiny_denoiser/res/meeting_ch01_mancrop1.wav)
 
 # WORK
 set (UTTR_FILE /usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/utterances.txt)
 set (TINYTEST_FILE /usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/tinytest.txt)
-set (RESTAURANT_NOISE_WAV /usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/restaurant_ch01_mancrop.wav)
+set (RESTAURANT_NOISE_WAV /usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/meeting_ch01_mancrop1.wav)
 
 FILE(STRINGS ${UTTR_FILE} UTTERANCES)
 FILE(STRINGS ${TINYTEST_FILE} TINYTEST_UTTR)
@@ -312,7 +310,7 @@ FILE(STRINGS ${TINYTEST_FILE} TINYTEST_UTTR)
 
 
 
- list(APPEND READFS_FILES 
+list(APPEND READFS_FILES 
                         ${CURDIR}DORY_network/hex/BNReluConvolution0_weights.hex
                         ${CURDIR}DORY_network/hex/BNReluConvolution1_weights.hex
                         ${CURDIR}DORY_network/hex/BNReluConvolution2_weights.hex
