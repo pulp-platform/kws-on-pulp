@@ -117,8 +117,6 @@ void *L2_FC_weights_int8;
 SFU_uDMA_Channel_T *ChanOutCtxt_0;
 void * BufferInList;
 
-static int chunk_in_cnt;
-
 
 // Global declaration 
 struct pi_device cluster_dev;
@@ -220,7 +218,6 @@ void input_mic(int save, int free, int noise){
     // Let the microphone start
     pi_time_wait_us(30000); 
 
-    chunk_in_cnt=0;
     SFU_StartGraph(&SFU_RTD(Graph));
     pi_time_wait_us(2000000);
 
@@ -258,18 +255,38 @@ void input_mic(int save, int free, int noise){
         }
     }
 
-    if (save) {
 
-        // Dumping the treated buffer
-        dump_wav_open("recording.wav", 16, 16000, 1, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
-        dump_wav_write(RecordedNoise_int16, sizeof(int16_t) *AUDIO_BUFFER_SIZE);
-
-        // Dumping the buffer
-        // dump_wav_open("recording.wav", 32, 48000, 1, BUFF_SIZE);
-        // dump_wav_write(BufferInList, BUFF_SIZE);
-        dump_wav_close();
-        printf("Writing wav file to recording.wav completed successfully\n");
+    for (int i = 0; i < AUDIO_BUFFER_SIZE; i++){
+        PRINTF("%i\n", MfccInSig_int16[i]);
     }
+
+    if (save) {
+        if (noise){
+            // Dumping the treated buffer
+            dump_wav_open("recording_noise.wav", 16, 16000, 1, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+            dump_wav_write(RecordedNoise_int16, sizeof(int16_t) *AUDIO_BUFFER_SIZE);
+
+            // Dumping the buffer
+            // dump_wav_open("recording.wav", 32, 48000, 1, BUFF_SIZE);
+            // dump_wav_write(BufferInList, BUFF_SIZE);
+            dump_wav_close();
+            printf("Writing wav file to recording.wav completed successfully\n");
+            pi_l2_free(RecordedNoise_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+        }
+        else{
+            // Dumping the treated buffer
+            dump_wav_open("recording_utterance.wav", 16, 16000, 1, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+            dump_wav_write(MfccInSig_int16, sizeof(int16_t) *AUDIO_BUFFER_SIZE);
+
+            // Dumping the buffer
+            // dump_wav_open("recording.wav", 32, 48000, 1, BUFF_SIZE);
+            // dump_wav_write(BufferInList, BUFF_SIZE);
+            dump_wav_close();
+            printf("Writing wav file to recording.wav completed successfully\n");
+            pi_l2_free(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+        }
+    }
+
 
     if (free){
         pi_l2_free(BufferInList, BUFF_SIZE);
@@ -570,7 +587,6 @@ void evaluate_tinytest(){
         // block until next input audio frame is ready
         pi_gpio_pin_write(gpio_pin_o, 0);
     #endif
-        chunk_in_cnt++;
 
 
         // TODO: Buffer the recording and the inference
@@ -960,7 +976,6 @@ int application(void){
             // block until next input audio frame is ready
             pi_gpio_pin_write(gpio_pin_o, 0);
         #endif
-        chunk_in_cnt++;
 
 
         // TODO: read button
@@ -1001,11 +1016,10 @@ int application(void){
         printf ("----------------------------- Round completed ---------------------------\n");
 
 
-        // block until next input audio frame is ready
-        #ifdef  AUDIO_EVK
-            pi_gpio_pin_write(gpio_pin_o, 0);
-        #endif
-        chunk_in_cnt++;
+        // // block until next input audio frame is ready
+        // #ifdef  AUDIO_EVK
+        //     pi_gpio_pin_write(gpio_pin_o, 0);
+        // #endif
 
         // TODO: Trigger inference every 250 ms
         pi_time_wait_us(250000); // microseconds
