@@ -118,6 +118,8 @@ SFU_uDMA_Channel_T *ChanOutCtxt_0;
 void * BufferInList;
 
 
+static const pi_gpio_e gpio_boot_pin_1 = PAD_GPIO_UPB;
+
 // Global declaration 
 struct pi_device cluster_dev;
 struct pi_cluster_conf cl_conf;
@@ -544,13 +546,6 @@ void evaluate_tinytest(){
         pi_l2_free(feat_char, 49 * 10 * sizeof(char));
 
 
-        // while (1){
-        //     pi_gpio_pin_read(gpio_boot_pin_1, &button_was_pressed);
-        //     pi_time_wait_us(1000000);
-        //     printf("button_was_pressed: %i\n", button_was_pressed);
-        // }
-
-
         // Extract backbone features
         void *dump; // dump to copy FC weights, won't be used; TODO: Parametrize DORY
         network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &dump, 0); // L2_input_h extra-arg for L2-only
@@ -754,6 +749,14 @@ void train_wavsrc(){
 
 }
 
+int read_button(){
+    int button_is_pressed;
+    pi_gpio_pin_read(gpio_boot_pin_1, &button_is_pressed);
+    printf("button_is_pressed: %i\n", button_is_pressed);
+
+    return button_is_pressed;
+}
+
 
 int application(void){
 
@@ -821,10 +824,8 @@ int application(void){
 
 
     // Configure User Button
-
     /* set pad to gpio mode */
     /* This will open the gpio automatically */
-    static const pi_gpio_e gpio_boot_pin_1 = PAD_GPIO_UPB;
     pi_pad_function_set(gpio_boot_pin_1, PI_PAD_FUNC1);
 
     /* configure gpio input */
@@ -935,13 +936,6 @@ int application(void){
         pi_l2_free(feat_char, 49 * 10 * sizeof(char));
 
 
-        // while (1){
-        //     pi_gpio_pin_read(gpio_boot_pin_1, &button_was_pressed);
-        //     pi_time_wait_us(1000000);
-        //     printf("button_was_pressed: %i\n", button_was_pressed);
-        // }
-
-
         // Extract backbone features
         void *dump; // dump to copy FC weights, won't be used; TODO: Parametrize DORY
         network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &dump, 0); // L2_input_h extra-arg for L2-only
@@ -979,8 +973,7 @@ int application(void){
 
 
         // TODO: read button
-        // button_pressed = read_button();
-        button_pressed = 0;
+        button_pressed = read_button();
 
         if (button_pressed){
 
