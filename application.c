@@ -117,6 +117,7 @@ void *L2_FC_weights_int8;
 SFU_uDMA_Channel_T *ChanOutCtxt_0;
 void * BufferInList;
 
+int noise_seconds;
 
 static const pi_gpio_e gpio_boot_pin_1 = PAD_GPIO_UPB;
 
@@ -289,17 +290,12 @@ void input_mic(int save, int free, int noise){
         }
     }
 
-
-    if (free){
-        pi_l2_free(BufferInList, BUFF_SIZE);
-    }
+    pi_l2_free(BufferInList, BUFF_SIZE);
 }
 
 
 void input_wav(int save, int free, char* wavfile, int noise){
     // Allocate L3 buffers for audio IN
-
-    int noise_seconds = 1;
      
     header_struct header_info;
 
@@ -386,14 +382,14 @@ void input_wav(int save, int free, char* wavfile, int noise){
         }
         
     }
-    if (free){
-        if (noise){
-            pi_l2_free(inWav, noise_seconds*AUDIO_BUFFER_SIZE * sizeof(short));
-        }
-        else{
-            pi_l2_free(inWav, AUDIO_BUFFER_SIZE * sizeof(short));
-        }
+
+    if (noise){
+        pi_l2_free(inWav, noise_seconds*AUDIO_BUFFER_SIZE * sizeof(short));
     }
+    else{
+        pi_l2_free(inWav, AUDIO_BUFFER_SIZE * sizeof(short));
+    }
+    
     
 
 }
@@ -403,7 +399,6 @@ void compute_mfcc(){
         Compute the MFCC
     ******/
     out_feat = (OUT_TYPE *) pi_l2_malloc(49 * 10 * 4 * sizeof(OUT_TYPE));    
-    feat_char = (char*) pi_l2_malloc(49 * 10 * sizeof(char));
     printf("\n\n********** Computing MFCC **********\n");
 
 
@@ -435,9 +430,10 @@ void compute_mfcc(){
 
 
     if (input == "0"){
-        pi_l2_free(MfccInSig, BUFF_SIZE);
+        pi_l2_free(MfccInSig, BUFF_SIZE/3/2);
     } else if (input == "1") {
-        pi_l2_free(MfccInSig, AUDIO_BUFFER_SIZE * sizeof (MFCC_IN_TYPE));
+        // TODO: separate noise and utterances
+        pi_l2_free(MfccInSig, noise_seconds * AUDIO_BUFFER_SIZE * sizeof (short));
     }
 
 }
@@ -504,7 +500,7 @@ void evaluate_tinytest(){
         }
         PRINTF("\n");
         
-       
+       feat_char = (char*) pi_l2_malloc(49 * 10 * sizeof(char));
         // Rescale data
         int k = 0;
         for (int i = 0; i < 1960;i++){                
@@ -670,6 +666,7 @@ void train_wavsrc(){
 
         compute_mfcc();
 
+        feat_char = (char*) pi_l2_malloc(49 * 10 * sizeof(char));
         // Rescale data
         int k = 0;
         for (int i = 0; i < 1960;i++){                
@@ -899,7 +896,7 @@ int application(void){
         }
         PRINTF("\n");
         
-       
+        feat_char = (char*) pi_l2_malloc(49 * 10 * sizeof(char));
         // Rescale data
         int k = 0;
         for (int i = 0; i < 1960;i++){                
