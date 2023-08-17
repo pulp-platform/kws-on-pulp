@@ -494,7 +494,9 @@ void net_step(void *args) {
         }
         
 
+        // TODO: enable only in eval mode
         compute_loss();
+
         predict_float_local(l0_out, OUT_SIZE);
 
         // #ifdef VERBOSE 
@@ -502,9 +504,6 @@ void net_step(void *args) {
         // #endif
     }
 
-
-
-    // // TODO: INIT
     if (init == 1) {
         for (int i = 0; i < WGT_SIZE_L0; i++){
             ((float*)L2_weights_curr_updated)[i] = layer0_wgt.data[i];

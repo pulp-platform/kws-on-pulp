@@ -99,7 +99,8 @@ static struct pi_device flash;
 // Load args
 char *WavName = NULL;
 char *mfcc = NULL;
-char *input = NULL;
+char *eval_input = NULL;
+char *appl_input = NULL;
 
 // Arrays handling data movement
 short int *inWav;
@@ -273,7 +274,7 @@ void input_mic(int save, int free, int noise){
             // dump_wav_open("recording.wav", 32, 48000, 1, BUFF_SIZE);
             // dump_wav_write(BufferInList, BUFF_SIZE);
             dump_wav_close();
-            printf("Writing wav file to recording.wav completed successfully\n");
+            PRINTF("Writing wav file to recording.wav completed successfully\n");
             pi_l2_free(RecordedNoise_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
         }
         else{
@@ -285,7 +286,7 @@ void input_mic(int save, int free, int noise){
             // dump_wav_open("recording.wav", 32, 48000, 1, BUFF_SIZE);
             // dump_wav_write(BufferInList, BUFF_SIZE);
             dump_wav_close();
-            printf("Writing wav file to recording.wav completed successfully\n");
+            PRINTF("Writing wav file to recording.wav completed successfully\n");
             pi_l2_free(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
         }
     }
@@ -305,7 +306,7 @@ void input_wav(int save, int free, char* wavfile, int noise){
             printf("Failed allocating inWav.\n");
             pmsis_exit(-1);
         }
-    printf("File is: %s\n", wavfile);
+    PRINTF("File is: %s\n", wavfile);
 
     if (ReadWavFromFile(wavfile, inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
         printf("Error reading wav file\n");
@@ -317,10 +318,6 @@ void input_wav(int save, int free, char* wavfile, int noise){
     }
     PRINTF("\n");
 
-    // for (int i = 0; i < 16000; i++){
-    //     printf("inWav[%i] = %i, ", i, inWav[i]);
-    // }
-    printf("\n");
 
     if (noise){
         RecordedNoise = NULL;
@@ -372,13 +369,13 @@ void input_wav(int save, int free, char* wavfile, int noise){
             dump_wav_open("noise_file.wav", 16, 16000, 1, noise_seconds*sizeof(short)*AUDIO_BUFFER_SIZE);
             dump_wav_write(inWav, noise_seconds*sizeof(short)*AUDIO_BUFFER_SIZE);
             dump_wav_close();
-            printf("Writing wav file to noise_file.wav completed successfully\n");
+            PRINTF("Writing wav file to noise_file.wav completed successfully\n");
         }
         else{   
             dump_wav_open("utter_file.wav", 16, 16000, 1, sizeof(short)*AUDIO_BUFFER_SIZE);
             dump_wav_write(inWav, sizeof(short)*AUDIO_BUFFER_SIZE);
             dump_wav_close();
-            printf("Writing wav file to utter_file.wav completed successfully\n");
+            PRINTF("Writing wav file to utter_file.wav completed successfully\n");
         }
         
     }
@@ -394,12 +391,12 @@ void input_wav(int save, int free, char* wavfile, int noise){
 
 }
 
-void compute_mfcc(){
+void compute_mfcc(mode){
     /******
         Compute the MFCC
     ******/
     out_feat = (OUT_TYPE *) pi_l2_malloc(49 * 10 * 4 * sizeof(OUT_TYPE));    
-    printf("\n\n********** Computing MFCC **********\n");
+    PRINTF("\n\n********** Computing MFCC **********\n");
 
 
     // struct pi_cluster_task task_mfcc;
@@ -428,12 +425,22 @@ void compute_mfcc(){
 
     pi_cluster_close(&cluster_dev);
 
-
-    if (input == "0"){
-        pi_l2_free(MfccInSig, BUFF_SIZE/3/2);
-    } else if (input == "1") {
-        // TODO: separate noise and utterances
-        pi_l2_free(MfccInSig, noise_seconds * AUDIO_BUFFER_SIZE * sizeof (short));
+    // mode: 0 - default application; 1 - evaluate
+    if (mode == 0){
+        if (appl_input == "0"){
+            pi_l2_free(MfccInSig, BUFF_SIZE/3/2);
+        } else if (eval_input == "1") {
+            // TODO: separate noise and utterances
+            pi_l2_free(MfccInSig, noise_seconds * AUDIO_BUFFER_SIZE * sizeof (short));
+        }
+    }
+    else{
+        if (eval_input == "0"){
+            pi_l2_free(MfccInSig, BUFF_SIZE/3/2);
+        } else if (eval_input == "1") {
+            // TODO: separate noise and utterances
+            pi_l2_free(MfccInSig, noise_seconds * AUDIO_BUFFER_SIZE * sizeof (short));
+        }
     }
 
 }
@@ -443,15 +450,15 @@ void evaluate_tinytest(){
 
     for (int tinytestidx = 0; tinytestidx < 10; tinytestidx++){ // only non-unknown
 
-        printf ("-----------------------------Loop evaluation (itteration %i)-------------------------\n", tinytestidx);
+        PRINTF ("-----------------------------Loop evaluation (itteration %i)-------------------------\n", tinytestidx);
 
         // Read from WAV
-        if (input == "1") {
+        if (eval_input == "1") {
             printf("Tested input: %s\n", tinytestutter[tinytestidx]);
             input_wav(1, 1, tinytestutter[tinytestidx], 0); // save, free, noise
         }
         // Read from MIC
-        else if (input == "0") {
+        else if (eval_input == "0") {
             input_mic(1, 1, 0); // save, free, noise
 #ifdef AUDIO_EVK
             pi_gpio_pin_write(gpio_pin_o, 1);
@@ -462,19 +469,20 @@ void evaluate_tinytest(){
         }
         PRINTF("\n");
 
-        int addnoise = 1;
-        if (addnoise) {
-            int noisesamplestart = 0; // TODO: random sample between (0, len(wav)-16000)
+        MfccInSig_int16 = (int16_t *) pi_l2_malloc (sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+        for (int i = 0; i < AUDIO_BUFFER_SIZE; i++){
+            MfccInSig_int16[i] = (int16_t) (MfccInSig[i] * (1<<15));
+        }
+        // Save the noise-augmented recording
+        dump_wav_open("utter.wav", 16, 16000, 1, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+        dump_wav_write(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+        dump_wav_close();
+        PRINTF("Writing wav file to utter.wav completed successfully\n");
 
-            MfccInSig_int16 = (int16_t *) pi_l2_malloc (sizeof(int16_t) * AUDIO_BUFFER_SIZE);
-            for (int i = 0; i < AUDIO_BUFFER_SIZE; i++){
-                MfccInSig_int16[i] = (int16_t) (MfccInSig[i] * (1<<15));
-            }
-            // Save the noise-augmented recording
-            dump_wav_open("utter.wav", 16, 16000, 1, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
-            dump_wav_write(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
-            dump_wav_close();
-            printf("Writing wav file to utter.wav completed successfully\n");
+        int addnoise = 1;
+        if (addnoise == 1 && eval_input == "1") {
+            int noisesamplestart = 0; // TODO: random sample between (0, len(wav)-16000)
+            
             for (int samplepos = 0; samplepos < AUDIO_BUFFER_SIZE; samplepos++){
                 MfccInSig[samplepos] = MfccInSig[samplepos] + 1*RecordedNoise[noisesamplestart+samplepos];
             }
@@ -490,10 +498,10 @@ void evaluate_tinytest(){
 
             pi_l2_free(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
 
-            printf("Writing wav file to utter_noise.wav completed successfully\n");
+            PRINTF("Writing wav file to utter_noise.wav completed successfully\n");
         }
 
-        compute_mfcc();
+        compute_mfcc(1);
 
         for (int i = 0; i < 5; i++){
             PRINTF("out_feat[%i] = %f, ", i, out_feat[i]);
@@ -532,7 +540,7 @@ void evaluate_tinytest(){
 
             }
         }
-        printf("\n");
+        PRINTF("\n");
 
         for (int i = 0; i < 5; i++){
             PRINTF("feat_char[%i] = %i, ", i, feat_char[i]);
@@ -551,7 +559,7 @@ void evaluate_tinytest(){
         }
         PRINTF("\n");
 
-        printf ("********** Run classifier **********\n");
+        PRINTF ("********** Run classifier **********\n");
 
         pi_cluster_conf_init(&cl_conf);
         pi_open_from_conf(&cluster_dev, &cl_conf);
@@ -571,18 +579,13 @@ void evaluate_tinytest(){
         pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, args_inference_classifier));
         pi_cluster_close(&cluster_dev);
 
-        printf ("********** Task completed **********\n");
+        PRINTF ("********** Task completed **********\n");
 
         
     #ifdef  AUDIO_EVK
         // block until next input audio frame is ready
         pi_gpio_pin_write(gpio_pin_o, 0);
     #endif
-
-
-        // TODO: Buffer the recording and the inference
-        // TODO: Trigger inference every 250 ms
-
     }
 }
 
@@ -648,11 +651,6 @@ void train_wavsrc(){
                 break;
         }
 
-        printf ("sampleidx: %i\n", sampleidx);
-        printf ("classidx: %i\n", classidx);
-        printf ("utterance: %s\n", utterance);
-
-
         // Load Utterance
         input_wav(0, 1, utterance, 0);  // save, free, utterance, noise
 
@@ -664,7 +662,7 @@ void train_wavsrc(){
             }
         }
 
-        compute_mfcc();
+        compute_mfcc(1);
 
         feat_char = (char*) pi_l2_malloc(49 * 10 * sizeof(char));
         // Rescale data
@@ -685,12 +683,6 @@ void train_wavsrc(){
             k++;
         } 
         
-
-        // // PATCH
-        // for (int i = 0; i < 10; i++){
-        //     feat_char[i+480] = feat_char[i];  
-        // }                    
-
         pi_l2_free(out_feat, 49*10*4*sizeof(OUT_TYPE));
 
         // Fill input buffer
@@ -714,7 +706,7 @@ void train_wavsrc(){
         // Extract backbone features
         network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &L2_FC_weights_int8, 0); // L2_input_h extra-arg for L2-only
 
-        printf ("********** Run classifier **********\n");
+        PRINTF ("********** Run classifier **********\n");
 
         pi_cluster_conf_init(&cl_conf);
         pi_open_from_conf(&cluster_dev, &cl_conf);
@@ -736,7 +728,7 @@ void train_wavsrc(){
         args_train_classifier[5] = (unsigned int) classidx;
 
         pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, args_train_classifier));
-        printf ("Finished task...\n");
+        PRINTF ("Finished task...\n");
 
         pi_cluster_close(&cluster_dev);
 
@@ -749,8 +741,6 @@ void train_wavsrc(){
 int read_button(){
     int button_is_pressed;
     pi_gpio_pin_read(gpio_boot_pin_1, &button_is_pressed);
-    printf("button_is_pressed: %i\n", button_is_pressed);
-
     return button_is_pressed;
 }
 
@@ -830,7 +820,7 @@ int application(void){
     pi_gpio_pin_configure(gpio_boot_pin_1, flags_upb);
 
 
-    printf ("----------------------------- Initializing backbone ---------------------------\n");
+    PRINTF ("----------------------------- Initializing backbone ---------------------------\n");
     // Dory init
     mem_init();
     network_initialize(); // Absent in L2-only
@@ -852,7 +842,7 @@ int application(void){
       return -1;
     }
     
-    printf ("----------------------------- Initializing classifier ---------------------------\n");
+    PRINTF ("----------------------------- Initializing classifier ---------------------------\n");
 
     L2_FC_weights_float = pi_l2_malloc (768 * 4);
     if (L2_FC_weights_float == NULL) {
@@ -873,23 +863,21 @@ int application(void){
 
     // pi_l2_free(l2_buffer, L2_MEMORY_SIZE);
 
-    
+    int button_was_pressed = 0;
 
-    printf ("----------------------------- Starting application ---------------------------\n");
-
-    int button_pressed = 0;
+    PRINTF ("----------------------------- Starting application ---------------------------\n");
     while (1) {
 
         char utterName[130] = "/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/meeting_ch01_mancrop1.wav";
 
-        if (input == "0"){
+        if (appl_input == "0"){
             input_mic(1, 1, 0); // save, free, noise
         }
-        else if (input == "1"){
+        else if (appl_input == "1"){
             input_wav(1, 1, utterName, 0); // save, free, utterName, noise
         }
 
-        compute_mfcc();
+        compute_mfcc(0); // mode 0: application
 
         for (int i = 0; i < 5; i++){
             PRINTF("out_feat[%i] = %f, ", i, out_feat[i]);
@@ -923,7 +911,7 @@ int application(void){
 
             }
         }
-        printf("\n");
+        PRINTF("\n");
 
         for (int i = 0; i < 5; i++){
             PRINTF("feat_char[%i] = %i, ", i, feat_char[i]);
@@ -942,7 +930,7 @@ int application(void){
         }
         PRINTF("\n");
 
-        printf ("********** Run classifier **********\n");
+        PRINTF ("********** Run classifier **********\n");
 
         pi_cluster_conf_init(&cl_conf);
         pi_open_from_conf(&cluster_dev, &cl_conf);
@@ -968,11 +956,9 @@ int application(void){
             pi_gpio_pin_write(gpio_pin_o, 0);
         #endif
 
+        button_was_pressed = read_button();
 
-        // TODO: read button
-        button_pressed = read_button();
-
-        if (button_pressed){
+        if (button_was_pressed){
 
             // Add noise
             int addnoise = 1;
@@ -981,17 +967,17 @@ int application(void){
 
                 char noiseName[130] = "/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/meeting_ch01_mancrop1.wav";
 
-                if (input == "0"){
-                    input_mic(0, 1, 1); // save, free, noise
+                if (eval_input == "0"){
+                    input_mic(1, 1, 1); // save, free, noise
                 }
-                else if (input == "1"){
+                else if (eval_input == "1"){
 
                     // input_mic(1, 1, 1); // save, free, noise // Forcefully recording noise from recording
                     input_wav(1, 1, noiseName, 1); // save, free, NoiseName, noise
                 }
             }
 
-            printf ("----------------------------- Started updating ---------------------------\n");
+            PRINTF ("----------------------------- Started updating ---------------------------\n");
             // evaluate before training
             evaluate_tinytest();
 
@@ -1000,10 +986,12 @@ int application(void){
 
             // evaluate improvement
             evaluate_tinytest();
+
+            PRINTF ("----------------------------- Finished updating ---------------------------\n");
         }
 
 
-        printf ("----------------------------- Round completed ---------------------------\n");
+        PRINTF ("----------------------------- Round completed ---------------------------\n");
 
 
         // // block until next input audio frame is ready
@@ -1030,7 +1018,8 @@ int main()
     #define __STR(__s) #__s
     WavName = __XSTR(WAV_FILE); 
     mfcc = __XSTR(MFCC);
-    input = __XSTR(INPUT);
+    eval_input = __XSTR(EVAL);
+    appl_input = __XSTR(APPL);
 
     return application();
 }

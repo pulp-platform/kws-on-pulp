@@ -49,7 +49,8 @@ set (MODEL_L3_MEMORY 8000000)
 
 set (WAV_FILE $ENV{WAV_FILE})
 set (MFCC $ENV{MFCC})
-set (INPUT $ENV{INPUT})
+set (EVAL $ENV{EVAL})
+set (APPL $ENV{APPL})
 
 # PULP trainlib
 set(MATMUL_TYPE_FW_L0  0)         # Selects which optimized matmul to be used in FW (see mm_manager_list.txt or "MM_manager()" body to verify which one is called)
@@ -266,7 +267,8 @@ list(APPEND TARGET_PREPROCESSOR  # -DPERF
                                 -DVOLTAGE=${VOLTAGE}
                                 -DWAV_FILE=${WAV_FILE}
                                 -DMFCC=${MFCC}
-                                -DINPUT=${INPUT}
+                                -DEVAL=${EVAL}
+                                -DAPPL=${APPL}
                                 # -DPERF
                                 # -DPRINTDEB
                                 # -DPRINT_INOUT

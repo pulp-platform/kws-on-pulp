@@ -2,16 +2,18 @@
 
 if [ "$1" == "-h" ] ; then
     echo "PLATFORM: gvsoc, board"
-    echo "INPUT: 0 (record)"
+    echo "EVAL: 0 (record)"
+    echo "APPL: 0 (record)"
     echo "MFCC computation: 0 (online)"
     echo "SYSTEM: WORK / HOME"
     exit 0
 fi
 
 export PLATFORM=$1
-export INPUT=$2
-export MFCC=$3
-export SYSTEM=$4
+export EVAL=$2
+export APPL=$3
+export MFCC=$4
+export SYSTEM=$5
 
 HOME="HOME"
 WORK="WORK"
