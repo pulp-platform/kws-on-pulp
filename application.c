@@ -213,19 +213,27 @@ void input_mic(int save, int free, int noise){
     // Configure PDM
     if (open_i2s_PDM(&i2s_sai1, SAI1,   3072000, 3, 0)) return -1;
 
+    printf("open_i2s_PDM!\n");
     StartSFU(FREQ_SFU*1000*1000, 1);
 
+    printf("Alloc channel\n");
     ChanOutCtxt_0  = (SFU_uDMA_Channel_T *) pi_l2_malloc(sizeof(SFU_uDMA_Channel_T));
+    printf("Alloc BufferInList\n");
     BufferInList = (void*) pi_l2_malloc(BUFF_SIZE);
+    printf("Finished mem alloc\n");
 
     // Get uDMA channels for Graph
     SFU_Allocate_uDMA_Channel(ChanOutCtxt_0, 0, &SFU_RTD(Graph));
+    printf("SFU_Allocate_uDMA_Channel\n");
     //Next API will have a value to replace this high number with -1
     //To be able to 
     SFU_Enqueue_uDMA_Channel(ChanOutCtxt_0, BufferInList, BUFF_SIZE);
+    printf("SFU_Enqueue_uDMA_Channel\n");
     // Connect Channels to SFU for Mic IN (PDM IN)
     SFU_GraphConnectIO(SFU_Name(Graph, Out1), ChanOutCtxt_0->ChannelId, 0, &SFU_RTD(Graph));
+    printf("SFU_GraphConnectIO\n");
     SFU_GraphConnectIO(SFU_Name(Graph, In1), SAI1, 2, &SFU_RTD(Graph));
+    printf("SFU_GraphConnectIO\n");
     pi_l2_free(ChanOutCtxt_0, sizeof(SFU_uDMA_Channel_T));
 
     printf("Start rec!\n");
@@ -245,11 +253,11 @@ void input_mic(int save, int free, int noise){
     int outidx;
 
     if (noise){
-        RecordedNoise = (MFCC_IN_TYPE *) pi_l2_malloc(BUFF_SIZE/3/2);
-        RecordedNoise_int16 = (int16_t *) pi_l2_malloc(sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+        RecordedNoise = (MFCC_IN_TYPE *) pi_l2_malloc(noise_seconds * AUDIO_BUFFER_SIZE * sizeof (MFCC_IN_TYPE));
+        // RecordedNoise_int16 = (int16_t *) pi_l2_malloc(sizeof(int16_t) * AUDIO_BUFFER_SIZE);
         for(int i=0;i<BUFF_SIZE;i+=3){
             RecordedNoise[outidx] = (MFCC_IN_TYPE) (((float)((int32_t *)BufferInList)[i]) / (float)(1<<31 - 1));
-            RecordedNoise_int16[outidx] = (int16_t) (RecordedNoise[outidx] * (1<<15));
+            // RecordedNoise_int16[outidx] = (int16_t) (RecordedNoise[outidx] * (1<<15));
 
             outidx++;
             if (outidx == AUDIO_BUFFER_SIZE){
@@ -259,11 +267,11 @@ void input_mic(int save, int free, int noise){
     }
     else {
 
-        MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(BUFF_SIZE/3/2);
-        MfccInSig_int16 = (int16_t *) pi_l2_malloc(sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+        MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(noise_seconds * AUDIO_BUFFER_SIZE * sizeof (MFCC_IN_TYPE));
+        // MfccInSig_int16 = (int16_t *) pi_l2_malloc(sizeof(int16_t) * AUDIO_BUFFER_SIZE);
         for(int i=0;i<BUFF_SIZE;i+=3){
             MfccInSig[outidx] = (MFCC_IN_TYPE) (((float)((int32_t *)BufferInList)[i]) / (float)(1<<31 - 1));
-            MfccInSig_int16[outidx] = (int16_t) (MfccInSig[outidx] * (1<<15));
+            // MfccInSig_int16[outidx] = (int16_t) (MfccInSig[outidx] * (1<<15));
 
             outidx++;
             if (outidx == AUDIO_BUFFER_SIZE){
@@ -439,22 +447,7 @@ void compute_mfcc(mode){
 
     pi_cluster_close(&cluster_dev);
 
-    // mode: 0 - default application; 1 - evaluate
-    if (mode == 0){
-        if (appl_input == "0"){
-            pi_l2_free(MfccInSig, BUFF_SIZE/3/2);
-        } else if (appl_input == "1") {
-            pi_l2_free(MfccInSig, noise_seconds * AUDIO_BUFFER_SIZE * sizeof (short));
-        }
-    }
-    else{
-        if (uttr_eval_input == "0"){
-            pi_l2_free(MfccInSig, BUFF_SIZE/3/2);
-        } else if (uttr_eval_input == "1") {
-            // TODO: separate noise and utterances
-            pi_l2_free(MfccInSig, noise_seconds * AUDIO_BUFFER_SIZE * sizeof (short));
-        }
-    }
+    pi_l2_free(MfccInSig, noise_seconds * AUDIO_BUFFER_SIZE * sizeof (MFCC_IN_TYPE));
 
 }
 
@@ -469,11 +462,12 @@ void evaluate_tinytest(int pre){
         if (uttr_eval_input == "1") {
             // Read from WAV
             printf("Tested input: %s\n", tinytestutter[tinytestidx]);
-            input_wav(1, 1, tinytestutter[tinytestidx], 0); // save, free, noise
+            input_wav(0, 1, tinytestutter[tinytestidx], 0); // save, free, noise
         }
-        else if (uttr_eval_input == "0" && pre == 0) {
+        else if (uttr_eval_input == "0") {
             // Read from MIC
-            input_mic(1, 1, 0); // save, free, noise
+            printf("Preparing reading!\n");
+            input_mic(0, 1, 0); // save, free, noise
 #ifdef AUDIO_EVK
             pi_gpio_pin_write(gpio_pin_o, 1);
 #endif
@@ -495,38 +489,38 @@ void evaluate_tinytest(int pre){
             }
 
             int save = 0;
+
             if (save){
 
-            MfccInSig_int16 = (int16_t *) pi_l2_malloc (sizeof(int16_t) * AUDIO_BUFFER_SIZE);
-            for (int i = 0; i < AUDIO_BUFFER_SIZE; i++){
-                MfccInSig_int16[i] = (int16_t) (MfccInSig[i] * (1<<15));
-                RecordedNoise_int16[i] = (int16_t) (RecordedNoise[i] * (1<<15));
-            }
+                MfccInSig_int16 = (int16_t *) pi_l2_malloc (sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+                for (int i = 0; i < AUDIO_BUFFER_SIZE; i++){
+                    MfccInSig_int16[i] = (int16_t) (MfccInSig[i] * (1<<15));
+                    RecordedNoise_int16[i] = (int16_t) (RecordedNoise[i] * (1<<15));
+                }
 
-            // Save the noise-augmented recording
-            dump_wav_open("utter.wav", 16, 16000, 1, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
-            dump_wav_write(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
-            dump_wav_close();
+                // Save the noise-augmented recording
+                dump_wav_open("utter.wav", 16, 16000, 1, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+                dump_wav_write(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+                dump_wav_close();
 
-            PRINTF("Writing wav file to utter.wav completed successfully\n");
-            for (int samplepos = 0; samplepos < AUDIO_BUFFER_SIZE; samplepos++){
-                MfccInSig_int16[samplepos] = (int16_t)(MfccInSig[samplepos] * (1<<15)) + 1*RecordedNoise_int16[noisesamplestart+samplepos];
-            }
-            // Save the noise-augmented recording
-            dump_wav_open("utter_noise.wav", 16, 16000, 1, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
-            dump_wav_write(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
-            dump_wav_close();
-            pi_l2_free(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
-            }
+                PRINTF("Writing wav file to utter.wav completed successfully\n");
+                for (int samplepos = 0; samplepos < AUDIO_BUFFER_SIZE; samplepos++){
+                    MfccInSig_int16[samplepos] = (int16_t)(MfccInSig[samplepos] * (1<<15)) + 1*RecordedNoise_int16[noisesamplestart+samplepos];
+                }
+                // Save the noise-augmented recording
+                dump_wav_open("utter_noise.wav", 16, 16000, 1, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+                dump_wav_write(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+                dump_wav_close();
+                pi_l2_free(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+                pi_l2_free(RecordedNoise_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
 
-            PRINTF("Writing wav file to utter_noise.wav completed successfully\n");
+                PRINTF("Writing wav file to utter_noise.wav completed successfully\n");
+            }
         }
 
         printf ("----------------------------- Noise added -------------------------\n");
 
-        if (pre == 0){
-            compute_mfcc(1);
-        }
+        compute_mfcc(1);
 
         printf ("----------------------------- MFCC computed -------------------------\n");
 
@@ -624,11 +618,6 @@ void evaluate_tinytest(int pre){
             }
         } 
 
-        // // PATCH
-        // for (int i = 0; i < 10; i++){
-        //     feat_char[i+480] = feat_char[i];  
-        // }     
-
         printf ("----------------------------- Scaling completed -------------------------\n");
 
         pi_l2_free(out_feat, 49*10*4*sizeof(OUT_TYPE));
@@ -666,7 +655,7 @@ void evaluate_tinytest(int pre){
         }
         PRINTF("\n");
 
-        printf ("********** Run classifier **********\n");
+        printf ("********** Setup classifier **********\n");
 
         pi_cluster_conf_init(&cl_conf);
         pi_open_from_conf(&cluster_dev, &cl_conf);
@@ -674,6 +663,8 @@ void evaluate_tinytest(int pre){
         {
           return -1;
         }
+
+        printf ("********** Run classifier **********\n");
 
         unsigned int args_inference_classifier[5];
         args_inference_classifier[0] = (unsigned int) l2_buffer;
@@ -708,8 +699,8 @@ void train_wavsrc(){
     int nepochs = 1; // BOARD - QUICK DEMO
 
     for (int epidx = 0; epidx < nepochs; epidx++) {
-        // for (int uttridx = 0; uttridx < 2; uttridx++){ // simple, to speed test
-        for (int uttridx = 0; uttridx < 100; uttridx++){
+        for (int uttridx = 0; uttridx < 2; uttridx++){ // simple, to speed test
+        // for (int uttridx = 0; uttridx < 100; uttridx++){
 
         sampleidx = uttridx / 10;
         classidx = uttridx % 10;
@@ -978,10 +969,10 @@ int application(void){
         char utterName[130] = "/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/meeting_ch01_mancrop1.wav";
 
         if (appl_input == "0"){
-            input_mic(1, 1, 0); // save, free, noise
+            input_mic(0, 1, 0); // save, free, noise
         }
         else if (appl_input == "1"){
-            input_wav(1, 1, utterName, 0); // save, free, utterName, noise
+            input_wav(0, 1, utterName, 0); // save, free, utterName, noise
         }
 
         compute_mfcc(0); // mode 0: application
@@ -1077,12 +1068,12 @@ int application(void){
                 char noiseName[130] = "/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/meeting_ch01_mancrop1.wav";
 
                 if (noise_eval_input == "0"){
-                    input_mic(1, 1, 1); // save, free, noise
+                    input_mic(0, 1, 1); // save, free, noise
                 }
                 else if (noise_eval_input == "1"){
 
                     // input_mic(1, 1, 1); // save, free, noise // Forcefully recording noise from recording
-                    input_wav(1, 1, noiseName, 1); // save, free, NoiseName, noise
+                    input_wav(0, 1, noiseName, 1); // save, free, NoiseName, noise
                 }
             }
 
@@ -1097,6 +1088,8 @@ int application(void){
             evaluate_tinytest(1);
 
             printf ("----------------------------- Finished updating ---------------------------\n");
+
+            pmsis_exit(0);
             return; // breaking loop early
         }
 
