@@ -10,8 +10,8 @@ if [ "$1" == "-h" ] ; then
 fi
 
 export PLATFORM=$1
-export EVAL=$2
-export APPL=$3
+export APPL=$2
+export EVAL=$3
 export MFCC=$4
 export SYSTEM=$5
 

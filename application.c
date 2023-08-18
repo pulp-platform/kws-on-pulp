@@ -118,7 +118,7 @@ void *L2_FC_weights_int8;
 SFU_uDMA_Channel_T *ChanOutCtxt_0;
 void * BufferInList;
 
-int noise_seconds;
+int noise_seconds = 1;
 
 static const pi_gpio_e gpio_boot_pin_1 = PAD_GPIO_UPB;
 
@@ -300,12 +300,13 @@ void input_wav(int save, int free, char* wavfile, int noise){
      
     header_struct header_info;
 
-        inWav = NULL;
-        inWav    = (short int *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(short)); 
-        if (inWav == NULL){
-            printf("Failed allocating inWav.\n");
-            pmsis_exit(-1);
-        }
+    inWav = NULL;
+    inWav    = (short int *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(short)); 
+    if (inWav == NULL){
+        printf("Failed allocating inWav.\n");
+        pmsis_exit(-1);
+    }
+
     PRINTF("File is: %s\n", wavfile);
 
     if (ReadWavFromFile(wavfile, inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
@@ -960,6 +961,8 @@ int application(void){
 
         if (button_was_pressed){
 
+            printf ("----------------------------- Button was pressed ---------------------------\n");
+
             // Add noise
             int addnoise = 1;
 
@@ -977,7 +980,7 @@ int application(void){
                 }
             }
 
-            PRINTF ("----------------------------- Started updating ---------------------------\n");
+            printf ("----------------------------- Started updating ---------------------------\n");
             // evaluate before training
             evaluate_tinytest();
 
@@ -987,7 +990,8 @@ int application(void){
             // evaluate improvement
             evaluate_tinytest();
 
-            PRINTF ("----------------------------- Finished updating ---------------------------\n");
+            printf ("----------------------------- Finished updating ---------------------------\n");
+            return; // breaking loop early
         }
 
 
