@@ -533,10 +533,9 @@ void evaluate_tinytest(int pre){
         // Rescale data
         int k = 0;
         for (int i = 0; i < 1960;i++){                
-            
-            if (pre == 0){
-                feat_char[k] = (char) ((int) floor(out_feat[i] * pow(2, -1) * sqrt(0.05)) + 128);
-            }
+    
+            feat_char[k] = (char) ((int) floor(out_feat[i] * pow(2, -1) * sqrt(0.05)) + 128);
+
             // Select 10 MFCC per window
             if (i == 40*(k/10) + 9){
                 i = 40*(k/10) + 39;
@@ -547,7 +546,7 @@ void evaluate_tinytest(int pre){
         for (int k = 0; k < 490; k++){
             // Data saving to elude re-recording the evaluation samples. TODO: organize workflow
             if (uttr_eval_input == "0") {
-                if (pre = 0){
+                if (pre == 0){
                     switch (tinytestidx) {
                         case 0:
                             yes[k] = feat_char[k];
