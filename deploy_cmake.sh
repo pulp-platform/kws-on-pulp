@@ -2,8 +2,9 @@
 
 if [ "$1" == "-h" ] ; then
     echo "PLATFORM: gvsoc, board"
-    echo "EVAL: 0 (record)"
     echo "APPL: 0 (record)"
+    echo "NOISE EVAL: 0 (record)"
+    echo "UTTR EVAL: 0 (record)"
     echo "MFCC computation: 0 (online)"
     echo "SYSTEM: WORK / HOME"
     exit 0
@@ -11,9 +12,10 @@ fi
 
 export PLATFORM=$1
 export APPL=$2
-export EVAL=$3
-export MFCC=$4
-export SYSTEM=$5
+export NOISE_EVAL=$3
+export UTTR_EVAL=$4
+export MFCC=$5
+export SYSTEM=$6
 
 HOME="HOME"
 WORK="WORK"

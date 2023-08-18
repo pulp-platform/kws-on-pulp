@@ -49,7 +49,8 @@ set (MODEL_L3_MEMORY 8000000)
 
 set (WAV_FILE $ENV{WAV_FILE})
 set (MFCC $ENV{MFCC})
-set (EVAL $ENV{EVAL})
+set (NOISE_EVAL $ENV{NOISE_EVAL})
+set (UTTR_EVAL $ENV{UTTR_EVAL})
 set (APPL $ENV{APPL})
 
 # PULP trainlib
@@ -267,7 +268,8 @@ list(APPEND TARGET_PREPROCESSOR  # -DPERF
                                 -DVOLTAGE=${VOLTAGE}
                                 -DWAV_FILE=${WAV_FILE}
                                 -DMFCC=${MFCC}
-                                -DEVAL=${EVAL}
+                                -DNOISE_EVAL=${NOISE_EVAL}
+                                -DUTTR_EVAL=${UTTR_EVAL}
                                 -DAPPL=${APPL}
                                 # -DPERF
                                 # -DPRINTDEB

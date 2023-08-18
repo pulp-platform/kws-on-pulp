@@ -393,17 +393,20 @@ void net_step(void *args) {
         int elapsed = 0;
         for (int epoch=0; epoch<EPOCHS; epoch++) {
 
+#ifdef VERBOSE
             gap_cl_starttimer();
             gap_cl_resethwtimer();
             start = gap_cl_readhwtimer();
-
+#endif
             forward();
+
+#ifdef VERBOSE            
             elapsed = gap_cl_readhwtimer() - start;
             printf("forward: %d\n", elapsed);
             gap_cl_starttimer();
             gap_cl_resethwtimer();
             start = gap_cl_readhwtimer();
-
+#endif
 #ifdef VERBOSE
             for (int i = 0; i < OUT_SIZE; i++){
                 printf("Out[%i]=%f\n", i, ((float *)layer0_out.data)[i]);
@@ -412,25 +415,27 @@ void net_step(void *args) {
 
             compute_loss();
 
+#ifdef VERBOSE
             elapsed = gap_cl_readhwtimer() - start;
             printf("compute loss: %d\n", elapsed);
             gap_cl_starttimer();
             gap_cl_resethwtimer();
             start = gap_cl_readhwtimer();
+ #endif           
 
             backward();
-
+#ifdef VERBOSE
             elapsed = gap_cl_readhwtimer() - start;
             printf("backward: %d\n", elapsed);
             gap_cl_starttimer();
             gap_cl_resethwtimer();
             start = gap_cl_readhwtimer();
-
+#endif
             update_weights();
-
+#ifdef VERBOSE
             elapsed = gap_cl_readhwtimer() - start;
             printf("update_weights: %d\n", elapsed);
-
+#endif
         }
 
 #ifdef VERBOSE        
