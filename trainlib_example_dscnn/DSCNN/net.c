@@ -301,8 +301,6 @@ void net_step(void *args) {
     // TODO: Move all in application.c.
     // TODO: Add trainlib_example_dscnn back in .gitignore
 
-    printf("Netstep start\n");
-
     unsigned int * real_args = (unsigned int *) args;
     void * l2_buffer = (void *) real_args[0];
     void * L3_weights_curr = (void *) real_args[1];
@@ -314,9 +312,7 @@ void net_step(void *args) {
     // TODO: Discuss sample management per epoch
     
     // TODO: INIT - take pretrained weights or used updated ones
-    printf("Mem alloc prep \n");
     float *L2_weights = (float *) pi_l2_malloc (WGT_SIZE_L0 * sizeof(float));
-    printf("Mem allocated \n");
     if (init == 1){        
         for (int i = 0; i < WGT_SIZE_L0; i++){
             L2_weights[i] = init_WGT_l0[i];
@@ -329,8 +325,6 @@ void net_step(void *args) {
         
     }
 
-    printf("Weights prepared\n");
-
 
 
     // L2 Dory to L1 TrainLib manual feature movement
@@ -338,8 +332,6 @@ void net_step(void *args) {
     // float eps_in = 0.1142;
     // Tensorflow
     // float eps_in = 0.1247; // TODO: should be passed as an argument
-
-
 
 
 
@@ -357,13 +349,9 @@ void net_step(void *args) {
     float eps_in = 0.1802; // TODO: should be passed as an argument
 
 
-
-
     for (int i = 0; i < IN_SIZE; i++){
         IN_DATA[i] = ((float) (((uint8_t    *) l2_buffer)[i])) * eps_in;
     }
-
-    printf("Data prepared\n");
 
 #ifdef VERBOSE
     for (int i = 0; i < 64; i++){
@@ -378,11 +366,7 @@ void net_step(void *args) {
     }
 #endif
 
-
     DNN_init(L2_weights);
-
-    printf("DNN_init\n");
-
     pi_l2_free(L2_weights, WGT_SIZE_L0 * sizeof(float));
 
 
@@ -494,19 +478,13 @@ void net_step(void *args) {
         printf("\n");
 #endif
 
-        printf("Forward FC layer\n");
-
         forward();
-
-        printf("Forward finished layer\n");
 
         for (int i = 0; i < OUT_SIZE; i++){
             // ((uint8_t    *) l2_buffer)[i] = (uint8_t) ((l0_out[i])*255.0); 
             // ((int *) l2_buffer)[i] = ((uint16_t *)l0_out)[i]; 
             ((float *) l2_buffer)[i] = ((float *)l0_out)[i]; 
         }
-
-        printf("Fill l2_buffer\n");
 
         // onehot encoding
         for (int labelidx = 0; labelidx<OUT_SIZE; labelidx++){
@@ -515,8 +493,7 @@ void net_step(void *args) {
         if (classidx != 100){
             LABEL[classidx] = 1.;     
         }
-        
-        printf("Compute loss\n");
+
         // TODO: enable only in eval mode
         compute_loss();
 
