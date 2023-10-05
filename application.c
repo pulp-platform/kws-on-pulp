@@ -961,17 +961,84 @@ int application(void){
 
     int button_was_pressed = 0;
 
+    printf ("----------------------------- Prepare microphone -----------------------------\n");
+    /****
+        Setup the SFU for PDM in/out
+    ****/
+    struct pi_device i2s_sai1;
+
+    // Configure PDM
+    if (open_i2s_PDM(&i2s_sai1, SAI1,   3072000, 3, 0)) return -1;
+
+    StartSFU(FREQ_SFU*1000*1000, 1);
+    ChanOutCtxt_0  = (SFU_uDMA_Channel_T *) pi_l2_malloc(sizeof(SFU_uDMA_Channel_T)); 
+    BufferInList = (void*) pi_l2_malloc(BUFF_SIZE);
+
+    // Get uDMA channels for Graph
+    SFU_Allocate_uDMA_Channel(ChanOutCtxt_0, 0, &SFU_RTD(Graph));
+    //Next API will have a value to replace this high number with -1
+    //To be able to 
+    SFU_Enqueue_uDMA_Channel(ChanOutCtxt_0, BufferInList, BUFF_SIZE);
+    // Connect Channels to SFU for Mic IN (PDM IN)
+    SFU_GraphConnectIO(SFU_Name(Graph, Out1), ChanOutCtxt_0->ChannelId, 0, &SFU_RTD(Graph));
+    SFU_GraphConnectIO(SFU_Name(Graph, In1), SAI1, 2, &SFU_RTD(Graph));
+    pi_l2_free(ChanOutCtxt_0, sizeof(SFU_uDMA_Channel_T));
+
+    int outidx = 0;
+
     PRINTF ("----------------------------- Starting application ---------------------------\n");
     while (1) {
 
         char utterName[130] = "/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/meeting_ch01_mancrop1.wav";
 
-        if (appl_input == "0"){
-            input_mic(1, 1, 0); // save, free, noise
+        // Manual input acquisition
+
+        // if (appl_input == "0"){
+        //     input_mic(1, 1, 0); // save, free, noise
+        // }
+        // else if (appl_input == "1"){
+        //     input_wav(1, 1, utterName, 0); // save, free, utterName, noise
+        // }
+
+
+
+        // Automatic input acquisition
+
+        //Starting In and Out Graphs
+        pi_i2s_ioctl(&i2s_sai1, PI_I2S_IOCTL_START, NULL);
+        // Let the microphone start
+        pi_time_wait_us(30000); 
+        // pi_time_wait_us(60000); 
+
+        SFU_StartGraph(&SFU_RTD(Graph));
+
+        // // We record one seconds (?)
+        pi_time_wait_us(1000000);
+
+        // pi_i2s_ioctl(&i2s_sai1, PI_I2S_IOCTL_STOP, NULL);
+
+        // printf("Finish rec!\n");
+
+        pi_l2_free(BufferInList, BUFF_SIZE);
+
+
+        outidx = 0; 
+
+        gap_fc_starttimer();
+        gap_fc_resethwtimer();
+        int start = gap_fc_readhwtimer();
+
+        MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(1 * AUDIO_BUFFER_SIZE * sizeof (MFCC_IN_TYPE));
+    
+        for(int i=0;i<BUFF_SIZE;i+=3){
+            MfccInSig[outidx] = (MFCC_IN_TYPE) (((float)((int32_t *)BufferInList)[i]) / (float)(1<<31 - 1));
+            outidx++;
+            if (outidx == AUDIO_BUFFER_SIZE){
+                break;
+            }
         }
-        else if (appl_input == "1"){
-            input_wav(1, 1, utterName, 0); // save, free, utterName, noise
-        }
+        
+
 
         gap_fc_starttimer();
         gap_fc_resethwtimer();
