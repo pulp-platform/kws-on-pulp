@@ -254,7 +254,7 @@ list(APPEND TARGET_CFLAGS   -O2
 )
 
 
-list(APPEND TARGET_PREPROCESSOR  # -DPERF
+list(APPEND TARGET_PREPROCESSOR # -DPERF
                                 -DNUM_CORES=${NUM_CORES}
                                 -DGAP_SDK=${GAP_SDK}
                                 -DFLASH_TYPE=${FLASH_TYPE}

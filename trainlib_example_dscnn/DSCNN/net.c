@@ -15,6 +15,7 @@
 #include "AutoTilerLibTypes.h"
 #include "DSP_Lib.h"
 
+// #define PERF 1
 
 
 int predict_unsigned_local (void * array, int n_classes){
@@ -41,46 +42,58 @@ int predict_unsigned_local (void * array, int n_classes){
 
         switch (idx){
                 case 0:
-                        strncpy(prediction, "silence", 10);
+                        // strncpy(prediction, "unknown", 10);
+                        // printf("The uttered keyword was: %s (%i).\n", "unknown", idx);
                         break;
                 case 1:
-                        strncpy(prediction, "unknown", 10);
+                        // strncpy(prediction, "unknown", 10);
+                        // printf("The uttered keyword was: %s (%i).\n", "unknown", idx);
                         break;
                 case 2:
-                        strncpy(prediction, "yes", 10);
+                        // strncpy(prediction, "yes", 10);
+                        // printf("The uttered keyword was: %s (%i).\n", "yes", idx);
                         break;
                 case 3:
-                        strncpy(prediction, "no", 10);
+                        // strncpy(prediction, "no", 10);
+                        // printf("The uttered keyword was: %s (%i).\n", "no", idx);
                         break;
                 case 4:
-                        strncpy(prediction, "up", 10);
+                        // strncpy(prediction, "up", 10);
+                        // printf("The uttered keyword was: %s (%i).\n", "up", idx);
                         break;
                 case 5:
-                        strncpy(prediction, "down", 10);
+                        // strncpy(prediction, "down", 10);
+                        // printf("The uttered keyword was: %s (%i).\n", "down", idx);
                         break;
                 case 6:
-                        strncpy(prediction, "left", 10);
+                        // strncpy(prediction, "left", 10);
+                        // printf("The uttered keyword was: %s (%i).\n", "left", idx);
                         break;
                 case 7:
-                        strncpy(prediction, "right", 10);
+                        // strncpy(prediction, "right", 10);
+                        // printf("The uttered keyword was: %s (%i).\n", "right", idx);
                         break;
                 case 8:
-                        strncpy(prediction, "on", 10);
+                        // strncpy(prediction, "on", 10);
+                        // printf("The uttered keyword was: %s (%i).\n", "on", idx);
                         break;
                 case 9:
-                        strncpy(prediction, "off", 10);
+                        // strncpy(prediction, "off", 10);
+                        // printf("The uttered keyword was: %s (%i).\n", "off", idx);
                         break;
                 case 10:
-                        strncpy(prediction, "stop", 10);
+                        // strncpy(prediction, "stop", 10);
+                        // printf("The uttered keyword was: %s (%i).\n", "stop", idx);
                         break;
                 case 11:
-                        strncpy(prediction, "go", 10);
+                        // strncpy(prediction, "go", 10);
+                    // printf("The uttered keyword was: %s (%i).\n", "go", idx);
                         break;
                 default:
                         printf ("Undefined class!\n");
         }
 
-        printf("The uttered keyword was: %s (%i).\n", prediction, idx);
+        
         return idx;
 }
 
@@ -107,48 +120,61 @@ int predict_float_local (void * array, int n_classes){
 
         idx = max_idx;
 
+
+        // NOTE: printf is cycle-hungry
         switch (idx){
                 case 0:
-                        strncpy(prediction, "silence", 10);
+                        // strncpy(prediction, "unknown", 10);
+                        // printf("The uttered keyword was: %s (%i).\n", "unknown", idx);
                         break;
                 case 1:
-                        strncpy(prediction, "unknown", 10);
+                        // strncpy(prediction, "unknown", 10);
+                        // printf("The uttered keyword was: %s (%i).\n", "unknown", idx);
                         break;
                 case 2:
-                        strncpy(prediction, "yes", 10);
+                        // strncpy(prediction, "yes", 10);
+                        // printf("The uttered keyword was: %s (%i).\n", "yes", idx);
                         break;
                 case 3:
-                        strncpy(prediction, "no", 10);
+                        // strncpy(prediction, "no", 10);
+                        // printf("The uttered keyword was: %s (%i).\n", "no", idx);
                         break;
                 case 4:
-                        strncpy(prediction, "up", 10);
+                        // strncpy(prediction, "up", 10);
+                        // printf("The uttered keyword was: %s (%i).\n", "up", idx);
                         break;
                 case 5:
-                        strncpy(prediction, "down", 10);
+                        // strncpy(prediction, "down", 10);
+                        // printf("The uttered keyword was: %s (%i).\n", "down", idx);
                         break;
                 case 6:
-                        strncpy(prediction, "left", 10);
+                        // strncpy(prediction, "left", 10);
+                        // printf("The uttered keyword was: %s (%i).\n", "left", idx);
                         break;
                 case 7:
-                        strncpy(prediction, "right", 10);
+                        // strncpy(prediction, "right", 10);
+                        // printf("The uttered keyword was: %s (%i).\n", "right", idx);
                         break;
                 case 8:
-                        strncpy(prediction, "on", 10);
+                        // strncpy(prediction, "on", 10);
+                        // printf("The uttered keyword was: %s (%i).\n", "on", idx);
                         break;
                 case 9:
-                        strncpy(prediction, "off", 10);
+                        // strncpy(prediction, "off", 10);
+                        // printf("The uttered keyword was: %s (%i).\n", "off", idx);
                         break;
                 case 10:
-                        strncpy(prediction, "stop", 10);
+                        // strncpy(prediction, "stop", 10);
+                        // printf("The uttered keyword was: %s (%i).\n", "stop", idx);
                         break;
                 case 11:
-                        strncpy(prediction, "go", 10);
+                        // strncpy(prediction, "go", 10);
+                    // printf("The uttered keyword was: %s (%i).\n", "go", idx);
                         break;
                 default:
                         printf ("Undefined class!\n");
         }
 
-        printf("The uttered keyword was: %s (%i).\n", prediction, idx);
         return idx;
 }
 
@@ -389,20 +415,21 @@ void net_step(void *args) {
         int elapsed = 0;
         for (int epoch=0; epoch<EPOCHS; epoch++) {
 
-#ifdef VERBOSE
+#ifdef PERF
             gap_cl_starttimer();
             gap_cl_resethwtimer();
             start = gap_cl_readhwtimer();
 #endif
             forward();
 
-#ifdef VERBOSE            
+#ifdef PERF            
             elapsed = gap_cl_readhwtimer() - start;
             printf("forward: %d\n", elapsed);
             gap_cl_starttimer();
             gap_cl_resethwtimer();
             start = gap_cl_readhwtimer();
 #endif
+
 #ifdef VERBOSE
             for (int i = 0; i < OUT_SIZE; i++){
                 printf("Out[%i]=%f\n", i, ((float *)layer0_out.data)[i]);
@@ -411,16 +438,16 @@ void net_step(void *args) {
 
             compute_loss();
 
-#ifdef VERBOSE
+#ifdef PERF
             elapsed = gap_cl_readhwtimer() - start;
             printf("compute loss: %d\n", elapsed);
             gap_cl_starttimer();
             gap_cl_resethwtimer();
             start = gap_cl_readhwtimer();
- #endif           
+#endif           
 
             backward();
-#ifdef VERBOSE
+#ifdef PERF
             elapsed = gap_cl_readhwtimer() - start;
             printf("backward: %d\n", elapsed);
             gap_cl_starttimer();
@@ -428,7 +455,7 @@ void net_step(void *args) {
             start = gap_cl_readhwtimer();
 #endif
             update_weights();
-#ifdef VERBOSE
+#ifdef PERF
             elapsed = gap_cl_readhwtimer() - start;
             printf("update_weights: %d\n", elapsed);
 #endif
@@ -464,6 +491,10 @@ void net_step(void *args) {
     } // update
 
     else {
+
+        int start = 0;
+        int elapsed = 0;
+
 #ifdef VERBOSE
         printf("Testing DNN initialization forward..\n");
 
@@ -478,7 +509,18 @@ void net_step(void *args) {
         printf("\n");
 #endif
 
+#ifdef PERF
+        gap_cl_starttimer();
+        gap_cl_resethwtimer();
+        start = gap_cl_readhwtimer();
+#endif
+
         forward();
+
+#ifdef PERF            
+        elapsed = gap_cl_readhwtimer() - start;
+        printf("forward: %d\n", elapsed);
+#endif
 
         for (int i = 0; i < OUT_SIZE; i++){
             // ((uint8_t    *) l2_buffer)[i] = (uint8_t) ((l0_out[i])*255.0); 
@@ -494,10 +536,35 @@ void net_step(void *args) {
             LABEL[classidx] = 1.;     
         }
 
+#ifdef PERF
+        gap_cl_starttimer();
+        gap_cl_resethwtimer();
+        start = gap_cl_readhwtimer();
+#endif
+
         // TODO: enable only in eval mode
-        compute_loss();
+        // compute_loss(); // 7559922 cycles on CLUSTER
+
+#ifdef PERF            
+        elapsed = gap_cl_readhwtimer() - start;
+        printf("compute loss: %d\n", elapsed);
+#endif
+
+
+
+#ifdef PERF
+        gap_cl_starttimer();
+        gap_cl_resethwtimer();
+        start = gap_cl_readhwtimer();
+#endif
 
         predict_float_local(l0_out, OUT_SIZE);
+
+
+#ifdef PERF            
+        elapsed = gap_cl_readhwtimer() - start;
+        printf("predict: %d\n", elapsed);
+#endif
 
         // #ifdef VERBOSE 
         //     print_output();

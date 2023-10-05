@@ -233,8 +233,11 @@ void input_mic(int save, int free, int noise){
     pi_i2s_ioctl(&i2s_sai1, PI_I2S_IOCTL_START, NULL);
     // Let the microphone start
     pi_time_wait_us(30000); 
+    // pi_time_wait_us(60000); 
 
     SFU_StartGraph(&SFU_RTD(Graph));
+
+    // We record two seconds (?)
     pi_time_wait_us(2000000);
 
     pi_i2s_ioctl(&i2s_sai1, PI_I2S_IOCTL_STOP, NULL);
@@ -256,7 +259,11 @@ void input_mic(int save, int free, int noise){
     }
     else {
 
-        MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(noise_seconds * AUDIO_BUFFER_SIZE * sizeof (MFCC_IN_TYPE));
+        gap_fc_starttimer();
+        gap_fc_resethwtimer();
+        int start = gap_fc_readhwtimer();
+
+        MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(1 * AUDIO_BUFFER_SIZE * sizeof (MFCC_IN_TYPE));
     
         for(int i=0;i<BUFF_SIZE;i+=3){
             MfccInSig[outidx] = (MFCC_IN_TYPE) (((float)((int32_t *)BufferInList)[i]) / (float)(1<<31 - 1));
@@ -265,6 +272,10 @@ void input_mic(int save, int free, int noise){
                 break;
             }
         }
+        
+        int elapsed = gap_fc_readhwtimer() - start;
+        printf("Input scaling: %d\n", elapsed);
+        
     }
 
     if (save) {
@@ -307,7 +318,7 @@ void input_mic(int save, int free, int noise){
 
             // Dumping the treated buffer
             dump_wav_open("recording_utterance.wav", 16, 16000, 1, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
-            dump_wav_write(MfccInSig_int16, sizeof(int16_t) *AUDIO_BUFFER_SIZE);
+            dump_wav_write(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
 
             // Dumping the buffer
             // dump_wav_open("recording.wav", 32, 48000, 1, BUFF_SIZE);
@@ -364,9 +375,9 @@ void input_wav(int save, int free, char* wavfile, int noise){
         #else
             for (int i=0; i<noise_seconds*AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
                 // READ WAV
-                RecordedNoise[i] = (MFCC_IN_TYPE) gap_clip(((int) inWav[i]), 15);
+                RecordedNoise[i] = (MFCC_IN_TYPE) gap_fcip(((int) inWav[i]), 15);
                 // READ TEXT
-                // RecordedNoise[i] = (MFCC_IN_TYPE) gap_clip(((int) noisemeeting[i]), 15);
+                // RecordedNoise[i] = (MFCC_IN_TYPE) gap_fcip(((int) noisemeeting[i]), 15);
             }
         #endif
 
@@ -385,7 +396,7 @@ void input_wav(int save, int free, char* wavfile, int noise){
             }
         #else
             for (int i=0; i<AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
-                MfccInSig[i] = (MFCC_IN_TYPE) gap_clip(((int) inWav[i]), 15);
+                MfccInSig[i] = (MFCC_IN_TYPE) gap_fcip(((int) inWav[i]), 15);
             }
         #endif
     }
@@ -956,25 +967,37 @@ int application(void){
         char utterName[130] = "/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/meeting_ch01_mancrop1.wav";
 
         if (appl_input == "0"){
-            input_mic(0, 1, 0); // save, free, noise
+            input_mic(1, 1, 0); // save, free, noise
         }
         else if (appl_input == "1"){
-            input_wav(0, 1, utterName, 0); // save, free, utterName, noise
+            input_wav(1, 1, utterName, 0); // save, free, utterName, noise
         }
 
+        gap_fc_starttimer();
+        gap_fc_resethwtimer();
+        int start_timer_2 = gap_fc_readhwtimer();
+
         compute_mfcc();
+
+        int elapsed_timer_2 = gap_fc_readhwtimer() - start_timer_2;
+        printf("Compute mfcc: %d cycles\n", elapsed_timer_2);
 
         for (int i = 0; i < 5; i++){
             PRINTF("out_feat[%i] = %f, ", i, out_feat[i]);
         }
         PRINTF("\n");
         
+        gap_fc_starttimer();
+        gap_fc_resethwtimer();
+        start_timer_2 = gap_fc_readhwtimer();        
+
         feat_char = (char*) pi_l2_malloc(49 * 10 * sizeof(char));
         // Rescale data
         int k = 0;
         for (int i = 0; i < 1960;i++){                
             
-            feat_char[k] = (char) ((int) floor(out_feat[i] * pow(2, -1) * sqrt(0.05)) + 128);
+            // feat_char[k] = (char) ((int) floor(out_feat[i] * pow(2, -1) * sqrt(0.05)) + 128);
+            feat_char[k] = (char) ((int) floor(out_feat[i] * 0.1118) + 128);
 
             // Select 10 MFCC per window
             if (i == 40*(k/10) + 9){
@@ -984,6 +1007,13 @@ int application(void){
         } 
 
         pi_l2_free(out_feat, 49*10*4*sizeof(OUT_TYPE));
+
+        elapsed_timer_2 = gap_fc_readhwtimer() - start_timer_2;
+        printf("Scale mfcc: %d cycles\n", elapsed_timer_2);
+
+        gap_fc_starttimer();
+        gap_fc_resethwtimer();
+        int start_timer_3 = gap_fc_readhwtimer();        
 
         // Fill input buffer
         for (int i = 0; i < 490; i++){
@@ -1005,10 +1035,22 @@ int application(void){
 
         pi_l2_free(feat_char, 49 * 10 * sizeof(char));
 
+        int elapsed_timer_3 = gap_fc_readhwtimer() - start_timer_3;
+        printf("Convert mfcc: %d cycles\n", elapsed_timer_3);
+
 
         // Extract backbone features
         void *dump; // dump to copy FC weights, won't be used; TODO: Parametrize DORY
+
+        gap_fc_starttimer();
+        gap_fc_resethwtimer();
+        int start_timer_4 = gap_fc_readhwtimer();        
+
+
         network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &dump, 0); // L2_input_h extra-arg for L2-only
+
+        int elapsed_timer_4 = gap_fc_readhwtimer() - start_timer_4;
+        printf("Backbone inference: %d cycles\n", elapsed_timer_4);
 
         for (int i=0; i < 64; i++){
             PRINTF("%i, ", ((uint8_t *) l2_buffer)[i]);
@@ -1016,6 +1058,11 @@ int application(void){
         PRINTF("\n");
 
         PRINTF ("********** Run classifier **********\n");
+
+        gap_fc_starttimer();
+        gap_fc_resethwtimer();
+        int start_timer_5 = gap_fc_readhwtimer();        
+
 
         pi_cluster_conf_init(&cl_conf);
         pi_open_from_conf(&cluster_dev, &cl_conf);
@@ -1034,6 +1081,9 @@ int application(void){
 
         pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, args_inference_classifier));
         pi_cluster_close(&cluster_dev);
+
+        int elapsed_timer_5 = gap_fc_readhwtimer() - start_timer_5;
+        printf("FC inference: %d cycles\n", elapsed_timer_5);
 
         
         #ifdef  AUDIO_EVK
