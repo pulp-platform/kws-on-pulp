@@ -968,7 +968,7 @@ int application(void){
     struct pi_device i2s_sai1;
 
     // Configure PDM
-    if (open_i2s_PDM(&i2s_sai1, SAI1,   3072000, 3, 0)) return -1;
+    if (open_i2s_PDM(&i2s_sai1, SAI1, 3072000, 3, 0)) return -1;
 
     StartSFU(FREQ_SFU*1000*1000, 1);
     ChanOutCtxt_0  = (SFU_uDMA_Channel_T *) pi_l2_malloc(sizeof(SFU_uDMA_Channel_T)); 
@@ -985,6 +985,10 @@ int application(void){
     pi_l2_free(ChanOutCtxt_0, sizeof(SFU_uDMA_Channel_T));
 
     int outidx = 0;
+
+    int recordingidx = 0;
+    char wavpath[20];
+    char recordingidxstr[5];
 
     PRINTF ("----------------------------- Starting application ---------------------------\n");
     while (1) {
@@ -1003,7 +1007,7 @@ int application(void){
 
 
         // Automatic input acquisition
-
+        printf ("----------------------------- Starting recording ---------------------------\n");
         //Starting In and Out Graphs
         pi_i2s_ioctl(&i2s_sai1, PI_I2S_IOCTL_START, NULL);
         // Let the microphone start
@@ -1017,9 +1021,10 @@ int application(void){
 
         // pi_i2s_ioctl(&i2s_sai1, PI_I2S_IOCTL_STOP, NULL);
 
-        // printf("Finish rec!\n");
+        printf("Finish rec!\n");
 
-        pi_l2_free(BufferInList, BUFF_SIZE);
+        // pi_l2_free(BufferInList, BUFF_SIZE);
+
 
 
         outidx = 0; 
@@ -1037,6 +1042,37 @@ int application(void){
                 break;
             }
         }
+
+        outidx = 0; 
+
+        MfccInSig_int16 = (int16_t *) pi_l2_malloc(sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+        for(int i=0;i<BUFF_SIZE;i+=3){
+            MfccInSig_int16[outidx] = (int16_t) (MfccInSig[outidx] * (1<<15));
+            outidx++;
+            if (outidx == AUDIO_BUFFER_SIZE){
+                break;
+            }
+        }
+
+        for (int i = 0; i < AUDIO_BUFFER_SIZE; i++){
+            PRINTF("%i\n", MfccInSig_int16[i]);
+        }
+
+
+        // Dumping the treated buffer
+        strcpy(wavpath,"recording_utterance.wav");
+        sprintf(recordingidxstr, "%d", recordingidx);
+        strcat(recordingidxstr, wavpath);
+        dump_wav_open(recordingidxstr, 16, 16000, 1, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+        dump_wav_write(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+
+        // Dumping the buffer
+        // dump_wav_open("recording.wav", 32, 48000, 1, BUFF_SIZE);
+        // dump_wav_write(BufferInList, BUFF_SIZE);
+        dump_wav_close();
+        pi_l2_free(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+
+        recordingidx = recordingidx + 1;
         
 
 
