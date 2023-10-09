@@ -52,6 +52,15 @@ typedef short int MFCC_IN_TYPE; // Save MFCCs works
 #include "Graph_L2_Descr.h" // pdm_in_test
 #include "localutil.h"
 
+// PMSIS SFU
+#include "sfu_pmsis_runtime.h"
+#define NB_BUF_IN_RING 2
+#define FREQ_PDM_BIT (3072000)
+#define FREQ_PCM (48000)
+#define SAI_RX (0)
+#define SAI_TX (1)
+
+
 // MFCC
 #include "MFCC_params.h"
 #include "MfccKernels.h"
@@ -119,6 +128,31 @@ void *L2_FC_weights_int8;
 SFU_uDMA_Channel_T *ChanOutCtxt_0;
 void * BufferInList;
 
+// PMSIS SFU
+// SFU
+static pi_sfu_graph_t *sfu_graph;
+static uint8_t sfu_input_id;
+static uint8_t sfu_output_id;
+
+// SAI used for receiving and sending PDM
+static pi_device_t sai_dev_rx;
+static pi_device_t sai_dev_tx;
+
+// Audio buffers
+static pi_sfu_buffer_t sfu_out_buffers[NB_BUF_IN_RING]; // Buffers for SFU(MEM_OUT) -> L2 transfers
+static pi_sfu_buffer_t sfu_in_buffers[NB_BUF_IN_RING]; // BUffers for L2 -> SFU(MEM_IN) transfer
+static int sfu_out_buffer_idx = 0;
+static int sfu_out_buffer_cnt = 0;
+static int sfu_in_buffer_idx = 0;
+static int sfu_in_buffer_cnt = 0;
+
+static pi_evt_t sfu_out_task;
+static pi_evt_t sfu_in_task;
+
+static pi_sfu_mem_port_t * memin_port;
+static pi_sfu_mem_port_t * memout_port;
+
+
 int noise_seconds = 1;
 
 static const pi_gpio_e gpio_boot_pin_1 = PAD_GPIO_UPB;
@@ -167,8 +201,156 @@ static int open_i2s_PDM(struct pi_device *i2s, unsigned int SAIn, unsigned int F
     pi_pad_set_function(SAI_SDO(SAIn),PI_PAD_FUNC0);
     pi_pad_set_function(SAI_WS(SAIn),PI_PAD_FUNC0);
 
+
+    // PMSIS SFU
+
+    // int res = 0;
+    // int err;
+    // // Connect to SFU
+    // if (res == 0)
+    // {
+    //     pi_sfu_pdm_itf_id_t itf_id =
+    //     {
+    //         SAI_RX,
+    //         0,
+    //         0
+    //     };
+    //     err = pi_sfu_graph_pdm_bind(sfu_graph, SFU_Name(Graph, PdmIn1), &itf_id);
+    //     if (err != 0)
+    //         res = -1;
+    // }
+
+    // return res;
+
     return 0;
 }
+
+
+// Configure PDM RX interface
+static int configure_pdm()
+{
+    int res = 0;
+    int err;
+
+    pi_pad_function_set(SAI_SCK(SAI_RX), PI_PAD_FUNC0);
+    pi_pad_function_set(SAI_WS(SAI_RX),  PI_PAD_FUNC0);
+    pi_pad_function_set(SAI_SDI(SAI_RX), PI_PAD_FUNC0);
+    pi_pad_function_set(SAI_SDO(SAI_RX), PI_PAD_FUNC0);
+
+    struct pi_i2s_conf i2s_conf;
+    pi_i2s_conf_init(&i2s_conf);
+    i2s_conf.options = PI_I2S_OPT_INT_CLK | PI_I2S_OPT_REF_CLK_FAST;
+    i2s_conf.frame_clk_freq = FREQ_PDM_BIT;
+    i2s_conf.itf = SAI_RX;
+    i2s_conf.mode = PI_I2S_MODE_PDM;
+    i2s_conf.pdm_direction = 0b11;
+    i2s_conf.pdm_diff = 0b00;
+
+    pi_open_from_conf(&sai_dev_rx, &i2s_conf);
+    if (pi_i2s_open(&sai_dev_rx))
+    {
+        printf("Failed to open PDM Rx\n");
+        res = -1;
+    }
+
+    // Connect to SFU
+    if (res == 0)
+    {
+        pi_sfu_pdm_itf_id_t itf_id =
+        {
+            SAI_RX,
+            0,
+            0
+        };
+        err = pi_sfu_graph_pdm_bind(sfu_graph, SFU_Name(Graph, PdmIn1), &itf_id);
+        if (err != 0)
+            res = -1;
+    }
+
+    return res;
+}
+
+// Configure I2S Tx interface
+static int configure_i2s()
+{
+    int err;
+
+    pi_pad_function_set(SAI_SCK(SAI_TX), PI_PAD_FUNC0);
+    pi_pad_function_set(SAI_WS(SAI_TX),  PI_PAD_FUNC0);
+    pi_pad_function_set(SAI_SDI(SAI_TX), PI_PAD_FUNC0);
+    pi_pad_function_set(SAI_SDO(SAI_TX), PI_PAD_FUNC0);
+
+    int32_t stream_ch;
+    struct pi_i2s_conf i2s_conf;
+    pi_i2s_conf_init(&i2s_conf);
+
+    i2s_conf.itf = SAI_TX;
+    i2s_conf.frame_clk_freq = FREQ_PCM;
+    i2s_conf.slot_width = 32;
+    i2s_conf.channels = 1;
+
+    pi_open_from_conf(&sai_dev_tx, &i2s_conf);
+    if (pi_i2s_open(&sai_dev_tx))
+        printf("Failed to open SAI %d in I2S mode\n", SAI_TX);
+
+    // Tx slot
+    pi_sfu_i2s_itf_id_t itf_id = {SAI_TX, 1};
+    err = pi_sfu_graph_i2s_bind(sfu_graph, SFU_Name(Graph, PcmOut1), &itf_id, &stream_ch);
+    if (err != 0)
+    {
+        printf("Unable to bind I2S(SAI: %d, Ch: %d) to SFU STREAM block\n", SAI_TX, 0);
+        return -1;
+    }
+
+    struct pi_i2s_channel_conf i2s_slot_conf;
+    pi_i2s_channel_conf_init(&i2s_slot_conf);
+    i2s_slot_conf.options = PI_I2S_OPT_IS_TX | PI_I2S_OPT_ENABLED;
+    i2s_slot_conf.word_size = 32;
+    i2s_slot_conf.format = PI_I2S_CH_FMT_DATA_ORDER_MSB | PI_I2S_CH_FMT_DATA_ALIGN_LEFT | PI_I2S_CH_FMT_DATA_SIGN_NO_EXTEND;
+    i2s_slot_conf.stream_id = stream_ch;
+
+    if (pi_i2s_channel_conf_set(&sai_dev_tx, 0, &i2s_slot_conf))
+        return -1;
+
+    return 0;
+}
+
+
+
+// PMSIS SFU
+static void handle_out_transfer_end(void *arg)
+{
+    // unsigned int t1 = pi_perf_fc_read(PI_PERF_CYCLES);
+    // printf("handle_out_transfer_end(): t1=%d, cnt=%d, idx=%d\n",
+    //     t1, sfu_out_buffer_cnt, sfu_out_buffer_idx);
+
+    pi_sfu_enqueue(sfu_graph, memout_port, &sfu_out_buffers[sfu_out_buffer_idx]);
+
+    /*
+     * Buffer received from MEM_OUT.
+     * Here we just do a simple copy to the MEM_IN buffer that is not currently being transferred.
+     */
+    int in_idx = sfu_in_buffer_idx ^ 1;
+    int out_idx = sfu_out_buffer_idx;
+    memcpy(sfu_in_buffers[in_idx].data, sfu_out_buffers[out_idx].data, BUFF_SIZE);
+
+    sfu_out_buffer_cnt++;
+    sfu_out_buffer_idx ^= 1;
+}
+
+
+static void handle_in_transfer_end(void *arg)
+{
+    // unsigned int t1 = pi_perf_fc_read(PI_PERF_CYCLES);
+    // printf("handle_in_transfer_end(): t1=%d, cnt=%d, idx=%d\n",
+    //     t1, sfu_in_buffer_cnt, sfu_in_buffer_idx);
+
+    pi_sfu_enqueue(sfu_graph, memin_port, &sfu_in_buffers[sfu_in_buffer_idx]);
+
+    sfu_in_buffer_cnt++;
+    sfu_in_buffer_idx ^= 1;
+}
+
 
 // MFCC Computation
 static void RunMFCC()
@@ -205,44 +387,239 @@ static void RunMFCC()
 }
 
 void input_mic(int save, int free, int noise){
-    /****
-        Setup the SFU for PDM in/out
-    ****/
-    struct pi_device i2s_sai1;
+    // /****
+    //     Setup the SFU for PDM in/out
+    // ****/
+    // struct pi_device i2s_sai1;
 
-    // Configure PDM
-    if (open_i2s_PDM(&i2s_sai1, SAI1,   3072000, 3, 0)) return -1;
+    // // Configure PDM
+    // if (open_i2s_PDM(&i2s_sai1, SAI1,   3072000, 3, 0)) return -1;
 
-    StartSFU(FREQ_SFU*1000*1000, 1);
-    ChanOutCtxt_0  = (SFU_uDMA_Channel_T *) pi_l2_malloc(sizeof(SFU_uDMA_Channel_T));
-    BufferInList = (void*) pi_l2_malloc(BUFF_SIZE);
+    // StartSFU(FREQ_SFU*1000*1000, 1);
+    // ChanOutCtxt_0  = (SFU_uDMA_Channel_T *) pi_l2_malloc(sizeof(SFU_uDMA_Channel_T));
+    // BufferInList = (void*) pi_l2_malloc(BUFF_SIZE);
 
-    // Get uDMA channels for Graph
-    SFU_Allocate_uDMA_Channel(ChanOutCtxt_0, 0, &SFU_RTD(Graph));
-    //Next API will have a value to replace this high number with -1
-    //To be able to 
-    SFU_Enqueue_uDMA_Channel(ChanOutCtxt_0, BufferInList, BUFF_SIZE);
-    // Connect Channels to SFU for Mic IN (PDM IN)
-    SFU_GraphConnectIO(SFU_Name(Graph, Out1), ChanOutCtxt_0->ChannelId, 0, &SFU_RTD(Graph));
-    SFU_GraphConnectIO(SFU_Name(Graph, In1), SAI1, 2, &SFU_RTD(Graph));
-    pi_l2_free(ChanOutCtxt_0, sizeof(SFU_uDMA_Channel_T));
+    // // Get uDMA channels for Graph
+    // SFU_Allocate_uDMA_Channel(ChanOutCtxt_0, 0, &SFU_RTD(Graph));
+    // //Next API will have a value to replace this high number with -1
+    // //To be able to 
+    // SFU_Enqueue_uDMA_Channel(ChanOutCtxt_0, BufferInList, BUFF_SIZE);
+    // // Connect Channels to SFU for Mic IN (PDM IN)
+    // SFU_GraphConnectIO(SFU_Name(Graph, Out1), ChanOutCtxt_0->ChannelId, 0, &SFU_RTD(Graph));
+    // SFU_GraphConnectIO(SFU_Name(Graph, In1), SAI1, 2, &SFU_RTD(Graph));
+    // pi_l2_free(ChanOutCtxt_0, sizeof(SFU_uDMA_Channel_T));
 
-    printf("Start rec!\n");
+    // printf("Start rec!\n");
 
-    //Starting In and Out Graphs
-    pi_i2s_ioctl(&i2s_sai1, PI_I2S_IOCTL_START, NULL);
-    // Let the microphone start
-    pi_time_wait_us(30000); 
-    // pi_time_wait_us(60000); 
+    // //Starting In and Out Graphs
+    // pi_i2s_ioctl(&i2s_sai1, PI_I2S_IOCTL_START, NULL);
+    // // Let the microphone start
+    // pi_time_wait_us(30000); 
+    // // pi_time_wait_us(60000); 
 
-    SFU_StartGraph(&SFU_RTD(Graph));
+    // SFU_StartGraph(&SFU_RTD(Graph));
 
-    // We record two seconds (?)
-    pi_time_wait_us(2000000);
+    // // We record two seconds (?)
+    // pi_time_wait_us(2000000);
 
-    pi_i2s_ioctl(&i2s_sai1, PI_I2S_IOCTL_STOP, NULL);
+    // pi_i2s_ioctl(&i2s_sai1, PI_I2S_IOCTL_STOP, NULL);
+
+    // printf("Finish rec!\n");
+
+    // int outidx = 0;
+
+    // if (noise){
+    //     RecordedNoise = (MFCC_IN_TYPE *) pi_l2_malloc(noise_seconds * AUDIO_BUFFER_SIZE * sizeof (MFCC_IN_TYPE));
+        
+    //     for(int i=0;i<BUFF_SIZE;i+=3){
+    //         RecordedNoise[outidx] = (MFCC_IN_TYPE) (((float)((int32_t *)BufferInList)[i]) / (float)(1<<31 - 1));
+    //         outidx++;
+    //         if (outidx == AUDIO_BUFFER_SIZE){
+    //             break;
+    //         }
+    //     } 
+    // }
+    // else {
+
+    //     gap_fc_starttimer();
+    //     gap_fc_resethwtimer();
+    //     int start = gap_fc_readhwtimer();
+
+    //     MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(1 * AUDIO_BUFFER_SIZE * sizeof (MFCC_IN_TYPE));
+    
+    //     for(int i=0;i<BUFF_SIZE;i+=3){
+    //         MfccInSig[outidx] = (MFCC_IN_TYPE) (((float)((int32_t *)BufferInList)[i]) / (float)(1<<31 - 1));
+    //         outidx++;
+    //         if (outidx == AUDIO_BUFFER_SIZE){
+    //             break;
+    //         }
+    //     }
+        
+    //     int elapsed = gap_fc_readhwtimer() - start;
+    //     printf("Input scaling: %d\n", elapsed);
+        
+    // }
+
+    // if (save) {
+    //     outidx = 0;
+    //     if (noise){
+
+    //         RecordedNoise_int16 = (int16_t *) pi_l2_malloc(sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+    //         for(int i=0;i<BUFF_SIZE;i+=3){
+    //             RecordedNoise_int16[outidx] = (int16_t) (RecordedNoise[outidx] * (1<<15));
+    //             outidx++;
+    //             if (outidx == AUDIO_BUFFER_SIZE){
+    //                 break;
+    //             }
+    //         }
+
+    //         // Dumping the treated buffer
+    //         dump_wav_open("recording_noise.wav", 16, 16000, 1, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+    //         dump_wav_write(RecordedNoise_int16, sizeof(int16_t) *AUDIO_BUFFER_SIZE);
+
+    //         // Dumping the buffer
+    //         // dump_wav_open("recording.wav", 32, 48000, 1, BUFF_SIZE);
+    //         // dump_wav_write(BufferInList, BUFF_SIZE);
+    //         dump_wav_close();
+    //         PRINTF("Writing wav file to recording.wav completed successfully\n");
+    //         pi_l2_free(RecordedNoise_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+    //     }
+    //     else {
+    //         MfccInSig_int16 = (int16_t *) pi_l2_malloc(sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+    //         for(int i=0;i<BUFF_SIZE;i+=3){
+    //             MfccInSig_int16[outidx] = (int16_t) (MfccInSig[outidx] * (1<<15));
+    //             outidx++;
+    //             if (outidx == AUDIO_BUFFER_SIZE){
+    //                 break;
+    //             }
+    //         }
+
+    //         for (int i = 0; i < AUDIO_BUFFER_SIZE; i++){
+    //             PRINTF("%i\n", MfccInSig_int16[i]);
+    //         }
+
+    //         // Dumping the treated buffer
+    //         dump_wav_open("recording_utterance.wav", 16, 16000, 1, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+    //         dump_wav_write(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+
+    //         // Dumping the buffer
+    //         // dump_wav_open("recording.wav", 32, 48000, 1, BUFF_SIZE);
+    //         // dump_wav_write(BufferInList, BUFF_SIZE);
+    //         dump_wav_close();
+    //         PRINTF("Writing wav file to recording.wav completed successfully\n");
+    //         pi_l2_free(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+    //     }
+    // }
+
+    // pi_l2_free(BufferInList, BUFF_SIZE);
+}
+
+void input_mic_buffer(int save, int free, int noise){
+
+    int err;
+
+    // Open SFU with default frequency
+    pi_sfu_conf_t conf = { .sfu_frequency=0 };
+    if (pi_sfu_open(&conf))
+        printf("SFU device open failed\n");
+    printf("SFU activated\n");
+
+    sfu_graph = pi_sfu_graph_open(&SFU_RTD(Graph));
+    if (sfu_graph == NULL)
+        printf("SFU graph open failed\n");
+    printf("Graph opened\n");
+
+    // Allocate IO buffers
+    for (int i = 0; i < NB_BUF_IN_RING; i++)
+    {
+        // void *BufferInList = pi_l2_malloc(BUFF_SIZE * sizeof(int));
+        // if (BufferInList == NULL) return -1;
+        // pi_sfu_buffer_init(&sfu_out_buffers[i], BufferInList, BUFF_SIZE, sizeof(int));
+        // pi_l2_free(BufferInList, BUFF_SIZE);
+
+        sfu_out_buffers[i].data = pi_l2_malloc(BUFF_SIZE);
+        sfu_out_buffers[i].size = BUFF_SIZE;
+
+        // BufferInList = pi_l2_malloc(BUFF_SIZE * sizeof(int));
+        // if (BufferInList == NULL) return -1;
+        // pi_sfu_buffer_init(&sfu_in_buffers[i], BufferInList, BUFF_SIZE, sizeof(int));
+        // pi_l2_free(BufferInList, BUFF_SIZE);
+
+        sfu_in_buffers[i].data = pi_l2_malloc(BUFF_SIZE);
+        sfu_in_buffers[i].size = BUFF_SIZE;
+    }
+
+    // Configure interfaces
+    err = configure_pdm();
+    if (err != 0)
+        printf("PDM interface init failed\n");
+    printf("PDM Rx interface configured\n");
+
+    err = configure_i2s();
+    if (err != 0)
+        printf("I2S interface init failed\n");
+    printf("I2S Tx interface configured\n");
+
+    // Get port refs
+    memin_port = pi_sfu_mem_port_get(sfu_graph, SFU_Name(Graph, MemIn1));
+    memout_port = pi_sfu_mem_port_get(sfu_graph, SFU_Name(Graph, MemOut1));
+    if ((memin_port == NULL) || (memout_port == NULL))
+        printf("Failed to get mem io references\n");
+
+     // Prepare buffer transfer callbacks
+    pi_evt_callback_irq_init(&sfu_out_task, handle_out_transfer_end, NULL);
+    pi_evt_callback_irq_init(&sfu_in_task, handle_in_transfer_end, NULL);
+
+    // Enqueue first two buffers on each side
+    for (int i = 0; i < NB_BUF_IN_RING; i++)
+    {
+        sfu_out_buffers[i].task = &sfu_out_task;
+        pi_sfu_enqueue(sfu_graph, memout_port, &sfu_out_buffers[i]);
+    }
+    for (int i = 0; i < NB_BUF_IN_RING; i++)
+    {
+        sfu_in_buffers[i].task = &sfu_in_task;
+        pi_sfu_enqueue(sfu_graph, memin_port, &sfu_in_buffers[i]);
+    }
+
+    pi_sfu_graph_load(sfu_graph);
+
+    pi_i2s_ioctl(&sai_dev_rx, PI_I2S_IOCTL_START, NULL);
+    pi_i2s_ioctl(&sai_dev_tx, PI_I2S_IOCTL_START, NULL);
+
+    pi_time_wait_us(1000000);
+
+    pi_i2s_ioctl(&sai_dev_tx, PI_I2S_IOCTL_STOP, NULL);
+    pi_i2s_ioctl(&sai_dev_rx, PI_I2S_IOCTL_STOP, NULL);
+
+    pi_sfu_graph_unload(sfu_graph);
+
+    pi_sfu_graph_close(sfu_graph);
+
 
     printf("Finish rec!\n");
+
+    printf("((int32_t *)sfu_out_buffers[0].data)[i])\n");
+    for (int i = 0; i < 5; i++){
+        printf("%i\n", ((int32_t *)sfu_out_buffers[0].data)[i]);
+    }
+    printf("----------------\n");
+    printf("((int32_t *)sfu_out_buffers[1].data)[i])\n");
+    for (int i = 0; i < 5; i++){
+        printf("%i\n", ((int32_t *)sfu_out_buffers[1].data)[i]);
+    }
+    printf("----------------\n");
+    printf("((int32_t *)sfu_in_buffers[0].data)[i])\n");
+    for (int i = 0; i < 5; i++){
+        printf("%i\n", ((int32_t *)sfu_in_buffers[0].data)[i]);
+    }   
+    printf("((int32_t *)sfu_in_buffers[1].data)[i])\n");
+    printf("----------------\n");
+    for (int i = 0; i < 5; i++){
+        printf("%i\n", ((int32_t *)sfu_in_buffers[1].data)[i]);
+    }
+    printf("----------------\n");
+
 
     int outidx = 0;
 
@@ -266,7 +643,9 @@ void input_mic(int save, int free, int noise){
         MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(1 * AUDIO_BUFFER_SIZE * sizeof (MFCC_IN_TYPE));
     
         for(int i=0;i<BUFF_SIZE;i+=3){
-            MfccInSig[outidx] = (MFCC_IN_TYPE) (((float)((int32_t *)BufferInList)[i]) / (float)(1<<31 - 1));
+            // MfccInSig[outidx] = (MFCC_IN_TYPE) (((float)((int32_t *)BufferInList)[i]) / (float)(1<<31 - 1));
+            // MfccInSig[outidx] = (MFCC_IN_TYPE) (((float)((int32_t *)sfu_out_buffers[0].data)[i]) / (float)(1<<31 - 1));
+            MfccInSig[outidx] = (MFCC_IN_TYPE) (((float)((int32_t *)sfu_out_buffers[1].data)[i]) / (float)(1<<31 - 1));
             outidx++;
             if (outidx == AUDIO_BUFFER_SIZE){
                 break;
@@ -299,7 +678,7 @@ void input_mic(int save, int free, int noise){
             // dump_wav_open("recording.wav", 32, 48000, 1, BUFF_SIZE);
             // dump_wav_write(BufferInList, BUFF_SIZE);
             dump_wav_close();
-            PRINTF("Writing wav file to recording.wav completed successfully\n");
+            printf("Writing wav file to recording.wav completed successfully\n");
             pi_l2_free(RecordedNoise_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
         }
         else {
@@ -324,12 +703,34 @@ void input_mic(int save, int free, int noise){
             // dump_wav_open("recording.wav", 32, 48000, 1, BUFF_SIZE);
             // dump_wav_write(BufferInList, BUFF_SIZE);
             dump_wav_close();
-            PRINTF("Writing wav file to recording.wav completed successfully\n");
+            printf("Writing wav file to recording.wav completed successfully\n");
             pi_l2_free(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
         }
     }
 
-    pi_l2_free(BufferInList, BUFF_SIZE);
+    // printf("Address to clean: %p\n", BufferInList);
+    // printf("Address to clean: %p\n", &sfu_out_buffers[0]);
+    // printf("Address to clean: %p\n", &sfu_in_buffers[0]);
+    // printf("Address to clean: %p\n", address1);
+    // printf("Address to clean: %p\n", address2);
+
+    pi_l2_free(sfu_out_buffers[0].data, BUFF_SIZE);
+    pi_l2_free(sfu_in_buffers[0].data, BUFF_SIZE);
+    pi_l2_free(sfu_out_buffers[1].data, BUFF_SIZE);
+    pi_l2_free(sfu_in_buffers[1].data, BUFF_SIZE);
+    
+    // pi_l2_free(address1, BUFF_SIZE);
+    // pi_l2_free(address2, BUFF_SIZE);
+
+    // // pi_l2_free(BufferInList, BUFF_SIZE);
+
+    // for (int i = 0; i < NB_BUF_IN_RING; i++)
+    // {
+
+    //     pi_l2_free(&sfu_out_buffers[i], BUFF_SIZE);
+    //     pi_l2_free(&sfu_in_buffers[i], BUFF_SIZE);
+    // }
+
 }
 
 
@@ -961,34 +1362,37 @@ int application(void){
 
     int button_was_pressed = 0;
 
-    printf ("----------------------------- Prepare microphone -----------------------------\n");
-    /****
-        Setup the SFU for PDM in/out
-    ****/
-    struct pi_device i2s_sai1;
+    // *** ALWAYS-ON MIC PRELIM *** 
+    // printf ("----------------------------- Prepare microphone -----------------------------\n");
+    // /****
+    //     Setup the SFU for PDM in/out
+    // ****/
+    // struct pi_device i2s_sai1;
 
-    // Configure PDM
-    if (open_i2s_PDM(&i2s_sai1, SAI1, 3072000, 3, 0)) return -1;
+    // // Configure PDM
+    // if (open_i2s_PDM(&i2s_sai1, SAI1, 3072000, 3, 0)) return -1;
 
-    StartSFU(FREQ_SFU*1000*1000, 1);
-    ChanOutCtxt_0  = (SFU_uDMA_Channel_T *) pi_l2_malloc(sizeof(SFU_uDMA_Channel_T)); 
-    BufferInList = (void*) pi_l2_malloc(BUFF_SIZE);
+    // StartSFU(FREQ_SFU*1000*1000, 1);
+    // ChanOutCtxt_0  = (SFU_uDMA_Channel_T *) pi_l2_malloc(sizeof(SFU_uDMA_Channel_T)); 
+    // BufferInList = (void*) pi_l2_malloc(BUFF_SIZE);
 
-    // Get uDMA channels for Graph
-    SFU_Allocate_uDMA_Channel(ChanOutCtxt_0, 0, &SFU_RTD(Graph));
-    //Next API will have a value to replace this high number with -1
-    //To be able to 
-    SFU_Enqueue_uDMA_Channel(ChanOutCtxt_0, BufferInList, BUFF_SIZE);
-    // Connect Channels to SFU for Mic IN (PDM IN)
-    SFU_GraphConnectIO(SFU_Name(Graph, Out1), ChanOutCtxt_0->ChannelId, 0, &SFU_RTD(Graph));
-    SFU_GraphConnectIO(SFU_Name(Graph, In1), SAI1, 2, &SFU_RTD(Graph));
-    pi_l2_free(ChanOutCtxt_0, sizeof(SFU_uDMA_Channel_T));
+    // // Get uDMA channels for Graph
+    // SFU_Allocate_uDMA_Channel(ChanOutCtxt_0, 0, &SFU_RTD(Graph));
+    // //Next API will have a value to replace this high number with -1
+    // //To be able to 
+    // SFU_Enqueue_uDMA_Channel(ChanOutCtxt_0, BufferInList, BUFF_SIZE);
+    // // Connect Channels to SFU for Mic IN (PDM IN)
+    // SFU_GraphConnectIO(SFU_Name(Graph, Out1), ChanOutCtxt_0->ChannelId, 0, &SFU_RTD(Graph));
+    // SFU_GraphConnectIO(SFU_Name(Graph, In1), SAI1, 2, &SFU_RTD(Graph));
+    // pi_l2_free(ChanOutCtxt_0, sizeof(SFU_uDMA_Channel_T));
 
-    int outidx = 0;
+    // int outidx = 0;
 
-    int recordingidx = 0;
-    char wavpath[20];
-    char recordingidxstr[5];
+    // int recordingidx = 0;
+    // char wavpath[20];
+    // char recordingidxstr[5];
+
+    // *** ALWAYS-ON MIC PRELIM *** 
 
     PRINTF ("----------------------------- Starting application ---------------------------\n");
     while (1) {
@@ -997,204 +1401,209 @@ int application(void){
 
         // Manual input acquisition
 
-        // if (appl_input == "0"){
-        //     input_mic(1, 1, 0); // save, free, noise
-        // }
-        // else if (appl_input == "1"){
-        //     input_wav(1, 1, utterName, 0); // save, free, utterName, noise
-        // }
+        if (appl_input == "0"){
+            // input_mic(1, 1, 0); // save, free, noise
+            input_mic_buffer(1, 1, 0);
+        }
+        else if (appl_input == "1"){
+            input_wav(1, 1, utterName, 0); // save, free, utterName, noise
+        }
 
 
 
         // Automatic input acquisition
-        printf ("----------------------------- Starting recording ---------------------------\n");
-        //Starting In and Out Graphs
-        pi_i2s_ioctl(&i2s_sai1, PI_I2S_IOCTL_START, NULL);
-        // Let the microphone start
-        pi_time_wait_us(30000); 
-        // pi_time_wait_us(60000); 
+        // *** ALWAYS-ON MIC PRELIM *** 
+        // printf ("----------------------------- Starting recording ---------------------------\n");
+        // //Starting In and Out Graphs
+        // pi_i2s_ioctl(&i2s_sai1, PI_I2S_IOCTL_START, NULL);
+        // // Let the microphone start
+        // pi_time_wait_us(30000); 
+        // // pi_time_wait_us(60000); 
 
-        SFU_StartGraph(&SFU_RTD(Graph));
+        // SFU_StartGraph(&SFU_RTD(Graph));
 
-        // // We record one seconds (?)
-        pi_time_wait_us(1000000);
+        // // // We record one seconds (?)
+        // pi_time_wait_us(1000000);
 
-        // pi_i2s_ioctl(&i2s_sai1, PI_I2S_IOCTL_STOP, NULL);
+        // // pi_i2s_ioctl(&i2s_sai1, PI_I2S_IOCTL_STOP, NULL);
 
-        printf("Finish rec!\n");
+        // printf("Finish rec!\n");
 
-        // pi_l2_free(BufferInList, BUFF_SIZE);
+        
+        // // SFU_GraphResetInputs(&SFU_RTD(Graph));
 
+        // outidx = 0; 
 
+        // gap_fc_starttimer();
+        // gap_fc_resethwtimer();
+        // int start = gap_fc_readhwtimer();
 
-        outidx = 0; 
-
-        gap_fc_starttimer();
-        gap_fc_resethwtimer();
-        int start = gap_fc_readhwtimer();
-
-        MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(1 * AUDIO_BUFFER_SIZE * sizeof (MFCC_IN_TYPE));
+        // MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(1 * AUDIO_BUFFER_SIZE * sizeof (MFCC_IN_TYPE));
     
-        for(int i=0;i<BUFF_SIZE;i+=3){
-            MfccInSig[outidx] = (MFCC_IN_TYPE) (((float)((int32_t *)BufferInList)[i]) / (float)(1<<31 - 1));
-            outidx++;
-            if (outidx == AUDIO_BUFFER_SIZE){
-                break;
-            }
-        }
+        // for(int i=0;i<BUFF_SIZE;i+=3){
+        //     MfccInSig[outidx] = (MFCC_IN_TYPE) (((float)((int32_t *)BufferInList)[i]) / (float)(1<<31 - 1));
+        //     outidx++;
+        //     if (outidx == AUDIO_BUFFER_SIZE){
+        //         break;
+        //     }
+        // }
 
-        outidx = 0; 
+        // // Current position is outidx, we use that to reset the buffer 
 
-        MfccInSig_int16 = (int16_t *) pi_l2_malloc(sizeof(int16_t) * AUDIO_BUFFER_SIZE);
-        for(int i=0;i<BUFF_SIZE;i+=3){
-            MfccInSig_int16[outidx] = (int16_t) (MfccInSig[outidx] * (1<<15));
-            outidx++;
-            if (outidx == AUDIO_BUFFER_SIZE){
-                break;
-            }
-        }
+        // outidx = 0; 
 
-        for (int i = 0; i < AUDIO_BUFFER_SIZE; i++){
-            PRINTF("%i\n", MfccInSig_int16[i]);
-        }
+        // MfccInSig_int16 = (int16_t *) pi_l2_malloc(sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+        // for(int i=0;i<BUFF_SIZE;i+=3){
+        //     MfccInSig_int16[outidx] = (int16_t) (MfccInSig[outidx] * (1<<15));
+        //     outidx++;
+        //     if (outidx == AUDIO_BUFFER_SIZE){
+        //         break;
+        //     }
+        // }
+
+        // for (int i = 0; i < AUDIO_BUFFER_SIZE; i++){
+        //     PRINTF("%i\n", MfccInSig_int16[i]);
+        // }
 
 
-        // Dumping the treated buffer
-        strcpy(wavpath,"recording_utterance.wav");
-        sprintf(recordingidxstr, "%d", recordingidx);
-        strcat(recordingidxstr, wavpath);
-        dump_wav_open(recordingidxstr, 16, 16000, 1, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
-        dump_wav_write(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+        // // Dumping the treated buffer
+        // strcpy(wavpath,"recording_utterance.wav");
+        // sprintf(recordingidxstr, "%d", recordingidx);
+        // strcat(recordingidxstr, wavpath);
+        // dump_wav_open(recordingidxstr, 16, 16000, 1, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+        // dump_wav_write(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
 
-        // Dumping the buffer
-        // dump_wav_open("recording.wav", 32, 48000, 1, BUFF_SIZE);
-        // dump_wav_write(BufferInList, BUFF_SIZE);
-        dump_wav_close();
-        pi_l2_free(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+        // // Dumping the buffer
+        // // dump_wav_open("recording.wav", 32, 48000, 1, BUFF_SIZE);
+        // // dump_wav_write(BufferInList, BUFF_SIZE);
+        // dump_wav_close();
+        // pi_l2_free(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
 
-        recordingidx = recordingidx + 1;
+        // recordingidx = recordingidx + 1;
+
+        // *** ALWAYS-ON MIC PRELIM *** 
         
 
 
-        gap_fc_starttimer();
-        gap_fc_resethwtimer();
-        int start_timer_2 = gap_fc_readhwtimer();
+        // gap_fc_starttimer();
+        // gap_fc_resethwtimer();
+        // int start_timer_2 = gap_fc_readhwtimer();
 
-        compute_mfcc();
+        // compute_mfcc();
 
-        int elapsed_timer_2 = gap_fc_readhwtimer() - start_timer_2;
-        printf("Compute mfcc: %d cycles\n", elapsed_timer_2);
+        // int elapsed_timer_2 = gap_fc_readhwtimer() - start_timer_2;
+        // printf("Compute mfcc: %d cycles\n", elapsed_timer_2);
 
-        for (int i = 0; i < 5; i++){
-            PRINTF("out_feat[%i] = %f, ", i, out_feat[i]);
-        }
-        PRINTF("\n");
+        // for (int i = 0; i < 5; i++){
+        //     PRINTF("out_feat[%i] = %f, ", i, out_feat[i]);
+        // }
+        // PRINTF("\n");
         
-        gap_fc_starttimer();
-        gap_fc_resethwtimer();
-        start_timer_2 = gap_fc_readhwtimer();        
+        // gap_fc_starttimer();
+        // gap_fc_resethwtimer();
+        // start_timer_2 = gap_fc_readhwtimer();        
 
-        feat_char = (char*) pi_l2_malloc(49 * 10 * sizeof(char));
-        // Rescale data
-        int k = 0;
-        for (int i = 0; i < 1960;i++){                
+        // feat_char = (char*) pi_l2_malloc(49 * 10 * sizeof(char));
+        // // Rescale data
+        // int k = 0;
+        // for (int i = 0; i < 1960;i++){                
             
-            // feat_char[k] = (char) ((int) floor(out_feat[i] * pow(2, -1) * sqrt(0.05)) + 128);
-            feat_char[k] = (char) ((int) floor(out_feat[i] * 0.1118) + 128);
+        //     // feat_char[k] = (char) ((int) floor(out_feat[i] * pow(2, -1) * sqrt(0.05)) + 128);
+        //     feat_char[k] = (char) ((int) floor(out_feat[i] * 0.1118) + 128);
 
-            // Select 10 MFCC per window
-            if (i == 40*(k/10) + 9){
-                i = 40*(k/10) + 39;
-            }
-            k++;
-        } 
+        //     // Select 10 MFCC per window
+        //     if (i == 40*(k/10) + 9){
+        //         i = 40*(k/10) + 39;
+        //     }
+        //     k++;
+        // } 
 
-        pi_l2_free(out_feat, 49*10*4*sizeof(OUT_TYPE));
+        // pi_l2_free(out_feat, 49*10*4*sizeof(OUT_TYPE));
 
-        elapsed_timer_2 = gap_fc_readhwtimer() - start_timer_2;
-        printf("Scale mfcc: %d cycles\n", elapsed_timer_2);
+        // elapsed_timer_2 = gap_fc_readhwtimer() - start_timer_2;
+        // printf("Scale mfcc: %d cycles\n", elapsed_timer_2);
 
-        gap_fc_starttimer();
-        gap_fc_resethwtimer();
-        int start_timer_3 = gap_fc_readhwtimer();        
+        // gap_fc_starttimer();
+        // gap_fc_resethwtimer();
+        // int start_timer_3 = gap_fc_readhwtimer();        
 
-        // Fill input buffer
-        for (int i = 0; i < 490; i++){
-            if (mfcc == "1"){
-                ((uint8_t *)l2_buffer)[i] = L2_input_h[i]; // Precomputed MFCC
-            }
-            else {
-                ((uint8_t *)l2_buffer)[i] = feat_char[i]; // Online computed MFCC
-                PRINTF("%i,", feat_char[i]);
+        // // Fill input buffer
+        // for (int i = 0; i < 490; i++){
+        //     if (mfcc == "1"){
+        //         ((uint8_t *)l2_buffer)[i] = L2_input_h[i]; // Precomputed MFCC
+        //     }
+        //     else {
+        //         ((uint8_t *)l2_buffer)[i] = feat_char[i]; // Online computed MFCC
+        //         PRINTF("%i,", feat_char[i]);
 
-            }
-        }
-        PRINTF("\n");
+        //     }
+        // }
+        // PRINTF("\n");
 
-        for (int i = 0; i < 5; i++){
-            PRINTF("feat_char[%i] = %i, ", i, feat_char[i]);
-        }
-        PRINTF("\n");
+        // for (int i = 0; i < 5; i++){
+        //     PRINTF("feat_char[%i] = %i, ", i, feat_char[i]);
+        // }
+        // PRINTF("\n");
 
-        pi_l2_free(feat_char, 49 * 10 * sizeof(char));
+        // pi_l2_free(feat_char, 49 * 10 * sizeof(char));
 
-        int elapsed_timer_3 = gap_fc_readhwtimer() - start_timer_3;
-        printf("Convert mfcc: %d cycles\n", elapsed_timer_3);
-
-
-        // Extract backbone features
-        void *dump; // dump to copy FC weights, won't be used; TODO: Parametrize DORY
-
-        gap_fc_starttimer();
-        gap_fc_resethwtimer();
-        int start_timer_4 = gap_fc_readhwtimer();        
+        // int elapsed_timer_3 = gap_fc_readhwtimer() - start_timer_3;
+        // printf("Convert mfcc: %d cycles\n", elapsed_timer_3);
 
 
-        network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &dump, 0); // L2_input_h extra-arg for L2-only
+        // // Extract backbone features
+        // void *dump; // dump to copy FC weights, won't be used; TODO: Parametrize DORY
 
-        int elapsed_timer_4 = gap_fc_readhwtimer() - start_timer_4;
-        printf("Backbone inference: %d cycles\n", elapsed_timer_4);
-
-        for (int i=0; i < 64; i++){
-            PRINTF("%i, ", ((uint8_t *) l2_buffer)[i]);
-        }
-        PRINTF("\n");
-
-        PRINTF ("********** Run classifier **********\n");
-
-        gap_fc_starttimer();
-        gap_fc_resethwtimer();
-        int start_timer_5 = gap_fc_readhwtimer();        
+        // gap_fc_starttimer();
+        // gap_fc_resethwtimer();
+        // int start_timer_4 = gap_fc_readhwtimer();        
 
 
-        pi_cluster_conf_init(&cl_conf);
-        pi_open_from_conf(&cluster_dev, &cl_conf);
-        if (pi_cluster_open(&cluster_dev))
-        {
-          return -1;
-        }
+        // network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &dump, 0); // L2_input_h extra-arg for L2-only
 
-        unsigned int args_inference_classifier[5];
-        args_inference_classifier[0] = (unsigned int) l2_buffer;
-        args_inference_classifier[1] = (unsigned int) dump;
-        args_inference_classifier[2] = (unsigned int) L2_FC_weights_float;
-        args_inference_classifier[3] = (unsigned int) 0; // update = 1
-        args_inference_classifier[4] = (unsigned int) 0; // init = 1
-        args_inference_classifier[5] = (unsigned int) 0; // tinytest already ordered
+        // int elapsed_timer_4 = gap_fc_readhwtimer() - start_timer_4;
+        // printf("Backbone inference: %d cycles\n", elapsed_timer_4);
 
-        pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, args_inference_classifier));
-        pi_cluster_close(&cluster_dev);
+        // for (int i=0; i < 64; i++){
+        //     PRINTF("%i, ", ((uint8_t *) l2_buffer)[i]);
+        // }
+        // PRINTF("\n");
 
-        int elapsed_timer_5 = gap_fc_readhwtimer() - start_timer_5;
-        printf("FC inference: %d cycles\n", elapsed_timer_5);
+        // PRINTF ("********** Run classifier **********\n");
+
+        // gap_fc_starttimer();
+        // gap_fc_resethwtimer();
+        // int start_timer_5 = gap_fc_readhwtimer();        
+
+
+        // pi_cluster_conf_init(&cl_conf);
+        // pi_open_from_conf(&cluster_dev, &cl_conf);
+        // if (pi_cluster_open(&cluster_dev))
+        // {
+        //   return -1;
+        // }
+
+        // unsigned int args_inference_classifier[5];
+        // args_inference_classifier[0] = (unsigned int) l2_buffer;
+        // args_inference_classifier[1] = (unsigned int) dump;
+        // args_inference_classifier[2] = (unsigned int) L2_FC_weights_float;
+        // args_inference_classifier[3] = (unsigned int) 0; // update = 1
+        // args_inference_classifier[4] = (unsigned int) 0; // init = 1
+        // args_inference_classifier[5] = (unsigned int) 0; // tinytest already ordered
+
+        // pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, args_inference_classifier));
+        // pi_cluster_close(&cluster_dev);
+
+        // int elapsed_timer_5 = gap_fc_readhwtimer() - start_timer_5;
+        // printf("FC inference: %d cycles\n", elapsed_timer_5);
 
         
-        #ifdef  AUDIO_EVK
-            // block until next input audio frame is ready
-            pi_gpio_pin_write(gpio_pin_o, 0);
-        #endif
+        // #ifdef  AUDIO_EVK
+        //     // block until next input audio frame is ready
+        //     pi_gpio_pin_write(gpio_pin_o, 0);
+        // #endif
 
-        button_was_pressed = read_button();
+        // button_was_pressed = read_button();
 
         if (button_was_pressed){
 
@@ -1266,3 +1675,69 @@ int main()
 
     return application();
 }
+
+
+// Finish rec!
+// ((int32_t *)sfu_out_buffers[0].data)[i])
+// 634
+// 132019
+// 3147716
+// 29333307
+// 152078280
+// ----------------
+// ((int32_t *)sfu_out_buffers[1].data)[i])
+// 393216
+// 470979656
+// -166380181
+// -1192842199
+// -2113704018
+// ----------------
+// ((int32_t *)sfu_in_buffers[0].data)[i])
+// 589824
+// 470979656
+// 1944499546
+// -1915009618
+// -568721107
+// ((int32_t *)sfu_in_buffers[1].data)[i])
+// ----------------
+// 196608
+// 470979656
+// 1334737874
+// -1210310566
+// -169854325
+// ----------------
+// Input scaling: 113519
+// Writing wav file to recording.wav completed successfully
+// SFU activated
+// Graph opened
+// PDM Rx interface configured
+// I2S Tx interface configured
+// Finish rec!
+// ((int32_t *)sfu_out_buffers[0].data)[i])
+// 634
+// 132019
+// 3147716
+// 29333307
+// 152078280
+// ----------------
+// ((int32_t *)sfu_out_buffers[1].data)[i])
+// 393216
+// 471011656
+// -418038429
+// -1194939288
+// -2029883474
+// ----------------
+// ((int32_t *)sfu_in_buffers[0].data)[i])
+// 589824
+// 471011656
+// 1940304210
+// -2049225554
+// 2122973485
+// ((int32_t *)sfu_in_buffers[1].data)[i])
+// ----------------
+// 196608
+// 471011656
+// 1863219542
+// -1252261861
+// 1962162831
+// ----------------

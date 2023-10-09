@@ -44,7 +44,8 @@ set (CLUSTER_STACK_SIZE 8192)
 set (CLUSTER_SLAVE_STACK_SIZE 4096)
 set (TOTAL_STACK_SIZE $(shell expr $(CLUSTER_STACK_SIZE) \+ $(CLUSTER_SLAVE_STACK_SIZE) \* $(CLUSTER_NUM_CORES)))
 set (MODEL_L1_MEMORY $(shell expr 120000 \- $(TOTAL_STACK_SIZE)))
-set (MODEL_L2_MEMORY 1000000)
+# set (MODEL_L2_MEMORY 1000000)
+set (MODEL_L2_MEMORY 200000)
 set (MODEL_L3_MEMORY 8000000)
 
 set (WAV_FILE $ENV{WAV_FILE})
@@ -145,6 +146,7 @@ list (APPEND TARGET_SRCS
                          ${BUILD_DIR}/Graph_L2_Descr.c
                          ${BUILD_DIR}/L2_Descr_Table.c
                          ${GAP9_SDK_DIR}rtos/sfu/SFU_RT.c
+                         ${GAP9_SDK_DIR}rtos/sfu/sfu_pmsis_runtime.c
                          ${GAP_SDK_HOME}/tools/audio-framework/runtime/include
 )
 
