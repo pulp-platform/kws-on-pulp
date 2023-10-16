@@ -57,8 +57,8 @@ typedef short int MFCC_IN_TYPE; // Save MFCCs works
 #define NB_BUF_IN_RING 2
 #define FREQ_PDM_BIT (3072000)
 #define FREQ_PCM (48000)
-#define SAI_RX (0)
-#define SAI_TX (1)
+#define SAI_RX (1)
+#define SAI_TX (0)
 
 
 // MFCC
@@ -259,7 +259,7 @@ static int configure_pdm()
         pi_sfu_pdm_itf_id_t itf_id =
         {
             SAI_RX,
-            0,
+            2,
             0
         };
         err = pi_sfu_graph_pdm_bind(sfu_graph, SFU_Name(Graph, PdmIn1), &itf_id);
@@ -332,7 +332,9 @@ static void handle_out_transfer_end(void *arg)
      */
     int in_idx = sfu_in_buffer_idx ^ 1;
     int out_idx = sfu_out_buffer_idx;
-    memcpy(sfu_in_buffers[in_idx].data, sfu_out_buffers[out_idx].data, BUFF_SIZE);
+    // memcpy(sfu_in_buffers[in_idx].data, sfu_out_buffers[out_idx].data, DOUBLE_BUFF_SIZE*sizeof(int));
+    // TODO: Add memcopy to our buffer
+    memcpy(BufferInList+sfu_out_buffer_cnt*DOUBLE_BUFF_SIZE*sizeof(int), sfu_out_buffers[out_idx].data, DOUBLE_BUFF_SIZE*sizeof(int));
 
     sfu_out_buffer_cnt++;
     sfu_out_buffer_idx ^= 1;
@@ -532,21 +534,13 @@ void input_mic_buffer(int save, int free, int noise){
     // Allocate IO buffers
     for (int i = 0; i < NB_BUF_IN_RING; i++)
     {
-        // void *BufferInList = pi_l2_malloc(BUFF_SIZE * sizeof(int));
-        // if (BufferInList == NULL) return -1;
-        // pi_sfu_buffer_init(&sfu_out_buffers[i], BufferInList, BUFF_SIZE, sizeof(int));
-        // pi_l2_free(BufferInList, BUFF_SIZE);
+        void *data_out = pi_l2_malloc(DOUBLE_BUFF_SIZE * sizeof(int));
+        if (data_out == NULL) return -1;
+        pi_sfu_buffer_init(&sfu_out_buffers[i], data_out, DOUBLE_BUFF_SIZE, sizeof(int));
 
-        sfu_out_buffers[i].data = pi_l2_malloc(BUFF_SIZE);
-        sfu_out_buffers[i].size = BUFF_SIZE;
-
-        // BufferInList = pi_l2_malloc(BUFF_SIZE * sizeof(int));
-        // if (BufferInList == NULL) return -1;
-        // pi_sfu_buffer_init(&sfu_in_buffers[i], BufferInList, BUFF_SIZE, sizeof(int));
-        // pi_l2_free(BufferInList, BUFF_SIZE);
-
-        sfu_in_buffers[i].data = pi_l2_malloc(BUFF_SIZE);
-        sfu_in_buffers[i].size = BUFF_SIZE;
+        // void *data_in = pi_l2_malloc(DOUBLE_BUFF_SIZE * sizeof(int));
+        // if (data_in == NULL) return -1;
+        // pi_sfu_buffer_init(&sfu_in_buffers[i], data_in, DOUBLE_BUFF_SIZE, sizeof(int));
     }
 
     // Configure interfaces
@@ -555,20 +549,22 @@ void input_mic_buffer(int save, int free, int noise){
         printf("PDM interface init failed\n");
     printf("PDM Rx interface configured\n");
 
-    err = configure_i2s();
-    if (err != 0)
-        printf("I2S interface init failed\n");
-    printf("I2S Tx interface configured\n");
+    // err = configure_i2s();
+    // if (err != 0)
+    //     printf("I2S interface init failed\n");
+    // printf("I2S Tx interface configured\n");
 
     // Get port refs
-    memin_port = pi_sfu_mem_port_get(sfu_graph, SFU_Name(Graph, MemIn1));
+    // memin_port = pi_sfu_mem_port_get(sfu_graph, SFU_Name(Graph, MemIn1));
+    // if (memin_port == NULL)
+        // printf("Failed to get memin_port references\n");
     memout_port = pi_sfu_mem_port_get(sfu_graph, SFU_Name(Graph, MemOut1));
-    if ((memin_port == NULL) || (memout_port == NULL))
-        printf("Failed to get mem io references\n");
+    if (memout_port == NULL)
+        printf("Failed to get memout_port references\n");
 
      // Prepare buffer transfer callbacks
     pi_evt_callback_irq_init(&sfu_out_task, handle_out_transfer_end, NULL);
-    pi_evt_callback_irq_init(&sfu_in_task, handle_in_transfer_end, NULL);
+    // pi_evt_callback_irq_init(&sfu_in_task, handle_in_transfer_end, NULL);
 
     // Enqueue first two buffers on each side
     for (int i = 0; i < NB_BUF_IN_RING; i++)
@@ -576,21 +572,22 @@ void input_mic_buffer(int save, int free, int noise){
         sfu_out_buffers[i].task = &sfu_out_task;
         pi_sfu_enqueue(sfu_graph, memout_port, &sfu_out_buffers[i]);
     }
-    for (int i = 0; i < NB_BUF_IN_RING; i++)
-    {
-        sfu_in_buffers[i].task = &sfu_in_task;
-        pi_sfu_enqueue(sfu_graph, memin_port, &sfu_in_buffers[i]);
-    }
+    // for (int i = 0; i < NB_BUF_IN_RING; i++)
+    // {
+    //     sfu_in_buffers[i].task = &sfu_in_task;
+    //     pi_sfu_enqueue(sfu_graph, memin_port, &sfu_in_buffers[i]);
+    // }
 
     pi_sfu_graph_load(sfu_graph);
 
     pi_i2s_ioctl(&sai_dev_rx, PI_I2S_IOCTL_START, NULL);
-    pi_i2s_ioctl(&sai_dev_tx, PI_I2S_IOCTL_START, NULL);
+    // pi_i2s_ioctl(&sai_dev_tx, PI_I2S_IOCTL_START, NULL);
 
-    pi_time_wait_us(1000000);
+    pi_time_wait_us(2000000);
 
-    pi_i2s_ioctl(&sai_dev_tx, PI_I2S_IOCTL_STOP, NULL);
     pi_i2s_ioctl(&sai_dev_rx, PI_I2S_IOCTL_STOP, NULL);
+    // pi_i2s_ioctl(&sai_dev_tx, PI_I2S_IOCTL_STOP, NULL);
+
 
     pi_sfu_graph_unload(sfu_graph);
 
@@ -598,28 +595,6 @@ void input_mic_buffer(int save, int free, int noise){
 
 
     printf("Finish rec!\n");
-
-    printf("((int32_t *)sfu_out_buffers[0].data)[i])\n");
-    for (int i = 0; i < 5; i++){
-        printf("%i\n", ((int32_t *)sfu_out_buffers[0].data)[i]);
-    }
-    printf("----------------\n");
-    printf("((int32_t *)sfu_out_buffers[1].data)[i])\n");
-    for (int i = 0; i < 5; i++){
-        printf("%i\n", ((int32_t *)sfu_out_buffers[1].data)[i]);
-    }
-    printf("----------------\n");
-    printf("((int32_t *)sfu_in_buffers[0].data)[i])\n");
-    for (int i = 0; i < 5; i++){
-        printf("%i\n", ((int32_t *)sfu_in_buffers[0].data)[i]);
-    }   
-    printf("((int32_t *)sfu_in_buffers[1].data)[i])\n");
-    printf("----------------\n");
-    for (int i = 0; i < 5; i++){
-        printf("%i\n", ((int32_t *)sfu_in_buffers[1].data)[i]);
-    }
-    printf("----------------\n");
-
 
     int outidx = 0;
 
@@ -643,9 +618,7 @@ void input_mic_buffer(int save, int free, int noise){
         MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(1 * AUDIO_BUFFER_SIZE * sizeof (MFCC_IN_TYPE));
     
         for(int i=0;i<BUFF_SIZE;i+=3){
-            // MfccInSig[outidx] = (MFCC_IN_TYPE) (((float)((int32_t *)BufferInList)[i]) / (float)(1<<31 - 1));
-            // MfccInSig[outidx] = (MFCC_IN_TYPE) (((float)((int32_t *)sfu_out_buffers[0].data)[i]) / (float)(1<<31 - 1));
-            MfccInSig[outidx] = (MFCC_IN_TYPE) (((float)((int32_t *)sfu_out_buffers[1].data)[i]) / (float)(1<<31 - 1));
+            MfccInSig[outidx] = (MFCC_IN_TYPE) (((float)((int32_t *)BufferInList)[i]) / (float)(1<<31 - 1));
             outidx++;
             if (outidx == AUDIO_BUFFER_SIZE){
                 break;
@@ -708,28 +681,19 @@ void input_mic_buffer(int save, int free, int noise){
         }
     }
 
-    // printf("Address to clean: %p\n", BufferInList);
-    // printf("Address to clean: %p\n", &sfu_out_buffers[0]);
-    // printf("Address to clean: %p\n", &sfu_in_buffers[0]);
-    // printf("Address to clean: %p\n", address1);
-    // printf("Address to clean: %p\n", address2);
+    // pi_l2_free(sfu_out_buffers[0].data, DOUBLE_BUFF_SIZE * sizeof(int));
+    // pi_l2_free(sfu_in_buffers[0].data, DOUBLE_BUFF_SIZE * sizeof(int));
+    // pi_l2_free(sfu_out_buffers[1].data, DOUBLE_BUFF_SIZE * sizeof(int));
+    // pi_l2_free(sfu_in_buffers[1].data, DOUBLE_BUFF_SIZE * sizeof(int));
 
-    pi_l2_free(sfu_out_buffers[0].data, BUFF_SIZE);
-    pi_l2_free(sfu_in_buffers[0].data, BUFF_SIZE);
-    pi_l2_free(sfu_out_buffers[1].data, BUFF_SIZE);
-    pi_l2_free(sfu_in_buffers[1].data, BUFF_SIZE);
-    
-    // pi_l2_free(address1, BUFF_SIZE);
-    // pi_l2_free(address2, BUFF_SIZE);
+    for (int i = 0; i < NB_BUF_IN_RING; i++)
+    {
 
-    // // pi_l2_free(BufferInList, BUFF_SIZE);
+        pi_l2_free(&sfu_out_buffers[i], DOUBLE_BUFF_SIZE);
+        // pi_l2_free(&sfu_in_buffers[i], DOUBLE_BUFF_SIZE);
+    }
 
-    // for (int i = 0; i < NB_BUF_IN_RING; i++)
-    // {
-
-    //     pi_l2_free(&sfu_out_buffers[i], BUFF_SIZE);
-    //     pi_l2_free(&sfu_in_buffers[i], BUFF_SIZE);
-    // }
+    pi_l2_free(BufferInList, BUFF_SIZE);
 
 }
 
@@ -1358,9 +1322,13 @@ int application(void){
 
     pi_cluster_close(&cluster_dev);
 
+    BufferInList = (void*) pi_l2_malloc(BUFF_SIZE);
+    if (BufferInList == NULL) return -1;
+
     // pi_l2_free(l2_buffer, L2_MEMORY_SIZE);
 
     int button_was_pressed = 0;
+
 
     // *** ALWAYS-ON MIC PRELIM *** 
     // printf ("----------------------------- Prepare microphone -----------------------------\n");
@@ -1374,7 +1342,6 @@ int application(void){
 
     // StartSFU(FREQ_SFU*1000*1000, 1);
     // ChanOutCtxt_0  = (SFU_uDMA_Channel_T *) pi_l2_malloc(sizeof(SFU_uDMA_Channel_T)); 
-    // BufferInList = (void*) pi_l2_malloc(BUFF_SIZE);
 
     // // Get uDMA channels for Graph
     // SFU_Allocate_uDMA_Channel(ChanOutCtxt_0, 0, &SFU_RTD(Graph));
@@ -1394,7 +1361,9 @@ int application(void){
 
     // *** ALWAYS-ON MIC PRELIM *** 
 
-    PRINTF ("----------------------------- Starting application ---------------------------\n");
+
+
+    printf ("----------------------------- Starting application ---------------------------\n");
     while (1) {
 
         char utterName[130] = "/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/meeting_ch01_mancrop1.wav";
@@ -1403,12 +1372,13 @@ int application(void){
 
         if (appl_input == "0"){
             // input_mic(1, 1, 0); // save, free, noise
+
+            printf ("----------------------------- Start acquisition ---------------------------\n");                
             input_mic_buffer(1, 1, 0);
         }
         else if (appl_input == "1"){
             input_wav(1, 1, utterName, 0); // save, free, utterName, noise
         }
-
 
 
         // Automatic input acquisition
@@ -1484,97 +1454,119 @@ int application(void){
         // *** ALWAYS-ON MIC PRELIM *** 
         
 
+        #ifdef PERF
+        gap_fc_starttimer();
+        gap_fc_resethwtimer();
+        int start_timer_2 = gap_fc_readhwtimer();
+        #endif
 
-        // gap_fc_starttimer();
-        // gap_fc_resethwtimer();
-        // int start_timer_2 = gap_fc_readhwtimer();
+        printf("***************************** Computing MFCC **************************\n");
+        compute_mfcc();
 
-        // compute_mfcc();
+        #ifdef PERF
+        int elapsed_timer_2 = gap_fc_readhwtimer() - start_timer_2;
+        printf("Compute mfcc: %d cycles\n", elapsed_timer_2);
+        #endif
 
-        // int elapsed_timer_2 = gap_fc_readhwtimer() - start_timer_2;
-        // printf("Compute mfcc: %d cycles\n", elapsed_timer_2);
-
-        // for (int i = 0; i < 5; i++){
-        //     PRINTF("out_feat[%i] = %f, ", i, out_feat[i]);
-        // }
-        // PRINTF("\n");
+        for (int i = 0; i < 5; i++){
+            PRINTF("out_feat[%i] = %f, ", i, out_feat[i]);
+        }
+        PRINTF("\n");
         
-        // gap_fc_starttimer();
-        // gap_fc_resethwtimer();
-        // start_timer_2 = gap_fc_readhwtimer();        
+        #ifdef PERF
+        gap_fc_starttimer();
+        gap_fc_resethwtimer();
+        start_timer_2 = gap_fc_readhwtimer();    
+        #endif    
 
-        // feat_char = (char*) pi_l2_malloc(49 * 10 * sizeof(char));
-        // // Rescale data
-        // int k = 0;
-        // for (int i = 0; i < 1960;i++){                
+        printf("***************************** Rescaling data **************************\n");
+        feat_char = (char*) pi_l2_malloc(49 * 10 * sizeof(char));
+        // Rescale data
+        int k = 0;
+        for (int i = 0; i < 1960;i++){                
             
-        //     // feat_char[k] = (char) ((int) floor(out_feat[i] * pow(2, -1) * sqrt(0.05)) + 128);
-        //     feat_char[k] = (char) ((int) floor(out_feat[i] * 0.1118) + 128);
+            // feat_char[k] = (char) ((int) floor(out_feat[i] * pow(2, -1) * sqrt(0.05)) + 128);
+            feat_char[k] = (char) ((int) floor(out_feat[i] * 0.1118) + 128);
 
-        //     // Select 10 MFCC per window
-        //     if (i == 40*(k/10) + 9){
-        //         i = 40*(k/10) + 39;
-        //     }
-        //     k++;
-        // } 
+            // Select 10 MFCC per window
+            if (i == 40*(k/10) + 9){
+                i = 40*(k/10) + 39;
+            }
+            k++;
+        } 
 
-        // pi_l2_free(out_feat, 49*10*4*sizeof(OUT_TYPE));
+        pi_l2_free(out_feat, 49*10*4*sizeof(OUT_TYPE));
 
-        // elapsed_timer_2 = gap_fc_readhwtimer() - start_timer_2;
-        // printf("Scale mfcc: %d cycles\n", elapsed_timer_2);
+        #ifdef PERF
+        elapsed_timer_2 = gap_fc_readhwtimer() - start_timer_2;
+        printf("Scale mfcc: %d cycles\n", elapsed_timer_2);
+        #endif
 
-        // gap_fc_starttimer();
-        // gap_fc_resethwtimer();
-        // int start_timer_3 = gap_fc_readhwtimer();        
+        #ifdef PERF
+        gap_fc_starttimer();
+        gap_fc_resethwtimer();
+        int start_timer_3 = gap_fc_readhwtimer();    
+        #endif    
 
-        // // Fill input buffer
-        // for (int i = 0; i < 490; i++){
-        //     if (mfcc == "1"){
-        //         ((uint8_t *)l2_buffer)[i] = L2_input_h[i]; // Precomputed MFCC
-        //     }
-        //     else {
-        //         ((uint8_t *)l2_buffer)[i] = feat_char[i]; // Online computed MFCC
-        //         PRINTF("%i,", feat_char[i]);
+        printf("***************************** Move data in L2 **************************\n");
+        // Fill input buffer
+        for (int i = 0; i < 490; i++){
+            if (mfcc == "1"){
+                ((uint8_t *)l2_buffer)[i] = L2_input_h[i]; // Precomputed MFCC
+            }
+            else {
+                ((uint8_t *)l2_buffer)[i] = feat_char[i]; // Online computed MFCC
+                PRINTF("%i,", feat_char[i]);
 
-        //     }
-        // }
-        // PRINTF("\n");
+            }
+        }
+        PRINTF("\n");
 
-        // for (int i = 0; i < 5; i++){
-        //     PRINTF("feat_char[%i] = %i, ", i, feat_char[i]);
-        // }
-        // PRINTF("\n");
+        for (int i = 0; i < 5; i++){
+            PRINTF("feat_char[%i] = %i, ", i, feat_char[i]);
+        }
+        PRINTF("\n");
 
-        // pi_l2_free(feat_char, 49 * 10 * sizeof(char));
+        pi_l2_free(feat_char, 49 * 10 * sizeof(char));
 
-        // int elapsed_timer_3 = gap_fc_readhwtimer() - start_timer_3;
-        // printf("Convert mfcc: %d cycles\n", elapsed_timer_3);
+        #ifdef PERF
+        int elapsed_timer_3 = gap_fc_readhwtimer() - start_timer_3;
+        printf("Convert mfcc: %d cycles\n", elapsed_timer_3);
+        #endif
 
-
-        // // Extract backbone features
-        // void *dump; // dump to copy FC weights, won't be used; TODO: Parametrize DORY
-
-        // gap_fc_starttimer();
-        // gap_fc_resethwtimer();
-        // int start_timer_4 = gap_fc_readhwtimer();        
+        // Extract backbone features
+        void *dump; // dump to copy FC weights, won't be used; TODO: Parametrize DORY
 
 
-        // network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &dump, 0); // L2_input_h extra-arg for L2-only
+        #ifdef PERF
+        gap_fc_starttimer();
+        gap_fc_resethwtimer();
+        int start_timer_4 = gap_fc_readhwtimer();        
+        #endif
 
-        // int elapsed_timer_4 = gap_fc_readhwtimer() - start_timer_4;
-        // printf("Backbone inference: %d cycles\n", elapsed_timer_4);
+        printf("***************************** Backbone inference **************************\n");
+        network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &dump, 0); // L2_input_h extra-arg for L2-only
 
-        // for (int i=0; i < 64; i++){
-        //     PRINTF("%i, ", ((uint8_t *) l2_buffer)[i]);
-        // }
-        // PRINTF("\n");
+        #ifdef PERF
+        int elapsed_timer_4 = gap_fc_readhwtimer() - start_timer_4;
+        printf("Backbone inference: %d cycles\n", elapsed_timer_4);
+        #endif
 
-        // PRINTF ("********** Run classifier **********\n");
+        for (int i=0; i < 64; i++){
+            PRINTF("%i, ", ((uint8_t *) l2_buffer)[i]);
+        }
+        PRINTF("\n");
 
-        // gap_fc_starttimer();
-        // gap_fc_resethwtimer();
-        // int start_timer_5 = gap_fc_readhwtimer();        
+        
 
+        #ifdef PERF
+        gap_fc_starttimer();
+        gap_fc_resethwtimer();
+        int start_timer_5 = gap_fc_readhwtimer();    
+        #endif    
+
+
+        printf("***************************** Classifier inference **************************\n");
 
         // pi_cluster_conf_init(&cl_conf);
         // pi_open_from_conf(&cluster_dev, &cl_conf);
@@ -1594,8 +1586,12 @@ int application(void){
         // pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, args_inference_classifier));
         // pi_cluster_close(&cluster_dev);
 
-        // int elapsed_timer_5 = gap_fc_readhwtimer() - start_timer_5;
-        // printf("FC inference: %d cycles\n", elapsed_timer_5);
+        printf("***************************** Process complete **************************\n");
+
+        #ifdef PERF
+        int elapsed_timer_5 = gap_fc_readhwtimer() - start_timer_5;
+        printf("FC inference: %d cycles\n", elapsed_timer_5);
+        #endif
 
         
         // #ifdef  AUDIO_EVK
@@ -1603,7 +1599,10 @@ int application(void){
         //     pi_gpio_pin_write(gpio_pin_o, 0);
         // #endif
 
-        // button_was_pressed = read_button();
+        
+
+
+        button_was_pressed = read_button();
 
         if (button_was_pressed){
 
@@ -1677,67 +1676,11 @@ int main()
 }
 
 
-// Finish rec!
-// ((int32_t *)sfu_out_buffers[0].data)[i])
-// 634
-// 132019
-// 3147716
-// 29333307
-// 152078280
-// ----------------
-// ((int32_t *)sfu_out_buffers[1].data)[i])
-// 393216
-// 470979656
-// -166380181
-// -1192842199
-// -2113704018
-// ----------------
-// ((int32_t *)sfu_in_buffers[0].data)[i])
-// 589824
-// 470979656
-// 1944499546
-// -1915009618
-// -568721107
-// ((int32_t *)sfu_in_buffers[1].data)[i])
-// ----------------
-// 196608
-// 470979656
-// 1334737874
-// -1210310566
-// -169854325
-// ----------------
-// Input scaling: 113519
-// Writing wav file to recording.wav completed successfully
-// SFU activated
-// Graph opened
-// PDM Rx interface configured
-// I2S Tx interface configured
-// Finish rec!
-// ((int32_t *)sfu_out_buffers[0].data)[i])
-// 634
-// 132019
-// 3147716
-// 29333307
-// 152078280
-// ----------------
-// ((int32_t *)sfu_out_buffers[1].data)[i])
-// 393216
-// 471011656
-// -418038429
-// -1194939288
-// -2029883474
-// ----------------
-// ((int32_t *)sfu_in_buffers[0].data)[i])
-// 589824
-// 471011656
-// 1940304210
-// -2049225554
-// 2122973485
-// ((int32_t *)sfu_in_buffers[1].data)[i])
-// ----------------
-// 196608
-// 471011656
-// 1863219542
-// -1252261861
-// 1962162831
-// ----------------
+
+
+// Example :)
+// Everytime a buffer is finished, you re-enqueue itself. THen you pingpong the buffer out index
+// KConfig/Menuconfig for SFU for example
+// Memout comes from the PDM, Memin sends to the I2S
+//when buffer received: pi_evt_push (to send a new event) -> in while(1) you wait for the event (pi_even_wait)
+// pi_even_init() when I finished my comp task
