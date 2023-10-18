@@ -287,8 +287,13 @@ static void handle_out_transfer_end(void *arg)
     // memcpy(sfu_in_buffers[in_idx].data, sfu_out_buffers[out_idx].data, DOUBLE_BUFF_SIZE*sizeof(int));
     // TODO: Add memcopy to our buffer
     memcpy(BufferInList+sfu_out_buffer_cnt*DOUBLE_BUFF_SIZE*sizeof(int), sfu_out_buffers[out_idx].data, DOUBLE_BUFF_SIZE*sizeof(int));
+    // memcpy(BufferInList, sfu_out_buffers[out_idx].data, DOUBLE_BUFF_SIZE*sizeof(int));
 
-    if (1) { // enough samples are added to the main buffer
+    // printf("sfu_out_buffer_cnt: %i\n", sfu_out_buffer_cnt);
+    // printf("sfu_out_buffer_idx: %i\n", sfu_out_buffer_idx);
+
+    if (sfu_out_buffer_cnt*DOUBLE_BUFF_SIZE > 48000) { // one seccond is added to the main buffer
+        // printf ("PI EVENT PUSH");
         pi_evt_push(&inference_task);
     }
 
@@ -411,117 +416,19 @@ void input_mic_buffer(int save, int free, int noise){
     pi_i2s_ioctl(&sai_dev_rx, PI_I2S_IOCTL_START, NULL);
     // pi_i2s_ioctl(&sai_dev_tx, PI_I2S_IOCTL_START, NULL);
 
-    pi_time_wait_us(2000000);
+    // pi_time_wait_us(2000000);
+    // pi_time_wait_us(100000);
 
-    pi_i2s_ioctl(&sai_dev_rx, PI_I2S_IOCTL_STOP, NULL);
-    // pi_i2s_ioctl(&sai_dev_tx, PI_I2S_IOCTL_STOP, NULL);
-
-
-    pi_sfu_graph_unload(sfu_graph);
-
-    pi_sfu_graph_close(sfu_graph);
+    // pi_i2s_ioctl(&sai_dev_rx, PI_I2S_IOCTL_STOP, NULL);
+    // // pi_i2s_ioctl(&sai_dev_tx, PI_I2S_IOCTL_STOP, NULL);
 
 
-    printf("Finish rec!\n");
+    // pi_sfu_graph_unload(sfu_graph);
 
-    int outidx = 0;
+    // pi_sfu_graph_close(sfu_graph);
 
-    if (noise){
-        RecordedNoise = (MFCC_IN_TYPE *) pi_l2_malloc(noise_seconds * AUDIO_BUFFER_SIZE * sizeof (MFCC_IN_TYPE));
-        
-        for(int i=0;i<BUFF_SIZE;i+=3){
-            RecordedNoise[outidx] = (MFCC_IN_TYPE) (((float)((int32_t *)BufferInList)[i]) / (float)(1<<31 - 1));
-            outidx++;
-            if (outidx == AUDIO_BUFFER_SIZE){
-                break;
-            }
-        } 
-    }
-    else {
 
-        gap_fc_starttimer();
-        gap_fc_resethwtimer();
-        int start = gap_fc_readhwtimer();
-
-        MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(1 * AUDIO_BUFFER_SIZE * sizeof (MFCC_IN_TYPE));
-    
-        for(int i=0;i<BUFF_SIZE;i+=3){
-            MfccInSig[outidx] = (MFCC_IN_TYPE) (((float)((int32_t *)BufferInList)[i]) / (float)(1<<31 - 1));
-            outidx++;
-            if (outidx == AUDIO_BUFFER_SIZE){
-                break;
-            }
-        }
-        
-        int elapsed = gap_fc_readhwtimer() - start;
-        printf("Input scaling: %d\n", elapsed);
-        
-    }
-
-    if (save) {
-        outidx = 0;
-        if (noise){
-
-            RecordedNoise_int16 = (int16_t *) pi_l2_malloc(sizeof(int16_t) * AUDIO_BUFFER_SIZE);
-            for(int i=0;i<BUFF_SIZE;i+=3){
-                RecordedNoise_int16[outidx] = (int16_t) (RecordedNoise[outidx] * (1<<15));
-                outidx++;
-                if (outidx == AUDIO_BUFFER_SIZE){
-                    break;
-                }
-            }
-
-            // Dumping the treated buffer
-            dump_wav_open("recording_noise.wav", 16, 16000, 1, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
-            dump_wav_write(RecordedNoise_int16, sizeof(int16_t) *AUDIO_BUFFER_SIZE);
-
-            // Dumping the buffer
-            // dump_wav_open("recording.wav", 32, 48000, 1, BUFF_SIZE);
-            // dump_wav_write(BufferInList, BUFF_SIZE);
-            dump_wav_close();
-            printf("Writing wav file to recording.wav completed successfully\n");
-            pi_l2_free(RecordedNoise_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
-        }
-        else {
-            MfccInSig_int16 = (int16_t *) pi_l2_malloc(sizeof(int16_t) * AUDIO_BUFFER_SIZE);
-            for(int i=0;i<BUFF_SIZE;i+=3){
-                MfccInSig_int16[outidx] = (int16_t) (MfccInSig[outidx] * (1<<15));
-                outidx++;
-                if (outidx == AUDIO_BUFFER_SIZE){
-                    break;
-                }
-            }
-
-            for (int i = 0; i < AUDIO_BUFFER_SIZE; i++){
-                PRINTF("%i\n", MfccInSig_int16[i]);
-            }
-
-            // Dumping the treated buffer
-            dump_wav_open("recording_utterance.wav", 16, 16000, 1, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
-            dump_wav_write(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
-
-            // Dumping the buffer
-            // dump_wav_open("recording.wav", 32, 48000, 1, BUFF_SIZE);
-            // dump_wav_write(BufferInList, BUFF_SIZE);
-            dump_wav_close();
-            printf("Writing wav file to recording.wav completed successfully\n");
-            pi_l2_free(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
-        }
-    }
-
-    // pi_l2_free(sfu_out_buffers[0].data, DOUBLE_BUFF_SIZE * sizeof(int));
-    // pi_l2_free(sfu_in_buffers[0].data, DOUBLE_BUFF_SIZE * sizeof(int));
-    // pi_l2_free(sfu_out_buffers[1].data, DOUBLE_BUFF_SIZE * sizeof(int));
-    // pi_l2_free(sfu_in_buffers[1].data, DOUBLE_BUFF_SIZE * sizeof(int));
-
-    for (int i = 0; i < NB_BUF_IN_RING; i++)
-    {
-
-        pi_l2_free(&sfu_out_buffers[i], DOUBLE_BUFF_SIZE);
-        // pi_l2_free(&sfu_in_buffers[i], DOUBLE_BUFF_SIZE);
-    }
-
-    pi_l2_free(BufferInList, BUFF_SIZE);
+    // printf("Finish rec!\n");
 
 }
 
@@ -1162,25 +1069,82 @@ int application(void){
 
     pi_evt_sig_init(&inference_task);
 
+    input_mic_buffer(1, 1, 0);
 
     while (1) {
 
         char utterName[130] = "/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/meeting_ch01_mancrop1.wav";
 
-        // Manual input acquisition
+        
+
+        // Block inference until recording is long enough
+        printf("PI EVENT WAITING\n");
+        pi_evt_wait_on(&inference_task);
+        printf("PI EVENT THROUGH\n");
 
         if (appl_input == "0"){
             // input_mic(1, 1, 0); // save, free, noise
 
-            printf ("----------------------------- Start acquisition ---------------------------\n");                
-            input_mic_buffer(1, 1, 0);
+            printf ("----------------------------- Start acquisition ---------------------------\n");        
+
+
+            
+
+            gap_fc_starttimer();
+            gap_fc_resethwtimer();
+            int start = gap_fc_readhwtimer();
+
+            int outidx = 0;
+
+            MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(1 * AUDIO_BUFFER_SIZE * sizeof (MFCC_IN_TYPE));
+        
+            for(int i=0;i<BUFF_SIZE;i+=3){
+                MfccInSig[outidx] = (MFCC_IN_TYPE) (((float)((int32_t *)BufferInList)[i]) / (float)(1<<31 - 1));
+                outidx++;
+                if (outidx == AUDIO_BUFFER_SIZE){
+                    break;
+                }
+            }
+            
+            int elapsed = gap_fc_readhwtimer() - start;
+            printf("Input scaling: %d\n", elapsed);
+        
+    
+            MfccInSig_int16 = (int16_t *) pi_l2_malloc(sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+            for(int i=0;i<BUFF_SIZE;i+=3){
+
+                
+                MfccInSig_int16[outidx] = (int16_t) (MfccInSig[outidx] * (1<<15));
+                printf("%i\n", MfccInSig_int16[outidx]);
+                outidx++;
+                if (outidx == AUDIO_BUFFER_SIZE){
+                    break;
+                }
+            }
+
+            for (int i = 0; i < AUDIO_BUFFER_SIZE; i++){
+                PRINTF("%i\n", MfccInSig_int16[i]);
+            }
+
+            // Dumping the treated buffer
+            dump_wav_open("recording_utterance.wav", 16, 16000, 1, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+            dump_wav_write(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+
+            // Dumping the buffer
+            // dump_wav_open("recording.wav", 32, 48000, 1, BUFF_SIZE);
+            // dump_wav_write(BufferInList, BUFF_SIZE);
+            dump_wav_close();
+            printf("Writing wav file to recording.wav completed successfully\n");
+            pi_l2_free(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+           
+
+
+
+
         }
         else if (appl_input == "1"){
             input_wav(1, 1, utterName, 0); // save, free, utterName, noise
         }
-
-        // Block inference until recording is long enough
-        pi_evt_wait_on(&inference_task);
 
         #ifdef PERF
         gap_fc_starttimer();
@@ -1296,23 +1260,23 @@ int application(void){
 
         printf("***************************** Classifier inference **************************\n");
 
-        // pi_cluster_conf_init(&cl_conf);
-        // pi_open_from_conf(&cluster_dev, &cl_conf);
-        // if (pi_cluster_open(&cluster_dev))
-        // {
-        //   return -1;
-        // }
+        pi_cluster_conf_init(&cl_conf);
+        pi_open_from_conf(&cluster_dev, &cl_conf);
+        if (pi_cluster_open(&cluster_dev))
+        {
+          return -1;
+        }
 
-        // unsigned int args_inference_classifier[5];
-        // args_inference_classifier[0] = (unsigned int) l2_buffer;
-        // args_inference_classifier[1] = (unsigned int) dump;
-        // args_inference_classifier[2] = (unsigned int) L2_FC_weights_float;
-        // args_inference_classifier[3] = (unsigned int) 0; // update = 1
-        // args_inference_classifier[4] = (unsigned int) 0; // init = 1
-        // args_inference_classifier[5] = (unsigned int) 0; // tinytest already ordered
+        unsigned int args_inference_classifier[5];
+        args_inference_classifier[0] = (unsigned int) l2_buffer;
+        args_inference_classifier[1] = (unsigned int) dump;
+        args_inference_classifier[2] = (unsigned int) L2_FC_weights_float;
+        args_inference_classifier[3] = (unsigned int) 0; // update = 1
+        args_inference_classifier[4] = (unsigned int) 0; // init = 1
+        args_inference_classifier[5] = (unsigned int) 0; // tinytest already ordered
 
-        // pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, args_inference_classifier));
-        // pi_cluster_close(&cluster_dev);
+        pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, args_inference_classifier));
+        pi_cluster_close(&cluster_dev);
 
         printf("***************************** Process complete **************************\n");
 
@@ -1321,11 +1285,14 @@ int application(void){
         printf("FC inference: %d cycles\n", elapsed_timer_5);
         #endif
 
+        break;
+
         
         // #ifdef  AUDIO_EVK
         //     // block until next input audio frame is ready
         //     pi_gpio_pin_write(gpio_pin_o, 0);
         // #endif
+
 
         
 
