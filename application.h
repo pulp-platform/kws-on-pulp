@@ -19,7 +19,8 @@
 
 // #define BUFF_SIZE (48*1024*4)
 #define DOUBLE_BUFF_SIZE (1000)
-#define BUFF_SIZE (48*1024*4)
+// #define BUFF_SIZE (48*1024*4)
+#define BUFF_SIZE (48*1000*4)
 #define AUDIO_BUFFER_SIZE 16000 // (32*1024)
 #define CHUNK_NUM (8)
 

@@ -152,6 +152,8 @@ static pi_evt_t sfu_in_task;
 static pi_sfu_mem_port_t * memin_port;
 static pi_sfu_mem_port_t * memout_port;
 
+static int sfu_buffer_filled = 0;
+
 
 int noise_seconds = 1;
 
@@ -292,15 +294,31 @@ static void handle_out_transfer_end(void *arg)
     // printf("sfu_out_buffer_cnt: %i\n", sfu_out_buffer_cnt);
     // printf("sfu_out_buffer_idx: %i\n", sfu_out_buffer_idx);
 
-    if (sfu_out_buffer_cnt*DOUBLE_BUFF_SIZE >= 2*48000) { // one seccond is added to the main buffer
+    
+
+    if (sfu_buffer_filled){
         // printf ("PI EVENT PUSH");
-        pi_evt_push(&inference_task);
-        memcpy(BufferInList, BufferInList+DOUBLE_BUFF_SIZE*sizeof(int32_t), BUFF_SIZE);
-        sfu_out_buffer_cnt--;
+        
+        memmove(BufferInList, BufferInList+DOUBLE_BUFF_SIZE*sizeof(int32_t), BUFF_SIZE-DOUBLE_BUFF_SIZE*sizeof(int32_t));
+        memset(BufferInList + BUFF_SIZE-DOUBLE_BUFF_SIZE*sizeof(int32_t), 0, DOUBLE_BUFF_SIZE*sizeof(int32_t));
+        // sfu_out_buffer_cnt--;
 
     }
 
-    memcpy(BufferInList+sfu_out_buffer_cnt*DOUBLE_BUFF_SIZE*sizeof(int32_t), sfu_out_buffers[out_idx].data, DOUBLE_BUFF_SIZE*sizeof(int32_t));
+    if (sfu_buffer_filled){
+        memcpy(BufferInList+BUFF_SIZE-DOUBLE_BUFF_SIZE*sizeof(int32_t), sfu_out_buffers[out_idx].data, DOUBLE_BUFF_SIZE*sizeof(int32_t));    
+    }
+    else{
+        memcpy(BufferInList+sfu_out_buffer_cnt*DOUBLE_BUFF_SIZE*sizeof(int32_t), sfu_out_buffers[out_idx].data, DOUBLE_BUFF_SIZE*sizeof(int32_t));
+    }
+
+    if (sfu_out_buffer_cnt*DOUBLE_BUFF_SIZE*sizeof(int32_t) >= BUFF_SIZE) { // one seccond is added to the main buffer
+        sfu_buffer_filled = 1;
+    }
+
+    if (sfu_buffer_filled){
+        pi_evt_push(&inference_task);
+    }
 
     sfu_out_buffer_cnt++;
     sfu_out_buffer_idx ^= 1;
