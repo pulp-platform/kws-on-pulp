@@ -286,16 +286,21 @@ static void handle_out_transfer_end(void *arg)
     int out_idx = sfu_out_buffer_idx;
     // memcpy(sfu_in_buffers[in_idx].data, sfu_out_buffers[out_idx].data, DOUBLE_BUFF_SIZE*sizeof(int));
     // TODO: Add memcopy to our buffer
-    memcpy(BufferInList+sfu_out_buffer_cnt*DOUBLE_BUFF_SIZE*sizeof(int), sfu_out_buffers[out_idx].data, DOUBLE_BUFF_SIZE*sizeof(int));
+    // memcpy(BufferInList+sfu_out_buffer_cnt*DOUBLE_BUFF_SIZE*sizeof(int), sfu_out_buffers[out_idx].data, DOUBLE_BUFF_SIZE*sizeof(int));
     // memcpy(BufferInList, sfu_out_buffers[out_idx].data, DOUBLE_BUFF_SIZE*sizeof(int));
 
     // printf("sfu_out_buffer_cnt: %i\n", sfu_out_buffer_cnt);
     // printf("sfu_out_buffer_idx: %i\n", sfu_out_buffer_idx);
 
-    if (sfu_out_buffer_cnt*DOUBLE_BUFF_SIZE > 48000) { // one seccond is added to the main buffer
+    if (sfu_out_buffer_cnt*DOUBLE_BUFF_SIZE >= 2*48000) { // one seccond is added to the main buffer
         // printf ("PI EVENT PUSH");
         pi_evt_push(&inference_task);
+        memcpy(BufferInList, BufferInList+DOUBLE_BUFF_SIZE*sizeof(int32_t), BUFF_SIZE);
+        sfu_out_buffer_cnt--;
+
     }
+
+    memcpy(BufferInList+sfu_out_buffer_cnt*DOUBLE_BUFF_SIZE*sizeof(int32_t), sfu_out_buffers[out_idx].data, DOUBLE_BUFF_SIZE*sizeof(int32_t));
 
     sfu_out_buffer_cnt++;
     sfu_out_buffer_idx ^= 1;
@@ -1071,6 +1076,8 @@ int application(void){
 
     input_mic_buffer(1, 1, 0);
 
+    int iterations = 0;
+
     while (1) {
 
         char utterName[130] = "/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/meeting_ch01_mancrop1.wav";
@@ -1098,7 +1105,7 @@ int application(void){
 
             MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(1 * AUDIO_BUFFER_SIZE * sizeof (MFCC_IN_TYPE));
         
-            for(int i=0;i<BUFF_SIZE;i+=3){
+            for(int i=0;i<BUFF_SIZE;i+=3){ // downsample from 48 kHz to 16 kHz               
                 MfccInSig[outidx] = (MFCC_IN_TYPE) (((float)((int32_t *)BufferInList)[i]) / (float)(1<<31 - 1));
                 outidx++;
                 if (outidx == AUDIO_BUFFER_SIZE){
@@ -1111,21 +1118,9 @@ int application(void){
         
     
             MfccInSig_int16 = (int16_t *) pi_l2_malloc(sizeof(int16_t) * AUDIO_BUFFER_SIZE);
-            for(int i=0;i<BUFF_SIZE;i+=3){
-
-                
-                MfccInSig_int16[outidx] = (int16_t) (MfccInSig[outidx] * (1<<15));
-                printf("%i\n", MfccInSig_int16[outidx]);
-                outidx++;
-                if (outidx == AUDIO_BUFFER_SIZE){
-                    break;
-                }
+            for(int i=0;i<AUDIO_BUFFER_SIZE;i++){
+                MfccInSig_int16[i] = (int16_t) (MfccInSig[i] * (1<<15));
             }
-
-            for (int i = 0; i < AUDIO_BUFFER_SIZE; i++){
-                PRINTF("%i\n", MfccInSig_int16[i]);
-            }
-
             // Dumping the treated buffer
             dump_wav_open("recording_utterance.wav", 16, 16000, 1, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
             dump_wav_write(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
@@ -1285,7 +1280,9 @@ int application(void){
         printf("FC inference: %d cycles\n", elapsed_timer_5);
         #endif
 
-        break;
+        iterations++;
+        if (iterations == 10)
+            break;
 
         
         // #ifdef  AUDIO_EVK
