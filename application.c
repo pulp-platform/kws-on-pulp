@@ -294,33 +294,58 @@ static void handle_out_transfer_end(void *arg)
     // printf("sfu_out_buffer_cnt: %i\n", sfu_out_buffer_cnt);
     // printf("sfu_out_buffer_idx: %i\n", sfu_out_buffer_idx);
 
-    
-
-    if (sfu_buffer_filled){
-        // printf ("PI EVENT PUSH");
         
-        memmove(BufferInList, BufferInList+DOUBLE_BUFF_SIZE*sizeof(int32_t), BUFF_SIZE-DOUBLE_BUFF_SIZE*sizeof(int32_t));
-        memset(BufferInList + BUFF_SIZE-DOUBLE_BUFF_SIZE*sizeof(int32_t), 0, DOUBLE_BUFF_SIZE*sizeof(int32_t));
-        // sfu_out_buffer_cnt--;
 
-    }
 
-    if (sfu_buffer_filled){
-        memcpy(BufferInList+BUFF_SIZE-DOUBLE_BUFF_SIZE*sizeof(int32_t), sfu_out_buffers[out_idx].data, DOUBLE_BUFF_SIZE*sizeof(int32_t));    
-    }
-    else{
-        memcpy(BufferInList+sfu_out_buffer_cnt*DOUBLE_BUFF_SIZE*sizeof(int32_t), sfu_out_buffers[out_idx].data, DOUBLE_BUFF_SIZE*sizeof(int32_t));
-    }
+     int start;
+     int elapsed;
+
+    // if (sfu_buffer_filled){
+    //     // printf ("PI EVENT PUSH");
+    //     gap_fc_starttimer();
+    //     gap_fc_resethwtimer();
+    //     start = gap_fc_readhwtimer();
+    //     memmove(BufferInList, BufferInList+DOUBLE_BUFF_SIZE*sizeof(int32_t), BUFF_SIZE-DOUBLE_BUFF_SIZE*sizeof(int32_t));
+
+    //     // memset(BufferInList + BUFF_SIZE-DOUBLE_BUFF_SIZE*sizeof(int32_t), 0, DOUBLE_BUFF_SIZE*sizeof(int32_t));
+
+    //     elapsed = gap_fc_readhwtimer() - start;
+    //     printf("memmove time: %d\n", elapsed);
+
+    // }
+
+    // gap_fc_starttimer();
+    // gap_fc_resethwtimer();
+    // start = gap_fc_readhwtimer();
+    
+    // if (sfu_buffer_filled){
+    //     memcpy(BufferInList+BUFF_SIZE-DOUBLE_BUFF_SIZE*sizeof(int32_t), sfu_out_buffers[out_idx].data, DOUBLE_BUFF_SIZE*sizeof(int32_t));    
+    // }
+    // else{
+    //     memcpy(BufferInList+sfu_out_buffer_cnt*DOUBLE_BUFF_SIZE*sizeof(int32_t), sfu_out_buffers[out_idx].data, DOUBLE_BUFF_SIZE*sizeof(int32_t));
+    // }
+
+    memcpy(BufferInList+sfu_out_buffer_cnt*DOUBLE_BUFF_SIZE*sizeof(int32_t), sfu_out_buffers[out_idx].data, DOUBLE_BUFF_SIZE*sizeof(int32_t));
+
+
+
+    sfu_out_buffer_cnt++;
+
+    // elapsed = gap_fc_readhwtimer() - start;
+    // printf("memcpy time: %d\n", elapsed);
 
     if (sfu_out_buffer_cnt*DOUBLE_BUFF_SIZE*sizeof(int32_t) >= BUFF_SIZE) { // one seccond is added to the main buffer
         sfu_buffer_filled = 1;
+    }
+
+    if (sfu_out_buffer_cnt == BUFF_SIZE/DOUBLE_BUFF_SIZE/sizeof(int32_t)){
+        sfu_out_buffer_cnt = 0;
     }
 
     if (sfu_buffer_filled){
         pi_evt_push(&inference_task);
     }
 
-    sfu_out_buffer_cnt++;
     sfu_out_buffer_idx ^= 1;
 }
 
@@ -1095,6 +1120,7 @@ int application(void){
     input_mic_buffer(1, 1, 0);
 
     int iterations = 0;
+    int sfu_out_buffer_cnt_fixed = 0;
 
     while (1) {
 
@@ -1102,43 +1128,114 @@ int application(void){
 
         
 
-        // Block inference until recording is long enough
-        printf("PI EVENT WAITING\n");
-        pi_evt_wait_on(&inference_task);
-        printf("PI EVENT THROUGH\n");
+
 
         if (appl_input == "0"){
             // input_mic(1, 1, 0); // save, free, noise
 
-            printf ("----------------------------- Start acquisition ---------------------------\n");        
+            // printf ("----------------------------- Start acquisition ---------------------------\n");        
 
 
             
 
-            gap_fc_starttimer();
-            gap_fc_resethwtimer();
-            int start = gap_fc_readhwtimer();
+            // gap_fc_starttimer();
+            // gap_fc_resethwtimer();
+            // int start = gap_fc_readhwtimer();
 
             int outidx = 0;
 
             MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(1 * AUDIO_BUFFER_SIZE * sizeof (MFCC_IN_TYPE));
         
-            for(int i=0;i<BUFF_SIZE;i+=3){ // downsample from 48 kHz to 16 kHz               
+            // Block inference until recording is long enough
+            printf("PI EVENT WAITING\n");
+            pi_evt_wait_on(&inference_task);
+            printf("PI EVENT THROUGH\n");
+
+            sfu_out_buffer_cnt_fixed = sfu_out_buffer_cnt;
+
+
+           
+            for(int i=sfu_out_buffer_cnt_fixed*DOUBLE_BUFF_SIZE;i<BUFF_SIZE/4;i+=3){ // downsample from 48 kHz to 16 kHz               
                 MfccInSig[outidx] = (MFCC_IN_TYPE) (((float)((int32_t *)BufferInList)[i]) / (float)(1<<31 - 1));
                 outidx++;
                 if (outidx == AUDIO_BUFFER_SIZE){
                     break;
                 }
+                if (i == sfu_out_buffer_cnt_fixed*DOUBLE_BUFF_SIZE){
+                    printf ("------------------------------\n");
+                    printf ("sfu_out_buffer_cnt: %i\n", sfu_out_buffer_cnt);
+                    printf ("sfu_out_buffer_cnt_fixed: %i\n", sfu_out_buffer_cnt_fixed);
+                    printf ("Start value: %i\n", i);
+                    printf ("End value: %i\n", BUFF_SIZE/4);
+                    printf ("Length: %i\n", BUFF_SIZE/4-i);
+
+                }
             }
+
+            for(int i=0;i<sfu_out_buffer_cnt_fixed*DOUBLE_BUFF_SIZE;i+=3){ // downsample from 48 kHz to 16 kHz               
+                MfccInSig[outidx] = (MFCC_IN_TYPE) (((float)((int32_t *)BufferInList)[i]) / (float)(1<<31 - 1));
+                outidx++;
+                if (outidx == AUDIO_BUFFER_SIZE){
+                    break;
+                }
+                if (i == 0){
+                    printf ("sfu_out_buffer_cnt: %i\n", sfu_out_buffer_cnt);
+                    printf ("sfu_out_buffer_cnt_fixed: %i\n", sfu_out_buffer_cnt_fixed);
+                    printf ("Start value: %i\n", i);
+                    printf ("End value: %i\n", sfu_out_buffer_cnt_fixed*DOUBLE_BUFF_SIZE);
+                    printf ("Length: %i\n", sfu_out_buffer_cnt_fixed*DOUBLE_BUFF_SIZE-i);
+                }
+            }
+
+            // WE NEED TO FIND A WAY TO COPY EVERYTHING BEFORE THE MICROPHONE OVERWRITES
+            // sfu_out_buffer_cnt: 4
+            // sfu_out_buffer_cnt_fixed: 2
+            // Start value: 2000
+            // End value: 48000
+            // Length: 46000
+            // sfu_out_buffer_cnt: 14
+            // sfu_out_buffer_cnt_fixed: 2
+            // Start value: 0
+            // End value: 2000
+            // Length: 2000
+
             
-            int elapsed = gap_fc_readhwtimer() - start;
-            printf("Input scaling: %d\n", elapsed);
+            // int elapsed = gap_fc_readhwtimer() - start;
+            // printf("Input scaling: %d\n", elapsed);
         
     
             MfccInSig_int16 = (int16_t *) pi_l2_malloc(sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+
+            int outliers = 0;
             for(int i=0;i<AUDIO_BUFFER_SIZE;i++){
                 MfccInSig_int16[i] = (int16_t) (MfccInSig[i] * (1<<15));
+
+                if (MfccInSig_int16[i] < 2000) {
+                    printf("At %i we have value %i\n", i, MfccInSig_int16[i]);
+                    outliers++;
+                }
+
+                if (outliers > 10){
+                    outliers = 0;
+                    break;
+                }
             }
+
+            // for(int i=0;i<5;i++){
+            //     printf("MfccInSig_int16[%d]=%d\n", i, MfccInSig_int16[i]);
+            // }
+            // for(int i=DOUBLE_BUFF_SIZE;i<DOUBLE_BUFF_SIZE+5;i++){
+            //     printf("MfccInSig_int16[%d]=%d\n", i, MfccInSig_int16[i]);
+            // }
+            // for(int i=10*DOUBLE_BUFF_SIZE;i<10*DOUBLE_BUFF_SIZE+5;i++){
+            //     printf("MfccInSig_int16[%d]=%d\n", i, MfccInSig_int16[i]);
+            // }
+            // for(int i=15*DOUBLE_BUFF_SIZE;i<15*DOUBLE_BUFF_SIZE+5;i++){
+            //     printf("MfccInSig_int16[%d]=%d\n", i, MfccInSig_int16[i]);
+            // }
+            // for(int i=16*DOUBLE_BUFF_SIZE;i<16*DOUBLE_BUFF_SIZE+5;i++){
+            //     printf("MfccInSig_int16[%d]=%d\n", i, MfccInSig_int16[i]);
+            // }
             // Dumping the treated buffer
             dump_wav_open("recording_utterance.wav", 16, 16000, 1, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
             dump_wav_write(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
@@ -1299,7 +1396,7 @@ int application(void){
         #endif
 
         iterations++;
-        if (iterations == 10)
+        if (iterations == 3)
             break;
 
         
