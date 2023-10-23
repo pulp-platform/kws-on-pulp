@@ -127,6 +127,7 @@ void *L2_FC_weights_int8;
 
 SFU_uDMA_Channel_T *ChanOutCtxt_0;
 void * BufferInList;
+void * BufferOutList;
 
 // PMSIS SFU
 // SFU
@@ -154,6 +155,8 @@ static pi_sfu_mem_port_t * memout_port;
 
 static int sfu_buffer_filled = 0;
 
+void *write_ptr;
+void *read_ptr;
 
 int noise_seconds = 1;
 
@@ -163,7 +166,6 @@ static const pi_gpio_e gpio_boot_pin_1 = PAD_GPIO_UPB;
 struct pi_device cluster_dev;
 struct pi_cluster_conf cl_conf;
 struct pi_cluster_task cl_task;
-
 
 static pi_event_t inference_task;
 
@@ -286,47 +288,13 @@ static void handle_out_transfer_end(void *arg)
      */
     int in_idx = sfu_in_buffer_idx ^ 1;
     int out_idx = sfu_out_buffer_idx;
-    // memcpy(sfu_in_buffers[in_idx].data, sfu_out_buffers[out_idx].data, DOUBLE_BUFF_SIZE*sizeof(int));
-    // TODO: Add memcopy to our buffer
-    // memcpy(BufferInList+sfu_out_buffer_cnt*DOUBLE_BUFF_SIZE*sizeof(int), sfu_out_buffers[out_idx].data, DOUBLE_BUFF_SIZE*sizeof(int));
-    // memcpy(BufferInList, sfu_out_buffers[out_idx].data, DOUBLE_BUFF_SIZE*sizeof(int));
-
-    // printf("sfu_out_buffer_cnt: %i\n", sfu_out_buffer_cnt);
-    // printf("sfu_out_buffer_idx: %i\n", sfu_out_buffer_idx);
-
         
+    int start;
+    int elapsed;
 
+    write_ptr = BufferInList+sfu_out_buffer_cnt*DOUBLE_BUFF_SIZE*sizeof(int32_t);
 
-     int start;
-     int elapsed;
-
-    // if (sfu_buffer_filled){
-    //     // printf ("PI EVENT PUSH");
-    //     gap_fc_starttimer();
-    //     gap_fc_resethwtimer();
-    //     start = gap_fc_readhwtimer();
-    //     memmove(BufferInList, BufferInList+DOUBLE_BUFF_SIZE*sizeof(int32_t), BUFF_SIZE-DOUBLE_BUFF_SIZE*sizeof(int32_t));
-
-    //     // memset(BufferInList + BUFF_SIZE-DOUBLE_BUFF_SIZE*sizeof(int32_t), 0, DOUBLE_BUFF_SIZE*sizeof(int32_t));
-
-    //     elapsed = gap_fc_readhwtimer() - start;
-    //     printf("memmove time: %d\n", elapsed);
-
-    // }
-
-    // gap_fc_starttimer();
-    // gap_fc_resethwtimer();
-    // start = gap_fc_readhwtimer();
-    
-    // if (sfu_buffer_filled){
-    //     memcpy(BufferInList+BUFF_SIZE-DOUBLE_BUFF_SIZE*sizeof(int32_t), sfu_out_buffers[out_idx].data, DOUBLE_BUFF_SIZE*sizeof(int32_t));    
-    // }
-    // else{
-    //     memcpy(BufferInList+sfu_out_buffer_cnt*DOUBLE_BUFF_SIZE*sizeof(int32_t), sfu_out_buffers[out_idx].data, DOUBLE_BUFF_SIZE*sizeof(int32_t));
-    // }
-
-    memcpy(BufferInList+sfu_out_buffer_cnt*DOUBLE_BUFF_SIZE*sizeof(int32_t), sfu_out_buffers[out_idx].data, DOUBLE_BUFF_SIZE*sizeof(int32_t));
-
+    memcpy(write_ptr, sfu_out_buffers[out_idx].data, DOUBLE_BUFF_SIZE*sizeof(int32_t));
 
 
     sfu_out_buffer_cnt++;
@@ -1108,6 +1076,9 @@ int application(void){
     BufferInList = (void*) pi_l2_malloc(BUFF_SIZE);
     if (BufferInList == NULL) return -1;
 
+    BufferOutList = (void*) pi_l2_malloc(BUFF_SIZE);
+    if (BufferOutList == NULL) return -1;
+
     // pi_l2_free(l2_buffer, L2_MEMORY_SIZE);
 
     int button_was_pressed = 0;
@@ -1121,6 +1092,8 @@ int application(void){
 
     int iterations = 0;
     int sfu_out_buffer_cnt_fixed = 0;
+    read_ptr = BufferInList;
+
 
     while (1) {
 
@@ -1142,62 +1115,30 @@ int application(void){
             // gap_fc_resethwtimer();
             // int start = gap_fc_readhwtimer();
 
-            int outidx = 0;
+            
 
             MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(1 * AUDIO_BUFFER_SIZE * sizeof (MFCC_IN_TYPE));
         
             // Block inference until recording is long enough
-            printf("PI EVENT WAITING\n");
+            // printf("PI EVENT WAITING\n");
             pi_evt_wait_on(&inference_task);
-            printf("PI EVENT THROUGH\n");
+            // printf("PI EVENT THROUGH\n");
 
             sfu_out_buffer_cnt_fixed = sfu_out_buffer_cnt;
+            read_ptr = BufferInList + sfu_out_buffer_cnt_fixed*DOUBLE_BUFF_SIZE*sizeof(int32_t);
 
 
+            for(int i=0;i<AUDIO_BUFFER_SIZE;i++){ 
+                MfccInSig[i] = BufferOutList[i];
+            }  
            
-            for(int i=sfu_out_buffer_cnt_fixed*DOUBLE_BUFF_SIZE;i<BUFF_SIZE/4;i+=3){ // downsample from 48 kHz to 16 kHz               
-                MfccInSig[outidx] = (MFCC_IN_TYPE) (((float)((int32_t *)BufferInList)[i]) / (float)(1<<31 - 1));
+            int outidx = 0;
+            for(int i=prevread;i<curread/4;i+=3){ // downsample from 48 kHz to 16 kHz               
+                BufferOutList[outidx] = (MFCC_IN_TYPE) (((float)((int32_t *)BufferInList)[i]) / (float)(1<<31 - 1));
                 outidx++;
-                if (outidx == AUDIO_BUFFER_SIZE){
-                    break;
-                }
-                if (i == sfu_out_buffer_cnt_fixed*DOUBLE_BUFF_SIZE){
-                    printf ("------------------------------\n");
-                    printf ("sfu_out_buffer_cnt: %i\n", sfu_out_buffer_cnt);
-                    printf ("sfu_out_buffer_cnt_fixed: %i\n", sfu_out_buffer_cnt_fixed);
-                    printf ("Start value: %i\n", i);
-                    printf ("End value: %i\n", BUFF_SIZE/4);
-                    printf ("Length: %i\n", BUFF_SIZE/4-i);
-
-                }
+                read_ptr = read_ptr + 3*sizeof(int32_t);
             }
 
-            for(int i=0;i<sfu_out_buffer_cnt_fixed*DOUBLE_BUFF_SIZE;i+=3){ // downsample from 48 kHz to 16 kHz               
-                MfccInSig[outidx] = (MFCC_IN_TYPE) (((float)((int32_t *)BufferInList)[i]) / (float)(1<<31 - 1));
-                outidx++;
-                if (outidx == AUDIO_BUFFER_SIZE){
-                    break;
-                }
-                if (i == 0){
-                    printf ("sfu_out_buffer_cnt: %i\n", sfu_out_buffer_cnt);
-                    printf ("sfu_out_buffer_cnt_fixed: %i\n", sfu_out_buffer_cnt_fixed);
-                    printf ("Start value: %i\n", i);
-                    printf ("End value: %i\n", sfu_out_buffer_cnt_fixed*DOUBLE_BUFF_SIZE);
-                    printf ("Length: %i\n", sfu_out_buffer_cnt_fixed*DOUBLE_BUFF_SIZE-i);
-                }
-            }
-
-            // WE NEED TO FIND A WAY TO COPY EVERYTHING BEFORE THE MICROPHONE OVERWRITES
-            // sfu_out_buffer_cnt: 4
-            // sfu_out_buffer_cnt_fixed: 2
-            // Start value: 2000
-            // End value: 48000
-            // Length: 46000
-            // sfu_out_buffer_cnt: 14
-            // sfu_out_buffer_cnt_fixed: 2
-            // Start value: 0
-            // End value: 2000
-            // Length: 2000
 
             
             // int elapsed = gap_fc_readhwtimer() - start;
