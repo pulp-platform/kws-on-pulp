@@ -33,7 +33,8 @@
 #define SAI_SDI(itf)         (48+(itf*4)+2)
 #define SAI_SDO(itf)         (48+(itf*4)+3)
 
-#define L2_MEMORY_SIZE MODEL_L2_MEMORY // TODO: Read from CMake
+// #define L2_MEMORY_SIZE MODEL_L2_MEMORY // TODO: Read from CMake
+#define L2_MEMORY_SIZE 90000 // TODO: Read from CMake
 
 // typedef struct float16 MFCC_IN_TYPE;
 // typedef struct float16 OUT_TYPE;
