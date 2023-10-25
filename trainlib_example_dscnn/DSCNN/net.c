@@ -124,57 +124,58 @@ int predict_float_local (void * array, int n_classes){
         // NOTE: printf is cycle-hungry
         switch (idx){
                 case 0:
-                        // strncpy(prediction, "unknown", 10);
+                        strncpy(prediction, "silence", 10);
                         // printf("The uttered keyword was: %s (%i).\n", "unknown", idx);
                         break;
                 case 1:
-                        // strncpy(prediction, "unknown", 10);
+                        strncpy(prediction, "unknown", 10);
                         // printf("The uttered keyword was: %s (%i).\n", "unknown", idx);
                         break;
                 case 2:
-                        // strncpy(prediction, "yes", 10);
+                        strncpy(prediction, "yes", 10);
                         // printf("The uttered keyword was: %s (%i).\n", "yes", idx);
                         break;
                 case 3:
-                        // strncpy(prediction, "no", 10);
+                        strncpy(prediction, "no", 10);
                         // printf("The uttered keyword was: %s (%i).\n", "no", idx);
                         break;
                 case 4:
-                        // strncpy(prediction, "up", 10);
+                        strncpy(prediction, "up", 10);
                         // printf("The uttered keyword was: %s (%i).\n", "up", idx);
                         break;
                 case 5:
-                        // strncpy(prediction, "down", 10);
+                        strncpy(prediction, "down", 10);
                         // printf("The uttered keyword was: %s (%i).\n", "down", idx);
                         break;
                 case 6:
-                        // strncpy(prediction, "left", 10);
+                        strncpy(prediction, "left", 10);
                         // printf("The uttered keyword was: %s (%i).\n", "left", idx);
                         break;
                 case 7:
-                        // strncpy(prediction, "right", 10);
+                        strncpy(prediction, "right", 10);
                         // printf("The uttered keyword was: %s (%i).\n", "right", idx);
                         break;
                 case 8:
-                        // strncpy(prediction, "on", 10);
+                        strncpy(prediction, "on", 10);
                         // printf("The uttered keyword was: %s (%i).\n", "on", idx);
                         break;
                 case 9:
-                        // strncpy(prediction, "off", 10);
+                        strncpy(prediction, "off", 10);
                         // printf("The uttered keyword was: %s (%i).\n", "off", idx);
                         break;
                 case 10:
-                        // strncpy(prediction, "stop", 10);
+                        strncpy(prediction, "stop", 10);
                         // printf("The uttered keyword was: %s (%i).\n", "stop", idx);
                         break;
                 case 11:
-                        // strncpy(prediction, "go", 10);
+                        strncpy(prediction, "go", 10);
                     // printf("The uttered keyword was: %s (%i).\n", "go", idx);
                         break;
                 default:
                         printf ("Undefined class!\n");
         }
 
+        printf("%s\n", prediction);
         return idx;
 }
 

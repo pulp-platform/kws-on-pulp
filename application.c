@@ -583,85 +583,97 @@ void compute_mfcc(){
 
 void evaluate_tinytest(int pre){
 
+    MFCC_IN_TYPE *MfccInSig_buff[10];
+    for (int tinytestidx = 0; tinytestidx < 10; tinytestidx++){
+        MfccInSig_buff[tinytestidx] = (MFCC_IN_TYPE *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
+    }
+
+
 
     for (int tinytestidx = 0; tinytestidx < 10; tinytestidx++){ // only non-unknown
 
         printf ("-----------------------------Loop evaluation (itteration %i)-------------------------\n", tinytestidx);
 
+        int addnoise;
+        int save; 
+
         if (uttr_eval_input == "1") {
             // Read from WAV
             printf("Tested input: %s\n", tinytestutter[tinytestidx]);
             input_wav(1, 1, tinytestutter[tinytestidx], 0); // save, free, noise
+            addnoise = 1;
         }
         else if (uttr_eval_input == "0") {
-            // Read from MIC
-            printf("Preparing reading!\n");
-            // input_mic_buffer(1, 1, 0); // save, free, noise
 
-            // clean up buffer
-            pi_time_wait_us(1000000);
+            if (pre == 0) {
 
-            // allocate memory
-            MfccInSig = NULL;
-            MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
-            if (MfccInSig == NULL){
-                printf("Failed allocating MfccInSig.\n");
-                pmsis_exit(-1);
+                // Read from MIC
+                printf("Preparing reading!\n");
+                MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
+
+                // clean up buffer
+                pi_time_wait_us(1000000);
+
+                // read recording
+
+                int mfccidx = 0;
+                for (int i = 0; i < BUFF_SIZE; i+=3){
+                    MfccInSig[mfccidx] = (MFCC_IN_TYPE) (((float)((int32_t *)BufferInList)[i]) / (float)(1<<31 - 1));
+                    MfccInSig_buff[tinytestidx][mfccidx] = MfccInSig[mfccidx];
+                    mfccidx++;
+
+                }
+            }
+            else{
+                for (int i = 0; i < AUDIO_BUFFER_SIZE; i++){
+                    MfccInSig[i] = MfccInSig_buff[tinytestidx][i];
+
+                }
             }
 
-            // read recording
-            int mfccidx = 0;
-            for (int i = 0; i < BUFF_SIZE; i+=3){
-                MfccInSig[mfccidx] = (MFCC_IN_TYPE) (((float)((int32_t *)BufferInList)[i]) / (float)(1<<31 - 1));
-                mfccidx++;
-            }
+            addnoise = 0;
 
 #ifdef AUDIO_EVK
             pi_gpio_pin_write(gpio_pin_o, 1);
 #endif
         }
-        for (int i = 0; i < 10; i++){
-            PRINTF("MfccInSig[%i] = %f, ", i, MfccInSig[i]);
-        }
-        PRINTF("\n");
 
-
-        int addnoise = 1;
+        int noisesamplestart;
         if (addnoise == 1 && noise_eval_input == "1" && uttr_eval_input == "1") {
-            int noisesamplestart = 0; // TODO: random sample between (0, len(wav)-16000)
+            noisesamplestart = 0; // TODO: random sample between (0, len(wav)-16000)
             
             for (int samplepos = 0; samplepos < AUDIO_BUFFER_SIZE; samplepos++){
                 MfccInSig[samplepos] = MfccInSig[samplepos] + 1*RecordedNoise[noisesamplestart+samplepos];
             }
+        }
 
-            int save = 0;
+        save = 0;
 
-            if (save){
+        if (save){
 
-                MfccInSig_int16 = (int16_t *) pi_l2_malloc (sizeof(int16_t) * AUDIO_BUFFER_SIZE);
-                for (int i = 0; i < AUDIO_BUFFER_SIZE; i++){
-                    MfccInSig_int16[i] = (int16_t) (MfccInSig[i] * (1<<15));
-                    RecordedNoise_int16[i] = (int16_t) (RecordedNoise[i] * (1<<15));
-                }
-
-                // Save the noise-augmented recording
-                dump_wav_open("utter.wav", 16, 16000, 1, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
-                dump_wav_write(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
-                dump_wav_close();
-
-                PRINTF("Writing wav file to utter.wav completed successfully\n");
-                for (int samplepos = 0; samplepos < AUDIO_BUFFER_SIZE; samplepos++){
-                    MfccInSig_int16[samplepos] = (int16_t)(MfccInSig[samplepos] * (1<<15)) + 1*RecordedNoise_int16[noisesamplestart+samplepos];
-                }
-                // Save the noise-augmented recording
-                dump_wav_open("utter_noise.wav", 16, 16000, 1, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
-                dump_wav_write(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
-                dump_wav_close();
-                pi_l2_free(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
-                pi_l2_free(RecordedNoise_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
-
-                PRINTF("Writing wav file to utter_noise.wav completed successfully\n");
+            MfccInSig_int16 = (int16_t *) pi_l2_malloc (sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+            for (int i = 0; i < AUDIO_BUFFER_SIZE; i++){
+                MfccInSig_int16[i] = (int16_t) (MfccInSig[i] * (1<<15));
+                RecordedNoise_int16[i] = (int16_t) (RecordedNoise[i] * (1<<15));
             }
+
+            // Save the noise-augmented recording
+            dump_wav_open("utter.wav", 16, 16000, 1, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+            dump_wav_write(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+            dump_wav_close();
+
+            PRINTF("Writing wav file to utter.wav completed successfully\n");
+            for (int samplepos = 0; samplepos < AUDIO_BUFFER_SIZE; samplepos++){
+                MfccInSig_int16[samplepos] = (int16_t)(MfccInSig[samplepos] * (1<<15)) + 1*RecordedNoise_int16[noisesamplestart+samplepos];
+            }
+            // Save the noise-augmented recording
+            dump_wav_open("utter_noise.wav", 16, 16000, 1, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+            dump_wav_write(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+            dump_wav_close();
+            pi_l2_free(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+            pi_l2_free(RecordedNoise_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+
+            PRINTF("Writing wav file to utter_noise.wav completed successfully\n");
         }
 
         compute_mfcc();
