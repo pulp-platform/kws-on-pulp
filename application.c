@@ -596,7 +596,26 @@ void evaluate_tinytest(int pre){
         else if (uttr_eval_input == "0") {
             // Read from MIC
             printf("Preparing reading!\n");
-            input_mic_buffer(1, 1, 0); // save, free, noise
+            // input_mic_buffer(1, 1, 0); // save, free, noise
+
+            // clean up buffer
+            pi_time_wait_us(1000000);
+
+            // allocate memory
+            MfccInSig = NULL;
+            MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
+            if (MfccInSig == NULL){
+                printf("Failed allocating MfccInSig.\n");
+                pmsis_exit(-1);
+            }
+
+            // read recording
+            int mfccidx = 0;
+            for (int i = 0; i < BUFF_SIZE; i+=3){
+                MfccInSig[mfccidx] = (MFCC_IN_TYPE) (((float)((int32_t *)BufferInList)[i]) / (float)(1<<31 - 1));
+                mfccidx++;
+            }
+
 #ifdef AUDIO_EVK
             pi_gpio_pin_write(gpio_pin_o, 1);
 #endif
@@ -1339,10 +1358,12 @@ int application(void){
                         printf("Failed allocating RecordedNoise.\n");
                         pmsis_exit(-1);
                     }
-                    
+
                     // copy content from BufferInList
-                    for (int i = 0; i < AUDIO_BUFFER_SIZE; i++){
-                        RecordedNoise[i] = (MFCC_IN_TYPE) (((float)((int32_t *)BufferInList)[i]) / (float)(1<<31 - 1));
+                    int noiseidx = 0;
+                    for (int i = 0; i < BUFF_SIZE; i+=3){
+                        RecordedNoise[noiseidx] = (MFCC_IN_TYPE) (((float)((int32_t *)BufferInList)[i]) / (float)(1<<31 - 1));
+                        noiseidx++;
                     }
                 }
                 else if (noise_eval_input == "1"){
