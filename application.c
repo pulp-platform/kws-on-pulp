@@ -1327,9 +1327,23 @@ int application(void){
 
                 if (noise_eval_input == "0"){
                     // TODO: Replace with simply copying the entire content of the BufferInList via on-going recording
-                    // wait 1s (for the previous non-noise content to be cleaned)
+                    
                     // copy content from BufferInList
-                    input_mic_buffer(1, 1, 1); // save, free, noise
+                    // input_mic_buffer(1, 1, 1); // save, free, noise
+                    // wait 1s (for the previous non-noise content to be cleaned)
+                    pi_time_wait_us (1000000);
+
+                    RecordedNoise = NULL;
+                    RecordedNoise = (MFCC_IN_TYPE *) pi_l2_malloc(noise_seconds*AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
+                    if (RecordedNoise == NULL){
+                        printf("Failed allocating RecordedNoise.\n");
+                        pmsis_exit(-1);
+                    }
+                    
+                    // copy content from BufferInList
+                    for (int i = 0; i < AUDIO_BUFFER_SIZE; i++){
+                        RecordedNoise[i] = (MFCC_IN_TYPE) (((float)((int32_t *)BufferInList)[i]) / (float)(1<<31 - 1));
+                    }
                 }
                 else if (noise_eval_input == "1"){
 
