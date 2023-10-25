@@ -584,10 +584,13 @@ void compute_mfcc(){
 void evaluate_tinytest(int pre){
 
     MFCC_IN_TYPE *MfccInSig_buff[10];
-    for (int tinytestidx = 0; tinytestidx < 10; tinytestidx++){
-        MfccInSig_buff[tinytestidx] = (MFCC_IN_TYPE *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
-    }
+    
 
+    if (pre == 0){
+        for (int tinytestidx = 0; tinytestidx < 10; tinytestidx++){
+            MfccInSig_buff[tinytestidx] = (MFCC_IN_TYPE *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
+        }
+    }
 
 
     for (int tinytestidx = 0; tinytestidx < 10; tinytestidx++){ // only non-unknown
@@ -826,6 +829,12 @@ void evaluate_tinytest(int pre){
         // block until next input audio frame is ready
         pi_gpio_pin_write(gpio_pin_o, 0);
     #endif
+    }
+
+    if (pre == 1){
+        for (int tinytestidx = 0; tinytestidx < 10; tinytestidx++){
+            pi_l2_free(MfccInSig_buff[tinytestidx], AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
+        }
     }
 }
 
@@ -1396,8 +1405,8 @@ int application(void){
 
             printf ("----------------------------- ODDA complete ---------------------------\n");
 
-            pmsis_exit(0);
-            return; // breaking loop early
+            // pmsis_exit(0);
+            // return; // breaking loop early
         }
 
 

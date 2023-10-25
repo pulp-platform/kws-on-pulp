@@ -122,6 +122,7 @@ int predict_float_local (void * array, int n_classes){
 
 
         // NOTE: printf is cycle-hungry
+        // 63222 us at 50 MHz
         switch (idx){
                 case 0:
                         strncpy(prediction, "silence", 10);
@@ -176,6 +177,7 @@ int predict_float_local (void * array, int n_classes){
         }
 
         printf("%s\n", prediction);
+
         return idx;
 }
 
