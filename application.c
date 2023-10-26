@@ -622,7 +622,7 @@ void evaluate_tinytest(int pre){
             if (pre == 0) {
 
                 // clean up buffer
-                // pi_time_wait_us(1000000);
+                pi_time_wait_us(1000000);
 
                 // read recording
                 int mfccidx = 0;
@@ -1362,7 +1362,7 @@ int application(void){
                 if (noise_eval_input == "0"){
                     
                     // wait 1s (for the previous non-noise content to be cleaned)
-                    // pi_time_wait_us (1000000);
+                    pi_time_wait_us (1000000);
 
                     RecordedNoise = NULL;
                     RecordedNoise = (MFCC_IN_TYPE *) pi_l2_malloc(noise_seconds*AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
