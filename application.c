@@ -1071,23 +1071,28 @@ int application(void){
     /* set pad to gpio mode */
     /* This will open the gpio automatically */
     pi_pad_function_set(gpio_boot_pin_1, PI_PAD_FUNC1);
-
-    // Measurement
-
-    gpio_pin_measurement = PI_GPIO_A89; /* PI_GPIO_A02-PI_GPIO_A05 */
-    pi_gpio_flags_e flags = PI_GPIO_OUTPUT;
-    pi_gpio_pin_configure(gpio_pin_measurement, flags);
-    pi_gpio_pin_write(gpio_pin_measurement, 0);
-
-
     /* configure gpio input */
     pi_gpio_flags_e flags_upb = PI_GPIO_INPUT;
     pi_gpio_pin_configure(gpio_boot_pin_1, flags_upb);
 
 
-    pi_gpio_pin_write(gpio_pin_measurement, 1);
+    // Measurement preparation
+
+    gpio_pin_measurement = PI_GPIO_A89; /* PI_GPIO_A02-PI_GPIO_A05 */
+    pi_gpio_flags_e flags = PI_GPIO_OUTPUT;
+    pi_pad_function_set(gpio_pin_measurement, 1);
+    pi_gpio_pin_configure(gpio_pin_measurement, flags);
+    pi_gpio_pin_write(gpio_pin_measurement, 0);
+    pi_gpio_pin_write(gpio_pin_measurement, 0);
+
+
 
     PRINTF ("----------------------------- Initializing backbone ---------------------------\n");
+
+
+    // Measurement start
+    pi_gpio_pin_write(gpio_pin_measurement, 1);
+
     // Dory init
     mem_init();
     network_initialize(); // Absent in L2-only
