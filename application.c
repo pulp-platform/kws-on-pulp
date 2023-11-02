@@ -87,6 +87,12 @@ typedef short int MFCC_IN_TYPE; // Save MFCCs works
 
 #include "noise_meeting.h"
 
+// measurement
+// unsigned int GPIOs = PI_GPIO_A89;
+// unsigned int GPIOs = 89;
+// #define WRITE_GPIO(x) pi_gpio_pin_write(GPIOs,x)
+pi_gpio_e gpio_pin_measurement;
+
 
 /* 
      global variables
@@ -94,11 +100,14 @@ typedef short int MFCC_IN_TYPE; // Save MFCCs works
 struct pi_device DefaultRam; 
 struct pi_device* ram = &DefaultRam;
 
-#ifdef AUDIO_EVK
-    // GPIO defines
-    pi_gpio_e gpio_pin_o; /* PI_GPIO_A02-PI_GPIO_A05 */
-    int val_gpio;
-#endif
+// #ifdef AUDIO_EVK
+//     // GPIO defines
+//     pi_gpio_e gpio_pin_o; /* PI_GPIO_A02-PI_GPIO_A05 */
+//     int val_gpio;
+// #endif
+
+
+
 
 //static struct pi_default_flash_conf flash_conf;
 static pi_fs_file_t * file[1];
@@ -642,9 +651,9 @@ void evaluate_tinytest(int pre){
 
             addnoise = 0;
 
-#ifdef AUDIO_EVK
-            pi_gpio_pin_write(gpio_pin_o, 1);
-#endif
+// #ifdef AUDIO_EVK
+//             pi_gpio_pin_write(gpio_pin_o, 1);
+// #endif
         }
 
         int noisesamplestart = 0;
@@ -829,10 +838,10 @@ void evaluate_tinytest(int pre){
         pi_cluster_close(&cluster_dev);
 
         
-    #ifdef  AUDIO_EVK
-        // block until next input audio frame is ready
-        pi_gpio_pin_write(gpio_pin_o, 0);
-    #endif
+    // #ifdef  AUDIO_EVK
+    //     // block until next input audio frame is ready
+    //     pi_gpio_pin_write(gpio_pin_o, 0);
+    // #endif
     }
 
     if (pre == 1){
@@ -992,7 +1001,9 @@ int read_button(){
 
 int application(void){
 
+
     printf ("----------------------------- Initializing environment ---------------------------\n");
+
 
     // Voltage-Frequency settings
     uint32_t voltage =VOLTAGE;
@@ -1008,16 +1019,17 @@ int application(void){
     printf("Set VDD voltage as %.2f, FC Frequency as %d MHz, CL Frequency = %d MHz\n", 
         (float)voltage/1000, FREQ_FC, FREQ_CL);
 
-#ifdef AUDIO_EVK
-    /****
-        Configure GPIO Output.
-    ****/
+// #ifdef AUDIO_EVK
+//     /****
+//         Configure GPIO Output.
+//     ****/
 
-    //struct pi_gpio_conf gpio_conf = {0};
-    gpio_pin_o = PI_GPIO_A89; /* PI_GPIO_A02-PI_GPIO_A05 */
-    pi_gpio_flags_e flags = PI_GPIO_OUTPUT;
-    pi_gpio_pin_configure(gpio_pin_o, flags);
-#endif
+//     //struct pi_gpio_conf gpio_conf = {0};
+//     gpio_pin_o = PI_GPIO_A89; /* PI_GPIO_A02-PI_GPIO_A05 */
+//     pi_gpio_flags_e flags = PI_GPIO_OUTPUT;
+//     pi_gpio_pin_configure(gpio_pin_o, flags);
+// #endif
+
     /****
         Configure And Open the External Ram. 
     ****/
@@ -1060,10 +1072,20 @@ int application(void){
     /* This will open the gpio automatically */
     pi_pad_function_set(gpio_boot_pin_1, PI_PAD_FUNC1);
 
+    // Measurement
+
+    gpio_pin_measurement = PI_GPIO_A89; /* PI_GPIO_A02-PI_GPIO_A05 */
+    pi_gpio_flags_e flags = PI_GPIO_OUTPUT;
+    pi_gpio_pin_configure(gpio_pin_measurement, flags);
+    pi_gpio_pin_write(gpio_pin_measurement, 0);
+
+
     /* configure gpio input */
     pi_gpio_flags_e flags_upb = PI_GPIO_INPUT;
     pi_gpio_pin_configure(gpio_boot_pin_1, flags_upb);
 
+
+    pi_gpio_pin_write(gpio_pin_measurement, 1);
 
     PRINTF ("----------------------------- Initializing backbone ---------------------------\n");
     // Dory init
@@ -1106,8 +1128,14 @@ int application(void){
 
     pi_cluster_close(&cluster_dev);
 
+    pi_gpio_pin_write(gpio_pin_measurement, 0);
+    pmsis_exit(0);
+    return;
+
     BufferInList = (void*) pi_l2_malloc(BUFF_SIZE);
     if (BufferInList == NULL) return -1;
+
+
 
     int button_was_pressed = 0;
 
@@ -1126,6 +1154,8 @@ int application(void){
     int len = 0;
     int upperlim = 0;
     int lowerlim = 0;
+
+    
 
     while (1){
 
@@ -1189,6 +1219,7 @@ int application(void){
 
         }
         else if (appl_input == "1"){
+            // printf ("Reading wav...\n");
             char utterName[130] = "/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/meeting_ch01_mancrop1.wav";
             input_wav(1, 1, utterName, 0); // save, free, utterName, noise
         }
@@ -1406,17 +1437,24 @@ int application(void){
 
         }
 
+        printf ("----------------------------- Finished measurement ---------------------------\n");
+
+        pmsis_exit(0);
+        return;
+
 
         PRINTF ("----------------------------- Round completed ---------------------------\n");
 
 
         // // block until next input audio frame is ready
-        #ifdef  AUDIO_EVK
-            pi_gpio_pin_write(gpio_pin_o, 0);
-        #endif
+        // #ifdef  AUDIO_EVK
+        //     pi_gpio_pin_write(gpio_pin_o, 0);
+        // #endif
 
         // TODO: Trigger inference every 250 ms
         // pi_time_wait_us(250); // microseconds
+
+
 
 
 

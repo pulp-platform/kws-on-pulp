@@ -86,12 +86,14 @@ set(MFCC_SRC_CODE                ${BUILD_DIR}/MfccKernels.c)
 
 # Application
 
-add_custom_command (
-    
-    OUTPUT    ${MFCC_MODEL_GEN}
-    COMMAND   python ${DSP_GEN_DIR}/DSP_LUTGen.py ${MFCC_PARAMS_JSON} --build_dir ${BUILD_DIR} --save_params_header ${MFCC_HEAD} --save_text
 
-)
+# MFCC Already exists
+# add_custom_command (
+    
+#     OUTPUT    ${MFCC_MODEL_GEN}
+#     COMMAND   python ${DSP_GEN_DIR}/DSP_LUTGen.py ${MFCC_PARAMS_JSON} --build_dir ${BUILD_DIR} --save_params_header ${MFCC_HEAD} --save_text
+
+# )
 
 add_custom_command (
  
@@ -314,7 +316,7 @@ FILE(STRINGS ${TINYTEST_FILE} TINYTEST_UTTR)
 # list(APPEND READFS_MRAM_FILES 
 
 
-
+# Already flashed
 list(APPEND READFS_FILES 
                         ${CURDIR}DORY_network/hex/BNReluConvolution0_weights.hex
                         ${CURDIR}DORY_network/hex/BNReluConvolution1_weights.hex
