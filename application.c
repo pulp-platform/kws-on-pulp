@@ -92,6 +92,7 @@ typedef short int MFCC_IN_TYPE; // Save MFCCs works
 // unsigned int GPIOs = 89;
 // #define WRITE_GPIO(x) pi_gpio_pin_write(GPIOs,x)
 pi_gpio_e gpio_pin_measurement;
+unsigned int gpio_pin_measurement_id = 89;
 
 
 /* 
@@ -1078,20 +1079,24 @@ int application(void){
 
     // Measurement preparation
 
-    gpio_pin_measurement = PI_GPIO_A89; /* PI_GPIO_A02-PI_GPIO_A05 */
-    pi_gpio_flags_e flags = PI_GPIO_OUTPUT;
-    pi_pad_function_set(gpio_pin_measurement, 1);
-    pi_gpio_pin_configure(gpio_pin_measurement, flags);
-    pi_gpio_pin_write(gpio_pin_measurement, 0);
-    pi_gpio_pin_write(gpio_pin_measurement, 0);
+    // gpio_pin_measurement = PI_GPIO_A89; /* PI_GPIO_A02-PI_GPIO_A05 */
+    // pi_gpio_flags_e flags = PI_GPIO_OUTPUT;
+    // pi_pad_function_set(gpio_pin_measurement, 1);
+    // pi_gpio_pin_configure(gpio_pin_measurement, flags);
+    // pi_gpio_pin_write(gpio_pin_measurement, 0);
+    // pi_gpio_pin_write(gpio_pin_measurement, 0);
+
+    pi_pad_function_set(gpio_pin_measurement_id, 1);
+    pi_gpio_pin_configure(gpio_pin_measurement_id, PI_GPIO_OUTPUT);
+    pi_gpio_pin_write(gpio_pin_measurement_id, 0);
+    pi_gpio_pin_write(gpio_pin_measurement_id, 0);
 
 
 
     PRINTF ("----------------------------- Initializing backbone ---------------------------\n");
 
-
     // Measurement start
-    pi_gpio_pin_write(gpio_pin_measurement, 1);
+    pi_gpio_pin_write(gpio_pin_measurement_id, 1);
 
     // Dory init
     mem_init();
@@ -1133,14 +1138,11 @@ int application(void){
 
     pi_cluster_close(&cluster_dev);
 
-    pi_gpio_pin_write(gpio_pin_measurement, 0);
-    pmsis_exit(0);
-    return;
 
     BufferInList = (void*) pi_l2_malloc(BUFF_SIZE);
     if (BufferInList == NULL) return -1;
 
-
+    pi_gpio_pin_write(gpio_pin_measurement_id, 0);
 
     int button_was_pressed = 0;
 
@@ -1163,6 +1165,8 @@ int application(void){
     
 
     while (1){
+
+        pi_gpio_pin_write(gpio_pin_measurement_id, 1);
 
         if (appl_input == "0"){
 
@@ -1229,13 +1233,19 @@ int application(void){
             input_wav(1, 1, utterName, 0); // save, free, utterName, noise
         }
 
+        pi_gpio_pin_write(gpio_pin_measurement_id, 0);
+
         #ifdef PERF
         gap_fc_starttimer();
         gap_fc_resethwtimer();
         int start_timer_2 = gap_fc_readhwtimer();
         #endif
 
-        PRINTF("***************************** Computing MFCC **************************\n");
+        printf("***************************** Computing MFCC **************************\n");
+
+
+        pi_gpio_pin_write(gpio_pin_measurement_id, 1);
+
         compute_mfcc();
 
         #ifdef PERF
@@ -1254,7 +1264,6 @@ int application(void){
         start_timer_2 = gap_fc_readhwtimer();    
         #endif    
 
-        PRINTF("***************************** Rescaling data **************************\n");
         feat_char = (char*) pi_l2_malloc(49 * 10 * sizeof(char));
         // Rescale data
         int k = 0;
@@ -1269,8 +1278,8 @@ int application(void){
             }
             k++;
         } 
-
         pi_l2_free(out_feat, 49*10*4*sizeof(OUT_TYPE));
+
 
         #ifdef PERF
         elapsed_timer_2 = gap_fc_readhwtimer() - start_timer_2;
@@ -1283,7 +1292,6 @@ int application(void){
         int start_timer_3 = gap_fc_readhwtimer();    
         #endif    
 
-        PRINTF("***************************** Move data in L2 **************************\n");
         // Fill input buffer
         for (int i = 0; i < 490; i++){
             if (mfcc == "1"){
@@ -1309,6 +1317,8 @@ int application(void){
         printf("Convert mfcc: %d cycles\n", elapsed_timer_3);
         #endif
 
+        pi_gpio_pin_write(gpio_pin_measurement_id, 0);
+
         // Extract backbone features
         void *dump; // dump to copy FC weights, won't be used; TODO: Parametrize DORY
 
@@ -1319,8 +1329,12 @@ int application(void){
         int start_timer_4 = gap_fc_readhwtimer();        
         #endif
 
-        PRINTF("***************************** Backbone inference **************************\n");
+        printf("***************************** Backbone inference **************************\n");
+
+
+        pi_gpio_pin_write(gpio_pin_measurement_id, 1);
         network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &dump, 0); // L2_input_h extra-arg for L2-only
+        pi_gpio_pin_write(gpio_pin_measurement_id, 0);
 
         #ifdef PERF
         int elapsed_timer_4 = gap_fc_readhwtimer() - start_timer_4;
@@ -1341,7 +1355,10 @@ int application(void){
         #endif    
 
 
-        PRINTF("***************************** Classifier inference **************************\n");
+        printf("***************************** Classifier inference **************************\n");
+
+
+        pi_gpio_pin_write(gpio_pin_measurement_id, 1);
 
         pi_cluster_conf_init(&cl_conf);
         pi_open_from_conf(&cluster_dev, &cl_conf);
@@ -1362,7 +1379,9 @@ int application(void){
         pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, args_inference_classifier));
         pi_cluster_close(&cluster_dev);
 
-        PRINTF("***************************** Process complete **************************\n");
+        pi_gpio_pin_write(gpio_pin_measurement_id, 0);
+
+        printf("***************************** Process complete **************************\n");
 
         #ifdef PERF
         int elapsed_timer_5 = gap_fc_readhwtimer() - start_timer_5;
