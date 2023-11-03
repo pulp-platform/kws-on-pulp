@@ -177,7 +177,8 @@ struct pi_cluster_task cl_task;
 
 static pi_event_t inference_task;
 
-#define tinytestsize 10
+// #define tinytestsize 10
+#define tinytestsize 1
 static MFCC_IN_TYPE *MfccInSig_buff[tinytestsize];
 
 
@@ -864,8 +865,8 @@ void train_wavsrc(){
     int nepochs = 1; // BOARD - QUICK DEMO
 
     for (int epidx = 0; epidx < nepochs; epidx++) {
-        // for (int uttridx = 0; uttridx < 2; uttridx++){ // simple, to speed test
-        for (int uttridx = 0; uttridx < 100; uttridx++){
+        for (int uttridx = 0; uttridx < 2; uttridx++){ // debug/measurement
+        // for (int uttridx = 0; uttridx < 100; uttridx++){
 
         sampleidx = uttridx / 10;
         classidx = uttridx % 10;
@@ -1403,7 +1404,8 @@ int application(void){
         // #endif
 
         button_was_pressed = 0;
-        button_was_pressed = read_button();
+        // button_was_pressed = read_button();
+        button_was_pressed = 1; // measurement
 
         if (button_was_pressed){
 
@@ -1441,20 +1443,32 @@ int application(void){
                 }
             }
 
+            pi_gpio_pin_write(gpio_pin_measurement_id, 1);
             // evaluate before training
             evaluate_tinytest(0);
+            pi_gpio_pin_write(gpio_pin_measurement_id, 0);
 
+            printf("***************************** Finished pre-ODDA evaluation *****************************\n");
+
+
+            pi_gpio_pin_write(gpio_pin_measurement_id, 1);
             // train model with noisy data
             train_wavsrc();
+            pi_gpio_pin_write(gpio_pin_measurement_id, 0);
 
+            printf("***************************** Finished training *****************************\n ");
+
+
+            pi_gpio_pin_write(gpio_pin_measurement_id, 1);
             // evaluate improvement
             evaluate_tinytest(1);
+            pi_gpio_pin_write(gpio_pin_measurement_id, 0);
 
             if (addnoise == 1 && noise_eval_input == "0"){
                pi_l2_free(RecordedNoise, noise_seconds*AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
             }
 
-            printf ("----------------------------- ODDA complete ---------------------------\n");
+            printf ("***************************** ODDA complete *****************************\n");
 
             // pmsis_exit(0);
             // return; // breaking loop early
