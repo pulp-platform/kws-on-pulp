@@ -39,9 +39,16 @@
 
 // #define VERBOSE 1
 
-#define L3_WEIGHTS_SIZE 4000000
-#define L3_INPUT_SIZE 1500000
-#define L3_OUTPUT_SIZE 1500000
+// AUTOMATICALLY GENERATED
+// #define L3_WEIGHTS_SIZE 4000000
+// #define L3_INPUT_SIZE 1500000
+// #define L3_OUTPUT_SIZE 1500000
+
+
+// TESTED MANUALLY
+#define L3_WEIGHTS_SIZE 1000000
+#define L3_INPUT_SIZE 1000000
+#define L3_OUTPUT_SIZE 1000000
 static void *L3_weights = NULL;
 static void *L3_input = NULL;
 static void *L3_output = NULL; 
