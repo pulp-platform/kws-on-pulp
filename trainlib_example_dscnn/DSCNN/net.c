@@ -126,7 +126,7 @@ int predict_float_local (void * array, int n_classes){
         switch (idx){
                 case 0:
                         strncpy(prediction, "silence", 10);
-                        // printf("The uttered keyword was: %s (%i).\n", "unknown", idx);
+                        // printf("The uttered keyword was: %s (%i).\n", "silence", idx);
                         break;
                 case 1:
                         strncpy(prediction, "unknown", 10);
@@ -268,11 +268,12 @@ void backward()
 }
 
 // Compute loss and output gradient
-void compute_loss()
+void compute_loss(int mode)
 {
     loss_args.output = &layer0_out;
     loss_args.target = LABEL;
     loss_args.wr_loss = &loss;
+    loss_args.mode = mode;
     // pulp_MSELoss(&loss_args);
     pulp_CrossEntropyLoss(&loss_args);
 }
@@ -334,7 +335,7 @@ void net_step(void *args) {
     void * l2_buffer = (void *) real_args[0];
     void * L3_weights_curr = (void *) real_args[1];
     void * L2_weights_curr_updated = (void *) real_args[2];
-    int update = (int) real_args[3]; // 1 - update
+    int update = (int) real_args[3]; // 0-inference/1-update/2-evaluate
     int init = (int) real_args[4]; // 1 - initialize
     int classidx = (int) real_args[5];
 
@@ -423,6 +424,7 @@ void net_step(void *args) {
             gap_cl_resethwtimer();
             start = gap_cl_readhwtimer();
 #endif
+
             forward();
 
 #ifdef PERF            
@@ -439,7 +441,7 @@ void net_step(void *args) {
             }
 #endif
 
-            compute_loss();
+            compute_loss(update);
 
 #ifdef PERF
             elapsed = gap_cl_readhwtimer() - start;
@@ -483,13 +485,14 @@ void net_step(void *args) {
         STOP_STATS();
 #endif
 
+#ifdef VERBOSE
+
         // Check and print updated output
         forward();
-
-#ifdef VERBOSE
         printf("Checking updated output..\n");
         check_post_training_output();
         print_output();
+
 #endif
     } // update
 
@@ -546,7 +549,7 @@ void net_step(void *args) {
 #endif
 
         // TODO: enable only in eval mode
-        // compute_loss(); // 7559922 cycles on CLUSTER
+        compute_loss(update); // 7559922 cycles on CLUSTER
 
 #ifdef PERF            
         elapsed = gap_cl_readhwtimer() - start;

@@ -102,6 +102,7 @@ void pulp_CrossEntropyLoss ( void * loss_args )
   float * target = args->target;
   float * wr_loss = args->wr_loss;
   int size = args->output->dim;
+  int mode = args->mode;
 
   float loss = 0.0;
 
@@ -124,7 +125,11 @@ void pulp_CrossEntropyLoss ( void * loss_args )
       printf("loss:%f \n",loss);
     #endif
 
-  printf("Loss is %f\n", loss);
+  // Measurement
+  // if (mode == 1 || mode == 2) { // update/evaluate
+  if (mode == 2) { // evaluate    
+    printf("Loss is %f\n", loss);
+  }
 
   // Skip printf profiling in debug mode
   #ifdef DEBUG
