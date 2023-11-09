@@ -1258,13 +1258,15 @@ int application(void){
 
         
 
-        for (int idx=0; idx<AUDIO_BUFFER_SIZE;idx++){
-            // wav_ptr[i*AUDIO_BUFFER_SIZE*sizeof(short)+idx] = inWav[idx];
-            ((short int *)L3_wavs)[i*AUDIO_BUFFER_SIZE+idx] = inWav[idx];
-        }
+        // for (int idx=0; idx<AUDIO_BUFFER_SIZE;idx++){
+        //     // wav_ptr[i*AUDIO_BUFFER_SIZE*sizeof(short)+idx] = inWav[idx];
+        //     ((short int *)L3_wavs)[i*AUDIO_BUFFER_SIZE+idx] = inWav[idx];
+        // }
 
 
+        // TODO: Measure latency
         ram_write(L3_wavs + i*AUDIO_BUFFER_SIZE*sizeof(short), inWav, AUDIO_BUFFER_SIZE*sizeof(short));
+        // TODO: Measure latency
         ram_read(outWav, L3_wavs + i*AUDIO_BUFFER_SIZE*sizeof(short), AUDIO_BUFFER_SIZE*sizeof(short));
 
 
@@ -1272,12 +1274,12 @@ int application(void){
         for (int k = 0; k < 5; k++){
             printf("inWav[%i] = %i\n", k, inWav[k]);
         }
-        for (int k = 0; k < 5; k++){
-            printf("wav_ptr[%i] = %i\n", k, ((short int *)L3_wavs)[16000*i + k]);
-        }
         // for (int k = 0; k < 5; k++){
-        //     printf("outWav[%i] = %i\n", k, outWav[k]);
+        //     printf("wav_ptr[%i] = %i\n", k, ((short int *)L3_wavs)[16000*i + k]);
         // }
+        for (int k = 0; k < 5; k++){
+            printf("outWav[%i] = %i\n", k, outWav[k]);
+        }
 
         // wav_ptr += AUDIO_BUFFER_SIZE*sizeof(short);
 
