@@ -627,34 +627,33 @@ void evaluate_tinytest(int pre){
             // Read from WAV
             printf("Tested input: %s\n", tinytestutter[tinytestidx]);
 
-            input_wav(0, 1, tinytestutter[tinytestidx], 0); // save, free, noise
-            addnoise = 1;
+            // input_wav(0, 1, tinytestutter[tinytestidx], 0); // save, free, noise
+            addnoise = 0;
+
+            short int *prepWav = NULL;
+            prepWav = (short int *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(short));
+
+            ram_read(prepWav, L3_wavs + (100+tinytestidx)*AUDIO_BUFFER_SIZE*sizeof(short), AUDIO_BUFFER_SIZE*sizeof(short));
 
 
-            // MFCC_IN_TYPE *wav_ptr = L3_wavs;
-            // MfccInSig = NULL;
-            // MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
-            // if (MfccInSig == NULL){
-            //     printf("Failed allocating MfccInSig.\n");
-            //     pmsis_exit(-1);
-            // }
+            MfccInSig = NULL;
+            MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
+            if (MfccInSig == NULL){
+                printf("Failed allocating MfccInSig.\n");
+                pmsis_exit(-1);
+            }
         
-            // #if (DATA_TYPE==2) || (DATA_TYPE==3)
-            //     for (int i=0; i<AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
+            #if (DATA_TYPE==2) || (DATA_TYPE==3)
+                for (int i=0; i<AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
+                    MfccInSig[i] = (MFCC_IN_TYPE) prepWav[i] / (1<<15);
+                }
+            #else
+                for (int i=0; i<AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
+                    MfccInSig[i]] = (MFCC_IN_TYPE) gap_fcip(((int) prepWav[i]), 15);
+                }
+            #endif
 
-
-            //         MfccInSig[i] = (MFCC_IN_TYPE) wav_ptr[(100+tinytestidx) *16000+i] / (1<<15);
-            //         MfccInSig_buff[tinytestidx][i] = (MFCC_IN_TYPE) wav_ptr[(100+tinytestidx) *16000+i] / (1<<15);
-
-
-            //         printf("%i\n", MfccInSig[i]);
-            //     }
-            // #else
-            //     for (int i=0; i<AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
-            //         MfccInSig[i]] = (MFCC_IN_TYPE) gap_fcip(((int) wav_ptr[(100+tinytestidx)*16000+i]), 15);
-            //         MfccInSig_buff[tinytestidx][i] = (MFCC_IN_TYPE) gap_fcip(((int) wav_ptr[(100+tinytestidx)*16000+i]), 15);
-            //     }
-            // #endif
+            pi_l2_free(prepWav, AUDIO_BUFFER_SIZE * sizeof(short int));
 
 
         }
@@ -957,9 +956,14 @@ void train_wavsrc(){
         }
 
 
-        int start_acq = pi_time_get_us();
+        // Load Utterance
+        // input_wav(0, 1, utterance, 0);  // save, free, utterance, noise
 
-        MFCC_IN_TYPE *wav_ptr = L3_wavs;
+        short int *prepWav = NULL;
+        prepWav = (short int *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(short));
+
+        ram_read(prepWav, L3_wavs + ((classidx-2)*10+sampleidx)*AUDIO_BUFFER_SIZE*sizeof(short), AUDIO_BUFFER_SIZE*sizeof(short));
+
         MfccInSig = NULL;
         MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
         if (MfccInSig == NULL){
@@ -969,19 +973,17 @@ void train_wavsrc(){
     
         #if (DATA_TYPE==2) || (DATA_TYPE==3)
             for (int i=0; i<AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
-                MfccInSig[i] = (MFCC_IN_TYPE) wav_ptr[((classidx-2)*10+sampleidx) *16000+i] / (1<<15);
+                MfccInSig[i] = (MFCC_IN_TYPE) prepWav[i] / (1<<15);
             }
         #else
             for (int i=0; i<AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
-                MfccInSig[i] = (MFCC_IN_TYPE) gap_fcip(((int) wav_ptr[((classidx-2)*10+sampleidx)*16000+i]), 15);
+                MfccInSig[i]] = (MFCC_IN_TYPE) gap_fcip(((int) prepWav[i]), 15);
             }
         #endif
 
-        // Load Utterance
-        // input_wav(0, 1, utterance, 0);  // save, free, utterance, noise
+        pi_l2_free(prepWav, AUDIO_BUFFER_SIZE * sizeof(short int));
 
-        int end_acq = pi_time_get_us();
-        // printf("Reading wav takes: %i us\n", end_acq - start_acq);
+        // Reading wav for training takes: 2312 us
 
         int localaddnoise = 1;
         if (localaddnoise){
@@ -1170,153 +1172,125 @@ int application(void){
     pi_cluster_close(&cluster_dev);
 
 
-    PRINTF ("----------------------------- Read WAVs from filesystem ---------------------------\n");
+    printf ("----------------------------- Read WAVs from filesystem ---------------------------\n");
 
-    L3_wavs = ram_malloc(WAVRAM);
-    printf("\nL3_wavs alloc initial\t@ %d:\t%s\n", (unsigned int)L3_wavs, L3_wavs?"Ok":"Failed");
+    // L3_wavs = ram_malloc(WAVRAM);
+    // printf("\nL3_wavs alloc initial\t@ %d:\t%s\n", (unsigned int)L3_wavs, L3_wavs?"Ok":"Failed");
 
-    void *wav_ptr = L3_wavs;
 
-    int startwavreading = pi_time_get_us();
-    for (int i = 0; i < 100; i++) {
+    // // int startwavreading = pi_time_get_us();
+    // for (int i = 0; i < 100; i++) {
 
-        // size_t size = load_file_to_ram(wav_ptr, class_2[i]);
-        // wav_ptr += size;
+    //     header_struct header_info;
 
-        header_struct header_info;
+    //     inWav = NULL;
+    //     inWav    = (short int *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(short)); 
+    //     if (inWav == NULL){
+    //         printf("Failed allocating inWav.\n");
+    //         pmsis_exit(-1);
+    //     }
 
-        // printf("File is: %s\n", class_2[i]);
+    //     if (i < 10){
+    //         if (ReadWavFromFile(class_2[i], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+    //             printf("Error reading wav file\n");
+    //             pmsis_exit(1);
+    //         }
+    //     }
+    //     else if (i < 20){
+    //         if (ReadWavFromFile(class_3[i%10], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+    //             printf("Error reading wav file\n");
+    //             pmsis_exit(1);
+    //         }
+    //     }
+    //     else if (i < 30){
+    //         if (ReadWavFromFile(class_4[i%20], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+    //             printf("Error reading wav file\n");
+    //             pmsis_exit(1);
+    //         }
+    //     }
+    //     else if (i < 40){
+    //         if (ReadWavFromFile(class_5[i%30], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+    //             printf("Error reading wav file\n");
+    //             pmsis_exit(1);
+    //         }
+    //     }
+    //     else if (i < 50){
+    //         if (ReadWavFromFile(class_6[i%40], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+    //             printf("Error reading wav file\n");
+    //             pmsis_exit(1);
+    //         }
+    //     }
+    //     else if (i < 60){
+    //         if (ReadWavFromFile(class_7[i%50], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+    //             printf("Error reading wav file\n");
+    //             pmsis_exit(1);
+    //         }
+    //     }
+    //     else if (i < 70){
+    //         if (ReadWavFromFile(class_8[i%60], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+    //             printf("Error reading wav file\n");
+    //             pmsis_exit(1);
+    //         }
+    //     }
+    //     else if (i < 80){
+    //         if (ReadWavFromFile(class_9[i%70], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+    //             printf("Error reading wav file\n");
+    //             pmsis_exit(1);
+    //         }
+    //     } 
+    //     else if (i < 90){
+    //         if (ReadWavFromFile(class_10[i%80], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+    //             printf("Error reading wav file\n");
+    //             pmsis_exit(1);
+    //         }
+    //     } 
+    //     else if (i < 100){
+    //         if (ReadWavFromFile(class_11[i%90], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+    //             printf("Error reading wav file\n");
+    //             pmsis_exit(1);
+    //         }
+    //     }         
 
-        inWav = NULL;
-        inWav    = (short int *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(short)); 
-        short int *outWav    = (short int *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(short)); 
-        if (inWav == NULL){
-            printf("Failed allocating inWav.\n");
-            pmsis_exit(-1);
-        }
-
-        if (i < 10){
-            if (ReadWavFromFile(class_2[i], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
-                printf("Error reading wav file\n");
-                pmsis_exit(1);
-            }
-        }
-        else if (i < 20){
-            if (ReadWavFromFile(class_3[i%10], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
-                printf("Error reading wav file\n");
-                pmsis_exit(1);
-            }
-        }
-        else if (i < 30){
-            if (ReadWavFromFile(class_4[i%20], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
-                printf("Error reading wav file\n");
-                pmsis_exit(1);
-            }
-        }
-        else if (i < 40){
-            if (ReadWavFromFile(class_5[i%30], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
-                printf("Error reading wav file\n");
-                pmsis_exit(1);
-            }
-        }
-        else if (i < 50){
-            if (ReadWavFromFile(class_6[i%40], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
-                printf("Error reading wav file\n");
-                pmsis_exit(1);
-            }
-        }
-        else if (i < 60){
-            if (ReadWavFromFile(class_7[i%50], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
-                printf("Error reading wav file\n");
-                pmsis_exit(1);
-            }
-        }
-        else if (i < 70){
-            if (ReadWavFromFile(class_8[i%60], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
-                printf("Error reading wav file\n");
-                pmsis_exit(1);
-            }
-        }
-        else if (i < 80){
-            if (ReadWavFromFile(class_9[i%70], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
-                printf("Error reading wav file\n");
-                pmsis_exit(1);
-            }
-        } 
-        else if (i < 90){
-            if (ReadWavFromFile(class_10[i%80], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
-                printf("Error reading wav file\n");
-                pmsis_exit(1);
-            }
-        } 
-        else if (i < 100){
-            if (ReadWavFromFile(class_11[i%90], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
-                printf("Error reading wav file\n");
-                pmsis_exit(1);
-            }
-        }         
-
+    //     // TODO: Measure latency
+    //     // RAM write takes 701 us, RAM read takes 690
+    //     ram_write(L3_wavs + i*AUDIO_BUFFER_SIZE*sizeof(short), inWav, AUDIO_BUFFER_SIZE*sizeof(short));
         
+    //     // if (i%10 == 0){
+    //     //     printf(" %i/110 samples read in %i us\n", i, pi_time_get_us()-startwavreading);
+    //     // }
 
-        // for (int idx=0; idx<AUDIO_BUFFER_SIZE;idx++){
-        //     // wav_ptr[i*AUDIO_BUFFER_SIZE*sizeof(short)+idx] = inWav[idx];
-        //     ((short int *)L3_wavs)[i*AUDIO_BUFFER_SIZE+idx] = inWav[idx];
-        // }
+    //     pi_l2_free(inWav, AUDIO_BUFFER_SIZE*sizeof(short));
 
+    // }
 
-        // TODO: Measure latency
-        ram_write(L3_wavs + i*AUDIO_BUFFER_SIZE*sizeof(short), inWav, AUDIO_BUFFER_SIZE*sizeof(short));
-        // TODO: Measure latency
-        ram_read(outWav, L3_wavs + i*AUDIO_BUFFER_SIZE*sizeof(short), AUDIO_BUFFER_SIZE*sizeof(short));
+    // // printf("100/110 samples read in %i us\n", pi_time_get_us()-startwavreading);
 
 
-        printf("------------\n");
-        for (int k = 0; k < 5; k++){
-            printf("inWav[%i] = %i\n", k, inWav[k]);
-        }
-        // for (int k = 0; k < 5; k++){
-        //     printf("wav_ptr[%i] = %i\n", k, ((short int *)L3_wavs)[16000*i + k]);
-        // }
-        for (int k = 0; k < 5; k++){
-            printf("outWav[%i] = %i\n", k, outWav[k]);
-        }
+    // for (int i = 0; i < 10; i++) {
 
-        // wav_ptr += AUDIO_BUFFER_SIZE*sizeof(short);
+    //     inWav = NULL;
+    //     inWav    = (short int *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(short)); 
+    //     if (inWav == NULL){
+    //         printf("Failed allocating inWav.\n");
+    //         pmsis_exit(-1);
+    //     }
 
-        if (i%10 == 0){
-            printf(" %i/100 samples read in %i us\n", i, pi_time_get_us()-startwavreading);
-        }
+    //     header_struct header_info;
 
-        pi_l2_free(inWav, AUDIO_BUFFER_SIZE*sizeof(short));
-        pi_l2_free(outWav, AUDIO_BUFFER_SIZE*sizeof(short));
+    //     if (ReadWavFromFile(tinytestutter[i], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+    //         printf("Error reading wav file\n");
+    //         pmsis_exit(1);
+    //     }
 
-    }
+    //     ram_write(L3_wavs + (100+i)*AUDIO_BUFFER_SIZE*sizeof(short), inWav, AUDIO_BUFFER_SIZE*sizeof(short));
 
-    for (int i = 0; i < 10; i++) {
+    //     pi_l2_free(inWav, AUDIO_BUFFER_SIZE*sizeof(short));
+    // }
 
-        inWav = NULL;
-        inWav    = (short int *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(short)); 
-        if (inWav == NULL){
-            printf("Failed allocating inWav.\n");
-            pmsis_exit(-1);
-        }
 
-        header_struct header_info;
+    printf("WAV reading is complete\n");
 
-        if (ReadWavFromFile(tinytestutter[i], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
-            printf("Error reading wav file\n");
-            pmsis_exit(1);
-        }
-
-        // wav_ptr += AUDIO_BUFFER_SIZE*sizeof(short);
-
-        for (int idx=0; idx<AUDIO_BUFFER_SIZE;idx++){
-            // wav_ptr[i*AUDIO_BUFFER_SIZE*sizeof(short)+idx] = inWav[idx];
-            ((MFCC_IN_TYPE *)L3_wavs)[(100+i)*AUDIO_BUFFER_SIZE+idx] = inWav[idx];
-        }
-
-        pi_l2_free(inWav, AUDIO_BUFFER_SIZE*sizeof(short));
-    }
+    // printf("110/110 samples read in %i us\n", pi_time_get_us()-startwavreading);
 
 
     // /* Remove RAM memory */
@@ -1388,13 +1362,20 @@ int application(void){
 
     
 
+
     while (1){
 
         pi_gpio_pin_write(gpio_pin_measurement_id, 1);
 
+
+
+        
         if (appl_input == "0"){
 
             PRINTF ("----------------------------- Start acquisition ---------------------------\n");        
+
+            int threshold_counter = 0;
+
 
             MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(1 * AUDIO_BUFFER_SIZE * sizeof (MFCC_IN_TYPE));
 
@@ -1416,15 +1397,18 @@ int application(void){
                 lowerlim = sfu_out_buffer_cnt_curr * DOUBLE_BUFF_SIZE;
             }
 
+
+            // TODO: FIGURE OUT SCALING 2^32 or 2^31???
+
             int outidx = 0;
             for (int i = sfu_out_buffer_cnt_prev*DOUBLE_BUFF_SIZE; i < upperlim; i+=3){
                 // using MfccInSig_prev as buffer
-                MfccInSig_prev[outidx] = (MFCC_IN_TYPE) (((float)((int32_t *)BufferInList)[i]) / (float)(1<<31 - 1));
+                MfccInSig_prev[outidx] = (MFCC_IN_TYPE) (((float)((int32_t *)BufferInList)[i]) / (float)(1<<32 - 1));
                 outidx++;
             }
             for (int i = 0; i < lowerlim; i+=3){
                 // using MfccInSig_prev as buffer
-                MfccInSig_prev[outidx] = (MFCC_IN_TYPE) (((float)((int32_t *)BufferInList)[i]) / (float)(1<<31 - 1));
+                MfccInSig_prev[outidx] = (MFCC_IN_TYPE) (((float)((int32_t *)BufferInList)[i]) / (float)(1<<32 - 1));
                 outidx++;
             }
 
@@ -1446,8 +1430,36 @@ int application(void){
             sfu_out_buffer_cnt_prev = sfu_out_buffer_cnt_curr;
             
             MfccInSig_int16 = (int16_t *) pi_l2_malloc(sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+
+            float mean = 0;
             for(int i=0;i<AUDIO_BUFFER_SIZE;i++){
+
                 MfccInSig_int16[i] = (int16_t) (MfccInSig[i] * (1<<15));
+
+
+                mean = mean + MfccInSig_int16[i]; 
+
+                
+            }
+
+            mean = mean/AUDIO_BUFFER_SIZE;
+
+            // TODO: FIGURE OUT THRESHOLD
+            for(int i=0;i<AUDIO_BUFFER_SIZE;i++){
+                if(MfccInSig_int16[i] < mean - 500 || MfccInSig_int16[i] > mean + 500){
+                    threshold_counter++;
+                }
+            }
+
+            // printf ("threshold_counter is: %i\n", threshold_counter);
+            // TODO: FIGURE OUT NUMBER OF SAMPLES
+            if (threshold_counter < 250){
+                printf("silence\n");
+
+                pi_l2_free(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+                pi_l2_free(MfccInSig, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+
+                continue;
             }
 
         }
@@ -1623,6 +1635,11 @@ int application(void){
             dump_wav_close();
         #endif
 
+        // printf("Finished saving .wav\n");
+
+        // pmsis_exit(0);
+        // return;
+
         pi_l2_free(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
 
         
@@ -1672,16 +1689,23 @@ int application(void){
             }
 
             pi_gpio_pin_write(gpio_pin_measurement_id, 1);
+
+            int evaluationtime = pi_time_get_us();
             // evaluate before training
             evaluate_tinytest(0);
+            int endevaluationtime = pi_time_get_us();
+            printf("Evaluation time: %i\n", endevaluationtime - evaluationtime);
             pi_gpio_pin_write(gpio_pin_measurement_id, 0);
 
             printf("***************************** Finished pre-ODDA evaluation, now training... *****************************\n");
 
 
             pi_gpio_pin_write(gpio_pin_measurement_id, 1);
+            int traintime = pi_time_get_us();
             // train model with noisy data
             train_wavsrc();
+            int endtraintime = pi_time_get_us();
+            printf("Train time: %i\n", endtraintime - traintime);
             pi_gpio_pin_write(gpio_pin_measurement_id, 0);
 
             printf("***************************** Finished training, preparing post-ODDA evaluation *****************************\n ");
