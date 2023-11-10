@@ -1174,118 +1174,118 @@ int application(void){
 
     printf ("----------------------------- Read WAVs from filesystem ---------------------------\n");
 
-    // L3_wavs = ram_malloc(WAVRAM);
-    // printf("\nL3_wavs alloc initial\t@ %d:\t%s\n", (unsigned int)L3_wavs, L3_wavs?"Ok":"Failed");
+    L3_wavs = ram_malloc(WAVRAM);
+    printf("\nL3_wavs alloc initial\t@ %d:\t%s\n", (unsigned int)L3_wavs, L3_wavs?"Ok":"Failed");
 
 
-    // // int startwavreading = pi_time_get_us();
-    // for (int i = 0; i < 100; i++) {
+    // int startwavreading = pi_time_get_us();
+    for (int i = 0; i < 100; i++) {
 
-    //     header_struct header_info;
+        header_struct header_info;
 
-    //     inWav = NULL;
-    //     inWav    = (short int *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(short)); 
-    //     if (inWav == NULL){
-    //         printf("Failed allocating inWav.\n");
-    //         pmsis_exit(-1);
-    //     }
+        inWav = NULL;
+        inWav    = (short int *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(short)); 
+        if (inWav == NULL){
+            printf("Failed allocating inWav.\n");
+            pmsis_exit(-1);
+        }
 
-    //     if (i < 10){
-    //         if (ReadWavFromFile(class_2[i], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
-    //             printf("Error reading wav file\n");
-    //             pmsis_exit(1);
-    //         }
-    //     }
-    //     else if (i < 20){
-    //         if (ReadWavFromFile(class_3[i%10], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
-    //             printf("Error reading wav file\n");
-    //             pmsis_exit(1);
-    //         }
-    //     }
-    //     else if (i < 30){
-    //         if (ReadWavFromFile(class_4[i%20], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
-    //             printf("Error reading wav file\n");
-    //             pmsis_exit(1);
-    //         }
-    //     }
-    //     else if (i < 40){
-    //         if (ReadWavFromFile(class_5[i%30], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
-    //             printf("Error reading wav file\n");
-    //             pmsis_exit(1);
-    //         }
-    //     }
-    //     else if (i < 50){
-    //         if (ReadWavFromFile(class_6[i%40], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
-    //             printf("Error reading wav file\n");
-    //             pmsis_exit(1);
-    //         }
-    //     }
-    //     else if (i < 60){
-    //         if (ReadWavFromFile(class_7[i%50], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
-    //             printf("Error reading wav file\n");
-    //             pmsis_exit(1);
-    //         }
-    //     }
-    //     else if (i < 70){
-    //         if (ReadWavFromFile(class_8[i%60], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
-    //             printf("Error reading wav file\n");
-    //             pmsis_exit(1);
-    //         }
-    //     }
-    //     else if (i < 80){
-    //         if (ReadWavFromFile(class_9[i%70], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
-    //             printf("Error reading wav file\n");
-    //             pmsis_exit(1);
-    //         }
-    //     } 
-    //     else if (i < 90){
-    //         if (ReadWavFromFile(class_10[i%80], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
-    //             printf("Error reading wav file\n");
-    //             pmsis_exit(1);
-    //         }
-    //     } 
-    //     else if (i < 100){
-    //         if (ReadWavFromFile(class_11[i%90], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
-    //             printf("Error reading wav file\n");
-    //             pmsis_exit(1);
-    //         }
-    //     }         
+        if (i < 10){
+            if (ReadWavFromFile(class_2[i], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+                printf("Error reading wav file\n");
+                pmsis_exit(1);
+            }
+        }
+        else if (i < 20){
+            if (ReadWavFromFile(class_3[i%10], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+                printf("Error reading wav file\n");
+                pmsis_exit(1);
+            }
+        }
+        else if (i < 30){
+            if (ReadWavFromFile(class_4[i%20], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+                printf("Error reading wav file\n");
+                pmsis_exit(1);
+            }
+        }
+        else if (i < 40){
+            if (ReadWavFromFile(class_5[i%30], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+                printf("Error reading wav file\n");
+                pmsis_exit(1);
+            }
+        }
+        else if (i < 50){
+            if (ReadWavFromFile(class_6[i%40], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+                printf("Error reading wav file\n");
+                pmsis_exit(1);
+            }
+        }
+        else if (i < 60){
+            if (ReadWavFromFile(class_7[i%50], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+                printf("Error reading wav file\n");
+                pmsis_exit(1);
+            }
+        }
+        else if (i < 70){
+            if (ReadWavFromFile(class_8[i%60], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+                printf("Error reading wav file\n");
+                pmsis_exit(1);
+            }
+        }
+        else if (i < 80){
+            if (ReadWavFromFile(class_9[i%70], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+                printf("Error reading wav file\n");
+                pmsis_exit(1);
+            }
+        } 
+        else if (i < 90){
+            if (ReadWavFromFile(class_10[i%80], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+                printf("Error reading wav file\n");
+                pmsis_exit(1);
+            }
+        } 
+        else if (i < 100){
+            if (ReadWavFromFile(class_11[i%90], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+                printf("Error reading wav file\n");
+                pmsis_exit(1);
+            }
+        }         
 
-    //     // TODO: Measure latency
-    //     // RAM write takes 701 us, RAM read takes 690
-    //     ram_write(L3_wavs + i*AUDIO_BUFFER_SIZE*sizeof(short), inWav, AUDIO_BUFFER_SIZE*sizeof(short));
+        // TODO: Measure latency
+        // RAM write takes 701 us, RAM read takes 690
+        ram_write(L3_wavs + i*AUDIO_BUFFER_SIZE*sizeof(short), inWav, AUDIO_BUFFER_SIZE*sizeof(short));
         
-    //     // if (i%10 == 0){
-    //     //     printf(" %i/110 samples read in %i us\n", i, pi_time_get_us()-startwavreading);
-    //     // }
+        // if (i%10 == 0){
+        //     printf(" %i/110 samples read in %i us\n", i, pi_time_get_us()-startwavreading);
+        // }
 
-    //     pi_l2_free(inWav, AUDIO_BUFFER_SIZE*sizeof(short));
+        pi_l2_free(inWav, AUDIO_BUFFER_SIZE*sizeof(short));
 
-    // }
+    }
 
-    // // printf("100/110 samples read in %i us\n", pi_time_get_us()-startwavreading);
+    // printf("100/110 samples read in %i us\n", pi_time_get_us()-startwavreading);
 
 
-    // for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < 10; i++) {
 
-    //     inWav = NULL;
-    //     inWav    = (short int *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(short)); 
-    //     if (inWav == NULL){
-    //         printf("Failed allocating inWav.\n");
-    //         pmsis_exit(-1);
-    //     }
+        inWav = NULL;
+        inWav    = (short int *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(short)); 
+        if (inWav == NULL){
+            printf("Failed allocating inWav.\n");
+            pmsis_exit(-1);
+        }
 
-    //     header_struct header_info;
+        header_struct header_info;
 
-    //     if (ReadWavFromFile(tinytestutter[i], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
-    //         printf("Error reading wav file\n");
-    //         pmsis_exit(1);
-    //     }
+        if (ReadWavFromFile(tinytestutter[i], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+            printf("Error reading wav file\n");
+            pmsis_exit(1);
+        }
 
-    //     ram_write(L3_wavs + (100+i)*AUDIO_BUFFER_SIZE*sizeof(short), inWav, AUDIO_BUFFER_SIZE*sizeof(short));
+        ram_write(L3_wavs + (100+i)*AUDIO_BUFFER_SIZE*sizeof(short), inWav, AUDIO_BUFFER_SIZE*sizeof(short));
 
-    //     pi_l2_free(inWav, AUDIO_BUFFER_SIZE*sizeof(short));
-    // }
+        pi_l2_free(inWav, AUDIO_BUFFER_SIZE*sizeof(short));
+    }
 
 
     printf("WAV reading is complete\n");
