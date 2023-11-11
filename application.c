@@ -186,6 +186,10 @@ static MFCC_IN_TYPE *MfccInSig_buff[tinytestsize];
 
 static void *L3_wavs = NULL;
 
+static float ce_loss;
+static float ce_loss_pre;
+static float ce_loss_post;
+
 
 char yes[490];
 char no[490]; 
@@ -618,17 +622,48 @@ void evaluate_tinytest(int pre){
 
     for (int tinytestidx = 0; tinytestidx < tinytestsize; tinytestidx++){ // only non-unknown
 
-        printf ("-----------------------------Loop evaluation (itteration %i)-------------------------\n", tinytestidx);
+        // printf ("-----------------------------Loop evaluation (itteration %i)-------------------------\n", tinytestidx);
 
         int addnoise;
-        int save; 
+        int save = 0; 
 
         if (uttr_eval_input == "1") {
-            // Read from WAV
-            printf("Tested input: %s\n", tinytestutter[tinytestidx]);
 
-            // input_wav(0, 1, tinytestutter[tinytestidx], 0); // save, free, noise
-            addnoise = 0;
+            // Read from WAV
+            // printf("Tested input: %s\n", tinytestutter[tinytestidx]);
+
+            switch(tinytestidx){
+                case 0:
+                    printf("Ground truth: yes\n");
+                    break;
+                case 1:
+                    printf("Ground truth: no\n");
+                    break;
+                case 2:
+                    printf("Ground truth: up\n");
+                    break;
+                case 3:
+                    printf("Ground truth: down\n");
+                    break;
+                case 4:
+                    printf("Ground truth: left\n");
+                    break;
+                case 5:
+                    printf("Ground truth: right\n");
+                    break;
+                case 6:
+                    printf("Ground truth: on\n");
+                    break;    
+                case 7:
+                    printf("Ground truth: off\n");
+                    break;    
+                case 8:
+                    printf("Ground truth: stop\n");
+                    break;    
+                case 9:
+                    printf("Ground truth: go\n");
+                    break;                                                                                                                                                            
+            }
 
             short int *prepWav = NULL;
             prepWav = (short int *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(short));
@@ -655,6 +690,8 @@ void evaluate_tinytest(int pre){
 
             pi_l2_free(prepWav, AUDIO_BUFFER_SIZE * sizeof(short int));
 
+            addnoise = 1;
+
 
         }
         else if (uttr_eval_input == "0") {
@@ -671,6 +708,39 @@ void evaluate_tinytest(int pre){
               
 
             if (pre == 0) {
+
+                switch(tinytestidx){
+                case 0:
+                    printf("---------------- Pronounce yes --------------\n");
+                    break;
+                case 1:
+                    printf("---------------- Pronounce no --------------\n");
+                    break;
+                case 2:
+                    printf("---------------- Pronounce up --------------\n");
+                    break;
+                case 3:
+                    printf("---------------- Pronounce down --------------\n");
+                    break;
+                case 4:
+                    printf("---------------- Pronounce left --------------\n");
+                    break;
+                case 5:
+                    printf("---------------- Pronounce right --------------\n");
+                    break;
+                case 6:
+                    printf("---------------- Pronounce on --------------\n");
+                    break;    
+                case 7:
+                    printf("---------------- Pronounce off --------------\n");
+                    break;    
+                case 8:
+                    printf("---------------- Pronounce stop --------------\n");
+                    break;    
+                case 9:
+                    printf("---------------- Pronounce go --------------\n");
+                    break;                                                                                                                                                            
+            }
 
                 // clean up buffer
                 pi_time_wait_us(1000000);
@@ -691,7 +761,13 @@ void evaluate_tinytest(int pre){
                 }
             }
 
-            addnoise = 0;
+            if (noise_eval_input == "0"){
+                addnoise = 0; // TODO: Should be 0 if we record more seconds and randomly select from them
+                // addnoise = 1;
+            }
+            else{
+                addnoise = 1;
+            }
 
 // #ifdef AUDIO_EVK
 //             pi_gpio_pin_write(gpio_pin_o, 1);
@@ -706,8 +782,6 @@ void evaluate_tinytest(int pre){
                 MfccInSig[samplepos] = MfccInSig[samplepos] + 1*RecordedNoise[noisesamplestart+samplepos];
             }
         }
-
-        save = 0;
 
         if (save){
             MfccInSig_int16 = (int16_t *) pi_l2_malloc (sizeof(int16_t) * AUDIO_BUFFER_SIZE);
@@ -868,16 +942,26 @@ void evaluate_tinytest(int pre){
           return -1;
         }
 
-        unsigned int args_inference_classifier[5];
+        unsigned int args_inference_classifier[6];
         args_inference_classifier[0] = (unsigned int) l2_buffer;
         args_inference_classifier[1] = (unsigned int) dump;
         args_inference_classifier[2] = (unsigned int) L2_FC_weights_float;
         args_inference_classifier[3] = (unsigned int) 2; // inference=0/update=1/evaluate=2
         args_inference_classifier[4] = (unsigned int) 0; // init = 1
         args_inference_classifier[5] = (unsigned int) tinytestidx + 2; // tinytest already ordered
+        args_inference_classifier[6] = (float *) &ce_loss;
 
         pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, args_inference_classifier));
         pi_cluster_close(&cluster_dev);
+
+        printf("CE loss: %f\n", ce_loss);
+
+        if (pre == 0){
+            ce_loss_pre += ce_loss;
+        }
+        else{
+            ce_loss_post += ce_loss;
+        }
 
         
     // #ifdef  AUDIO_EVK
@@ -885,6 +969,9 @@ void evaluate_tinytest(int pre){
     //     pi_gpio_pin_write(gpio_pin_o, 0);
     // #endif
     }
+
+
+    
 
     if (pre == 1){
         for (int tinytestidx = 0; tinytestidx < tinytestsize; tinytestidx++){
@@ -986,6 +1073,7 @@ void train_wavsrc(){
         // Reading wav for training takes: 2312 us
 
         int localaddnoise = 1;
+
         if (localaddnoise){
             samplestart = 0; // TODO: random sample between (0, len(wav)-16000)
             for (int samplepos = 0; samplepos < AUDIO_BUFFER_SIZE; samplepos++){
@@ -1038,7 +1126,7 @@ void train_wavsrc(){
           return -1;
         }
 
-        unsigned int args_train_classifier[5];
+        unsigned int args_train_classifier[6];
         args_train_classifier[0] = (unsigned int) l2_buffer;
         args_train_classifier[1] = (unsigned int) L2_FC_weights_int8;
         args_train_classifier[2] = (unsigned int) L2_FC_weights_float;
@@ -1049,8 +1137,10 @@ void train_wavsrc(){
             args_train_classifier[4] = (unsigned int) 0; // init = 0   
         
         args_train_classifier[5] = (unsigned int) classidx;
+        args_train_classifier[6] = (float*) &ce_loss;
 
         pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, args_train_classifier));
+
         PRINTF ("Finished task...\n");
 
         pi_cluster_close(&cluster_dev);
@@ -1258,12 +1348,15 @@ int application(void){
         // if (i%10 == 0){
         //     printf(" %i/110 samples read in %i us\n", i, pi_time_get_us()-startwavreading);
         // }
+        if (i%10 == 0){
+            printf(" %i/110 samples read.\n", i);
+        }
 
         pi_l2_free(inWav, AUDIO_BUFFER_SIZE*sizeof(short));
 
     }
 
-    // printf("100/110 samples read in %i us\n", pi_time_get_us()-startwavreading);
+    printf("100/110 samples read.\n");
 
 
     for (int i = 0; i < 10; i++) {
@@ -1287,10 +1380,7 @@ int application(void){
         pi_l2_free(inWav, AUDIO_BUFFER_SIZE*sizeof(short));
     }
 
-
-    printf("WAV reading is complete\n");
-
-    // printf("110/110 samples read in %i us\n", pi_time_get_us()-startwavreading);
+    printf("110/110 samples read, WAV reading is complete.\n");;
 
 
     // /* Remove RAM memory */
@@ -1324,18 +1414,18 @@ int application(void){
         printf("failed to allocate memory for L2_FC_weights_float\n");
     }
 
-    unsigned int args_init_classifier[5];
+    unsigned int args_init_classifier[6];
     args_init_classifier[0] = (unsigned int) l2_buffer;
     args_init_classifier[1] = (unsigned int) L2_FC_weights_int8; // Weights buffer
     args_init_classifier[2] = (unsigned int) L2_FC_weights_float;
     args_init_classifier[3] = (unsigned int) 0; // update = 0
     args_init_classifier[4] = (unsigned int) 1; // init = 0
     args_init_classifier[5] = (unsigned int) 100; // dummy class
+    args_init_classifier[6] = (float*) &ce_loss;
 
     pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, args_init_classifier));
 
     pi_cluster_close(&cluster_dev);
-
 
     BufferInList = (void*) pi_l2_malloc(BUFF_SIZE);
     if (BufferInList == NULL) return -1;
@@ -1366,8 +1456,6 @@ int application(void){
     while (1){
 
         pi_gpio_pin_write(gpio_pin_measurement_id, 1);
-
-
 
         
         if (appl_input == "0"){
@@ -1459,7 +1547,8 @@ int application(void){
                 pi_l2_free(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
                 pi_l2_free(MfccInSig, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
 
-                continue;
+                // continue;
+                goto checkbutton;
             }
 
         }
@@ -1609,13 +1698,14 @@ int application(void){
         }
 
 
-        unsigned int args_inference_classifier[5];
+        unsigned int args_inference_classifier[6];
         args_inference_classifier[0] = (unsigned int) l2_buffer;
         args_inference_classifier[1] = (unsigned int) dump;
         args_inference_classifier[2] = (unsigned int) L2_FC_weights_float;
         args_inference_classifier[3] = (unsigned int) 0; // update = 1
         args_inference_classifier[4] = (unsigned int) 0; // init = 1
         args_inference_classifier[5] = (unsigned int) 0; // tinytest already ordered
+        args_inference_classifier[6] = (float *) &ce_loss;
 
         pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, args_inference_classifier));
         pi_cluster_close(&cluster_dev);
@@ -1648,6 +1738,7 @@ int application(void){
         //     pi_gpio_pin_write(gpio_pin_o, 0);
         // #endif
 
+        checkbutton:
         button_was_pressed = 0;
         button_was_pressed = read_button();
         // button_was_pressed = 1; // measurement
@@ -1656,42 +1747,43 @@ int application(void){
 
             printf ("----------------------------- Button pressed, recording noise ---------------------------\n");
 
-            // Add noise
-            int addnoise = 1;
+            if (noise_eval_input == "0"){
+                
+                // wait 1s (for the previous non-noise content to be cleaned)
+                pi_time_wait_us (1000000);
 
-            if (addnoise){
-
-                if (noise_eval_input == "0"){
-                    
-                    // wait 1s (for the previous non-noise content to be cleaned)
-                    pi_time_wait_us (1000000);
-
-                    RecordedNoise = NULL;
-                    RecordedNoise = (MFCC_IN_TYPE *) pi_l2_malloc(noise_seconds*AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
-                    if (RecordedNoise == NULL){
-                        printf("Failed allocating RecordedNoise.\n");
-                        pmsis_exit(-1);
-                    }
-
-                    // copy content from BufferInList
-                    int noiseidx = 0;
-                    pi_evt_wait(&inference_task);
-                    for (int i = 0; i < BUFF_SIZE; i+=3){
-                        RecordedNoise[noiseidx] = (MFCC_IN_TYPE) (((float)((int32_t *)BufferInList)[i]) / (float)(1<<31 - 1));
-                        noiseidx++;
-                    }
+                RecordedNoise = NULL;
+                RecordedNoise = (MFCC_IN_TYPE *) pi_l2_malloc(noise_seconds*AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
+                if (RecordedNoise == NULL){
+                    printf("Failed allocating RecordedNoise.\n");
+                    pmsis_exit(-1);
                 }
-                else if (noise_eval_input == "1"){
-                    char noiseName[130] = "/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/meeting_ch01_mancrop1.wav";
-                    // input_mic(1, 1, 1); // save, free, noise // Forcefully recording noise from recording
-                    input_wav(1, 1, noiseName, 1); // save, free, NoiseName, noise
+
+                // copy content from BufferInList
+                int noiseidx = 0;
+                pi_evt_wait(&inference_task);
+                for (int i = 0; i < BUFF_SIZE; i+=3){
+                    RecordedNoise[noiseidx] = (MFCC_IN_TYPE) (((float)((int32_t *)BufferInList)[i]) / (float)(1<<31 - 1));
+                    noiseidx++;
                 }
+            }
+            else if (noise_eval_input == "1"){
+                char noiseName[130] = "/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/meeting_ch01_mancrop1.wav";
+                // input_mic(1, 1, 1); // save, free, noise // Forcefully recording noise from recording
+                input_wav(0, 1, noiseName, 1); // save, free, NoiseName, noise
             }
 
             pi_gpio_pin_write(gpio_pin_measurement_id, 1);
 
             int evaluationtime = pi_time_get_us();
             // evaluate before training
+
+
+            ce_loss_pre = 0;
+            ce_loss_post = 0;
+
+
+            printf ("----------------------------- Pre-ODDA evaluation -----------------------------\n");
             evaluate_tinytest(0);
             int endevaluationtime = pi_time_get_us();
             printf("Evaluation time: %i\n", endevaluationtime - evaluationtime);
@@ -1708,7 +1800,7 @@ int application(void){
             printf("Train time: %i\n", endtraintime - traintime);
             pi_gpio_pin_write(gpio_pin_measurement_id, 0);
 
-            printf("***************************** Finished training, preparing post-ODDA evaluation *****************************\n ");
+            printf ("----------------------------- Post-ODDA evaluation -----------------------------\n");
 
 
             pi_gpio_pin_write(gpio_pin_measurement_id, 1);
@@ -1716,8 +1808,16 @@ int application(void){
             evaluate_tinytest(1);
             pi_gpio_pin_write(gpio_pin_measurement_id, 0);
 
-            if (addnoise == 1 && noise_eval_input == "0"){
+            if (noise_eval_input == "0"){
                pi_l2_free(RecordedNoise, noise_seconds*AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
+            }
+
+
+            if (ce_loss_pre > ce_loss_post){
+                printf("\x1B[32m *** Successfully reduced loss by %f from %f to %f *** \x1B[0m\n", ce_loss_pre-ce_loss_post, ce_loss_pre, ce_loss_post);
+            }
+            else{
+                printf ("\x1B[31m *** Unsuccessful adaptation, try again. Loss increased from %f to %f *** \x1B[0m\n", ce_loss_pre, ce_loss_post);
             }
 
             // printf ("***************************** ODDA complete *****************************\n");

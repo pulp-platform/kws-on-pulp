@@ -104,7 +104,7 @@ void pulp_CrossEntropyLoss ( void * loss_args )
   int size = args->output->dim;
   int mode = args->mode;
 
-  float loss = 0.0;
+  float loss = 0.0f;
 
   localsoftmax(outData, 12);
 
@@ -124,12 +124,6 @@ void pulp_CrossEntropyLoss ( void * loss_args )
       printf("target: %f, out_diff: %f, out_data:%f\n", target[i], outDiff[i], outData[i]);
       printf("loss:%f \n",loss);
     #endif
-
-  // Measurement
-  // if (mode == 1 || mode == 2) { // update/evaluate
-  if (mode == 2) { // evaluate    
-    printf("Loss is %f\n", loss);
-  }
 
   // Skip printf profiling in debug mode
   #ifdef DEBUG

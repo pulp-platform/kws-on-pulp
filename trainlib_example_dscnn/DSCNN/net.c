@@ -338,6 +338,7 @@ void net_step(void *args) {
     int update = (int) real_args[3]; // 0-inference/1-update/2-evaluate
     int init = (int) real_args[4]; // 1 - initialize
     int classidx = (int) real_args[5];
+    float *application_loss = (float*) real_args[6];
 
     // TODO: Discuss sample management per epoch
     
@@ -576,6 +577,8 @@ void net_step(void *args) {
         //     print_output();
         // #endif
     }
+
+    *application_loss = loss;
 
     if (init == 1) {
         for (int i = 0; i < WGT_SIZE_L0; i++){
