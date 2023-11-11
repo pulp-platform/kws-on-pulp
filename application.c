@@ -1403,12 +1403,12 @@ int application(void){
             int outidx = 0;
             for (int i = sfu_out_buffer_cnt_prev*DOUBLE_BUFF_SIZE; i < upperlim; i+=3){
                 // using MfccInSig_prev as buffer
-                MfccInSig_prev[outidx] = (MFCC_IN_TYPE) (((float)((int32_t *)BufferInList)[i]) / (float)(1<<32 - 1));
+                MfccInSig_prev[outidx] = (MFCC_IN_TYPE) (((float)((int32_t *)BufferInList)[i]) / (float)(1<<31 - 1));
                 outidx++;
             }
             for (int i = 0; i < lowerlim; i+=3){
                 // using MfccInSig_prev as buffer
-                MfccInSig_prev[outidx] = (MFCC_IN_TYPE) (((float)((int32_t *)BufferInList)[i]) / (float)(1<<32 - 1));
+                MfccInSig_prev[outidx] = (MFCC_IN_TYPE) (((float)((int32_t *)BufferInList)[i]) / (float)(1<<31 - 1));
                 outidx++;
             }
 
@@ -1446,14 +1446,14 @@ int application(void){
 
             // TODO: FIGURE OUT THRESHOLD
             for(int i=0;i<AUDIO_BUFFER_SIZE;i++){
-                if(MfccInSig_int16[i] < mean - 500 || MfccInSig_int16[i] > mean + 500){
+                if(MfccInSig_int16[i] < mean - 1000 || MfccInSig_int16[i] > mean + 1000){
                     threshold_counter++;
                 }
             }
 
             // printf ("threshold_counter is: %i\n", threshold_counter);
             // TODO: FIGURE OUT NUMBER OF SAMPLES
-            if (threshold_counter < 250){
+            if (threshold_counter < 200){
                 printf("silence\n");
 
                 pi_l2_free(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
