@@ -1262,7 +1262,8 @@ int application(void){
     pi_cluster_close(&cluster_dev);
 
 
-    printf ("----------------------------- Read WAVs from filesystem ---------------------------\n");
+    // removed for measurements
+    // printf ("----------------------------- Read WAVs from filesystem ---------------------------\n");
 
     L3_wavs = ram_malloc(WAVRAM);
     printf("\nL3_wavs alloc initial\t@ %d:\t%s\n", (unsigned int)L3_wavs, L3_wavs?"Ok":"Failed");
@@ -1341,13 +1342,10 @@ int application(void){
             }
         }         
 
-        // TODO: Measure latency
         // RAM write takes 701 us, RAM read takes 690
         ram_write(L3_wavs + i*AUDIO_BUFFER_SIZE*sizeof(short), inWav, AUDIO_BUFFER_SIZE*sizeof(short));
         
-        // if (i%10 == 0){
-        //     printf(" %i/110 samples read in %i us\n", i, pi_time_get_us()-startwavreading);
-        // }
+        // remove for measurements
         if (i%10 == 0){
             printf(" %i/110 samples read.\n", i);
         }
@@ -1356,6 +1354,7 @@ int application(void){
 
     }
 
+    // remove for measurements
     printf("100/110 samples read.\n");
 
 
@@ -1380,6 +1379,7 @@ int application(void){
         pi_l2_free(inWav, AUDIO_BUFFER_SIZE*sizeof(short));
     }
 
+    // remove for measurements
     printf("110/110 samples read, WAV reading is complete.\n");;
 
 
@@ -1451,8 +1451,6 @@ int application(void){
     int lowerlim = 0;
 
     
-
-
     while (1){
 
         pi_gpio_pin_write(gpio_pin_measurement_id, 1);
@@ -1521,13 +1519,8 @@ int application(void){
 
             float mean = 0;
             for(int i=0;i<AUDIO_BUFFER_SIZE;i++){
-
                 MfccInSig_int16[i] = (int16_t) (MfccInSig[i] * (1<<15));
-
-
                 mean = mean + MfccInSig_int16[i]; 
-
-                
             }
 
             mean = mean/AUDIO_BUFFER_SIZE;
@@ -1557,9 +1550,40 @@ int application(void){
             char utterName[130] = "/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/meeting_ch01_mancrop1.wav";
             
             int start_readwav = pi_time_get_us();
-            input_wav(0, 1, utterName, 0); // save, free, utterName, noise
+            
+
+            // Classic .wav reading
+            // input_wav(0, 1, utterName, 0); // save, free, utterName, noise
+
+
+            short int *prepWav = NULL;
+            prepWav = (short int *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(short));
+
+            // Read the 0th .wav saved in RAM
+            ram_read(prepWav, L3_wavs + (0)*AUDIO_BUFFER_SIZE*sizeof(short), AUDIO_BUFFER_SIZE*sizeof(short));
+
+            MfccInSig = NULL;
+            MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
+            if (MfccInSig == NULL){
+                printf("Failed allocating MfccInSig.\n");
+                pmsis_exit(-1);
+            }
+        
+            #if (DATA_TYPE==2) || (DATA_TYPE==3)
+                for (int i=0; i<AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
+                    MfccInSig[i] = (MFCC_IN_TYPE) prepWav[i] / (1<<15);
+                }
+            #else
+                for (int i=0; i<AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
+                    MfccInSig[i]] = (MFCC_IN_TYPE) gap_fcip(((int) prepWav[i]), 15);
+                }
+            #endif
+
+            pi_l2_free(prepWav, AUDIO_BUFFER_SIZE * sizeof(short int));
+
+
             int end_readwav = pi_time_get_us();
-            printf("Time spent reading wav: %i\n", end_readwav - start_readwav);
+            // printf("Time spent reading wav: %i\n", end_readwav - start_readwav);
         }
 
         pi_gpio_pin_write(gpio_pin_measurement_id, 0);
@@ -1675,7 +1699,6 @@ int application(void){
         }
         PRINTF("\n");
 
-        
 
         #ifdef PERF
         gap_fc_starttimer();
