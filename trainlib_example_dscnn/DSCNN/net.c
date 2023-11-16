@@ -176,7 +176,7 @@ int predict_float_local (void * array, int n_classes){
                         printf ("Undefined class!\n");
         }
 
-        printf("%s\n", prediction);
+        // printf("%s\n", prediction);
 
         return idx;
 }
@@ -551,12 +551,13 @@ void net_step(void *args) {
 
         // TODO: enable only in eval mode
         compute_loss(update); // 7559922 cycles on CLUSTER
+        backward();
+        update_weights();
 
 #ifdef PERF            
         elapsed = gap_cl_readhwtimer() - start;
         printf("compute loss: %d\n", elapsed);
 #endif
-
 
 
 #ifdef PERF

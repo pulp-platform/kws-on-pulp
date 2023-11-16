@@ -697,7 +697,6 @@ void evaluate_tinytest(int pre){
         else if (uttr_eval_input == "0") {
 
             // Read from MIC
-            printf("Preparing reading!\n");
             MfccInSig = NULL;
             MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
 
@@ -748,7 +747,9 @@ void evaluate_tinytest(int pre){
                 // read recording
                 int mfccidx = 0;
                 pi_evt_wait(&inference_task);
+
                 printf("Filling input buffer...\n");  
+                
                 for (int i = 0; i < BUFF_SIZE; i+=3){
                     MfccInSig[mfccidx] = (MFCC_IN_TYPE) (((float)((int32_t *)BufferInList)[i]) / (float)(1<<31 - 1));
                     MfccInSig_buff[tinytestidx][mfccidx] = MfccInSig[mfccidx];
@@ -1268,7 +1269,7 @@ int application(void){
     L3_wavs = ram_malloc(WAVRAM);
     printf("\nL3_wavs alloc initial\t@ %d:\t%s\n", (unsigned int)L3_wavs, L3_wavs?"Ok":"Failed");
 
-
+    /*
     // int startwavreading = pi_time_get_us();
     for (int i = 0; i < 100; i++) {
 
@@ -1381,6 +1382,7 @@ int application(void){
 
     // remove for measurements
     printf("110/110 samples read, WAV reading is complete.\n");;
+    */
 
 
     // /* Remove RAM memory */
@@ -1452,6 +1454,11 @@ int application(void){
 
     
     while (1){
+    
+        printf("Begin while loop\n");
+        printf("Begin while loop\n");
+        printf("Begin while loop\n");
+        printf("Begin while loop\n");
 
         pi_gpio_pin_write(gpio_pin_measurement_id, 1);
 
@@ -1586,7 +1593,7 @@ int application(void){
             // printf("Time spent reading wav: %i\n", end_readwav - start_readwav);
         }
 
-        pi_gpio_pin_write(gpio_pin_measurement_id, 0);
+        // pi_gpio_pin_write(gpio_pin_measurement_id, 0);
 
         #ifdef PERF
         gap_fc_starttimer();
@@ -1595,9 +1602,14 @@ int application(void){
         #endif
 
         // printf("***************************** Computing MFCC **************************\n");
+        // printf("***************************** Computing MFCC **************************\n");
+        // printf("***************************** Computing MFCC **************************\n");
+        // printf("***************************** Computing MFCC **************************\n");
+        // printf("***************************** Computing MFCC **************************\n");
 
 
-        pi_gpio_pin_write(gpio_pin_measurement_id, 1);
+
+        // pi_gpio_pin_write(gpio_pin_measurement_id, 1);
 
         compute_mfcc();
 
@@ -1670,7 +1682,7 @@ int application(void){
         printf("Convert mfcc: %d cycles\n", elapsed_timer_3);
         #endif
 
-        pi_gpio_pin_write(gpio_pin_measurement_id, 0);
+        // pi_gpio_pin_write(gpio_pin_measurement_id, 0);
 
         // Extract backbone features
         void *dump; // dump to copy FC weights, won't be used; TODO: Parametrize DORY
@@ -1683,11 +1695,14 @@ int application(void){
         #endif
 
         // printf("***************************** Backbone inference **************************\n");
+        // printf("***************************** Backbone inference **************************\n");
+        // printf("***************************** Backbone inference **************************\n");
+        // printf("***************************** Backbone inference **************************\n");
 
 
-        pi_gpio_pin_write(gpio_pin_measurement_id, 1);
+        // pi_gpio_pin_write(gpio_pin_measurement_id, 1);
         network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &dump, 0); // L2_input_h extra-arg for L2-only
-        pi_gpio_pin_write(gpio_pin_measurement_id, 0);
+        // pi_gpio_pin_write(gpio_pin_measurement_id, 0);
 
         #ifdef PERF
         int elapsed_timer_4 = gap_fc_readhwtimer() - start_timer_4;
@@ -1706,11 +1721,12 @@ int application(void){
         int start_timer_5 = gap_fc_readhwtimer();    
         #endif    
 
+        // printf("***************************** Classsifier inference **************************\n");
+        // printf("***************************** Classsifier inference **************************\n");
+        // printf("***************************** Classsifier inference **************************\n");
+        // printf("***************************** Classsifier inference **************************\n");
 
-        // printf("***************************** Classifier inference **************************\n");
-
-
-        pi_gpio_pin_write(gpio_pin_measurement_id, 1);
+        // pi_gpio_pin_write(gpio_pin_measurement_id, 1);
 
 
         pi_cluster_conf_init(&cl_conf);
@@ -1735,7 +1751,6 @@ int application(void){
 
         pi_gpio_pin_write(gpio_pin_measurement_id, 0);
 
-        // printf("***************************** Process complete **************************\n");
 
         #ifdef PERF
         int elapsed_timer_5 = gap_fc_readhwtimer() - start_timer_5;
@@ -1750,10 +1765,18 @@ int application(void){
 
         // printf("Finished saving .wav\n");
 
-        // pmsis_exit(0);
-        // return;
 
         pi_l2_free(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+        
+        
+        
+        // printf("Application complete\n");
+        // printf("Application complete\n");
+        // printf("Application complete\n");
+        // printf("Application complete\n");
+        
+        pmsis_exit(0);
+        return;
 
         
         // #ifdef  AUDIO_EVK
