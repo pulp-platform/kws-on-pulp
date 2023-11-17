@@ -1269,8 +1269,8 @@ int application(void){
     L3_wavs = ram_malloc(WAVRAM);
     printf("\nL3_wavs alloc initial\t@ %d:\t%s\n", (unsigned int)L3_wavs, L3_wavs?"Ok":"Failed");
 
-    /*
-    // int startwavreading = pi_time_get_us();
+
+    int startwavreading = pi_time_get_us();
     for (int i = 0; i < 100; i++) {
 
         header_struct header_info;
@@ -1348,7 +1348,7 @@ int application(void){
         
         // remove for measurements
         if (i%10 == 0){
-            printf(" %i/110 samples read.\n", i);
+            printf(" %i/110 samples read in %i us.\n", i,  pi_time_get_us()-startwavreading);
         }
 
         pi_l2_free(inWav, AUDIO_BUFFER_SIZE*sizeof(short));
@@ -1382,7 +1382,7 @@ int application(void){
 
     // remove for measurements
     printf("110/110 samples read, WAV reading is complete.\n");;
-    */
+    
 
 
     // /* Remove RAM memory */
@@ -1437,8 +1437,6 @@ int application(void){
     int button_was_pressed = 0;
 
 
-    printf ("----------------------------- Starting application ---------------------------\n");
-
     pi_evt_sig_init(&inference_task);
 
     input_mic_buffer(1, 1, 0);
@@ -1452,14 +1450,11 @@ int application(void){
     int upperlim = 0;
     int lowerlim = 0;
 
+    printf ("----------------------------- Starting application ---------------------------\n");
+
     
     while (1){
     
-        printf("Begin while loop\n");
-        printf("Begin while loop\n");
-        printf("Begin while loop\n");
-        printf("Begin while loop\n");
-
         pi_gpio_pin_write(gpio_pin_measurement_id, 1);
 
         
@@ -1554,7 +1549,7 @@ int application(void){
         }
         else if (appl_input == "1"){
             // printf ("Reading wav...\n");
-            char utterName[130] = "/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/meeting_ch01_mancrop1.wav";
+            char utterName[130] = "meeting_ch01_mancrop1.wav";
             
             int start_readwav = pi_time_get_us();
             
@@ -1601,12 +1596,7 @@ int application(void){
         int start_timer_2 = gap_fc_readhwtimer();
         #endif
 
-        // printf("***************************** Computing MFCC **************************\n");
-        // printf("***************************** Computing MFCC **************************\n");
-        // printf("***************************** Computing MFCC **************************\n");
-        // printf("***************************** Computing MFCC **************************\n");
-        // printf("***************************** Computing MFCC **************************\n");
-
+        PRINTF("***************************** Computing MFCC **************************\n");
 
 
         // pi_gpio_pin_write(gpio_pin_measurement_id, 1);
@@ -1694,12 +1684,8 @@ int application(void){
         int start_timer_4 = gap_fc_readhwtimer();        
         #endif
 
-        // printf("***************************** Backbone inference **************************\n");
-        // printf("***************************** Backbone inference **************************\n");
-        // printf("***************************** Backbone inference **************************\n");
-        // printf("***************************** Backbone inference **************************\n");
-
-
+        PRINTF("***************************** Backbone inference **************************\n");
+        
         // pi_gpio_pin_write(gpio_pin_measurement_id, 1);
         network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &dump, 0); // L2_input_h extra-arg for L2-only
         // pi_gpio_pin_write(gpio_pin_measurement_id, 0);
@@ -1721,10 +1707,7 @@ int application(void){
         int start_timer_5 = gap_fc_readhwtimer();    
         #endif    
 
-        // printf("***************************** Classsifier inference **************************\n");
-        // printf("***************************** Classsifier inference **************************\n");
-        // printf("***************************** Classsifier inference **************************\n");
-        // printf("***************************** Classsifier inference **************************\n");
+        PRINTF("***************************** Classsifier inference **************************\n");
 
         // pi_gpio_pin_write(gpio_pin_measurement_id, 1);
 
@@ -1770,13 +1753,7 @@ int application(void){
         
         
         
-        // printf("Application complete\n");
-        // printf("Application complete\n");
-        // printf("Application complete\n");
-        // printf("Application complete\n");
-        
-        pmsis_exit(0);
-        return;
+        PRINTF("***************************** Application complete *****************************\n");
 
         
         // #ifdef  AUDIO_EVK
@@ -1791,9 +1768,11 @@ int application(void){
 
         if (button_was_pressed){
 
-            printf ("----------------------------- Button pressed, recording noise ---------------------------\n");
+            
 
             if (noise_eval_input == "0"){
+
+                printf ("----------------------------- Button pressed, recording noise ---------------------------\n");
                 
                 // wait 1s (for the previous non-noise content to be cleaned)
                 pi_time_wait_us (1000000);
@@ -1814,7 +1793,10 @@ int application(void){
                 }
             }
             else if (noise_eval_input == "1"){
-                char noiseName[130] = "/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/meeting_ch01_mancrop1.wav";
+
+                printf ("----------------------------- Button pressed, loading noise ---------------------------\n");
+                
+                char noiseName[130] = "meeting_ch01_mancrop1.wav";
                 // input_mic(1, 1, 1); // save, free, noise // Forcefully recording noise from recording
                 input_wav(0, 1, noiseName, 1); // save, free, NoiseName, noise
             }
@@ -1873,11 +1855,6 @@ int application(void){
 
         }
 
-        // printf ("----------------------------- Finished measurement ---------------------------\n");
-
-        // pmsis_exit(0);
-        // return;
-
 
         PRINTF ("----------------------------- Round completed ---------------------------\n");
 
@@ -1889,9 +1866,6 @@ int application(void){
 
         // TODO: Trigger inference every 250 ms
         // pi_time_wait_us(250); // microseconds
-
-
-
 
 
     }
