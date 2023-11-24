@@ -620,48 +620,57 @@ void evaluate_tinytest(int pre){
     }
 
 
+    
+
     for (int tinytestidx = 0; tinytestidx < tinytestsize; tinytestidx++){ // only non-unknown
 
         // printf ("-----------------------------Loop evaluation (itteration %i)-------------------------\n", tinytestidx);
 
+
+        int start_readeval = pi_time_get_us();
+
         int addnoise;
         int save = 0; 
+
+       
 
         if (uttr_eval_input == "1") {
 
             // Read from WAV
             // printf("Tested input: %s\n", tinytestutter[tinytestidx]);
 
+            
+
             switch(tinytestidx){
                 case 0:
-                    printf("Ground truth: yes\n");
+                    // printf("Ground truth: yes\n");
                     break;
                 case 1:
-                    printf("Ground truth: no\n");
+                    // printf("Ground truth: no\n");
                     break;
                 case 2:
-                    printf("Ground truth: up\n");
+                    // printf("Ground truth: up\n");
                     break;
                 case 3:
-                    printf("Ground truth: down\n");
+                    // printf("Ground truth: down\n");
                     break;
                 case 4:
-                    printf("Ground truth: left\n");
+                    // printf("Ground truth: left\n");
                     break;
                 case 5:
-                    printf("Ground truth: right\n");
+                    // printf("Ground truth: right\n");
                     break;
                 case 6:
-                    printf("Ground truth: on\n");
+                    // printf("Ground truth: on\n");
                     break;    
                 case 7:
-                    printf("Ground truth: off\n");
+                    // printf("Ground truth: off\n");
                     break;    
                 case 8:
-                    printf("Ground truth: stop\n");
+                    // printf("Ground truth: stop\n");
                     break;    
                 case 9:
-                    printf("Ground truth: go\n");
+                    // printf("Ground truth: go\n");
                     break;                                                                                                                                                            
             }
 
@@ -691,7 +700,6 @@ void evaluate_tinytest(int pre){
             pi_l2_free(prepWav, AUDIO_BUFFER_SIZE * sizeof(short int));
 
             addnoise = 1;
-
 
         }
         else if (uttr_eval_input == "0") {
@@ -810,6 +818,9 @@ void evaluate_tinytest(int pre){
 
             PRINTF("Writing wav file to utter_noise.wav completed successfully\n");
         }
+
+        int end_readeval = pi_time_get_us();
+        // printf ("Loaded and scaled data for evaluation: %i us\n", end_readeval - start_readeval);
 
         compute_mfcc();
 
@@ -1271,6 +1282,7 @@ int application(void){
 
 
     int startwavreading = pi_time_get_us();
+
     for (int i = 0; i < 100; i++) {
 
         header_struct header_info;
@@ -1348,7 +1360,7 @@ int application(void){
         
         // remove for measurements
         if (i%10 == 0){
-            printf(" %i/110 samples read in %i us.\n", i,  pi_time_get_us()-startwavreading);
+            // printf(" %i/110 samples read.\n", i);
         }
 
         pi_l2_free(inWav, AUDIO_BUFFER_SIZE*sizeof(short));
@@ -1356,7 +1368,7 @@ int application(void){
     }
 
     // remove for measurements
-    printf("100/110 samples read.\n");
+    // printf("100/110 samples read.\n");
 
 
     for (int i = 0; i < 10; i++) {
@@ -1381,7 +1393,8 @@ int application(void){
     }
 
     // remove for measurements
-    printf("110/110 samples read, WAV reading is complete.\n");;
+    int endwavreading = pi_time_get_us();
+    // printf("110/110 samples read, WAV reading is complete in %d us.\n", endwavreading - startwavreading);
     
 
 
@@ -1460,7 +1473,9 @@ int application(void){
         
         if (appl_input == "0"){
 
-            PRINTF ("----------------------------- Start acquisition ---------------------------\n");        
+            PRINTF ("----------------------------- Start acquisition ---------------------------\n");    
+
+            int start_dataacq = pi_time_get_us();    
 
             int threshold_counter = 0;
 
@@ -1542,9 +1557,16 @@ int application(void){
                 pi_l2_free(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
                 pi_l2_free(MfccInSig, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
 
+
+                int end_dataacq = pi_time_get_us(); 
+                // printf("Data acquisition1: %i\n", end_dataacq - start_dataacq);
+
                 // continue;
                 goto checkbutton;
             }
+
+            int end_dataacq = pi_time_get_us(); 
+            // printf("Data acquisition2: %i\n", end_dataacq - start_dataacq);
 
         }
         else if (appl_input == "1"){
@@ -1585,7 +1607,7 @@ int application(void){
 
 
             int end_readwav = pi_time_get_us();
-            // printf("Time spent reading wav: %i\n", end_readwav - start_readwav);
+            printf("Time spent reading wav: %i\n", end_readwav - start_readwav);
         }
 
         // pi_gpio_pin_write(gpio_pin_measurement_id, 0);
@@ -1600,6 +1622,8 @@ int application(void){
 
 
         // pi_gpio_pin_write(gpio_pin_measurement_id, 1);
+
+        int start_readmfcc = pi_time_get_us();
 
         compute_mfcc();
 
@@ -1672,6 +1696,9 @@ int application(void){
         printf("Convert mfcc: %d cycles\n", elapsed_timer_3);
         #endif
 
+        int end_readmfcc = pi_time_get_us();
+        // printf("MFCC (incl. data proc): %i us\n", end_readmfcc - start_readmfcc);
+
         // pi_gpio_pin_write(gpio_pin_measurement_id, 0);
 
         // Extract backbone features
@@ -1685,6 +1712,9 @@ int application(void){
         #endif
 
         PRINTF("***************************** Backbone inference **************************\n");
+
+
+        int start_backbone = pi_time_get_us();
         
         // pi_gpio_pin_write(gpio_pin_measurement_id, 1);
         network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &dump, 0); // L2_input_h extra-arg for L2-only
@@ -1700,6 +1730,9 @@ int application(void){
         }
         PRINTF("\n");
 
+        int end_backbone = pi_time_get_us();
+        // printf("Backbone: %i us\n", end_backbone - start_backbone);
+
 
         #ifdef PERF
         gap_fc_starttimer();
@@ -1710,6 +1743,10 @@ int application(void){
         PRINTF("***************************** Classsifier inference **************************\n");
 
         // pi_gpio_pin_write(gpio_pin_measurement_id, 1);
+
+
+
+        int start_classif = pi_time_get_us();
 
 
         pi_cluster_conf_init(&cl_conf);
@@ -1750,6 +1787,9 @@ int application(void){
 
 
         pi_l2_free(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+
+        int end_classif = pi_time_get_us();
+        // printf("Classifier: %i us\n", end_classif - start_classif);
         
         
         
@@ -1795,7 +1835,7 @@ int application(void){
             else if (noise_eval_input == "1"){
 
                 printf ("----------------------------- Button pressed, loading noise ---------------------------\n");
-                
+
                 char noiseName[130] = "meeting_ch01_mancrop1.wav";
                 // input_mic(1, 1, 1); // save, free, noise // Forcefully recording noise from recording
                 input_wav(0, 1, noiseName, 1); // save, free, NoiseName, noise
