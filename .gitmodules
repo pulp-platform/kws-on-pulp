@@ -1,1 +1,4 @@
+[submodule "pulp-trainlib"]
+	path = pulp-trainlib
+	url = git@iis-git.ee.ethz.ch:kws/pulp-trainlib.git
 
