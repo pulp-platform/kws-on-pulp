@@ -1424,7 +1424,8 @@ int application(void){
     
     PRINTF ("----------------------------- Initializing classifier ---------------------------\n");
 
-    L2_FC_weights_float = pi_l2_malloc (768 * 4);
+    // L2_FC_weights_float = pi_l2_malloc (64 * 12 * 4);
+    L2_FC_weights_float = pi_l2_malloc (172 * 12 * 4);
     if (L2_FC_weights_float == NULL) {
         printf("failed to allocate memory for L2_FC_weights_float\n");
     }

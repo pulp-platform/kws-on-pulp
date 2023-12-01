@@ -33,6 +33,7 @@ struct loss_args {
     struct blob * output;
     float * target;
     float * wr_loss;
+    int * mode;
 };
 
 
