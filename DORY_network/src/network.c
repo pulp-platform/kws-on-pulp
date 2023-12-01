@@ -124,6 +124,7 @@ void execute_layer_fork(void *args) {
 
 }
 
+// ODDA
 void network_run(void *l2_buffer, size_t l2_buffer_size, void *l2_final_output, void ** L3_final_weights_curr, int exec)
 {
   struct pi_device cluster_dev = {0};
@@ -158,6 +159,7 @@ void network_run(void *l2_buffer, size_t l2_buffer_size, void *l2_final_output, 
   print_perf("Final", cycle_network_execution, 2656768);
   #endif
 
+  // ODDA
   // 9 layers with weights have been processed before FC layer  
   *L3_final_weights_curr = L3_weights;
   for (int i = 0; i < 9; i++){
@@ -216,6 +218,7 @@ void network_run_cluster(void *args) {
 /* -------- SECTION 2 BEGIN --------- */
 /* ---------------------------------- */
   int weight_l_cnt = 0; // count how many layers with weights we have processed to increment the weights_L3 pointer
+  // ODDA
   // int n_inf_layers = 11; // Inference
   int n_inf_layers = 10; // Training
 
