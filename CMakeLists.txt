@@ -70,7 +70,8 @@ set(GAP9_SDK_DIR        /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk_private/)
 set(CURDIR              /usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/)
 set(BUILD_DIR           ${CURDIR}/build)
 # set(TRAINLIB_DIR        ${CURDIR}/trainlib_example_dscnn/DSCNNS)
-set(TRAINLIB_DIR        ${CURDIR}/trainlib_example_dscnn/DSCNNM)
+# set(TRAINLIB_DIR        ${CURDIR}/trainlib_example_dscnn/DSCNNM)
+set(TRAINLIB_DIR        ${CURDIR}/trainlib_example_dscnn/DSCNNL)
 set(DSP_DIR             ${GAP9_SDK_DIR}tools/autotiler_v3/DSP_Libraries/)
 set(DSP_LUT_DIR         ${GAP9_SDK_DIR}tools/autotiler_v3/DSP_Libraries/LUT_Tables/)
 set(EMUL_DIR            ${GAP9_SDK_DIR}tools/autotiler_v3/Emulation/)
@@ -159,7 +160,7 @@ list (APPEND TARGET_INCS
                          -I${TILER_INC}
                          -I${TILER_EMU_INC}
                          -I${GAP_SDK_HOME}/libs/gap_lib/include
-                         -I${CURDIR}DORY_network_DSCNNM_dummy/inc
+                         -I${CURDIR}DORY_network_DSCNNL_dummy/inc
                          -I${GAP9_SDK_DIR}rtos/pmsis/bsp/include/bsp
                          -I${GAP9_SDK_DIR}rtos/pmsis/bsp/include/bsp/ram
                          -I${GAP9_SDK_DIR}rtos/pmsis/bsp/include/bsp/flash
@@ -183,39 +184,44 @@ set (NUM_CORES 8)
 set (GAP_SDK 1)
 
 set (TARGET_CHIP_FAMILY_GAP9 1)
-list (APPEND TARGET_SRCS ${CURDIR}DORY_network_DSCNNM_dummy/src/BNReluConvolution0.c
-                         ${CURDIR}DORY_network_DSCNNM_dummy/src/BNReluConvolution1.c 
-                         ${CURDIR}DORY_network_DSCNNM_dummy/src/BNReluConvolution2.c 
-                         ${CURDIR}DORY_network_DSCNNM_dummy/src/BNReluConvolution3.c 
-                         ${CURDIR}DORY_network_DSCNNM_dummy/src/BNReluConvolution4.c 
-                         ${CURDIR}DORY_network_DSCNNM_dummy/src/BNReluConvolution5.c 
-                         ${CURDIR}DORY_network_DSCNNM_dummy/src/BNReluConvolution6.c 
-                         ${CURDIR}DORY_network_DSCNNM_dummy/src/BNReluConvolution7.c 
-                         ${CURDIR}DORY_network_DSCNNM_dummy/src/BNReluConvolution8.c 
-                         ${CURDIR}DORY_network_DSCNNM_dummy/src/dory.c # GAP8GAP9
-                         # ${CURDIR}DORY_network_DSCNNM_dummy/src/dory_dma.c # ONESHOT
-                         ${CURDIR}DORY_network_DSCNNM_dummy/src/FullyConnected10.c 
-                         ${CURDIR}DORY_network_DSCNNM_dummy/src/mem.c 
-                         ${CURDIR}DORY_network_DSCNNM_dummy/src/net_utils.c 
-                         ${CURDIR}DORY_network_DSCNNM_dummy/src/network.c 
-                         ${CURDIR}DORY_network_DSCNNM_dummy/src/pulp_nn_add.c 
-                         ${CURDIR}DORY_network_DSCNNM_dummy/src/pulp_nn_avgpool.c 
-                         ${CURDIR}DORY_network_DSCNNM_dummy/src/pulp_nn_conv_Co_parallel.c 
-                         ${CURDIR}DORY_network_DSCNNM_dummy/src/pulp_nn_conv_Ho_parallel.c 
-                         ${CURDIR}DORY_network_DSCNNM_dummy/src/pulp_nn_conv_HoWo_parallel.c
-                         ${CURDIR}DORY_network_DSCNNM_dummy/src/pulp_nn_depthwise_3x3_s1.c 
-                         ${CURDIR}DORY_network_DSCNNM_dummy/src/pulp_nn_depthwise_generic.c
-                         ${CURDIR}DORY_network_DSCNNM_dummy/src/pulp_nn_depthwise_generic_less_4_weights.c
-                         ${CURDIR}DORY_network_DSCNNM_dummy/src/pulp_nn_linear.c
-                         ${CURDIR}DORY_network_DSCNNM_dummy/src/pulp_nn_linear_out_32.c
-                         ${CURDIR}DORY_network_DSCNNM_dummy/src/pulp_nn_matmul.c
-                         ${CURDIR}DORY_network_DSCNNM_dummy/src/pulp_nn_maxpool.c
-                         ${CURDIR}DORY_network_DSCNNM_dummy/src/pulp_nn_pointwise_Co_parallel.c
-                         ${CURDIR}DORY_network_DSCNNM_dummy/src/pulp_nn_pointwise_Ho_parallel.c
-                         ${CURDIR}DORY_network_DSCNNM_dummy/src/pulp_nn_pointwise_HoWo_parallel.c
-                         ${CURDIR}DORY_network_DSCNNM_dummy/src/pulp_nn_utils.c
-                         ${CURDIR}DORY_network_DSCNNM_dummy/src/ReluPooling9.c
-                         ${CURDIR}DORY_network_DSCNNM_dummy/src/thorir_dma.c # GAP8GAP9                
+list (APPEND TARGET_SRCS ${CURDIR}DORY_network_DSCNNL_dummy/src/BNReluConvolution0.c
+                         ${CURDIR}DORY_network_DSCNNL_dummy/src/BNReluConvolution1.c 
+                         ${CURDIR}DORY_network_DSCNNL_dummy/src/BNReluConvolution2.c 
+                         ${CURDIR}DORY_network_DSCNNL_dummy/src/BNReluConvolution3.c 
+                         ${CURDIR}DORY_network_DSCNNL_dummy/src/BNReluConvolution4.c 
+                         ${CURDIR}DORY_network_DSCNNL_dummy/src/BNReluConvolution5.c 
+                         ${CURDIR}DORY_network_DSCNNL_dummy/src/BNReluConvolution6.c 
+                         ${CURDIR}DORY_network_DSCNNL_dummy/src/BNReluConvolution7.c 
+                         ${CURDIR}DORY_network_DSCNNL_dummy/src/BNReluConvolution8.c 
+                         # ${CURDIR}DORY_network_DSCNNL_dummy/src/ReluPooling9.c     # DSCNN S/M
+                         # ${CURDIR}DORY_network_DSCNNL_dummy/src/FullyConnected10.c # DSCNN S/M
+                         ${CURDIR}DORY_network_DSCNNL_dummy/src/BNReluConvolution9.c   # DSCNN L
+                         ${CURDIR}DORY_network_DSCNNL_dummy/src/BNReluConvolution10.c  # DSCNN L
+                         ${CURDIR}DORY_network_DSCNNL_dummy/src/ReluPooling11.c        # DSCNN L
+                         ${CURDIR}DORY_network_DSCNNL_dummy/src/FullyConnected12.c     # DSCNN L
+
+                         ${CURDIR}DORY_network_DSCNNL_dummy/src/dory.c # GAP8GAP9
+                         # ${CURDIR}DORY_network_DSCNNL_dummy/src/dory_dma.c # ONESHOT
+                         ${CURDIR}DORY_network_DSCNNL_dummy/src/mem.c 
+                         ${CURDIR}DORY_network_DSCNNL_dummy/src/net_utils.c 
+                         ${CURDIR}DORY_network_DSCNNL_dummy/src/network.c 
+                         ${CURDIR}DORY_network_DSCNNL_dummy/src/pulp_nn_add.c 
+                         ${CURDIR}DORY_network_DSCNNL_dummy/src/pulp_nn_avgpool.c 
+                         ${CURDIR}DORY_network_DSCNNL_dummy/src/pulp_nn_conv_Co_parallel.c 
+                         ${CURDIR}DORY_network_DSCNNL_dummy/src/pulp_nn_conv_Ho_parallel.c 
+                         ${CURDIR}DORY_network_DSCNNL_dummy/src/pulp_nn_conv_HoWo_parallel.c
+                         ${CURDIR}DORY_network_DSCNNL_dummy/src/pulp_nn_depthwise_3x3_s1.c 
+                         ${CURDIR}DORY_network_DSCNNL_dummy/src/pulp_nn_depthwise_generic.c
+                         ${CURDIR}DORY_network_DSCNNL_dummy/src/pulp_nn_depthwise_generic_less_4_weights.c
+                         ${CURDIR}DORY_network_DSCNNL_dummy/src/pulp_nn_linear.c
+                         ${CURDIR}DORY_network_DSCNNL_dummy/src/pulp_nn_linear_out_32.c
+                         ${CURDIR}DORY_network_DSCNNL_dummy/src/pulp_nn_matmul.c
+                         ${CURDIR}DORY_network_DSCNNL_dummy/src/pulp_nn_maxpool.c
+                         ${CURDIR}DORY_network_DSCNNL_dummy/src/pulp_nn_pointwise_Co_parallel.c
+                         ${CURDIR}DORY_network_DSCNNL_dummy/src/pulp_nn_pointwise_Ho_parallel.c
+                         ${CURDIR}DORY_network_DSCNNL_dummy/src/pulp_nn_pointwise_HoWo_parallel.c
+                         ${CURDIR}DORY_network_DSCNNL_dummy/src/pulp_nn_utils.c
+                         ${CURDIR}DORY_network_DSCNNL_dummy/src/thorir_dma.c # GAP8GAP9                
 )
 
 list (APPEND TARGET_SRCS ${TRAINLIB_DIR}/net.c
@@ -320,17 +326,20 @@ FILE(STRINGS ${TINYTEST_FILE} TINYTEST_UTTR)
 
 # Already flashed
 list(APPEND READFS_FILES 
-                        ${CURDIR}DORY_network_DSCNNM_dummy/hex/BNReluConvolution0_weights.hex
-                        ${CURDIR}DORY_network_DSCNNM_dummy/hex/BNReluConvolution1_weights.hex
-                        ${CURDIR}DORY_network_DSCNNM_dummy/hex/BNReluConvolution2_weights.hex
-                        ${CURDIR}DORY_network_DSCNNM_dummy/hex/BNReluConvolution3_weights.hex
-                        ${CURDIR}DORY_network_DSCNNM_dummy/hex/BNReluConvolution4_weights.hex
-                        ${CURDIR}DORY_network_DSCNNM_dummy/hex/BNReluConvolution5_weights.hex
-                        ${CURDIR}DORY_network_DSCNNM_dummy/hex/BNReluConvolution6_weights.hex
-                        ${CURDIR}DORY_network_DSCNNM_dummy/hex/BNReluConvolution7_weights.hex
-                        ${CURDIR}DORY_network_DSCNNM_dummy/hex/BNReluConvolution8_weights.hex
-                        ${CURDIR}DORY_network_DSCNNM_dummy/hex/FullyConnected10_weights.hex
-                        ${CURDIR}DORY_network_DSCNNM_dummy/hex/inputs.hex
+                        ${CURDIR}DORY_network_DSCNNL_dummy/hex/BNReluConvolution0_weights.hex
+                        ${CURDIR}DORY_network_DSCNNL_dummy/hex/BNReluConvolution1_weights.hex
+                        ${CURDIR}DORY_network_DSCNNL_dummy/hex/BNReluConvolution2_weights.hex
+                        ${CURDIR}DORY_network_DSCNNL_dummy/hex/BNReluConvolution3_weights.hex
+                        ${CURDIR}DORY_network_DSCNNL_dummy/hex/BNReluConvolution4_weights.hex
+                        ${CURDIR}DORY_network_DSCNNL_dummy/hex/BNReluConvolution5_weights.hex
+                        ${CURDIR}DORY_network_DSCNNL_dummy/hex/BNReluConvolution6_weights.hex
+                        ${CURDIR}DORY_network_DSCNNL_dummy/hex/BNReluConvolution7_weights.hex
+                        ${CURDIR}DORY_network_DSCNNL_dummy/hex/BNReluConvolution8_weights.hex
+                        # ${CURDIR}DORY_network_DSCNNL_dummy/hex/FullyConnected10_weights.hex  # DSCNN S/M
+                        ${CURDIR}DORY_network_DSCNNL_dummy/hex/BNReluConvolution9_weights.hex   # DSCNN L
+                        ${CURDIR}DORY_network_DSCNNL_dummy/hex/BNReluConvolution10_weights.hex  # DSCNN L
+                        ${CURDIR}DORY_network_DSCNNL_dummy/hex/FullyConnected12_weights.hex     # DSCNN L 
+                        ${CURDIR}DORY_network_DSCNNL_dummy/hex/inputs.hex
                         ${WAV_FILE}
                         ${RESTAURANT_NOISE_WAV}
                         ${UTTERANCES} 
