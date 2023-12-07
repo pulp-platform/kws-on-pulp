@@ -85,6 +85,9 @@ typedef short int MFCC_IN_TYPE; // Save MFCCs works
 // Test utterances
 #include "tinytest.h"
 
+// Large validation set
+#include "validation.h"
+
 #include "noise_meeting.h"
 
 // measurement
