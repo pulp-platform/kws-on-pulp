@@ -27,14 +27,23 @@ def main():
 
     # Parse source dir
     filelist = [f for f in glob.glob("/usr/scratch/sassauna2/cioflanc/dolphinGSC/speech_commands_v0.02/*/*.wav")]
+    
+    vallist_file = open("gsc_validation_list.txt", "r") 
+    vallist_txt = vallist_file.read() 
+    vallist = vallist_txt.replace('\n', ' ') 
+
     random.shuffle(filelist)
 
     shutil.rmtree('./validation')
     os.mkdir('./validation')    
 
     for file in filelist:
+        file_name = file.split('/')[-1]
+
         for word in wordlist:
-            if word == file.split('/')[-2]:
+            file_name_upd = word+'_'+file_name
+            file_name_path = word+'/'+file_name
+            if word == file.split('/')[-2] and file_name_path in vallist:
            
                 shutil.copy(file, '/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/validation/'+word+'_'+ file.split('/')[-1])
                 file = '/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/validation/'+word+'_'+ file.split('/')[-1]
