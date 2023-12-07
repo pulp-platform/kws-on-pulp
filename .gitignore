@@ -13,3 +13,7 @@ logs/
 *.txt
 screenlog.*
 *.npy
+validation/
+validation.csv
+validation.h
+validation.txt
