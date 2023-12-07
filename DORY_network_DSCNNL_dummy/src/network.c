@@ -39,7 +39,7 @@
 #include "BNReluConvolution7.h"
 
 
-// #define VERBOSE 1
+#define VERBOSE 1
 
 #define L3_WEIGHTS_SIZE 4000000
 #define L3_INPUT_SIZE 1500000

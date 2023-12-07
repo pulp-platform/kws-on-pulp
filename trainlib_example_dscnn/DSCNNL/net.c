@@ -176,7 +176,7 @@ int predict_float_local (void * array, int n_classes){
                         printf ("Undefined class!\n");
         }
 
-        printf("%s\n", prediction);
+        // printf("%s\n", prediction);
 
         return idx;
 }
