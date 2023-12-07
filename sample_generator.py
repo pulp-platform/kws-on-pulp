@@ -26,25 +26,22 @@ def main():
 
 
     # Parse source dir
-    filelist = [f for f in glob.glob("/home/cioflanc/bonsapps_eenakws/maintain/eenakws_aiasset_v2/bonseyes_EENAKWS/data/speech_commands_v2/datatool/sample_files/*.wav")]
+    filelist = [f for f in glob.glob("/usr/scratch/sassauna2/cioflanc/dolphinGSC/speech_commands_v0.02/*/*.wav")]
     random.shuffle(filelist)
 
-    shutil.rmtree('./wavsrc')
-    os.mkdir('./wavsrc')    
+    shutil.rmtree('./validation')
+    os.mkdir('./validation')    
 
     for file in filelist:
         for word in wordlist:
-            if word == file.split('/')[-1].split('_')[0]:
-                if (len(sampledict[word]['samplelist']) == 10):
-                    continue
-                else:
-                    # print (sampledict[word]['samplelist'])
-                    shutil.copy(file, '/home/cioflanc/odda_gap9/tiny_denoiser/wavsrc/')
-                    file = file.replace('/home/cioflanc/bonsapps_eenakws/maintain/eenakws_aiasset_v2/bonseyes_EENAKWS/data/speech_commands_v2/datatool/sample_files/', '/home/cioflanc/odda_gap9/tiny_denoiser/wavsrc/')
-                    sampledict[word]['samplelist'].append(file)
+            if word == file.split('/')[-2]:
+           
+                shutil.copy(file, '/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/validation/'+word+'_'+ file.split('/')[-1])
+                file = '/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/validation/'+word+'_'+ file.split('/')[-1]
+                sampledict[word]['samplelist'].append(file)
 
     # dump list
-    csv_file = 'utterances.csv'
+    csv_file = 'validation.csv'
     with open(csv_file, 'w') as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=csv_columns)
         writer.writeheader()
@@ -58,19 +55,19 @@ def main():
         for elem in sampledict[word]['samplelist']:
             dumplist.append(elem)
 
-    with open('utterances.txt', 'w') as f:
+    with open('validation.txt', 'w') as f:
         for elem in dumplist:
             f.write(f"{elem}\n")
 
 
     # Arrange in .h to include it in app
-    with open('utterances.h', 'w') as f:
-        f.write(f"#ifndef __WAVSRC_H__\n")
-        f.write(f"#define __WAVSRC_H__\n")
+    with open('validation.h', 'w') as f:
+        f.write(f"#ifndef __VALIDATION_H__\n")
+        f.write(f"#define __VALIDATION_H__\n")
 
         classidx = 0
         for word in sampledict:
-            f.write(f"char class_{classidx}[12][100] = {{")
+            f.write(f"char class_{classidx}[1000][100] = {{")
             elemidx = 0
             for elem in sampledict[word]['samplelist']:
                 if (elemidx == 9):
