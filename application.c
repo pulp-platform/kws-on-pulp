@@ -194,6 +194,8 @@ static float ce_loss_pre;
 static float ce_loss_post;
 static float ce_loss_pre_val;
 static float ce_loss_post_val;
+static float correct_pre_val;
+static float correct_post_val;
 
 
 char yes[490];
@@ -786,6 +788,8 @@ void evaluate_validation(pre){
               return -1;
             }
 
+            int predidx = 0;
+
             unsigned int args_inference_classifier[6];
             args_inference_classifier[0] = (unsigned int) l2_buffer;
             args_inference_classifier[1] = (unsigned int) dump;
@@ -794,6 +798,10 @@ void evaluate_validation(pre){
             args_inference_classifier[4] = (unsigned int) 0; // init = 1
             args_inference_classifier[5] = (unsigned int) classidx; // tinytest already ordered
             args_inference_classifier[6] = (float *) &ce_loss;
+            args_inference_classifier[7] = (int *) &predidx;
+
+
+
 
             pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, args_inference_classifier));
             pi_cluster_close(&cluster_dev);
@@ -801,15 +809,20 @@ void evaluate_validation(pre){
             // printf("CE loss: %f\n", ce_loss);
 
             if (pre == 0){
-                ce_loss_pre_val += ce_loss;
+                ce_loss_pre_val += (ce_loss < 0) ? -ce_loss : ce_loss;
+                correct_pre_val += (predidx == classidx);
             }
             else{
-                ce_loss_post_val += ce_loss;
+                ce_loss_post_val += (ce_loss < 0) ? -ce_loss : ce_loss;
+                correct_post_val += (predidx == classidx);
             }
 
             sampleidx++;
 
         }
+
+        printf("ce_loss_pre_val=%f, correct_pre_val=%f\n", ce_loss_pre_val, correct_pre_val);
+        printf("ce_loss_post_val=%f, correct_post_val=%f\n", ce_loss_post_val, correct_post_val);
 
         break;
         
@@ -2059,10 +2072,14 @@ int application(void){
 
             ce_loss_pre = 0;
             ce_loss_post = 0;
+            ce_loss_pre_val = 0;
+            ce_loss_post_val = 0;
+            correct_pre_val = 0;
+            correct_post_val = 0;
 
 
             printf ("----------------------------- Pre-ODDA evaluation -----------------------------\n");
-            evaluate_tinytest(0);
+            // evaluate_tinytest(0);
             evaluate_validation(0);
             int endevaluationtime = pi_time_get_us();
             printf("Evaluation time: %i\n", endevaluationtime - evaluationtime);
@@ -2084,7 +2101,7 @@ int application(void){
 
             pi_gpio_pin_write(gpio_pin_measurement_id, 1);
             // evaluate improvement
-            evaluate_tinytest(1);
+            // evaluate_tinytest(1);
             evaluate_validation(1);
             pi_gpio_pin_write(gpio_pin_measurement_id, 0);
 
@@ -2093,12 +2110,12 @@ int application(void){
             }
 
 
-            if (ce_loss_pre > ce_loss_post){
-                printf("\x1B[32m *** Successfully reduced loss by %f from %f to %f *** \x1B[0m\n", ce_loss_pre-ce_loss_post, ce_loss_pre, ce_loss_post);
-            }
-            else{
-                printf ("\x1B[31m *** Unsuccessful adaptation, try again. Loss increased from %f to %f *** \x1B[0m\n", ce_loss_pre, ce_loss_post);
-            }
+            // if (ce_loss_pre > ce_loss_post){
+            //     printf("\x1B[32m *** Successfully reduced loss by %f from %f to %f *** \x1B[0m\n", ce_loss_pre-ce_loss_post, ce_loss_pre, ce_loss_post);
+            // }
+            // else{
+            //     printf ("\x1B[31m *** Unsuccessful adaptation, try again. Loss increased from %f to %f *** \x1B[0m\n", ce_loss_pre, ce_loss_post);
+            // }
 
             if (ce_loss_pre_val > ce_loss_post_val){
                 printf("\x1B[32m *** Successfully reduced loss by %f from %f to %f *** \x1B[0m\n", ce_loss_pre_val-ce_loss_post_val, ce_loss_pre_val, ce_loss_post_val);
@@ -2107,7 +2124,18 @@ int application(void){
                 printf ("\x1B[31m *** Unsuccessful adaptation, try again. Loss increased from %f to %f *** \x1B[0m\n", ce_loss_pre_val, ce_loss_post_val);
             }
 
+            if (correct_pre_val/300 * 100 < correct_post_val/300*100){
+                printf("\x1B[32m *** Successfully increased accuracy by %f from %f to %f *** \x1B[0m\n", correct_post_val/300*100-correct_pre_val/300 * 100, correct_pre_val/300 * 100, correct_post_val/300*100);
+            }
+            else{
+                printf ("\x1B[31m *** Unsuccessful adaptation, try again. Accuracy decreased from %f to %f *** \x1B[0m\n", correct_pre_val/300 * 100, correct_post_val/300*100);
+            }
+
             // printf ("***************************** ODDA complete *****************************\n");
+
+            // Class 2
+            // *** Successfully reduced loss by 7.925049 from 168.821243 to 160.896194 *** 
+            // *** Unsuccessful adaptation, try again. Accuracy decreased from 88.666664 to 88.666664 *** 
 
             pmsis_exit(0);
             return; // breaking loop early
@@ -2116,6 +2144,8 @@ int application(void){
 
 
         PRINTF ("----------------------------- Round completed ---------------------------\n");
+
+
 
 
         // // block until next input audio frame is ready

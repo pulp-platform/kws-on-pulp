@@ -339,6 +339,7 @@ void net_step(void *args) {
     int init = (int) real_args[4]; // 1 - initialize
     int classidx = (int) real_args[5];
     float *application_loss = (float*) real_args[6];
+    int *predidx_ptr = (int *) real_args[7];
 
     // TODO: Discuss sample management per epoch
     
@@ -566,7 +567,8 @@ void net_step(void *args) {
         start = gap_cl_readhwtimer();
 #endif
 
-        predict_float_local(l0_out, OUT_SIZE);
+        int predidx = predict_float_local(l0_out, OUT_SIZE);
+        *predidx_ptr = predidx;
 
 
 #ifdef PERF            
