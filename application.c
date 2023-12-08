@@ -622,18 +622,17 @@ void evaluate_validation(pre){
 
     for (int classidx=2; classidx<n_classes; classidx++){
 
+        classidx = 2;
+
         printf("Started evaluating class %i in pre=%i mode\n", classidx, pre);
 
         int sampleidx = 0;
         while (sampleidx < 300) {
 
-            if (sampleidx == 16){
-                break;
-            }
 
-            // if (sampleidx%10 == 0){
-            printf ("Now evaluting sample %i\n", sampleidx);
-            // }
+            if (sampleidx%100 == 0){
+                printf ("Now evaluting sample %i\n", sampleidx);
+            }
 
             // Read .wav
             header_struct header_info;
@@ -653,55 +652,55 @@ void evaluate_validation(pre){
                     }
                     break;
                 case 3:
-                    if (ReadWavFromFile(val_class_3[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+                    if (ReadWavFromFile(val_class_2[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
                         printf("Error reading wav file\n");
                         pmsis_exit(1);
                     }
                     break;
                 case 4:
-                    if (ReadWavFromFile(val_class_4[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+                    if (ReadWavFromFile(val_class_2[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
                         printf("Error reading wav file\n");
                         pmsis_exit(1);
                     }
                     break;
                 case 5:
-                    if (ReadWavFromFile(val_class_5[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+                    if (ReadWavFromFile(val_class_2[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
                         printf("Error reading wav file\n");
                         pmsis_exit(1);
                     }
                     break;
                 case 6:
-                    if (ReadWavFromFile(val_class_6[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+                    if (ReadWavFromFile(val_class_2[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
                         printf("Error reading wav file\n");
                         pmsis_exit(1);
                     }
                     break;
                 case 7:
-                    if (ReadWavFromFile(val_class_7[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+                    if (ReadWavFromFile(val_class_2[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
                         printf("Error reading wav file\n");
                         pmsis_exit(1);
                     }
                     break;
                 case 8:
-                    if (ReadWavFromFile(val_class_8[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+                    if (ReadWavFromFile(val_class_2[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
                         printf("Error reading wav file\n");
                         pmsis_exit(1);
                     }
                     break;
                 case 9:
-                    if (ReadWavFromFile(val_class_9[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+                    if (ReadWavFromFile(val_class_2[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
                         printf("Error reading wav file\n");
                         pmsis_exit(1);
                     }
                     break;
                 case 10:
-                    if (ReadWavFromFile(val_class_10[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+                    if (ReadWavFromFile(val_class_2[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
                         printf("Error reading wav file\n");
                         pmsis_exit(1);
                     }
                     break;
                 case 11:
-                    if (ReadWavFromFile(val_class_11[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+                    if (ReadWavFromFile(val_class_2[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
                         printf("Error reading wav file\n");
                         pmsis_exit(1);
                     }
@@ -725,7 +724,7 @@ void evaluate_validation(pre){
                 }
             #endif
 
-            pi_l2_free(inWav, AUDIO_BUFFER_SIZE * sizeof(short int));
+            pi_l2_free(inWav, AUDIO_BUFFER_SIZE * sizeof(short));
 
             int noisesamplestart = 0;
                 
@@ -735,7 +734,7 @@ void evaluate_validation(pre){
 
             compute_mfcc();  
 
-            pi_l2_free(MfccInSig,AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE)); 
+            pi_l2_free(MfccInSig, AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE)); 
             
             feat_char = (char*) pi_l2_malloc(49 * 10 * sizeof(char));
             // Rescale data
@@ -752,8 +751,6 @@ void evaluate_validation(pre){
             } 
 
             pi_l2_free(out_feat, 49*10*4*sizeof(OUT_TYPE));
-
-    
 
             // Fill input buffer
             for (int i = 0; i < 490; i++){
@@ -782,7 +779,6 @@ void evaluate_validation(pre){
                 PRINTF("%i, ", ((uint8_t *) l2_buffer)[i]);
             }
             PRINTF("\n");     
-
             pi_cluster_conf_init(&cl_conf);
             pi_open_from_conf(&cluster_dev, &cl_conf);
             if (pi_cluster_open(&cluster_dev))
@@ -814,6 +810,8 @@ void evaluate_validation(pre){
             sampleidx++;
 
         }
+
+        break;
         
     }
 
@@ -1778,7 +1776,7 @@ int application(void){
         }
         else if (appl_input == "1"){
             // printf ("Reading wav...\n");
-            char utterName[130] = "meeting_ch01_mancrop1.wav";
+            char utterName[130] = "usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/meeting_ch01_mancrop1.wav";
             
             int start_readwav = pi_time_get_us();
             
@@ -2048,7 +2046,7 @@ int application(void){
 
                 printf ("----------------------------- Button pressed, loading noise ---------------------------\n");
 
-                char noiseName[130] = "meeting_ch01_mancrop1.wav";
+                char noiseName[130] = "/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/meeting_ch01_mancrop1.wav";
                 // input_mic(1, 1, 1); // save, free, noise // Forcefully recording noise from recording
                 input_wav(0, 1, noiseName, 1); // save, free, NoiseName, noise
             }
@@ -2102,10 +2100,17 @@ int application(void){
                 printf ("\x1B[31m *** Unsuccessful adaptation, try again. Loss increased from %f to %f *** \x1B[0m\n", ce_loss_pre, ce_loss_post);
             }
 
+            if (ce_loss_pre_val > ce_loss_post_val){
+                printf("\x1B[32m *** Successfully reduced loss by %f from %f to %f *** \x1B[0m\n", ce_loss_pre_val-ce_loss_post_val, ce_loss_pre_val, ce_loss_post_val);
+            }
+            else{
+                printf ("\x1B[31m *** Unsuccessful adaptation, try again. Loss increased from %f to %f *** \x1B[0m\n", ce_loss_pre_val, ce_loss_post_val);
+            }
+
             // printf ("***************************** ODDA complete *****************************\n");
 
-            // pmsis_exit(0);
-            // return; // breaking loop early
+            pmsis_exit(0);
+            return; // breaking loop early
 
         }
 

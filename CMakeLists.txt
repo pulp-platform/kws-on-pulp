@@ -344,9 +344,10 @@ list(APPEND READFS_FILES
                         ${CURDIR}DORY_network/hex/inputs.hex
                         ${WAV_FILE}
                         ${RESTAURANT_NOISE_WAV}
-                        ${UTTERANCES} 
-                        ${TINYTEST_UTTR}
-                        ${VALIDATION_UTTR}
+                        # ${VALIDATION_UTTR}
+                        # ${UTTERANCES} 
+                        # ${TINYTEST_UTTR}
+                        
 )
 
 

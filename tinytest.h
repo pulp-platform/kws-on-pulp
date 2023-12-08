@@ -2,16 +2,16 @@
 #define __TINYTEST_H__
 
 char tinytestutter[40][200] = {
-"yes_e49428d9_nohash_3.wav",
-"no_e49428d9_nohash_3.wav",
-"up_0cb74144_nohash_2.wav",
-"down_3659fc1c_nohash_1.wav",
-"left_e1469561_nohash_1.wav",
-"right_e49428d9_nohash_3.wav",
-"on_e49428d9_nohash_3.wav",
-"off_3659fc1c_nohash_1.wav",
-"stop_3659fc1c_nohash_1.wav",
-"go_b7e9f841_nohash_1.wav",
+"/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/tinytest/yes_e49428d9_nohash_3.wav",
+"/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/tinytest/no_e49428d9_nohash_3.wav",
+"/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/tinytest/up_0cb74144_nohash_2.wav",
+"/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/tinytest/down_3659fc1c_nohash_1.wav",
+"/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/tinytest/left_e1469561_nohash_1.wav",
+"/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/tinytest/right_e49428d9_nohash_3.wav",
+"/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/tinytest/on_e49428d9_nohash_3.wav",
+"/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/tinytest/off_3659fc1c_nohash_1.wav",
+"/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/tinytest/stop_3659fc1c_nohash_1.wav",
+"/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/tinytest/go_b7e9f841_nohash_1.wav",
 
 };
 
