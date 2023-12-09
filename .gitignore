@@ -15,4 +15,3 @@ screenlog.*
 *.npy
 validation/
 validation.csv
-validation.txt
