@@ -624,12 +624,12 @@ void evaluate_validation(pre){
 
     for (int classidx=2; classidx<n_classes; classidx++){
 
-        classidx = 11;
+        classidx = 2;
 
         printf("Started evaluating class %i in pre=%i mode\n", classidx, pre);
 
         int sampleidx = 0;
-        while (sampleidx < 300) {
+        while (sampleidx < 400) {
 
 
             if (sampleidx%100 == 0){
@@ -648,61 +648,61 @@ void evaluate_validation(pre){
             // Define validation class
             switch(classidx){
                 case 2:
-                    if (ReadWavFromFile(val_class_11[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+                    if (ReadWavFromFile(test_class_2[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
                         printf("Error reading wav file\n");
                         pmsis_exit(1);
                     }
                     break;
                 case 3:
-                    if (ReadWavFromFile(val_class_11[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+                    if (ReadWavFromFile(test_class_2[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
                         printf("Error reading wav file\n");
                         pmsis_exit(1);
                     }
                     break;
                 case 4:
-                    if (ReadWavFromFile(val_class_11[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+                    if (ReadWavFromFile(test_class_2[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
                         printf("Error reading wav file\n");
                         pmsis_exit(1);
                     }
                     break;
                 case 5:
-                    if (ReadWavFromFile(val_class_11[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+                    if (ReadWavFromFile(test_class_2[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
                         printf("Error reading wav file\n");
                         pmsis_exit(1);
                     }
                     break;
                 case 6:
-                    if (ReadWavFromFile(val_class_11[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+                    if (ReadWavFromFile(test_class_2[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
                         printf("Error reading wav file\n");
                         pmsis_exit(1);
                     }
                     break;
                 case 7:
-                    if (ReadWavFromFile(val_class_11[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+                    if (ReadWavFromFile(test_class_2[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
                         printf("Error reading wav file\n");
                         pmsis_exit(1);
                     }
                     break;
                 case 8:
-                    if (ReadWavFromFile(val_class_11[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+                    if (ReadWavFromFile(test_class_2[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
                         printf("Error reading wav file\n");
                         pmsis_exit(1);
                     }
                     break;
                 case 9:
-                    if (ReadWavFromFile(val_class_11[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+                    if (ReadWavFromFile(test_class_2[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
                         printf("Error reading wav file\n");
                         pmsis_exit(1);
                     }
                     break;
                 case 10:
-                    if (ReadWavFromFile(val_class_11[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+                    if (ReadWavFromFile(test_class_2[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
                         printf("Error reading wav file\n");
                         pmsis_exit(1);
                     }
                     break;
                 case 11:
-                    if (ReadWavFromFile(val_class_11[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+                    if (ReadWavFromFile(test_class_2[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
                         printf("Error reading wav file\n");
                         pmsis_exit(1);
                     }
