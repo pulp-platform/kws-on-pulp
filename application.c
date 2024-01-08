@@ -86,7 +86,8 @@ typedef short int MFCC_IN_TYPE; // Save MFCCs works
 #include "tinytest.h"
 
 // Large validation set
-#include "validation.h"
+// #include "validation.h"
+#include "testing.h"
 
 #include "noise_meeting.h"
 
@@ -624,12 +625,12 @@ void evaluate_validation(pre){
 
     for (int classidx=2; classidx<n_classes; classidx++){
 
-        classidx = 2;
+        classidx = 7;
 
         printf("Started evaluating class %i in pre=%i mode\n", classidx, pre);
 
         int sampleidx = 0;
-        while (sampleidx < 400) {
+        while (sampleidx < 350) {
 
 
             if (sampleidx%100 == 0){
@@ -648,61 +649,61 @@ void evaluate_validation(pre){
             // Define validation class
             switch(classidx){
                 case 2:
-                    if (ReadWavFromFile(test_class_2[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+                    if (ReadWavFromFile(test_class_7[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
                         printf("Error reading wav file\n");
                         pmsis_exit(1);
                     }
                     break;
                 case 3:
-                    if (ReadWavFromFile(test_class_2[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+                    if (ReadWavFromFile(test_class_7[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
                         printf("Error reading wav file\n");
                         pmsis_exit(1);
                     }
                     break;
                 case 4:
-                    if (ReadWavFromFile(test_class_2[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+                    if (ReadWavFromFile(test_class_7[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
                         printf("Error reading wav file\n");
                         pmsis_exit(1);
                     }
                     break;
                 case 5:
-                    if (ReadWavFromFile(test_class_2[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+                    if (ReadWavFromFile(test_class_7[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
                         printf("Error reading wav file\n");
                         pmsis_exit(1);
                     }
                     break;
                 case 6:
-                    if (ReadWavFromFile(test_class_2[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+                    if (ReadWavFromFile(test_class_7[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
                         printf("Error reading wav file\n");
                         pmsis_exit(1);
                     }
                     break;
                 case 7:
-                    if (ReadWavFromFile(test_class_2[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+                    if (ReadWavFromFile(test_class_7[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
                         printf("Error reading wav file\n");
                         pmsis_exit(1);
                     }
                     break;
                 case 8:
-                    if (ReadWavFromFile(test_class_2[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+                    if (ReadWavFromFile(test_class_7[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
                         printf("Error reading wav file\n");
                         pmsis_exit(1);
                     }
                     break;
                 case 9:
-                    if (ReadWavFromFile(test_class_2[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+                    if (ReadWavFromFile(test_class_7[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
                         printf("Error reading wav file\n");
                         pmsis_exit(1);
                     }
                     break;
                 case 10:
-                    if (ReadWavFromFile(test_class_2[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+                    if (ReadWavFromFile(test_class_7[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
                         printf("Error reading wav file\n");
                         pmsis_exit(1);
                     }
                     break;
                 case 11:
-                    if (ReadWavFromFile(test_class_2[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+                    if (ReadWavFromFile(test_class_7[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
                         printf("Error reading wav file\n");
                         pmsis_exit(1);
                     }
@@ -2079,8 +2080,8 @@ int application(void){
 
 
             printf ("----------------------------- Pre-ODDA evaluation -----------------------------\n");
-            // evaluate_tinytest(0);
-            evaluate_validation(0);
+            evaluate_tinytest(0);
+            // evaluate_validation(0);
             int endevaluationtime = pi_time_get_us();
             printf("Evaluation time: %i\n", endevaluationtime - evaluationtime);
             pi_gpio_pin_write(gpio_pin_measurement_id, 0);
@@ -2101,8 +2102,8 @@ int application(void){
 
             pi_gpio_pin_write(gpio_pin_measurement_id, 1);
             // evaluate improvement
-            // evaluate_tinytest(1);
-            evaluate_validation(1);
+            evaluate_tinytest(1);
+            // evaluate_validation(1);
             pi_gpio_pin_write(gpio_pin_measurement_id, 0);
 
             if (noise_eval_input == "0"){
@@ -2124,11 +2125,11 @@ int application(void){
                 printf ("\x1B[31m *** Unsuccessful adaptation, try again. Loss increased from %f to %f *** \x1B[0m\n", ce_loss_pre_val, ce_loss_post_val);
             }
 
-            if (correct_pre_val/300 * 100 < correct_post_val/300*100){
-                printf("\x1B[32m *** Successfully increased accuracy by %f from %f to %f *** \x1B[0m\n", correct_post_val/300*100-correct_pre_val/300 * 100, correct_pre_val/300 * 100, correct_post_val/300*100);
+            if (correct_pre_val/350 * 100 < correct_post_val/350*100){
+                printf("\x1B[32m *** Successfully increased accuracy by %f from %f to %f *** \x1B[0m\n", correct_post_val/350*100-correct_pre_val/350 * 100, correct_pre_val/350 * 100, correct_post_val/350*100);
             }
             else{
-                printf ("\x1B[31m *** Unsuccessful adaptation, try again. Accuracy decreased from %f to %f *** \x1B[0m\n", correct_pre_val/300 * 100, correct_post_val/300*100);
+                printf ("\x1B[31m *** Unsuccessful adaptation, try again. Accuracy decreased from %f to %f *** \x1B[0m\n", correct_pre_val/350 * 100, correct_post_val/350*100);
             }
 
             // printf ("***************************** ODDA complete *****************************\n");
