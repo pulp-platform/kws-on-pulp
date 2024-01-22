@@ -2,7 +2,7 @@
   "history": [
     "set log_level INFO",
     "open DSCNNS_SIL_model_torch_v2.onnx",
-    "aquant -f 8 /usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/nntool_validation/inputs/*"
+    "aquant -f 8 /usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser/res/nntool_validation/inputs/*"
   ],
   "stats": {
     "input_1": {

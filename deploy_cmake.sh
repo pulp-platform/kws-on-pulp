@@ -36,7 +36,7 @@ then
     source /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk_private/sourceme.sh # Choose your board/config
     source /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk_private/configs/gap9_evk_audio.sh
 
-    export WAV_FILE=/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/right_94de6a6a_nohash_4.wav # ORIGINAL
+    export WAV_FILE=/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser/res/right_94de6a6a_nohash_4.wav # ORIGINAL
 fi
 
 

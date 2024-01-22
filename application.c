@@ -2060,7 +2060,7 @@ int application(void){
 
                 printf ("----------------------------- Button pressed, loading noise ---------------------------\n");
 
-                char noiseName[130] = "/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/meeting_ch01_mancrop1.wav";
+                char noiseName[130] = "/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser/res/meeting_ch01_mancrop1.wav";
                 // input_mic(1, 1, 1); // save, free, noise // Forcefully recording noise from recording
                 input_wav(0, 1, noiseName, 1); // save, free, NoiseName, noise
             }

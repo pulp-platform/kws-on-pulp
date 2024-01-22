@@ -45,8 +45,8 @@ def main():
             file_name_path = word+'/'+file_name
             if word == file.split('/')[-2] and file_name_path in vallist:
            
-                shutil.copy(file, '/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/testing/'+word+'_'+ file.split('/')[-1])
-                file = '/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/testing/'+word+'_'+ file.split('/')[-1]
+                shutil.copy(file, '/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser/testing/'+word+'_'+ file.split('/')[-1])
+                file = '/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser/testing/'+word+'_'+ file.split('/')[-1]
                 sampledict[word]['samplelist'].append(file)
 
     # dump list

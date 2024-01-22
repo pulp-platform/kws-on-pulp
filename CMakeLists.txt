@@ -67,7 +67,7 @@ set (NUM_MATMULS 24)
 # set(CURDIR              /home/cioflanc/odda_gap9/tiny_denoiser/)
 # WORK
 set(GAP9_SDK_DIR        /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk_private/)
-set(CURDIR              /usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/)
+set(CURDIR              /usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser/)
 set(BUILD_DIR           ${CURDIR}/build)
 set(TRAINLIB_DIR        ${CURDIR}/trainlib_example_dscnn/DSCNNS)
 # set(TRAINLIB_DIR        ${CURDIR}/trainlib_example_dscnn/DSCNNM)
@@ -312,10 +312,10 @@ list(APPEND TARGET_PREPROCESSOR # -DPERF
 # set (RESTAURANT_NOISE_WAV /home/cioflanc/odda_gap9/tiny_denoiser/res/meeting_ch01_mancrop1.wav)
 
 # WORK
-set (VALIDATION_FILE /usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/validation.txt)
-set (UTTR_FILE /usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/utterances.txt)
-set (TINYTEST_FILE /usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/tinytest.txt)
-set (RESTAURANT_NOISE_WAV /usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/meeting_ch01_mancrop1.wav)
+set (VALIDATION_FILE /usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser/validation.txt)
+set (UTTR_FILE /usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser/res/utterances.txt)
+set (TINYTEST_FILE /usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser/res/tinytest.txt)
+set (RESTAURANT_NOISE_WAV /usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser/res/meeting_ch01_mancrop1.wav)
 
 FILE(STRINGS ${UTTR_FILE} UTTERANCES)
 FILE(STRINGS ${TINYTEST_FILE} TINYTEST_UTTR)
