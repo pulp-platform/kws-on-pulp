@@ -22,7 +22,6 @@ tinytest/
 *.onnx
 *.pth
 *.slm
-*.sh
 *vars.mk
 *.npy
 *.txt
