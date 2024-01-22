@@ -142,16 +142,16 @@ class Train():
 
                 batched_inputs, batched_labels = inputs[indices].to(self.device), labels[indices].to(self.device)
 
-                save_idx = 0
-                for batched_input in batched_inputs:
-                    with open('validation_inputs'+str(save_idx)+'.npy', 'wb') as file:
-                        np.save(file, batched_input.cpu().numpy())
-                    save_idx = save_idx + 1
-                save_idx = 0
-                for batched_label in batched_labels:
-                    with open('validation_labels'+str(save_idx)+'.npy', 'wb') as file:
-                        np.save(file, batched_label.cpu().numpy())
-                    save_idx = save_idx + 1
+                # save_idx = 0
+                # for batched_input in batched_inputs:
+                #     with open('validation_inputs'+str(save_idx)+'.npy', 'wb') as file:
+                #         np.save(file, batched_input.cpu().numpy())
+                #     save_idx = save_idx + 1
+                # save_idx = 0
+                # for batched_label in batched_labels:
+                #     with open('validation_labels'+str(save_idx)+'.npy', 'wb') as file:
+                #         np.save(file, batched_label.cpu().numpy())
+                #     save_idx = save_idx + 1
 
 
                 if (integer):
@@ -343,10 +343,10 @@ class Train():
             # Save best performing network
             if (val_acc > best_acc):
                 best_acc = val_acc
-                PATH = './model_bbbias_fcnob_tensorflow_sil_acc_' + str(best_acc) + '.pth'
+                PATH = './model_fp32' + str(best_acc) + '.pth'
                 torch.save(model.state_dict(), PATH)
 
 
-        PATH = './model_bbbias_fcnob_tensorflow_sil.pth'
+        PATH = './model_fp32.pth'
         torch.save(model.state_dict(), PATH)
         
