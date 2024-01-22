@@ -4,6 +4,7 @@ quantization/models/
 quantization/tinytest/
 deployment/DSCNN_LIBROSA_SRC
 deployment/DSCNN_TENSORFLOW_SRC
+deployment/models_v1
 logs/
 wavsrc/
 temp/
@@ -24,6 +25,7 @@ tinytest/
 *.sh
 *vars.mk
 *.npy
+*.txt
 
 
 
