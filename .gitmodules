@@ -2,3 +2,6 @@
 	path = pulp-trainlib
 	url = git@iis-git.ee.ethz.ch:kws/pulp-trainlib.git
 
+[submodule "kws-on-pulp"]
+	path = kws-on-pulp
+	url = git@iis-git.ee.ethz.ch:kws/kws-on-pulp.git
