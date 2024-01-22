@@ -9,8 +9,10 @@ logs/
 wavsrc/
 temp/
 tinytest/
-
+DSCNN_*
+application_*
 *gap8_to_gap9/SRC*
+
 
 *BUILD/
 *BUILD_MFCC/
@@ -25,7 +27,7 @@ tinytest/
 *vars.mk
 *.npy
 *.txt
-
+*.wav
 
 
 
