@@ -219,7 +219,7 @@ class Train():
                     model = model.to(self.device)
                     batched_inputs = batched_inputs.type(torch.float).to(self.device)
 
-                    batched_outputs = model(batched_inputs, save, integer=False)
+                    batched_outputs = model(batched_inputs, save)
 
                     if (save):
                         f = open('batched_outputs_float.txt', "a")

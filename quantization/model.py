@@ -65,31 +65,19 @@ class DSCNN(torch.nn.Module):
         self.bn9   = torch.nn.BatchNorm2d(64)
         self.relu9 = torch.nn.ReLU()
 
-        # Default
+        # self.pad10  = nn.ConstantPad2d((1, 1, 1, 1), value=0.)
+        # self.conv10 = torch.nn.Conv2d(in_channels = 64, out_channels = 64, kernel_size = (3, 3), stride = (1, 1), groups = 64, bias = use_bias)
+        # self.bn10   = torch.nn.BatchNorm2d(64)
+        # self.relu10 = torch.nn.ReLU()
+        # self.conv11 = torch.nn.Conv2d(in_channels = 64, out_channels = 64, kernel_size = (1, 1), stride = (1, 1), bias = use_bias)
+        # self.bn11   = torch.nn.BatchNorm2d(64)
+        # self.relu11 = torch.nn.ReLU()
+
         self.avg   = torch.nn.AvgPool2d(kernel_size=(25, 5), stride=1)
-        # Reduced Librosa
-        # self.avg   = torch.nn.AvgPool2d(kernel_size=(21, 5), stride=1)
+        self.fc1   = torch.nn.Linear(64, 12, bias=use_bias)
         
-        self.fc1   = torch.nn.Linear(64, 12, bias=False)
-        # self.soft  = torch.nn.Softmax(dim=1)
-        # self.soft = F.log_softmax(x, dim=1)
-
-
-        self.postavg = None
-
-        # CONV2D replacing Block1 for evaluation purposes
-        # self.pad2  = nn.ConstantPad2d((1, 1, 1, 1), value=0.)
-        # self.conv2 = torch.nn.Conv2d(in_channels = 64, out_channels = 64, kernel_size = (3, 3), stride = (1, 1), groups = 1, bias = use_bias)
-        # self.bn2   = torch.nn.BatchNorm2d(64)
-        # self.relu2 = torch.nn.ReLU()
-        
-    def forward(self, x, save = False, integer=False):
+    def forward(self, x, save = False):
         if (save):
-
-            if (integer):
-                npy_to_txt(12, x.int().cpu().detach().numpy())
-            else:
-                npy_to_txt(12, x.cpu().detach().numpy())
 
             x = self.pad1 (x)
             x = self.conv1(x)
@@ -146,17 +134,24 @@ class DSCNN(torch.nn.Module):
             npy_to_txt(8, x.int().cpu().detach().numpy())
             print ("Sum: ", str(torch.sum(x.int())))
 
+            # x = self.pad10 (x)
+            # x = self.conv10(x)
+            # x = self.bn10  (x)
+            # x = self.relu10(x)   
+            # npy_to_txt(9, x.int().cpu().detach().numpy())
+            # print ("Sum: ", str(torch.sum(x.int())))
+            # x = self.conv11(x)
+            # x = self.bn11  (x)
+            # x = self.relu11(x)   
+            # npy_to_txt(10, x.int().cpu().detach().numpy())
+            # print ("Sum: ", str(torch.sum(x.int())))
+
             x = self.avg(x)
             npy_to_txt(9, x.int().cpu().detach().numpy())
             x = torch.flatten(x, 1) 
-            if (integer):
-                npy_to_txt(11, x.int().cpu().detach().numpy())
-            else:
-                npy_to_txt(11, x.cpu().detach().numpy())
-            self.postavg = x
             x = self.fc1(x)
             npy_to_txt(10, x.int().cpu().detach().numpy())
-            # print (x.int().cpu().detach().numpy())
+            print (x.int().cpu().detach().numpy())
 
         else:
 
@@ -197,13 +192,17 @@ class DSCNN(torch.nn.Module):
             x = self.bn9  (x)            
             x = self.relu9(x)          
 
+            # x = self.pad10 (x)            
+            # x = self.conv10(x)            
+            # x = self.bn10  (x)            
+            # x = self.relu10(x)            
+            # x = self.conv11(x)            
+            # x = self.bn11  (x)            
+            # x = self.relu11(x)          
+
             x = self.avg(x)            
             x = torch.flatten(x, 1) 
-            # print("Flattened")
-            # print (x)
-            self.postavg = x
             x = self.fc1(x)
-            # print (x)
             
         return x # To be compatible with Dory
         # return F.log_softmax(x, dim=1)
