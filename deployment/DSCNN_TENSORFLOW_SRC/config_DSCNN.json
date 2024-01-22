@@ -1,5 +1,0 @@
-{
-	"BNRelu_bits": 64,
-	"onnx_file": "/usr/scratch/wetterhorn/cioflanc/kws-on-pulp/deployment/DSCNN_TENSORFLOW_SRC/model.onnx",
-	"code reserved space": 132000
-}

@@ -142,6 +142,17 @@ class Train():
 
                 batched_inputs, batched_labels = inputs[indices].to(self.device), labels[indices].to(self.device)
 
+                save_idx = 0
+                for batched_input in batched_inputs:
+                    with open('validation_inputs'+str(save_idx)+'.npy', 'wb') as file:
+                        np.save(file, batched_input.cpu().numpy())
+                    save_idx = save_idx + 1
+                save_idx = 0
+                for batched_label in batched_labels:
+                    with open('validation_labels'+str(save_idx)+'.npy', 'wb') as file:
+                        np.save(file, batched_label.cpu().numpy())
+                    save_idx = save_idx + 1
+
 
                 if (integer):
 

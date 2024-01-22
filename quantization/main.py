@@ -97,22 +97,24 @@ print('Finished Training on GPU in {:.2f} seconds'.format(time.clock_gettime(0)-
 # Ignoring training, load pretrained model
 # model.load_state_dict(torch.load('./model.pth', map_location=torch.device('cuda')))
 # model.load_state_dict(torch.load('./best_model_nobias.pth', map_location=torch.device('cuda')))
-model.load_state_dict(torch.load('./best_model_bbbias_fcnob_tensorflow_sil.pth', map_location=torch.device('cuda')))
+
+
+model.load_state_dict(torch.load('./models/models_odda_gap9/DSCNNS_SIL/model.pth', map_location=torch.device('cuda')))
 
 
 dummy_input = torch.randn(1, 1, 49, 10, requires_grad=True).to(device)
-
+model_preponnx_copy = deepcopy(model).to(device)
 # Export the model
-# torch.onnx.export(model,               # model being run
-#                   dummy_input,                         # model input (or a tuple for multiple inputs)
-#                   "floatmodel.onnx",   # where to save the model (can be a file or file-like object)
-#                   export_params=True,        # store the trained parameter weights inside the model file
-#                   opset_version=10,          # the ONNX version to export the model to
-#                   do_constant_folding=True,  # whether to execute constant folding for optimization
-#                   input_names = ['input'],   # the model's input names
-#                   output_names = ['output'], # the model's output names
-#                   dynamic_axes={'input' : {0 : 'batch_size'},    # variable length axes
-#                                 'output' : {0 : 'batch_size'}})
+torch.onnx.export(model_preponnx_copy,               # model being run
+                  dummy_input,                         # model input (or a tuple for multiple inputs)
+                  "DSCNNS_SIL_model_torch_v2.onnx",   # where to save the model (can be a file or file-like object)
+                  export_params=True,        # store the trained parameter weights inside the model file
+                  opset_version=10,          # the ONNX version to export the model to
+                  do_constant_folding=True,  # whether to execute constant folding for optimization
+                  input_names = ['input'],   # the model's input names
+                  output_names = ['output'], # the model's output names
+                  dynamic_axes={'input' : {0 : 'batch_size'},    # variable length axes
+                                'output' : {0 : 'batch_size'}})
 
 
 # # torch.set_printoptions(profile="full")
@@ -294,6 +296,8 @@ with quantized_model.statistics_act():
     # trainining_environment.validate(model=quantized_model, mode='tinytest', batch_size=10)
 quantized_model.reset_alpha_act()
 
+quit() # early stop to simply save a validation set for NNTOOL
+
 # Remove biases after FQ stage
 quantized_model.remove_bias()
 
@@ -344,7 +348,7 @@ eps_avg = eps['avg']
 print (eps_avg)
 
 # Saving the model
-nemo.utils.export_onnx('best_model_bbbias_fcnob_tensorflow_sil.onnx', quantized_model, quantized_model, (1, 49, 10))
+nemo.utils.export_onnx('model_dscnns_sil_v2.onnx', quantized_model, quantized_model, (1, 49, 10))
 # Saving the activations for comparison within Dory
 acc = trainining_environment.validate(model=quantized_model, mode='tinytest', batch_size=1, integer=True, save=True)
 
