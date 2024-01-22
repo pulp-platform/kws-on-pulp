@@ -7,27 +7,29 @@ This project enables the deployment of a keyword spotting neural network on GAP9
 ### Pretrain ONNX model
 
 ```
-git clone https://github.com/pulp-platform/kws-on-pulp
+git submodule update --init
 cd quantization
 python main.py
+cd ..
 ```
 ### [INFERENCE] Generate DORY-based C code for GAP8
 
 ```
-cd /usr/scratch/wetterhorn/cioflanc/mlonmcu_exercise6/exercise6/curr/
+cd deployment/dory/dory/Hardware_targets/PULP/Backend_Kernels/ && git clone git@github.com:pulp-platform/pulp-nn.git # git submodule update --init 
+cd -
 ./deploy_dscnn_pulpsdkl2.sh gap_sdk 3 gvsoc 0
 ```
 
 ### [INFERENCE] GAP8-GAP9 conversion
 
 ```
-cd /usr/scratch/wetterhorn/cioflanc/mlonmcu_exercise6/exercise6/curr/application_dscnn_gap9/
-./converter.sh
-cp -r /usr/scratch/wetterhorn/cioflanc/mlonmcu_exercise6/exercise6/curr/application_dscnn_gap9/hex tiny_denoiser/DORY_network/
-cp -r /usr/scratch/wetterhorn/cioflanc/mlonmcu_exercise6/exercise6/curr/application_dscnn_gap9/inc tiny_denoiser/DORY_network/
-cp -r /usr/scratch/wetterhorn/cioflanc/mlonmcu_exercise6/exercise6/curr/application_dscnn_gap9/src tiny_denoiser/DORY_network/
-rm tiny_denoiser/DORY_network/src/main.c
+cd deployment/
+./convert_gap8_to_gap9.sh destination_directory ../source_directory
+cd -
 ```
+
+Several changes are required to stop the inference before the classifier.
+TODO: List the changes.
 
 ## [INFERENCE] Run on GAP9
 
