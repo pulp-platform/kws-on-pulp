@@ -1,0 +1,49 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+  workflow_dispatch:
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-22.04
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build the Docker image
+      run: |
+        docker login -u ${{secrets.DOCKER_USERNAME}} -p ${{secrets.DOCKER_PASSWORD}}
+        docker build -t ${{secrets.DOCKER_USERNAME}}/aleburrello - < Dockerfile
+        docker push ${{secrets.DOCKER_USERNAME}}/aleburrello
+
+  tests:
+
+    runs-on: ubuntu-22.04
+    needs: []
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.CI_TOKEN }}
+          submodules: recursive
+      - name: Run experiments in docker image
+        uses: addnab/docker-run-action@v3
+        with:
+          image: alessioburrello/aleburrello:latest
+          options: -v ${{ github.workspace }}:/dory_checkout --workdir /dory_checkout
+          shell: bash
+          run: |
+            source docker_utils/docker_pulp_sdk.sh
+            python3 -m pytest --durations=0 -x test_PULP.py --compat "pulp-sdk" --appdir "/dory_app"
+            retcode=$?
+            if [ ! $retcode -eq 0 ]; then exit $retcode; fi
+            echo $retcode
+            source docker_utils/docker_gap_sdk.sh
+            python3 -m pytest --durations=0 -x test_PULP.py --compat "gap-sdk" --appdir "/dory_app"
+            retcode=$?
+            if [ ! $retcode -eq 0 ]; then exit $retcode; fi
+            echo $retcode
