@@ -15,7 +15,7 @@
 #define Tpad_W_l0 0
 
 // HYPERPARAMETERS
-#define LEARNING_RATE 0.001
+#define LEARNING_RATE 0.5
 #define EPOCHS 1
 #define BATCH_SIZE 1
 #endif /* INITDEFINES_H */
