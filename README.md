@@ -28,8 +28,7 @@ cd deployment/
 cd -
 ```
 
-Several changes are required to stop the inference before the classifier.
-TODO: List the changes.
+Note that the DORY-generated C code currently allows setting the number of `n_frozen_layers` in `dory/Hardware_targets/PULP/PULP_gvsoc/Templates/network_c_template.c`. This should be passed as external paramater during code generation, also accounting for the number of non-parametrizable operations (e.g., AvgPool, Identity).
 
 ## [INFERENCE] Run on GAP9
 
