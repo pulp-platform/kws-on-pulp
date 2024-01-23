@@ -34,17 +34,17 @@ Note that the DORY-generated C code currently allows setting the number of `n_fr
 
 To run the network on GVSOC:
 ```
-./deploy_cmake.sh gvsoc 1 1 1 0 WORK
+./deploy.sh gvsoc 1 1 1 0 WORK
 ```
 
 To run the network on GAP9 with the Evaluation Kit:
 ```
-./deploy_cmake.sh board 0 0 0 0 WORK
+./deploy.sh board 0 0 0 0 WORK
 ```
 
 To understand the runtime parameters:
 ```
-./deploy_cmake.sh -h
+./deploy.sh -h
 ```
 
 This currently integrates inference and user-indicated training. An inference-only mode should be ensured.
