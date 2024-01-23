@@ -53,8 +53,7 @@ This currently integrates inference and user-indicated training. An inference-on
 
 ```
 cd pulp-trainlib/
-./codegen.sh # generates net.{c,h}, main.c
-
+./codegen.sh /usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser/trainlib_example_dscnn/ yournetwork/ # generates net.{h,c}, initdefines.h, iodata.{h,c}
 ```
 
 =======
