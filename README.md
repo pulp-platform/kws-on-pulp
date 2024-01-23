@@ -34,15 +34,22 @@ Note that the DORY-generated C code currently allows setting the number of `n_fr
 
 To run the network on GVSOC:
 ```
-./deploy_gvsoc.sh
+./deploy_cmake.sh gvsoc 1 1 1 0 WORK
 ```
 
 To run the network on GAP9 with the Evaluation Kit:
 ```
-./deploy_gvsoc.sh
+./deploy_cmake.sh board 0 0 0 0 WORK
 ```
 
-### [TRAIN] Generate PULP TrainLib-based C code for GAP8
+To understand the runtime parameters:
+```
+./deploy_cmake.sh -h
+```
+
+This currently integrates inference and user-indicated training. An inference-only mode should be ensured.
+
+### [TRAIN] Generate PULP TrainLib-based C code
 
 WIP
 =======
