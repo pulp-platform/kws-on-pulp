@@ -51,7 +51,12 @@ This currently integrates inference and user-indicated training. An inference-on
 
 ### [TRAIN] Generate PULP TrainLib-based C code
 
-WIP
+```
+cd pulp-trainlib/
+./codegen.sh # generates net.{c,h}, main.c
+
+```
+
 =======
 
 ### Board configuration
