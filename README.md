@@ -17,7 +17,7 @@ cd ..
 ```
 cd deployment/dory/dory/Hardware_targets/PULP/Backend_Kernels/ && git clone git@github.com:pulp-platform/pulp-nn.git # git submodule update --init 
 cd -
-./deploy_dscnn_pulpsdkl2.sh gap_sdk 3 gvsoc 0
+./deploy_dory.sh gap_sdk 3 gvsoc 0 0
 ```
 
 ### [INFERENCE] GAP8-GAP9 conversion
