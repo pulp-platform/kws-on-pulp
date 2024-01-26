@@ -46,6 +46,7 @@ export SDK=$1
 export MEMORY=$2
 export PLATFORM=$3
 export MFCC=$4
+export COMPUTE=$5
 export NETWORK_DIR=DSCNN
 export NETWORK_SRC_DIR=DSCNN_SRC
 export CUR_DIR=$PWD
@@ -98,8 +99,12 @@ cp $CUR_DIR/$NETWORK_SRC_DIR/out_layer*.txt $NETWORK_DIR/
 # We use 64 bits for the BatchNorm and ReLU
 if [[ $MEMORY == "3" ]]
 then
-  # python network_generate.py NEMO GAP8.GAP8_gvsoc $CUR_DIR/$NETWORK_SRC_DIR/config_DSCNN.json --app_dir $NETWORK_DIR/ --perf_layer Yes # origin/l2_pulp_sdk
-  python network_generate.py NEMO PULP.PULP_gvsoc $CUR_DIR/$NETWORK_SRC_DIR/config_DSCNN.json --app_dir $NETWORK_DIR/
+  if [[ $COMPUTE == "0" ]]
+  then
+    python network_generate.py NEMO PULP.PULP_gvsoc $CUR_DIR/$NETWORK_SRC_DIR/config_DSCNN.json --app_dir $NETWORK_DIR/
+  else
+    python network_generate.py NEMO PULP.GAP9_NE16 $CUR_DIR/$NETWORK_SRC_DIR/config_DSCNN.json --app_dir $NETWORK_DIR/
+  fi
 else
   python network_generate.py NEMO PULP.GAP8_L2 $CUR_DIR/$NETWORK_SRC_DIR/config_DSCNN.json --app_dir $NETWORK_DIR/
 fi
