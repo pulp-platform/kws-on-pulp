@@ -24,7 +24,7 @@ cd -
 
 ```
 cd deployment/
-./convert_gap8_to_gap9.sh destination_directory ../source_directory
+./convert_gap8_to_gap9.sh destination_directory source_directory
 cd -
 ```
 
