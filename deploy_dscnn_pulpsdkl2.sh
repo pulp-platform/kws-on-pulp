@@ -99,9 +99,9 @@ cp $CUR_DIR/$NETWORK_SRC_DIR/out_layer*.txt $NETWORK_DIR/
 if [[ $MEMORY == "3" ]]
 then
   # python network_generate.py NEMO GAP8.GAP8_gvsoc $CUR_DIR/$NETWORK_SRC_DIR/config_DSCNN.json --app_dir $NETWORK_DIR/ --perf_layer Yes # origin/l2_pulp_sdk
-  python network_generate.py NEMO PULP.PULP_gvsoc $CUR_DIR/$NETWORK_SRC_DIR/config_DSCNN.json --app_dir $NETWORK_DIR/ --perf_layer
+  python network_generate.py NEMO PULP.PULP_gvsoc $CUR_DIR/$NETWORK_SRC_DIR/config_DSCNN.json --app_dir $NETWORK_DIR/
 else
-  python network_generate.py NEMO PULP.GAP8_L2 $CUR_DIR/$NETWORK_SRC_DIR/config_DSCNN.json --app_dir $NETWORK_DIR/ --perf_layer
+  python network_generate.py NEMO PULP.GAP8_L2 $CUR_DIR/$NETWORK_SRC_DIR/config_DSCNN.json --app_dir $NETWORK_DIR/
 fi
 
 # Copy the files into our directory, preparing the MFCC integration
