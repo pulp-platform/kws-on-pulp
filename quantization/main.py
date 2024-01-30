@@ -25,7 +25,7 @@ import math
 import nemo
 
 from torchsummary import summary
-from model import DSCNN
+from model import DSCNNS, DSCNNM, DSCNNL
 from utils import remove_txt, parameter_generation
 from copy import deepcopy
 from pthflops import count_ops
@@ -56,8 +56,8 @@ tinytrain_size = audio_processor.get_size('tinytrain')
 print("Dataset split (Train/valid/test/tinytrain): "+ str(train_size) +"/"+str(valid_size) + "/" + str(test_size) + "/" + str(tinytrain_size))
 
 # Model generation and analysis
-# model = DSCNN(use_bias = False) # Put to FALSE to reproduce FC layer
-model = DSCNN(use_bias = True) # Put to TRUE to reproduce model_bias layer
+# model = DSCNNS(use_bias = False) # Put to FALSE to reproduce FC layer
+model = DSCNNS(use_bias = True) # Put to TRUE to reproduce model_bias layer
 model.to(device)
 
 summary(model,(1,49,data_processing_parameters['feature_bin_count']))
