@@ -26,9 +26,9 @@ if [ "$1" == "-h" ] ; then
     echo "MEMORY: (L)2, (L)3"
     echo "PLATFORM: gvsoc, fpga, rtl"
     echo "MFCC computation: 0 (offline), 1 (online)"
+    echo "COMPUTE: 0 (PULP GVSOC), 1 (GAP9 multicore), 2 (GAP9 NE16)"
     exit 0
 fi
-
 
 # export PATH=/usr/pack/gcc-4.9.1-af/x86_64-rhe6-linux/bin:$PATH
 # export LD_LIBRARY_PATH=/usr/pack/gcc-4.9.1-af/x86_64-rhe6-linux/lib64/:$LD_LIBRARY_PATH
@@ -42,15 +42,14 @@ export CXX=g++-9.2.1
 export GAP_SDK_DIR=/usr/scratch/wetterhorn/cioflanc/tools/gap_sdk/
 # export AUDIO_SAMPLE=/usr/scratch/wetterhorn/cioflanc/kws-on-pulp/kws-on-pulp/dataset/train/right/aa48c94a_nohash_2.wav
 export AUDIO_SAMPLE=/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser/kws-on-pulp/aa48c94a_nohash_2.wav
-export SDK=$1
-export MEMORY=$2
-export PLATFORM=$3
-export MFCC=$4
-export COMPUTE=$5
+export SDK=$1 # pulp_sdk, gap_sdk
+export MEMORY=$2 # 2, 3
+export PLATFORM=$3 # gvsoc, fpga, rtl
+export MFCC=$4 # 0 - offline, 1 - online
+export COMPUTE=$5 # 0 - PULP GVSOC, 1 - GAP9 multicore, 2 - GAP9 NE16
 export NETWORK_DIR=DSCNN
 export NETWORK_SRC_DIR=DSCNN_SRC
 export CUR_DIR=$PWD
-
 
 
 if [[ $SDK == "pulp_sdk" ]]
@@ -70,9 +69,12 @@ then
 else
   export GAP_RISCV_GCC_TOOLCHAIN=/usr/scratch/wetterhorn/cioflanc/tools/gap_riscv_toolchain/
   # Select target
-  # source /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk/sourceme.sh # original
-  # source /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk_mar23/gap_sdk/sourceme.sh #newest GAP8
-  source /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk_private/configs/gap9_evk_audio.sh # GAP9
+  if [[ $COMPUTE == "0" ]]
+  then
+    source /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk_mar23/gap_sdk/sourceme.sh #newest GAP8
+  else
+    source /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk_private/configs/gap9_evk_audio.sh # GAP9
+  fi
 fi
 
 mkdir $NETWORK_SRC_DIR
@@ -89,12 +91,9 @@ rm $NETWORK_DIR/model.onnx
 rm $NETWORK_DIR/out_layer*.txt
 rm $NETWORK_DIR/input.txt
 
-
 cp $CUR_DIR/$NETWORK_SRC_DIR/input.txt $NETWORK_DIR/
 cp $CUR_DIR/$NETWORK_SRC_DIR/model.onnx  $NETWORK_DIR/
 cp $CUR_DIR/$NETWORK_SRC_DIR/out_layer*.txt $NETWORK_DIR/
-
-# TODO: Fix target's SDK (e.g., dory/dory/Hardware_targets/GAP8/GAP8_gvsoc/HW_description.json)
 
 # Generate source code and weights for model inference
 # We use 64 bits for the BatchNorm and ReLU
@@ -103,7 +102,11 @@ then
   if [[ $COMPUTE == "0" ]]
   then
     python network_generate.py NEMO PULP.PULP_gvsoc $CUR_DIR/$NETWORK_SRC_DIR/config_DSCNN.json --app_dir $NETWORK_DIR/ --verbose_level Check_all+Perf_final --perf_layer
-  else
+  elif [[ $COMPUTE == "1" ]]
+  then
+    python network_generate.py NEMO PULP.GAP9 $CUR_DIR/$NETWORK_SRC_DIR/config_DSCNN.json --app_dir $NETWORK_DIR/ --verbose_level Check_all+Perf_final --perf_layer
+  elif [[ $COMPUTE == "2" ]]
+  then
     python network_generate.py NEMO PULP.GAP9_NE16 $CUR_DIR/$NETWORK_SRC_DIR/config_DSCNN.json --app_dir $NETWORK_DIR/ --verbose_level Check_all+Perf_final --perf_layer
   fi
 else
@@ -150,7 +153,3 @@ if [[ $PLATFORM == "rtl" ]]
 # screen -L /dev/ttyUSB2 115200
 # ./openocd -f openocd-zcu102-digilent-jtag-hs2.cfg
 # /usr/scratch/wetterhorn/cioflanc/tools/pulp_riscv_toolchain/v1.0.16-pulp-riscv-gcc-centos-7/bin/riscv32-unknown-elf-gdb executable
-
-
-# DSCNN - all good :) with l2_pulp_sdk
-
