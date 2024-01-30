@@ -114,42 +114,19 @@ else
 fi
 
 # Copy the files into our directory, preparing the MFCC integration
-# mkdir -p $CUR_DIR/application_dscnnl_gap8/ && cp -r $NETWORK_DIR/DORY_network/ "$_"
-# mkdir -p $CUR_DIR/application_dscnnl_gap8/ && cp -r $NETWORK_DIR/DORY_network/ $CUR_DIR/application_dscnnl_gap8/
 mkdir -p $CUR_DIR/application_dscnnl_gap8/ && cp -r $NETWORK_DIR/* $CUR_DIR/application_dscnnl_gap8/
 if [[ $MEMORY == "2" ]]
 then
   # Save .WAV as .h for L2
   python $CUR_DIR/wav_to_header.py --file $AUDIO_SAMPLE --sdk $SDK
-  # mv $CUR_DIR/wav.h $CUR_DIR/application_dscnnl_gap8
 fi
 cd $CUR_DIR/application_dscnnl_gap8/
-
-# Run end-to-end KWS on selected 8-core platform (e.g., PULP-OPEN) using the selected SDK (e.g., pulp_sdk)
-# Compute MFCC for selected audio sample and perform inference using the MFCCs on GVSOC
-# Dory will compare the intermediate features agains the ones generated in Python (quantization/main.py) 
-
-# VERBOSE=1 requires MAGICK?! TODO: understand
-# make VERBOSE=1 clean all run sample=$AUDIO_SAMPLE sdk=$SDK memory=$MEMORY CORE=8 platform=$PLATFORM 
 
 # Parametrized
 make clean all run sample=$AUDIO_SAMPLE sdk=$SDK memory=$MEMORY platform=$PLATFORM mfcc=$MFCC CORE=8 # runner_args="--trace=insn"
 
 if [[ $PLATFORM == "rtl" ]]
-  then
-    cd $CUR_DIR
-    # Convert .slm to .hex
-    # Out size: 144 K
-    # python utils/flash_to_hyperflash.py --input $CUR_DIR/application_dscnnl_gap8/BUILD/PULP/GCC_RISCV/slm_files/flash_stim.slm --output hyperflash_stim.slm
-    # python utils/slm_to_hex.py --input hyperflash_stim.slm
-
-    # Out size: 294 K
-    python utils/slm_to_hex.py  --input $CUR_DIR/application_dscnnl_gap8/BUILD/PULP/GCC_RISCV/slm_files/flash_stim.slm
-  fi
-
-
-
-# Instructions
-# screen -L /dev/ttyUSB2 115200
-# ./openocd -f openocd-zcu102-digilent-jtag-hs2.cfg
-# /usr/scratch/wetterhorn/cioflanc/tools/pulp_riscv_toolchain/v1.0.16-pulp-riscv-gcc-centos-7/bin/riscv32-unknown-elf-gdb executable
+then
+  cd $CUR_DIR
+  python utils/slm_to_hex.py  --input $CUR_DIR/application_dscnnl_gap8/BUILD/PULP/GCC_RISCV/slm_files/flash_stim.slm
+fi
