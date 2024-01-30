@@ -70,14 +70,15 @@ then
 else
   export GAP_RISCV_GCC_TOOLCHAIN=/usr/scratch/wetterhorn/cioflanc/tools/gap_riscv_toolchain/
   # Select target
-  # source /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk/sourceme.sh
-  source /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk_mar23/gap_sdk/sourceme.sh #newest
+  # source /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk/sourceme.sh # original
+  # source /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk_mar23/gap_sdk/sourceme.sh #newest GAP8
+  source /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk_private/configs/gap9_evk_audio.sh # GAP9
 fi
 
 mkdir $NETWORK_SRC_DIR
 
 cp $CUR_DIR/quantization/input.txt $NETWORK_SRC_DIR/
-cp $CUR_DIR/quantization/model*.onnx $NETWORK_SRC_DIR/model.onnx
+cp $CUR_DIR/quantization/model_int8.onnx $NETWORK_SRC_DIR/model.onnx
 cp $CUR_DIR/quantization/out_layer*.txt $NETWORK_SRC_DIR/
 cp $CUR_DIR/config_DSCNN.json $NETWORK_SRC_DIR/
 
@@ -101,12 +102,12 @@ if [[ $MEMORY == "3" ]]
 then
   if [[ $COMPUTE == "0" ]]
   then
-    python network_generate.py NEMO PULP.PULP_gvsoc $CUR_DIR/$NETWORK_SRC_DIR/config_DSCNN.json --app_dir $NETWORK_DIR/
+    python network_generate.py NEMO PULP.PULP_gvsoc $CUR_DIR/$NETWORK_SRC_DIR/config_DSCNN.json --app_dir $NETWORK_DIR/ --verbose_level Check_all+Perf_final --perf_layer
   else
-    python network_generate.py NEMO PULP.GAP9_NE16 $CUR_DIR/$NETWORK_SRC_DIR/config_DSCNN.json --app_dir $NETWORK_DIR/
+    python network_generate.py NEMO PULP.GAP9_NE16 $CUR_DIR/$NETWORK_SRC_DIR/config_DSCNN.json --app_dir $NETWORK_DIR/ --verbose_level Check_all+Perf_final --perf_layer
   fi
 else
-  python network_generate.py NEMO PULP.GAP8_L2 $CUR_DIR/$NETWORK_SRC_DIR/config_DSCNN.json --app_dir $NETWORK_DIR/
+  python network_generate.py NEMO PULP.GAP8_L2 $CUR_DIR/$NETWORK_SRC_DIR/config_DSCNN.json --app_dir $NETWORK_DIR/ --verbose_level Check_all+Perf_final --perf_layer
 fi
 
 # Copy the files into our directory, preparing the MFCC integration
