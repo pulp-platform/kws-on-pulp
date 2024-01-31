@@ -88,7 +88,7 @@ cp $CUR_DIR/quantization/out_layer*.txt $NETWORK_DIR_SRC/
 cp $CUR_DIR/config_DSCNN.json $NETWORK_DIR_SRC/ # TODO: .onnx path in config_DSCNN.json
 
 # Copy model and it's activations to Dory
-cd deployment/dory/
+cd dory/
 mkdir -p $NETWORK_DIR_DEST_DORY
 rm $NETWORK_DIR_DEST_DORY/model.onnx
 rm $NETWORK_DIR_DEST_DORY/out_layer*.txt
