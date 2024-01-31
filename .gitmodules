@@ -2,3 +2,6 @@
 	path = quantization/nemo
 	url = https://github.com/pulp-platform/nemo.git
 
+[submodule "dory"]
+	path = dory
+	url = git@iis-git.ee.ethz.ch:kws/dory.git
