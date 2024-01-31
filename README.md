@@ -12,27 +12,13 @@ cd kws-on-pulp/quantization
 python main.py
 cd ..
 ```
-### [INFERENCE] Generate DORY-based C code for GAP8
+### [INFERENCE] Generate DORY-based C code for GAP9
 
 ```
-cd kws-on-pulp/deployment/dory/dory/Hardware_targets/PULP/Backend_Kernels/ && git clone git@github.com:pulp-platform/pulp-nn.git # git submodule update --init 
+cd dory/
+git submodule update --init 
 cd -
-./deploy_dory.sh gap_sdk 3 gvsoc 0 0
-```
-
-### [INFERENCE] GAP8-GAP9 conversion
-
-```
-cd kws-on-pulp/deployment/
-./convert_gap8_to_gap9.sh destination_directory source_directory
-cd -
-```
-
-If DORY-generated C code targets GAP9, then
-```
-cd kws-on-pulp/deployment/
-./dory_to_application.sh destination_directory source_directory
-cd -
+./deploy_dory.sh gap_sdk 3 gvsoc 0 2 DSCNN_DIR_DEST DSCNN_DIR_SRC
 ```
 
 Note that the DORY-generated C code currently allows setting the number of `n_frozen_layers` in `dory/Hardware_targets/PULP/PULP_gvsoc/Templates/network_c_template.c`. This should be passed as external paramater during code generation, also accounting for the number of non-parametrizable operations (e.g., AvgPool, Identity).
