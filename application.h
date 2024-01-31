@@ -35,6 +35,7 @@
 
 // #define L2_MEMORY_SIZE MODEL_L2_MEMORY // TODO: Read from CMake
 #define L2_MEMORY_SIZE 150000 // TODO: Read from CMake
+// #define L2_MEMORY_SIZE 1404000
 
 // typedef struct float16 MFCC_IN_TYPE;
 // typedef struct float16 OUT_TYPE;

@@ -8,14 +8,14 @@ This project enables the deployment of a keyword spotting neural network on GAP9
 
 ```
 git submodule update --init
-cd quantization
+cd kws-on-pulp/quantization
 python main.py
 cd ..
 ```
 ### [INFERENCE] Generate DORY-based C code for GAP8
 
 ```
-cd deployment/dory/dory/Hardware_targets/PULP/Backend_Kernels/ && git clone git@github.com:pulp-platform/pulp-nn.git # git submodule update --init 
+cd kws-on-pulp/deployment/dory/dory/Hardware_targets/PULP/Backend_Kernels/ && git clone git@github.com:pulp-platform/pulp-nn.git # git submodule update --init 
 cd -
 ./deploy_dory.sh gap_sdk 3 gvsoc 0 0
 ```
@@ -23,8 +23,15 @@ cd -
 ### [INFERENCE] GAP8-GAP9 conversion
 
 ```
-cd deployment/
+cd kws-on-pulp/deployment/
 ./convert_gap8_to_gap9.sh destination_directory source_directory
+cd -
+```
+
+If DORY-generated C code targets GAP9, then
+```
+cd kws-on-pulp/deployment/
+./dory_to_application.sh destination_directory source_directory
 cd -
 ```
 

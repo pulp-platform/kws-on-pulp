@@ -776,7 +776,7 @@ void evaluate_validation(pre){
 
             // Extract backbone features
             void *dump; // dump to copy FC weights, won't be used; TODO: Parametrize DORY
-            network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &dump, 0); // L2_input_h extra-arg for L2-only
+            network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &dump, 0, 1); // L2_input_h extra-arg for L2-only
 
             for (int i=0; i < 64; i++){
                 PRINTF("%i, ", ((uint8_t *) l2_buffer)[i]);
@@ -1150,7 +1150,7 @@ void evaluate_tinytest(int pre){
 
         // Extract backbone features
         void *dump; // dump to copy FC weights, won't be used; TODO: Parametrize DORY
-        network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &dump, 0); // L2_input_h extra-arg for L2-only
+        network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &dump, 0, 1); // L2_input_h extra-arg for L2-only
 
         for (int i=0; i < 64; i++){
             PRINTF("%i, ", ((uint8_t *) l2_buffer)[i]);
@@ -1337,7 +1337,7 @@ void train_wavsrc(){
 
         PRINTF ("********** Run inferecene **********\n");
         // Extract backbone features
-        network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &L2_FC_weights_int8, 0); // L2_input_h extra-arg for L2-only
+        network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &L2_FC_weights_int8, 0, 1); // L2_input_h extra-arg for L2-only
 
 
         pi_cluster_conf_init(&cl_conf);
@@ -1627,7 +1627,7 @@ int application(void){
     if (l2_buffer == NULL) {
         printf("failed to allocate memory for l2_buffer\n");
     }
-    network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &L2_FC_weights_int8, 0); // L2_input_h extra-arg for L2-only
+    network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &L2_FC_weights_int8, 0, 1); // L2_input_h extra-arg for L2-only
 
     // Run classifier
     pi_cluster_conf_init(&cl_conf);
@@ -1936,7 +1936,7 @@ int application(void){
         int start_backbone = pi_time_get_us();
         
         // pi_gpio_pin_write(gpio_pin_measurement_id, 1);
-        network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &dump, 0); // L2_input_h extra-arg for L2-only
+        network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &dump, 0, 1); // L2_input_h extra-arg for L2-only
         // pi_gpio_pin_write(gpio_pin_measurement_id, 0);
 
         #ifdef PERF

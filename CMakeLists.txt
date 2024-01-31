@@ -160,7 +160,7 @@ list (APPEND TARGET_INCS
                          -I${TILER_INC}
                          -I${TILER_EMU_INC}
                          -I${GAP_SDK_HOME}/libs/gap_lib/include
-                         -I${CURDIR}DORY_network/inc
+                         -I${CURDIR}example_gap9ne16/inc
                          -I${GAP9_SDK_DIR}rtos/pmsis/bsp/include/bsp
                          -I${GAP9_SDK_DIR}rtos/pmsis/bsp/include/bsp/ram
                          -I${GAP9_SDK_DIR}rtos/pmsis/bsp/include/bsp/flash
@@ -184,45 +184,133 @@ set (NUM_CORES 8)
 set (GAP_SDK 1)
 
 set (TARGET_CHIP_FAMILY_GAP9 1)
-list (APPEND TARGET_SRCS ${CURDIR}DORY_network/src/BNReluConvolution0.c
-                         ${CURDIR}DORY_network/src/BNReluConvolution1.c 
-                         ${CURDIR}DORY_network/src/BNReluConvolution2.c 
-                         ${CURDIR}DORY_network/src/BNReluConvolution3.c 
-                         ${CURDIR}DORY_network/src/BNReluConvolution4.c 
-                         ${CURDIR}DORY_network/src/BNReluConvolution5.c 
-                         ${CURDIR}DORY_network/src/BNReluConvolution6.c 
-                         ${CURDIR}DORY_network/src/BNReluConvolution7.c 
-                         ${CURDIR}DORY_network/src/BNReluConvolution8.c 
-                         ${CURDIR}DORY_network/src/ReluPooling9.c     # DSCNN S/M
-                         ${CURDIR}DORY_network/src/FullyConnected10.c # DSCNN S/M
-                         # ${CURDIR}DORY_network/src/BNReluConvolution9.c   # DSCNN L
-                         # ${CURDIR}DORY_network/src/BNReluConvolution10.c  # DSCNN L
-                         # ${CURDIR}DORY_network/src/ReluPooling11.c        # DSCNN L
-                         # ${CURDIR}DORY_network/src/FullyConnected12.c     # DSCNN L
+# GAP8 TO GAP9 CONVERSION
+# list (APPEND TARGET_SRCS ${CURDIR}DORY_network/src/BNReluConvolution0.c
+#                          ${CURDIR}DORY_network/src/BNReluConvolution1.c 
+#                          ${CURDIR}DORY_network/src/BNReluConvolution2.c 
+#                          ${CURDIR}DORY_network/src/BNReluConvolution3.c 
+#                          ${CURDIR}DORY_network/src/BNReluConvolution4.c 
+#                          ${CURDIR}DORY_network/src/BNReluConvolution5.c 
+#                          ${CURDIR}DORY_network/src/BNReluConvolution6.c 
+#                          ${CURDIR}DORY_network/src/BNReluConvolution7.c 
+#                          ${CURDIR}DORY_network/src/BNReluConvolution8.c 
+#                          ${CURDIR}DORY_network/src/ReluPooling9.c     # DSCNN S/M
+#                          ${CURDIR}DORY_network/src/FullyConnected10.c # DSCNN S/M
+#                          # ${CURDIR}DORY_network/src/BNReluConvolution9.c   # DSCNN L
+#                          # ${CURDIR}DORY_network/src/BNReluConvolution10.c  # DSCNN L
+#                          # ${CURDIR}DORY_network/src/ReluPooling11.c        # DSCNN L
+#                          # ${CURDIR}DORY_network/src/FullyConnected12.c     # DSCNN L
+# 
+#                          ${CURDIR}DORY_network/src/dory.c # GAP8GAP9
+#                          # ${CURDIR}DORY_network/src/dory_dma.c # ONESHOT
+#                          ${CURDIR}DORY_network/src/mem.c 
+#                          ${CURDIR}DORY_network/src/net_utils.c 
+#                          ${CURDIR}DORY_network/src/network.c 
+#                          ${CURDIR}DORY_network/src/pulp_nn_add.c 
+#                          ${CURDIR}DORY_network/src/pulp_nn_avgpool.c 
+#                          ${CURDIR}DORY_network/src/pulp_nn_conv_Co_parallel.c 
+#                          ${CURDIR}DORY_network/src/pulp_nn_conv_Ho_parallel.c 
+#                          ${CURDIR}DORY_network/src/pulp_nn_conv_HoWo_parallel.c
+#                          ${CURDIR}DORY_network/src/pulp_nn_depthwise_3x3_s1.c 
+#                          ${CURDIR}DORY_network/src/pulp_nn_depthwise_generic.c
+#                          ${CURDIR}DORY_network/src/pulp_nn_depthwise_generic_less_4_weights.c
+#                          ${CURDIR}DORY_network/src/pulp_nn_linear.c
+#                          ${CURDIR}DORY_network/src/pulp_nn_linear_out_32.c
+#                          ${CURDIR}DORY_network/src/pulp_nn_matmul.c
+#                          ${CURDIR}DORY_network/src/pulp_nn_maxpool.c
+#                          ${CURDIR}DORY_network/src/pulp_nn_pointwise_Co_parallel.c
+#                          ${CURDIR}DORY_network/src/pulp_nn_pointwise_Ho_parallel.c
+#                          ${CURDIR}DORY_network/src/pulp_nn_pointwise_HoWo_parallel.c
+#                          ${CURDIR}DORY_network/src/pulp_nn_utils.c
+#                          ${CURDIR}DORY_network/src/thorir_dma.c # GAP8GAP9                
+# )
 
-                         ${CURDIR}DORY_network/src/dory.c # GAP8GAP9
-                         # ${CURDIR}DORY_network/src/dory_dma.c # ONESHOT
-                         ${CURDIR}DORY_network/src/mem.c 
-                         ${CURDIR}DORY_network/src/net_utils.c 
-                         ${CURDIR}DORY_network/src/network.c 
-                         ${CURDIR}DORY_network/src/pulp_nn_add.c 
-                         ${CURDIR}DORY_network/src/pulp_nn_avgpool.c 
-                         ${CURDIR}DORY_network/src/pulp_nn_conv_Co_parallel.c 
-                         ${CURDIR}DORY_network/src/pulp_nn_conv_Ho_parallel.c 
-                         ${CURDIR}DORY_network/src/pulp_nn_conv_HoWo_parallel.c
-                         ${CURDIR}DORY_network/src/pulp_nn_depthwise_3x3_s1.c 
-                         ${CURDIR}DORY_network/src/pulp_nn_depthwise_generic.c
-                         ${CURDIR}DORY_network/src/pulp_nn_depthwise_generic_less_4_weights.c
-                         ${CURDIR}DORY_network/src/pulp_nn_linear.c
-                         ${CURDIR}DORY_network/src/pulp_nn_linear_out_32.c
-                         ${CURDIR}DORY_network/src/pulp_nn_matmul.c
-                         ${CURDIR}DORY_network/src/pulp_nn_maxpool.c
-                         ${CURDIR}DORY_network/src/pulp_nn_pointwise_Co_parallel.c
-                         ${CURDIR}DORY_network/src/pulp_nn_pointwise_Ho_parallel.c
-                         ${CURDIR}DORY_network/src/pulp_nn_pointwise_HoWo_parallel.c
-                         ${CURDIR}DORY_network/src/pulp_nn_utils.c
-                         ${CURDIR}DORY_network/src/thorir_dma.c # GAP8GAP9                
+
+# GAP9 MULTICORE
+list (APPEND TARGET_SRCS ${CURDIR}example_gap9multicore/src/BNReluConvolution0.c
+                         ${CURDIR}example_gap9multicore/src/BNReluConvolution1.c 
+                         ${CURDIR}example_gap9multicore/src/BNReluConvolution2.c 
+                         ${CURDIR}example_gap9multicore/src/BNReluConvolution3.c 
+                         ${CURDIR}example_gap9multicore/src/BNReluConvolution4.c 
+                         ${CURDIR}example_gap9multicore/src/BNReluConvolution5.c 
+                         ${CURDIR}example_gap9multicore/src/BNReluConvolution6.c 
+                         ${CURDIR}example_gap9multicore/src/BNReluConvolution7.c 
+                         ${CURDIR}example_gap9multicore/src/BNReluConvolution8.c 
+                         ${CURDIR}example_gap9multicore/src/ReluPooling9.c     # DSCNN S/M
+                         ${CURDIR}example_gap9multicore/src/FullyConnected10.c # DSCNN S/M
+                         # ${CURDIR}example_gap9multicore/src/BNReluConvolution9.c   # DSCNN L
+                         # ${CURDIR}example_gap9multicore/src/BNReluConvolution10.c  # DSCNN L
+                         # ${CURDIR}example_gap9multicore/src/ReluPooling11.c        # DSCNN L
+                         # ${CURDIR}example_gap9multicore/src/FullyConnected12.c     # DSCNN L
+                         ${CURDIR}example_gap9multicore/src/dory_dma.c # ONESHOT
+                         ${CURDIR}example_gap9multicore/src/mem.c 
+                         ${CURDIR}example_gap9multicore/src/monitor.c 
+                         ${CURDIR}example_gap9multicore/src/net_utils.c 
+                         ${CURDIR}example_gap9multicore/src/network.c 
+                         ${CURDIR}example_gap9multicore/src/pulp_nn_add.c 
+                         ${CURDIR}example_gap9multicore/src/pulp_nn_avgpool.c 
+                         ${CURDIR}example_gap9multicore/src/pulp_nn_conv_Co_parallel.c 
+                         ${CURDIR}example_gap9multicore/src/pulp_nn_conv_Ho_parallel.c 
+                         ${CURDIR}example_gap9multicore/src/pulp_nn_conv_HoWo_parallel.c
+                         ${CURDIR}example_gap9multicore/src/pulp_nn_depthwise_3x3_s1.c 
+                         ${CURDIR}example_gap9multicore/src/pulp_nn_depthwise_generic.c
+                         ${CURDIR}example_gap9multicore/src/pulp_nn_depthwise_generic_less_4_weights.c
+                         ${CURDIR}example_gap9multicore/src/pulp_nn_linear.c
+                         ${CURDIR}example_gap9multicore/src/pulp_nn_linear_out_32.c
+                         ${CURDIR}example_gap9multicore/src/pulp_nn_matmul.c
+                         ${CURDIR}example_gap9multicore/src/pulp_nn_maxpool.c
+                         ${CURDIR}example_gap9multicore/src/pulp_nn_pointwise_Co_parallel.c
+                         ${CURDIR}example_gap9multicore/src/pulp_nn_pointwise_Ho_parallel.c
+                         ${CURDIR}example_gap9multicore/src/pulp_nn_pointwise_HoWo_parallel.c
+                         ${CURDIR}example_gap9multicore/src/pulp_nn_utils.c                
 )
+
+
+
+# GAP9 NE16
+# list (APPEND TARGET_SRCS ${CURDIR}example_gap9ne16/src/BNReluConvolution0.c
+#                          ${CURDIR}example_gap9ne16/src/BNReluConvolution1.c 
+#                          ${CURDIR}example_gap9ne16/src/BNReluConvolution2.c 
+#                          ${CURDIR}example_gap9ne16/src/BNReluConvolution3.c 
+#                          ${CURDIR}example_gap9ne16/src/BNReluConvolution4.c 
+#                          ${CURDIR}example_gap9ne16/src/BNReluConvolution5.c 
+#                          ${CURDIR}example_gap9ne16/src/BNReluConvolution6.c 
+#                          ${CURDIR}example_gap9ne16/src/BNReluConvolution7.c 
+#                          ${CURDIR}example_gap9ne16/src/BNReluConvolution8.c 
+#                          ${CURDIR}example_gap9ne16/src/ReluPooling9.c     # DSCNN S/M
+#                          ${CURDIR}example_gap9ne16/src/FullyConnected10.c # DSCNN S/M
+#                          # ${CURDIR}example_gap9ne16/src/BNReluConvolution9.c   # DSCNN L
+#                          # ${CURDIR}example_gap9ne16/src/BNReluConvolution10.c  # DSCNN L
+#                          # ${CURDIR}example_gap9ne16/src/ReluPooling11.c        # DSCNN L
+#                          # ${CURDIR}example_gap9ne16/src/FullyConnected12.c     # DSCNN L
+#                          ${CURDIR}example_gap9ne16/src/dory_dma.c # ONESHOT
+#                          ${CURDIR}example_gap9ne16/src/hwpe.c
+#                          ${CURDIR}example_gap9ne16/src/mem.c 
+#                          ${CURDIR}example_gap9ne16/src/monitor.c
+#                          ${CURDIR}example_gap9ne16/src/ne16.c
+#                          ${CURDIR}example_gap9ne16/src/ne16_pulp_bsp.c
+#                          ${CURDIR}example_gap9ne16/src/ne16_task.c
+#                          ${CURDIR}example_gap9ne16/src/net_utils.c 
+#                          ${CURDIR}example_gap9ne16/src/network.c 
+#                          ${CURDIR}example_gap9ne16/src/pulp_nn_add.c 
+#                          ${CURDIR}example_gap9ne16/src/pulp_nn_avgpool.c 
+#                          ${CURDIR}example_gap9ne16/src/pulp_nn_conv_Co_parallel.c 
+#                          ${CURDIR}example_gap9ne16/src/pulp_nn_conv_Ho_parallel.c 
+#                          ${CURDIR}example_gap9ne16/src/pulp_nn_conv_HoWo_parallel.c
+#                          ${CURDIR}example_gap9ne16/src/pulp_nn_depthwise_3x3_s1.c 
+#                          ${CURDIR}example_gap9ne16/src/pulp_nn_depthwise_generic.c
+#                          ${CURDIR}example_gap9ne16/src/pulp_nn_depthwise_generic_less_4_weights.c
+#                          ${CURDIR}example_gap9ne16/src/pulp_nn_linear.c
+#                          ${CURDIR}example_gap9ne16/src/pulp_nn_linear_out_32.c
+#                          ${CURDIR}example_gap9ne16/src/pulp_nn_matmul.c
+#                          ${CURDIR}example_gap9ne16/src/pulp_nn_maxpool.c
+#                          ${CURDIR}example_gap9ne16/src/pulp_nn_pointwise_Co_parallel.c
+#                          ${CURDIR}example_gap9ne16/src/pulp_nn_pointwise_Ho_parallel.c
+#                          ${CURDIR}example_gap9ne16/src/pulp_nn_pointwise_HoWo_parallel.c
+#                          ${CURDIR}example_gap9ne16/src/pulp_nn_utils.c
+#                          ${CURDIR}example_gap9ne16/src/pulp_nnx_ne16.c
+#                          ${CURDIR}example_gap9ne16/src/pulp_nnx_util.c               
+# )
 
 list (APPEND TARGET_SRCS ${TRAINLIB_DIR}/net.c
                          ${TRAINLIB_DIR}/lib/sources/pulp_act_fp16.c
@@ -328,20 +416,20 @@ FILE(STRINGS ${VALIDATION_FILE} VALIDATION_UTTR)
 
 # Already flashed
 list(APPEND READFS_FILES 
-                        ${CURDIR}DORY_network/hex/BNReluConvolution0_weights.hex
-                        ${CURDIR}DORY_network/hex/BNReluConvolution1_weights.hex
-                        ${CURDIR}DORY_network/hex/BNReluConvolution2_weights.hex
-                        ${CURDIR}DORY_network/hex/BNReluConvolution3_weights.hex
-                        ${CURDIR}DORY_network/hex/BNReluConvolution4_weights.hex
-                        ${CURDIR}DORY_network/hex/BNReluConvolution5_weights.hex
-                        ${CURDIR}DORY_network/hex/BNReluConvolution6_weights.hex
-                        ${CURDIR}DORY_network/hex/BNReluConvolution7_weights.hex
-                        ${CURDIR}DORY_network/hex/BNReluConvolution8_weights.hex
-                        ${CURDIR}DORY_network/hex/FullyConnected10_weights.hex  # DSCNN S/M
-                        # ${CURDIR}DORY_network/hex/BNReluConvolution9_weights.hex   # DSCNN L
-                        # ${CURDIR}DORY_network/hex/BNReluConvolution10_weights.hex  # DSCNN L
-                        # ${CURDIR}DORY_network/hex/FullyConnected12_weights.hex     # DSCNN L 
-                        ${CURDIR}DORY_network/hex/inputs.hex
+                        ${CURDIR}example_gap9ne16/hex/BNReluConvolution0_weights.hex
+                        ${CURDIR}example_gap9ne16/hex/BNReluConvolution1_weights.hex
+                        ${CURDIR}example_gap9ne16/hex/BNReluConvolution2_weights.hex
+                        ${CURDIR}example_gap9ne16/hex/BNReluConvolution3_weights.hex
+                        ${CURDIR}example_gap9ne16/hex/BNReluConvolution4_weights.hex
+                        ${CURDIR}example_gap9ne16/hex/BNReluConvolution5_weights.hex
+                        ${CURDIR}example_gap9ne16/hex/BNReluConvolution6_weights.hex
+                        ${CURDIR}example_gap9ne16/hex/BNReluConvolution7_weights.hex
+                        ${CURDIR}example_gap9ne16/hex/BNReluConvolution8_weights.hex
+                        ${CURDIR}example_gap9ne16/hex/FullyConnected10_weights.hex  # DSCNN S/M
+                        # ${CURDIR}example_gap9ne16/hex/BNReluConvolution9_weights.hex   # DSCNN L
+                        # ${CURDIR}example_gap9ne16/hex/BNReluConvolution10_weights.hex  # DSCNN L
+                        # ${CURDIR}example_gap9ne16/hex/FullyConnected12_weights.hex     # DSCNN L 
+                        ${CURDIR}example_gap9ne16/hex/inputs.hex
                         ${WAV_FILE}
                         ${RESTAURANT_NOISE_WAV}
                         # ${VALIDATION_UTTR}
