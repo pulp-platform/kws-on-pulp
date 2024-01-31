@@ -1,5 +1,5 @@
 {
     "BNRelu_bits": 32,
-    "onnx_file": "/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser/kws-on-pulp/DSCNN_SRC/model.onnx",
+    "onnx_file": "/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser/kws-on-pulp/DSCNN_DIR_SRC/model.onnx",
     "code reserved space": 132000
 }

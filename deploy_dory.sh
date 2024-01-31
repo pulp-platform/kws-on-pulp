@@ -27,6 +27,8 @@ if [ "$1" == "-h" ] ; then
     echo "PLATFORM: gvsoc, fpga, rtl"
     echo "MFCC computation: 0 (offline), 1 (online)"
     echo "COMPUTE: 0 (PULP GVSOC), 1 (GAP9 multicore), 2 (GAP9 NE16)"
+    echo "NETWORK_DIR_DEST: Destination directory"
+    echo "NETWORK_DIR_SRC: Source directory"
     exit 0
 fi
 
@@ -47,8 +49,9 @@ export MEMORY=$2 # 2, 3
 export PLATFORM=$3 # gvsoc, fpga, rtl
 export MFCC=$4 # 0 - offline, 1 - online
 export COMPUTE=$5 # 0 - PULP GVSOC, 1 - GAP9 multicore, 2 - GAP9 NE16
-export NETWORK_DIR=DSCNN
-export NETWORK_SRC_DIR=DSCNN_SRC
+export NETWORK_DIR_DEST=$6
+export NETWORK_DIR_DEST_DORY=$6_DORY
+export NETWORK_DIR_SRC=$7
 export CUR_DIR=$PWD
 
 
@@ -77,23 +80,23 @@ else
   fi
 fi
 
-mkdir $NETWORK_SRC_DIR
+mkdir $NETWORK_DIR_SRC
 
-cp $CUR_DIR/quantization/input.txt $NETWORK_SRC_DIR/
-cp $CUR_DIR/quantization/model_int8.onnx $NETWORK_SRC_DIR/model.onnx
-cp $CUR_DIR/quantization/out_layer*.txt $NETWORK_SRC_DIR/
-cp $CUR_DIR/config_DSCNN.json $NETWORK_SRC_DIR/
+cp $CUR_DIR/quantization/input.txt $NETWORK_DIR_SRC/
+cp $CUR_DIR/quantization/model_int8.onnx $NETWORK_DIR_SRC/model.onnx
+cp $CUR_DIR/quantization/out_layer*.txt $NETWORK_DIR_SRC/
+cp $CUR_DIR/config_DSCNN.json $NETWORK_DIR_SRC/ # TODO: .onnx path in config_DSCNN.json
 
 # Copy model and it's activations to Dory
 cd deployment/dory/
-mkdir -p $NETWORK_DIR
-rm $NETWORK_DIR/model.onnx
-rm $NETWORK_DIR/out_layer*.txt
-rm $NETWORK_DIR/input.txt
+mkdir -p $NETWORK_DIR_DEST_DORY
+rm $NETWORK_DIR_DEST_DORY/model.onnx
+rm $NETWORK_DIR_DEST_DORY/out_layer*.txt
+rm $NETWORK_DIR_DEST_DORY/input.txt
 
-cp $CUR_DIR/$NETWORK_SRC_DIR/input.txt $NETWORK_DIR/
-cp $CUR_DIR/$NETWORK_SRC_DIR/model.onnx  $NETWORK_DIR/
-cp $CUR_DIR/$NETWORK_SRC_DIR/out_layer*.txt $NETWORK_DIR/
+cp $CUR_DIR/$NETWORK_DIR_SRC/input.txt $NETWORK_DIR_DEST_DORY/
+cp $CUR_DIR/$NETWORK_DIR_SRC/model.onnx  $NETWORK_DIR_DEST_DORY/
+cp $CUR_DIR/$NETWORK_DIR_SRC/out_layer*.txt $NETWORK_DIR_DEST_DORY/
 
 # Generate source code and weights for model inference
 # We use 64 bits for the BatchNorm and ReLU
@@ -101,26 +104,26 @@ if [[ $MEMORY == "3" ]]
 then
   if [[ $COMPUTE == "0" ]]
   then
-    python network_generate.py NEMO PULP.PULP_gvsoc $CUR_DIR/$NETWORK_SRC_DIR/config_DSCNN.json --app_dir $NETWORK_DIR/ --verbose_level Check_all+Perf_final --perf_layer
+    python network_generate.py NEMO PULP.PULP_gvsoc $CUR_DIR/$NETWORK_DIR_SRC/config_DSCNN.json --app_dir $NETWORK_DIR_DEST_DORY/ --verbose_level Check_all+Perf_final --perf_layer
   elif [[ $COMPUTE == "1" ]]
   then
-    python network_generate.py NEMO PULP.GAP9 $CUR_DIR/$NETWORK_SRC_DIR/config_DSCNN.json --app_dir $NETWORK_DIR/ --verbose_level Check_all+Perf_final --perf_layer
+    python network_generate.py NEMO PULP.GAP9 $CUR_DIR/$NETWORK_DIR_SRC/config_DSCNN.json --app_dir $NETWORK_DIR_DEST_DORY/ --verbose_level Check_all+Perf_final --perf_layer
   elif [[ $COMPUTE == "2" ]]
   then
-    python network_generate.py NEMO PULP.GAP9_NE16 $CUR_DIR/$NETWORK_SRC_DIR/config_DSCNN.json --app_dir $NETWORK_DIR/ --verbose_level Check_all+Perf_final --perf_layer
+    python network_generate.py NEMO PULP.GAP9_NE16 $CUR_DIR/$NETWORK_DIR_SRC/config_DSCNN.json --app_dir $NETWORK_DIR_DEST_DORY/ --verbose_level Check_all+Perf_final --perf_layer
   fi
 else
-  python network_generate.py NEMO PULP.GAP8_L2 $CUR_DIR/$NETWORK_SRC_DIR/config_DSCNN.json --app_dir $NETWORK_DIR/ --verbose_level Check_all+Perf_final --perf_layer
+  python network_generate.py NEMO PULP.GAP8_L2 $CUR_DIR/$NETWORK_DIR_SRC/config_DSCNN.json --app_dir $NETWORK_DIR_DEST_DORY/ --verbose_level Check_all+Perf_final --perf_layer
 fi
 
 # Copy the files into our directory, preparing the MFCC integration
-mkdir -p $CUR_DIR/testnet/ && cp -r $NETWORK_DIR/* $CUR_DIR/testnet/
+mkdir -p $CUR_DIR/$NETWORK_DIR_DEST/ && cp -r $NETWORK_DIR_DEST_DORY/* $CUR_DIR/$NETWORK_DIR_DEST/
 if [[ $MEMORY == "2" ]]
 then
   # Save .WAV as .h for L2
   python $CUR_DIR/wav_to_header.py --file $AUDIO_SAMPLE --sdk $SDK
 fi
-cd $CUR_DIR/testnet/
+cd $CUR_DIR/$NETWORK_DIR_DEST/
 
 # Parametrized
 make clean all run sample=$AUDIO_SAMPLE sdk=$SDK memory=$MEMORY platform=$PLATFORM mfcc=$MFCC CORE=8 # runner_args="--trace=insn"
@@ -130,3 +133,10 @@ then
   cd $CUR_DIR
   python utils/slm_to_hex.py  --input $CUR_DIR/testnet/BUILD/PULP/GCC_RISCV/slm_files/flash_stim.slm
 fi
+
+# Copy DORY-generated code to main application
+mkdir -p $CUR_DIR/../$NETWORK_DIR_DEST/
+cp -r $CUR_DIR/$NETWORK_DIR_DEST/src/ $CUR_DIR/../$NETWORK_DIR_DEST/
+cp -r $CUR_DIR/$NETWORK_DIR_DEST/inc/ $CUR_DIR/../$NETWORK_DIR_DEST/
+cp -r $CUR_DIR/$NETWORK_DIR_DEST/hex/ $CUR_DIR/../$NETWORK_DIR_DEST/
+rm $CUR_DIR/../$NETWORK_DIR_DEST/src/main.c
