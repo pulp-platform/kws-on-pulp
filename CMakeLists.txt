@@ -5,7 +5,6 @@ cmake_minimum_required(VERSION 3.19.5)
 set(TARGET_NAME         "application")
 set(MAIN                "application.c")
 
-
 # Cmake pre-inits
 
 # set(CMAKE_VERBOSE_MAKEFILE ON)
@@ -16,23 +15,14 @@ set(BOARD_NAME gap9_evk)
 set(PMSIS_OS freertos)
 set(platform $ENV{PLATFORM})
 
-
 # kconfig options
 
 set (io   host)
 set (DEMO 1)
 
-
-# Not needed for MRAM
-# set (CONFIG_FLASH_LAYOUT_CUSTOM 1)
-
-
-# set (FLASH_TYPE MRAM) # HYPERFLASH # Working for small things to flash
-set (FLASH_TYPE DEFAULT) # HYPERFLASH
-set (RAM_TYPE   DEFAULT) # DEFAULT
-# set (MODEL_L3_FLASH   AT_MEM_L3_MRAMFLASH) # Working for small things to flash
+set (FLASH_TYPE DEFAULT)
+set (RAM_TYPE   DEFAULT)
 set (MODEL_L3_FLASH   AT_MEM_L3_DEFAULTFLASH)
-# set (READFS_FLASH  mram) # Not needed for MRAM
 set (EXEC_FROM_FLASH true)
 set (MODEL_L3_RAM   AT_MEM_L3_DEFAULTRAM)
 
@@ -63,29 +53,28 @@ set (NUM_MATMULS 24)
 
 
 # HOME
-# set(GAP9_SDK_DIR        /home/cioflanc/odda_gap9/gap_sdk_private/)
-# set(CURDIR              /home/cioflanc/odda_gap9/tiny_denoiser/)
+# set(GAP9_SDK_DIR       /home/cioflanc/odda_gap9/gap_sdk_private/)
+# set(CURDIR             /home/cioflanc/odda_gap9/tiny_denoiser/)
 # WORK
-set(GAP9_SDK_DIR        /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk_private/)
-set(CURDIR              /usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser/)
-set(BUILD_DIR           ${CURDIR}/build)
-set(TRAINLIB_DIR        ${CURDIR}/trainlib_example_dscnn/DSCNNS)
-# set(TRAINLIB_DIR        ${CURDIR}/trainlib_example_dscnn/DSCNNM)
-# set(TRAINLIB_DIR        ${CURDIR}/trainlib_example_dscnn/DSCNNL)
-set(DSP_DIR             ${GAP9_SDK_DIR}tools/autotiler_v3/DSP_Libraries/)
-set(DSP_LUT_DIR         ${GAP9_SDK_DIR}tools/autotiler_v3/DSP_Libraries/LUT_Tables/)
-set(EMUL_DIR            ${GAP9_SDK_DIR}tools/autotiler_v3/Emulation/)
-set(AUTOTILER_DIR       ${GAP9_SDK_DIR}tools/autotiler_v3/Autotiler/)
-set(AUTOTILER_MFCC_DIR  ${GAP9_SDK_DIR}tools/autotiler_v3/Generators/MFCC/)
-set(WAVIO_DIR           ${GAP9_SDK_DIR}libs/gap_lib/include/)
-set(DSP_GEN_DIR         ${GAP9_SDK_DIR}/tools/autotiler_v3/DSP_Generators/)
-
-set(MFCC_SRCG                    ${GAP9_SDK_DIR}/tools/autotiler_v3/DSP_Generators/DSP_Generators.c)
-set(MFCC_MODEL_GEN               ${BUILD_DIR}/GenMFCC)
-set(MFCC_HEAD                    ${BUILD_DIR}/MFCC_params.h)
-# set(MFCC_PARAMS_JSON             ${CURDIR}/MfccConfigLibrosa.json)
-set(MFCC_PARAMS_JSON             ${CURDIR}/MfccConfigTF.json)
-set(MFCC_SRC_CODE                ${BUILD_DIR}/MfccKernels.c)
+set(GAP9_SDK_DIR         /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk_private/)
+set(CURDIR               /usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser/)
+set(BUILD_DIR            ${CURDIR}/build)
+set(TRAINLIB_DIR         ${CURDIR}/trainlib_example_dscnn/DSCNNS)
+# set(TRAINLIB_DIR       ${CURDIR}/trainlib_example_dscnn/DSCNNM)
+# set(TRAINLIB_DIR       ${CURDIR}/trainlib_example_dscnn/DSCNNL)
+set(DSP_DIR              ${GAP9_SDK_DIR}tools/autotiler_v3/DSP_Libraries/)
+set(DSP_LUT_DIR          ${GAP9_SDK_DIR}tools/autotiler_v3/DSP_Libraries/LUT_Tables/)
+set(EMUL_DIR             ${GAP9_SDK_DIR}tools/autotiler_v3/Emulation/)
+set(AUTOTILER_DIR        ${GAP9_SDK_DIR}tools/autotiler_v3/Autotiler/)
+set(AUTOTILER_MFCC_DIR   ${GAP9_SDK_DIR}tools/autotiler_v3/Generators/MFCC/)
+set(WAVIO_DIR            ${GAP9_SDK_DIR}libs/gap_lib/include/)
+set(DSP_GEN_DIR          ${GAP9_SDK_DIR}/tools/autotiler_v3/DSP_Generators/)
+set(MFCC_SRCG            ${GAP9_SDK_DIR}/tools/autotiler_v3/DSP_Generators/DSP_Generators.c)
+set(MFCC_MODEL_GEN       ${BUILD_DIR}/GenMFCC)
+set(MFCC_HEAD            ${BUILD_DIR}/MFCC_params.h)
+# set(MFCC_PARAMS_JSON   ${CURDIR}/MfccConfigLibrosa.json)
+set(MFCC_PARAMS_JSON     ${CURDIR}/MfccConfigTF.json)
+set(MFCC_SRC_CODE        ${BUILD_DIR}/MfccKernels.c)
 
 # Application
 
@@ -156,11 +145,10 @@ list (APPEND TARGET_SRCS
 
 
 list (APPEND TARGET_INCS 
-                         
                          -I${TILER_INC}
                          -I${TILER_EMU_INC}
                          -I${GAP_SDK_HOME}/libs/gap_lib/include
-                         -I${CURDIR}example_testnet_gap9ne16/inc
+                         -I${CURDIR}DSCNN_DIR_DEST/inc
                          -I${GAP9_SDK_DIR}rtos/pmsis/bsp/include/bsp
                          -I${GAP9_SDK_DIR}rtos/pmsis/bsp/include/bsp/ram
                          -I${GAP9_SDK_DIR}rtos/pmsis/bsp/include/bsp/flash
@@ -174,7 +162,6 @@ list (APPEND TARGET_INCS
                          -I${DSP_GEN_DIR}
                          -I${TRAINLIB_DIR}/lib/include
                          -I${TRAINLIB_DIR}
-
 )
 
 
@@ -182,166 +169,18 @@ list (APPEND TARGET_INCS
 
 set (NUM_CORES 8)
 set (GAP_SDK 1)
-
 set (TARGET_CHIP_FAMILY_GAP9 1)
-# GAP8 TO GAP9 CONVERSION
-# list (APPEND TARGET_SRCS ${CURDIR}DORY_network/src/BNReluConvolution0.c
-#                          ${CURDIR}DORY_network/src/BNReluConvolution1.c 
-#                          ${CURDIR}DORY_network/src/BNReluConvolution2.c 
-#                          ${CURDIR}DORY_network/src/BNReluConvolution3.c 
-#                          ${CURDIR}DORY_network/src/BNReluConvolution4.c 
-#                          ${CURDIR}DORY_network/src/BNReluConvolution5.c 
-#                          ${CURDIR}DORY_network/src/BNReluConvolution6.c 
-#                          ${CURDIR}DORY_network/src/BNReluConvolution7.c 
-#                          ${CURDIR}DORY_network/src/BNReluConvolution8.c 
-#                          ${CURDIR}DORY_network/src/ReluPooling9.c     # DSCNN S/M
-#                          ${CURDIR}DORY_network/src/FullyConnected10.c # DSCNN S/M
-#                          # ${CURDIR}DORY_network/src/BNReluConvolution9.c   # DSCNN L
-#                          # ${CURDIR}DORY_network/src/BNReluConvolution10.c  # DSCNN L
-#                          # ${CURDIR}DORY_network/src/ReluPooling11.c        # DSCNN L
-#                          # ${CURDIR}DORY_network/src/FullyConnected12.c     # DSCNN L
-# 
-#                          ${CURDIR}DORY_network/src/dory.c # GAP8GAP9
-#                          # ${CURDIR}DORY_network/src/dory_dma.c # ONESHOT
-#                          ${CURDIR}DORY_network/src/mem.c 
-#                          ${CURDIR}DORY_network/src/net_utils.c 
-#                          ${CURDIR}DORY_network/src/network.c 
-#                          ${CURDIR}DORY_network/src/pulp_nn_add.c 
-#                          ${CURDIR}DORY_network/src/pulp_nn_avgpool.c 
-#                          ${CURDIR}DORY_network/src/pulp_nn_conv_Co_parallel.c 
-#                          ${CURDIR}DORY_network/src/pulp_nn_conv_Ho_parallel.c 
-#                          ${CURDIR}DORY_network/src/pulp_nn_conv_HoWo_parallel.c
-#                          ${CURDIR}DORY_network/src/pulp_nn_depthwise_3x3_s1.c 
-#                          ${CURDIR}DORY_network/src/pulp_nn_depthwise_generic.c
-#                          ${CURDIR}DORY_network/src/pulp_nn_depthwise_generic_less_4_weights.c
-#                          ${CURDIR}DORY_network/src/pulp_nn_linear.c
-#                          ${CURDIR}DORY_network/src/pulp_nn_linear_out_32.c
-#                          ${CURDIR}DORY_network/src/pulp_nn_matmul.c
-#                          ${CURDIR}DORY_network/src/pulp_nn_maxpool.c
-#                          ${CURDIR}DORY_network/src/pulp_nn_pointwise_Co_parallel.c
-#                          ${CURDIR}DORY_network/src/pulp_nn_pointwise_Ho_parallel.c
-#                          ${CURDIR}DORY_network/src/pulp_nn_pointwise_HoWo_parallel.c
-#                          ${CURDIR}DORY_network/src/pulp_nn_utils.c
-#                          ${CURDIR}DORY_network/src/thorir_dma.c # GAP8GAP9                
-# )
 
+FILE (GLOB DORY_C_Sources ${CURDIR}DSCNN_DIR_DEST/src/*.c)
+list (APPEND TARGET_SRCS ${DORY_C_Sources})
 
-# GAP9 MULTICORE
-# list (APPEND TARGET_SRCS ${CURDIR}example_gap9multicore/src/BNReluConvolution0.c
-#                          ${CURDIR}example_gap9multicore/src/BNReluConvolution1.c 
-#                          ${CURDIR}example_gap9multicore/src/BNReluConvolution2.c 
-#                          ${CURDIR}example_gap9multicore/src/BNReluConvolution3.c 
-#                          ${CURDIR}example_gap9multicore/src/BNReluConvolution4.c 
-#                          ${CURDIR}example_gap9multicore/src/BNReluConvolution5.c 
-#                          ${CURDIR}example_gap9multicore/src/BNReluConvolution6.c 
-#                          ${CURDIR}example_gap9multicore/src/BNReluConvolution7.c 
-#                          ${CURDIR}example_gap9multicore/src/BNReluConvolution8.c 
-#                          ${CURDIR}example_gap9multicore/src/ReluPooling9.c     # DSCNN S/M
-#                          ${CURDIR}example_gap9multicore/src/FullyConnected10.c # DSCNN S/M
-#                          # ${CURDIR}example_gap9multicore/src/BNReluConvolution9.c   # DSCNN L
-#                          # ${CURDIR}example_gap9multicore/src/BNReluConvolution10.c  # DSCNN L
-#                          # ${CURDIR}example_gap9multicore/src/ReluPooling11.c        # DSCNN L
-#                          # ${CURDIR}example_gap9multicore/src/FullyConnected12.c     # DSCNN L
-#                          ${CURDIR}example_gap9multicore/src/dory_dma.c # ONESHOT
-#                          ${CURDIR}example_gap9multicore/src/mem.c 
-#                          ${CURDIR}example_gap9multicore/src/monitor.c 
-#                          ${CURDIR}example_gap9multicore/src/net_utils.c 
-#                          ${CURDIR}example_gap9multicore/src/network.c 
-#                          ${CURDIR}example_gap9multicore/src/pulp_nn_add.c 
-#                          ${CURDIR}example_gap9multicore/src/pulp_nn_avgpool.c 
-#                          ${CURDIR}example_gap9multicore/src/pulp_nn_conv_Co_parallel.c 
-#                          ${CURDIR}example_gap9multicore/src/pulp_nn_conv_Ho_parallel.c 
-#                          ${CURDIR}example_gap9multicore/src/pulp_nn_conv_HoWo_parallel.c
-#                          ${CURDIR}example_gap9multicore/src/pulp_nn_depthwise_3x3_s1.c 
-#                          ${CURDIR}example_gap9multicore/src/pulp_nn_depthwise_generic.c
-#                          ${CURDIR}example_gap9multicore/src/pulp_nn_depthwise_generic_less_4_weights.c
-#                          ${CURDIR}example_gap9multicore/src/pulp_nn_linear.c
-#                          ${CURDIR}example_gap9multicore/src/pulp_nn_linear_out_32.c
-#                          ${CURDIR}example_gap9multicore/src/pulp_nn_matmul.c
-#                          ${CURDIR}example_gap9multicore/src/pulp_nn_maxpool.c
-#                          ${CURDIR}example_gap9multicore/src/pulp_nn_pointwise_Co_parallel.c
-#                          ${CURDIR}example_gap9multicore/src/pulp_nn_pointwise_Ho_parallel.c
-#                          ${CURDIR}example_gap9multicore/src/pulp_nn_pointwise_HoWo_parallel.c
-#                          ${CURDIR}example_gap9multicore/src/pulp_nn_utils.c                
-# )
+# TRAINLIB
 
-
-
-# GAP9 NE16
-list (APPEND TARGET_SRCS ${CURDIR}example_testnet_gap9ne16/src/BNReluConvolution0.c
-                      ${CURDIR}example_testnet_gap9ne16/src/BNReluConvolution1.c 
-                      ${CURDIR}example_testnet_gap9ne16/src/BNReluConvolution2.c 
-                      ${CURDIR}example_testnet_gap9ne16/src/BNReluConvolution3.c 
-                      ${CURDIR}example_testnet_gap9ne16/src/BNReluConvolution4.c 
-                      ${CURDIR}example_testnet_gap9ne16/src/BNReluConvolution5.c 
-                      ${CURDIR}example_testnet_gap9ne16/src/BNReluConvolution6.c 
-                      ${CURDIR}example_testnet_gap9ne16/src/BNReluConvolution7.c 
-                      ${CURDIR}example_testnet_gap9ne16/src/BNReluConvolution8.c 
-                      ${CURDIR}example_testnet_gap9ne16/src/ReluPooling9.c     # DSCNN S/M
-                      ${CURDIR}example_testnet_gap9ne16/src/FullyConnected10.c # DSCNN S/M
-                      # ${CURDIR}example_testnet_gap9ne16/src/BNReluConvolution9.c   # DSCNN L
-                      # ${CURDIR}example_testnet_gap9ne16/src/BNReluConvolution10.c  # DSCNN L
-                      # ${CURDIR}example_testnet_gap9ne16/src/ReluPooling11.c        # DSCNN L
-                      # ${CURDIR}example_testnet_gap9ne16/src/FullyConnected12.c     # DSCNN L
-                         ${CURDIR}example_testnet_gap9ne16/src/dory_dma.c # ONESHOT
-                         ${CURDIR}example_testnet_gap9ne16/src/hwpe.c
-                         ${CURDIR}example_testnet_gap9ne16/src/mem.c 
-                         ${CURDIR}example_testnet_gap9ne16/src/monitor.c
-                         ${CURDIR}example_testnet_gap9ne16/src/ne16.c
-                         ${CURDIR}example_testnet_gap9ne16/src/ne16_pulp_bsp.c
-                         ${CURDIR}example_testnet_gap9ne16/src/ne16_task.c
-                         ${CURDIR}example_testnet_gap9ne16/src/net_utils.c 
-                         ${CURDIR}example_testnet_gap9ne16/src/network.c 
-                         ${CURDIR}example_testnet_gap9ne16/src/pulp_nn_add.c 
-                         ${CURDIR}example_testnet_gap9ne16/src/pulp_nn_avgpool.c 
-                         ${CURDIR}example_testnet_gap9ne16/src/pulp_nn_conv_Co_parallel.c 
-                         ${CURDIR}example_testnet_gap9ne16/src/pulp_nn_conv_Ho_parallel.c 
-                         ${CURDIR}example_testnet_gap9ne16/src/pulp_nn_conv_HoWo_parallel.c
-                         ${CURDIR}example_testnet_gap9ne16/src/pulp_nn_depthwise_3x3_s1.c 
-                         ${CURDIR}example_testnet_gap9ne16/src/pulp_nn_depthwise_generic.c
-                         ${CURDIR}example_testnet_gap9ne16/src/pulp_nn_depthwise_generic_less_4_weights.c
-                         ${CURDIR}example_testnet_gap9ne16/src/pulp_nn_linear.c
-                         ${CURDIR}example_testnet_gap9ne16/src/pulp_nn_linear_out_32.c
-                         ${CURDIR}example_testnet_gap9ne16/src/pulp_nn_matmul.c
-                         ${CURDIR}example_testnet_gap9ne16/src/pulp_nn_maxpool.c
-                         ${CURDIR}example_testnet_gap9ne16/src/pulp_nn_pointwise_Co_parallel.c
-                         ${CURDIR}example_testnet_gap9ne16/src/pulp_nn_pointwise_Ho_parallel.c
-                         ${CURDIR}example_testnet_gap9ne16/src/pulp_nn_pointwise_HoWo_parallel.c
-                         ${CURDIR}example_testnet_gap9ne16/src/pulp_nn_utils.c
-                         ${CURDIR}example_testnet_gap9ne16/src/pulp_nnx_ne16.c
-                         ${CURDIR}example_testnet_gap9ne16/src/pulp_nnx_util.c               
-)
-
-list (APPEND TARGET_SRCS ${TRAINLIB_DIR}/net.c
-                         ${TRAINLIB_DIR}/lib/sources/pulp_act_fp16.c
-                         ${TRAINLIB_DIR}/lib/sources/pulp_act_fp32.c
-                         ${TRAINLIB_DIR}/lib/sources/pulp_conv2d_fp16.c
-                         ${TRAINLIB_DIR}/lib/sources/pulp_conv2d_fp32.c
-                         ${TRAINLIB_DIR}/lib/sources/pulp_conv_dw_fp16.c
-                         ${TRAINLIB_DIR}/lib/sources/pulp_conv_dw_fp32.c
-                         ${TRAINLIB_DIR}/lib/sources/pulp_conv_pw_fp16.c
-                         ${TRAINLIB_DIR}/lib/sources/pulp_conv_pw_fp32.c
-                         ${TRAINLIB_DIR}/lib/sources/pulp_im2col_fp16.c
-                         ${TRAINLIB_DIR}/lib/sources/pulp_im2col_fp32.c
-                         ${TRAINLIB_DIR}/lib/sources/pulp_linear_fp16.c
-                         ${TRAINLIB_DIR}/lib/sources/pulp_linear_fp32.c
-                         ${TRAINLIB_DIR}/lib/sources/pulp_losses_fp16.c
-                         ${TRAINLIB_DIR}/lib/sources/pulp_losses_fp32.c
-                         ${TRAINLIB_DIR}/lib/sources/pulp_matmul_fp16.c
-                         ${TRAINLIB_DIR}/lib/sources/pulp_matmul_fp32.c
-                         ${TRAINLIB_DIR}/lib/sources/pulp_mhsa_fp32.c
-                         ${TRAINLIB_DIR}/lib/sources/pulp_optimizers_fp16.c
-                         ${TRAINLIB_DIR}/lib/sources/pulp_optimizers_fp32.c
-                         ${TRAINLIB_DIR}/lib/sources/pulp_pooling_fp16.c
-                         ${TRAINLIB_DIR}/lib/sources/pulp_pooling_fp32.c
-                         # ${TRAINLIB_DIR}/lib/sources/pulp_residual_fp16.c
-                         # ${TRAINLIB_DIR}/lib/sources/pulp_residual_fp32.c
-                         ${TRAINLIB_DIR}/lib/sources/pulp_rnn_fp32.c
-                         ${TRAINLIB_DIR}/lib/sources/pulp_train_utils_fp16.c
-                         ${TRAINLIB_DIR}/lib/sources/pulp_train_utils_fp32.c
-)
-
-
+FILE (GLOB TRAINLIB_C_Sources ${TRAINLIB_DIR}/lib/sources/*.c)
+list (APPEND TARGET_SRCS ${TRAINLIB_C_Sources})
+list (REMOVE_ITEM TARGET_SRCS ${TRAINLIB_DIR}/lib/sources/pulp_residual_fp16.c) # Incompatible declaration
+list (REMOVE_ITEM TARGET_SRCS ${TRAINLIB_DIR}/lib/sources/pulp_residual_fp32.c) # Incompatible declaration
+list (APPEND TARGET_SRCS ${TRAINLIB_DIR}/net.c)
 
 list(APPEND TARGET_CFLAGS   -O2
                             -s
@@ -349,9 +188,7 @@ list(APPEND TARGET_CFLAGS   -O2
                             -mno-memcpy
                             -fno-tree-loop-distribute-patterns
                             -Wno-incompatible-pointer-types
-
 )
-
 
 list(APPEND TARGET_PREPROCESSOR # -DPERF
                                 -DNUM_CORES=${NUM_CORES}
@@ -381,7 +218,6 @@ list(APPEND TARGET_PREPROCESSOR # -DPERF
                                 -DCONFIG_FLASH_LAYOUT_CUSTOM
                                 -DMODEL_L2_MEMORY=${MODEL_L2_MEMORY}
                                 -DTARGET_CHIP_FAMILY_GAP9
-                                # TrainLib
                                 -DFABRIC
                                 -DCLUSTER
                                 # -DDEBUG
@@ -391,7 +227,6 @@ list(APPEND TARGET_PREPROCESSOR # -DPERF
                                 -DMATMUL_TYPE_FW_L0=${MATMUL_TYPE_FW_L0}
                                 -DMATMUL_TYPE_WG_L0=${MATMUL_TYPE_WG_L0}
                                 -DMATMUL_TYPE_IG_L0=${MATMUL_TYPE_IG_L0}
-                                # -DSINGLE_CORE_DMA # GAP9 NE16
 
 )
 
@@ -406,36 +241,20 @@ set (UTTR_FILE /usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser/res/ut
 set (TINYTEST_FILE /usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser/res/tinytest.txt)
 set (RESTAURANT_NOISE_WAV /usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser/res/meeting_ch01_mancrop1.wav)
 
+
 FILE(STRINGS ${UTTR_FILE} UTTERANCES)
 FILE(STRINGS ${TINYTEST_FILE} TINYTEST_UTTR)
 FILE(STRINGS ${VALIDATION_FILE} VALIDATION_UTTR)
 
 
-# Working well for small files
-# list(APPEND READFS_MRAM_FILES 
-
-
-# Already flashed
-list(APPEND READFS_FILES 
-                        ${CURDIR}example_testnet_gap9ne16/hex/BNReluConvolution0_weights.hex
-                        ${CURDIR}example_testnet_gap9ne16/hex/BNReluConvolution1_weights.hex
-                        ${CURDIR}example_testnet_gap9ne16/hex/BNReluConvolution2_weights.hex
-                        ${CURDIR}example_testnet_gap9ne16/hex/BNReluConvolution3_weights.hex
-                        ${CURDIR}example_testnet_gap9ne16/hex/BNReluConvolution4_weights.hex
-                        ${CURDIR}example_testnet_gap9ne16/hex/BNReluConvolution5_weights.hex
-                        ${CURDIR}example_testnet_gap9ne16/hex/BNReluConvolution6_weights.hex
-                        ${CURDIR}example_testnet_gap9ne16/hex/BNReluConvolution7_weights.hex
-                        ${CURDIR}example_testnet_gap9ne16/hex/BNReluConvolution8_weights.hex
-                        ${CURDIR}example_testnet_gap9ne16/hex/FullyConnected10_weights.hex  # DSCNN S/M
-                        # ${CURDIR}example_testnet_gap9ne16/hex/BNReluConvolution9_weights.hex   # DSCNN L
-                        # ${CURDIR}example_testnet_gap9ne16/hex/BNReluConvolution10_weights.hex  # DSCNN L
-                        # ${CURDIR}example_testnet_gap9ne16/hex/FullyConnected12_weights.hex     # DSCNN L 
-                        ${CURDIR}example_testnet_gap9ne16/hex/inputs.hex
-                        ${WAV_FILE}
-                        ${RESTAURANT_NOISE_WAV}
-                        # ${VALIDATION_UTTR}
-                        # ${UTTERANCES} 
-                        # ${TINYTEST_UTTR}
+# FLASH
+FILE(GLOB DORY_WEIGHTS ${CURDIR}DSCNN_DIR_DEST/hex/*.hex)
+list (APPEND READFS_FILES ${DORY_WEIGHTS})
+list(APPEND READFS_FILES ${WAV_FILE}
+                         ${RESTAURANT_NOISE_WAV}
+                         # ${VALIDATION_UTTR}
+                         # ${UTTERANCES} 
+                         # ${TINYTEST_UTTR}
                         
 )
 
@@ -460,7 +279,6 @@ target_compile_options(${TARGET_NAME} PUBLIC   ${TARGET_CFLAGS}
 target_link_libraries(${TARGET_NAME} PRIVATE m)
 target_link_libraries(${TARGET_NAME} PRIVATE ${TILER_LIB})
 list(APPEND TABLE_CFLAGS -lm)
-
 
 # CMake post initialization
 
