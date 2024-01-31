@@ -114,13 +114,13 @@ else
 fi
 
 # Copy the files into our directory, preparing the MFCC integration
-mkdir -p $CUR_DIR/application_dscnnl_gap8/ && cp -r $NETWORK_DIR/* $CUR_DIR/application_dscnnl_gap8/
+mkdir -p $CUR_DIR/testnet/ && cp -r $NETWORK_DIR/* $CUR_DIR/testnet/
 if [[ $MEMORY == "2" ]]
 then
   # Save .WAV as .h for L2
   python $CUR_DIR/wav_to_header.py --file $AUDIO_SAMPLE --sdk $SDK
 fi
-cd $CUR_DIR/application_dscnnl_gap8/
+cd $CUR_DIR/testnet/
 
 # Parametrized
 make clean all run sample=$AUDIO_SAMPLE sdk=$SDK memory=$MEMORY platform=$PLATFORM mfcc=$MFCC CORE=8 # runner_args="--trace=insn"
@@ -128,5 +128,5 @@ make clean all run sample=$AUDIO_SAMPLE sdk=$SDK memory=$MEMORY platform=$PLATFO
 if [[ $PLATFORM == "rtl" ]]
 then
   cd $CUR_DIR
-  python utils/slm_to_hex.py  --input $CUR_DIR/application_dscnnl_gap8/BUILD/PULP/GCC_RISCV/slm_files/flash_stim.slm
+  python utils/slm_to_hex.py  --input $CUR_DIR/testnet/BUILD/PULP/GCC_RISCV/slm_files/flash_stim.slm
 fi
