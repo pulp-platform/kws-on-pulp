@@ -584,7 +584,7 @@ void compute_mfcc(){
     /******
         Compute the MFCC
     ******/
-    out_feat = (OUT_TYPE *) pi_l2_malloc(49 * 10 * 4 * sizeof(OUT_TYPE));    
+    out_feat = (OUT_TYPE *) pi_l2_malloc(49 * N_MELS * sizeof(OUT_TYPE));    
 
 
     // struct pi_cluster_task task_mfcc;
@@ -740,39 +740,34 @@ void evaluate_validation(pre){
             pi_l2_free(MfccInSig, AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE)); 
             
             feat_char = (char*) pi_l2_malloc(49 * 10 * sizeof(char));
-            // Rescale data
-            int k = 0;
-            for (int i = 0; i < 1960;i++){                
-        
-                feat_char[k] = (char) ((int) floor(out_feat[i] * pow(2, -1) * sqrt(0.05)) + 128);
 
-                // Select 10 MFCC per window
-                if (i == 40*(k/10) + 9){
-                    i = 40*(k/10) + 39;
+            int k = 0;
+            for (int i = 0; i < 49 * N_MELS;i++){                
+                
+                // feat_char[k] = (char) ((int) floor(out_feat[i] * pow(2, -1) * sqrt(0.05)) + 128);
+                feat_char[k] = (char) ((int) floor(out_feat[i] * 0.1118) + 128);
+
+                if (N_MELS == 40){
+                    // Select 10 MFCC per window
+                    if (i == 40*(k/10) + 9){
+                        i = 40*(k/10) + 39;
+                    }
                 }
+
+                // Fill input buffer
+                if (mfcc == "1"){
+                    ((uint8_t *)l2_buffer)[k] = L2_input_h[k]; // Precomputed MFCC
+                }
+                else {
+                    ((uint8_t *)l2_buffer)[k] = feat_char[k]; // Online computed MFCC
+                }
+
                 k++;
             } 
 
-            pi_l2_free(out_feat, 49*10*4*sizeof(OUT_TYPE));
-
-            // Fill input buffer
-            for (int i = 0; i < 490; i++){
-                if (mfcc == "1"){
-                    ((uint8_t *)l2_buffer)[i] = L2_input_h[i]; // Precomputed MFCC
-                }
-                else {
-                    ((uint8_t *)l2_buffer)[i] = feat_char[i]; // Online computed MFCC
-                    PRINTF("%i,", feat_char[i]);
-                }
-            }
-            PRINTF("\n");
-
-            for (int i = 0; i < 5; i++){
-                PRINTF("feat_char[%i] = %i, ", i, feat_char[i]);
-            }
-            PRINTF("\n");
-
+            pi_l2_free(out_feat, 49 * N_MELS * sizeof(OUT_TYPE));
             pi_l2_free(feat_char, 49 * 10 * sizeof(char));
+
 
             // Extract backbone features
             void *dump; // dump to copy FC weights, won't be used; TODO: Parametrize DORY
@@ -1034,28 +1029,36 @@ void evaluate_tinytest(int pre){
 
         compute_mfcc();
 
-        for (int i = 0; i < 5; i++){
-            PRINTF("out_feat[%i] = %f, ", i, out_feat[i]);
-        }
-        PRINTF("\n");      
-        
         feat_char = (char*) pi_l2_malloc(49 * 10 * sizeof(char));
-        // Rescale data
-        int k = 0;
-        for (int i = 0; i < 1960;i++){                
-    
-            feat_char[k] = (char) ((int) floor(out_feat[i] * pow(2, -1) * sqrt(0.05)) + 128);
 
-            // Select 10 MFCC per window
-            if (i == 40*(k/10) + 9){
-                i = 40*(k/10) + 39;
+        int k = 0;
+        for (int i = 0; i < 49 * N_MELS;i++){                
+            
+            // feat_char[k] = (char) ((int) floor(out_feat[i] * pow(2, -1) * sqrt(0.05)) + 128); // 23.883617 QSNR w/ float
+            feat_char[k] = (char) ((int) floor(out_feat[i] * 0.1118) + 128);
+
+            if (N_MELS == 40){
+                // Select 10 MFCC per window
+                if (i == 40*(k/10) + 9){
+                    i = 40*(k/10) + 39;
+                }
             }
+
+            // Fill input buffer
+            if (mfcc == "1"){
+                ((uint8_t *)l2_buffer)[k] = L2_input_h[k]; // Precomputed MFCC
+            }
+            else {
+                ((uint8_t *)l2_buffer)[k] = feat_char[k]; // Online computed MFCC
+            }
+
             k++;
         } 
 
-        pi_l2_free(out_feat, 49*10*4*sizeof(OUT_TYPE));
+        pi_l2_free(out_feat, 49 * N_MELS * sizeof(OUT_TYPE));
+        pi_l2_free(feat_char, 49 * 10 * sizeof(char));
 
-        for (int k = 0; k < 490; k++){
+        for (int k = 0; k < 49 * 10; k++){
             // Data saving to elude re-recording the evaluation samples. TODO: organize workflow
             if (uttr_eval_input == "0") {
                 if (pre == 0){
@@ -1128,25 +1131,6 @@ void evaluate_tinytest(int pre){
                 }
             }
         }
-
-        // Fill input buffer
-        for (int i = 0; i < 490; i++){
-            if (mfcc == "1"){
-                ((uint8_t *)l2_buffer)[i] = L2_input_h[i]; // Precomputed MFCC
-            }
-            else {
-                ((uint8_t *)l2_buffer)[i] = feat_char[i]; // Online computed MFCC
-                PRINTF("%i,", feat_char[i]);
-            }
-        }
-        PRINTF("\n");
-
-        for (int i = 0; i < 5; i++){
-            PRINTF("feat_char[%i] = %i, ", i, feat_char[i]);
-        }
-        PRINTF("\n");
-
-        pi_l2_free(feat_char, 49 * 10 * sizeof(char));
 
         // Extract backbone features
         void *dump; // dump to copy FC weights, won't be used; TODO: Parametrize DORY
@@ -1305,35 +1289,34 @@ void train_wavsrc(){
         compute_mfcc();
 
         feat_char = (char*) pi_l2_malloc(49 * 10 * sizeof(char));
-        // Rescale data
+
         int k = 0;
-        for (int i = 0; i < 1960;i++){                
+        for (int i = 0; i < 49 * N_MELS;i++){                
             
-            feat_char[k] = (char) (((int) floor(out_feat[i] * pow(2, -1) * sqrt(0.05))) + 128); // 23.883617 QSNR w/ float
-            // feat_char[k] = (char) (((int) floor(out_feat[i] * pow(2, -4) * sqrt(0.2))) + 128); // kws-on-pulp
+            // feat_char[k] = (char) ((int) floor(out_feat[i] * pow(2, -1) * sqrt(0.05)) + 128); // 23.883617 QSNR w/ float
+            feat_char[k] = (char) ((int) floor(out_feat[i] * 0.1118) + 128);
 
-
-            // TODO: Determine Librosa scaling
-            
-
-            // Select 10 MFCC per window
-            if (i == 40*(k/10) + 9){
-                i = 40*(k/10) + 39;
+            if (N_MELS == 40){
+                // Select 10 MFCC per window
+                if (i == 40*(k/10) + 9){
+                    i = 40*(k/10) + 39;
+                }
             }
-            k++;
-        } 
-        
-        pi_l2_free(out_feat, 49*10*4*sizeof(OUT_TYPE));
 
-        for (int i = 0; i < 490; i++){
+            // Fill input buffer
             if (mfcc == "1"){
-                ((uint8_t *)l2_buffer)[i] = L2_input_h[i]; // Precomputed MFCC
+                ((uint8_t *)l2_buffer)[k] = L2_input_h[k]; // Precomputed MFCC
             }
             else {
-                ((uint8_t *)l2_buffer)[i] = feat_char[i]; // Online computed MFCC
+                ((uint8_t *)l2_buffer)[k] = feat_char[k]; // Online computed MFCC
             }
-        }
+
+            k++;
+        } 
+
+        pi_l2_free(out_feat, 49 * N_MELS * sizeof(OUT_TYPE));
         pi_l2_free(feat_char, 49 * 10 * sizeof(char));
+
 
         PRINTF ("********** Run inferecene **********\n");
         // Extract backbone features
@@ -1842,9 +1825,18 @@ int application(void){
 
         // pi_gpio_pin_write(gpio_pin_measurement_id, 1);
 
+        gap_fc_starttimer();
+        gap_fc_resethwtimer();
+        int start_timer_mfcc = gap_fc_readhwtimer();        
         int start_readmfcc = pi_time_get_us();
 
         compute_mfcc();
+
+        int elapsed_timer_mfcc = gap_fc_readhwtimer() - start_timer_mfcc;
+        int end_readmfcc = pi_time_get_us();
+        printf("Compute mfcc: %d cycles\n", elapsed_timer_mfcc);
+        printf("MFCC: %i us\n", end_readmfcc - start_readmfcc);
+
 
         #ifdef PERF
         int elapsed_timer_2 = gap_fc_readhwtimer() - start_timer_2;
@@ -1862,61 +1854,49 @@ int application(void){
         start_timer_2 = gap_fc_readhwtimer();    
         #endif    
 
+        gap_fc_starttimer();
+        gap_fc_resethwtimer();
+        int start_timer_processing = gap_fc_readhwtimer();        
+        int start_readprocessing = pi_time_get_us();
+
         feat_char = (char*) pi_l2_malloc(49 * 10 * sizeof(char));
-        // Rescale data
+
         int k = 0;
-        for (int i = 0; i < 1960;i++){                
+        for (int i = 0; i < 49 * N_MELS;i++){                
             
             // feat_char[k] = (char) ((int) floor(out_feat[i] * pow(2, -1) * sqrt(0.05)) + 128);
             feat_char[k] = (char) ((int) floor(out_feat[i] * 0.1118) + 128);
 
-            // Select 10 MFCC per window
-            if (i == 40*(k/10) + 9){
-                i = 40*(k/10) + 39;
+            if (N_MELS == 40){
+                // Select 10 MFCC per window
+                if (i == 40*(k/10) + 9){
+                    i = 40*(k/10) + 39;
+                }
             }
-            k++;
-        } 
-        pi_l2_free(out_feat, 49*10*4*sizeof(OUT_TYPE));
 
-
-        #ifdef PERF
-        elapsed_timer_2 = gap_fc_readhwtimer() - start_timer_2;
-        printf("Scale mfcc: %d cycles\n", elapsed_timer_2);
-        #endif
-
-        #ifdef PERF
-        gap_fc_starttimer();
-        gap_fc_resethwtimer();
-        int start_timer_3 = gap_fc_readhwtimer();    
-        #endif    
-
-        // Fill input buffer
-        for (int i = 0; i < 490; i++){
+            // Fill input buffer
             if (mfcc == "1"){
-                ((uint8_t *)l2_buffer)[i] = L2_input_h[i]; // Precomputed MFCC
+                ((uint8_t *)l2_buffer)[k] = L2_input_h[k]; // Precomputed MFCC
             }
             else {
-                ((uint8_t *)l2_buffer)[i] = feat_char[i]; // Online computed MFCC
-                PRINTF("%i,", feat_char[i]);
-
+                ((uint8_t *)l2_buffer)[k] = feat_char[k]; // Online computed MFCC
             }
-        }
-        PRINTF("\n");
 
-        for (int i = 0; i < 5; i++){
-            PRINTF("feat_char[%i] = %i, ", i, feat_char[i]);
-        }
-        PRINTF("\n");
+            k++;
+        } 
 
+        pi_l2_free(out_feat, 49 * N_MELS * sizeof(OUT_TYPE));
         pi_l2_free(feat_char, 49 * 10 * sizeof(char));
 
-        #ifdef PERF
-        int elapsed_timer_3 = gap_fc_readhwtimer() - start_timer_3;
-        printf("Convert mfcc: %d cycles\n", elapsed_timer_3);
-        #endif
+        int elapsed_timer_processing = gap_fc_readhwtimer() - start_timer_processing;
+        int end_readprocessing = pi_time_get_us();
+        printf("Processing: %d cycles\n", elapsed_timer_processing);
+        printf("Processing: %i us\n", end_readprocessing - start_readprocessing);
 
-        int end_readmfcc = pi_time_get_us();
-        // printf("MFCC (incl. data proc): %i us\n", end_readmfcc - start_readmfcc);
+        #ifdef PERF
+        int elapsed_timer_2 = gap_fc_readhwtimer() - start_timer_2;
+        printf("Convert mfcc: %d cycles\n", elapsed_timer_2);
+        #endif
 
         // pi_gpio_pin_write(gpio_pin_measurement_id, 0);
 
@@ -2028,7 +2008,7 @@ int application(void){
         checkbutton:
         button_was_pressed = 0;
         button_was_pressed = read_button();
-        button_was_pressed = 1; // measurement
+        button_was_pressed = 0; // measurement
 
         if (button_was_pressed){
 

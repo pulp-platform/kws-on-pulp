@@ -79,20 +79,16 @@ set(MFCC_SRC_CODE        ${BUILD_DIR}/MfccKernels.c)
 # Application
 
 
-# MFCC Already exists
-# add_custom_command (
-    
-#     OUTPUT    ${MFCC_MODEL_GEN}
-#     COMMAND   python ${DSP_GEN_DIR}/DSP_LUTGen.py ${MFCC_PARAMS_JSON} --build_dir ${BUILD_DIR} --save_params_header ${MFCC_HEAD} --save_text
-
-# )
+add_custom_command (
+    OUTPUT    ${MFCC_MODEL_GEN}
+    COMMAND   python ${DSP_GEN_DIR}/DSP_LUTGen.py ${MFCC_PARAMS_JSON} --build_dir ${BUILD_DIR} --save_params_header ${MFCC_HEAD} --save_text
+)
 
 add_custom_command (
  
     OUTPUT    ${MFCC_SRC_CODE}
     COMMAND   ${MFCC_MODEL_GEN} -o ${BUILD_DIR} -c ${BUILD_DIR} ${MODEL_GEN_EXTRA_FLAGS}
     DEPENDS   ${MFCC_MODEL_GEN}
-
 )
 
 add_custom_target (
@@ -110,7 +106,6 @@ add_custom_target (
     COMMAND              gcc -g -o ${MFCC_MODEL_GEN} -I${BUILD_DIR} -I${DSP_GEN_DIR} -I${TILER_INC} -I${TILER_EMU_INC} ${CURDIR}/MfccModel.c ${MFCC_SRCG} ${TILER_LIB} ${TABLE_CFLAGS} ${COMPILE_MODEL_EXTRA_FLAGS} -DUSE_POWER=${USE_POWER} ${SDL_FLAGS}
     BYPRODUCTS           ${MFCC_MODEL_GEN}   
     DEPENDS              ${MFCC_HEAD}         
-
 )
 
 
@@ -120,12 +115,10 @@ add_custom_target(
     COMMAND             SFU -i ${CURDIR}/Graph.src -C
     SOURCES             ${CURDIR}/Graph.src
     BYPRODUCTS          ${BUILD_DIR}/Graph_L2_Descr.c ${BUILD_DIR}/Graph_L2_Descr.h ${BUILD_DIR}/L2_Descr_Table.c ${BUILD_DIR}/L2_Descr_Table.h
-    )
+)
 
 
 list (APPEND TARGET_SRCS 
-                         
-                         
                          ${DSP_DIR}FFT_Library.c 
                          ${DSP_DIR}CmplxFunctions.c
                          ${DSP_DIR}PreProcessing.c
