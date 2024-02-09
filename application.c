@@ -1885,6 +1885,10 @@ int application(void){
             k++;
         } 
 
+        // if DEBUG
+        dump_data_write("mfccdump.data", feat_char, 49 * 10 * sizeof(char));
+
+
         pi_l2_free(out_feat, 49 * N_MELS * sizeof(OUT_TYPE));
         pi_l2_free(feat_char, 49 * 10 * sizeof(char));
 
