@@ -56,8 +56,8 @@ tinytrain_size = audio_processor.get_size('tinytrain')
 print("Dataset split (Train/valid/test/tinytrain): "+ str(train_size) +"/"+str(valid_size) + "/" + str(test_size) + "/" + str(tinytrain_size))
 
 # Model generation and analysis
-# model = DSCNNS(use_bias = False) # Put to FALSE to reproduce FC layer
-model = DSCNNS(use_bias = True) # Put to TRUE to reproduce model_bias layer
+model = DSCNNL(use_bias = False) # Put to FALSE to reproduce FC layer
+# model = DSCNNS(use_bias = True) # Put to TRUE to reproduce model_bias layer
 model.to(device)
 
 summary(model,(1,49,data_processing_parameters['feature_bin_count']))
@@ -200,7 +200,7 @@ quantized_model.reset_alpha_act()
 # quit() # early stop to simply save a validation set for NNTOOL
 
 # Remove biases after FQ stage
-quantized_model.remove_bias()
+# quantized_model.remove_bias()
 
 print("\nFakeQuantized @ 8b accuracy (calibrated):")
 acc = trainining_environment.validate(model=quantized_model, mode='testing', batch_size=128)
