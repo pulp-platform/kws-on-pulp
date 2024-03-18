@@ -52,7 +52,9 @@ export COMPUTE=$5 # 0 - PULP GVSOC, 1 - GAP9 multicore, 2 - GAP9 NE16
 export NETWORK_DIR_DEST=$6
 export NETWORK_DIR_DEST_DORY=$6_DORY
 export NETWORK_DIR_SRC=$7
+export CORES=$8
 export CUR_DIR=$PWD
+
 
 
 if [[ $SDK == "pulp_sdk" ]]
@@ -127,7 +129,7 @@ fi
 cd $CUR_DIR/$NETWORK_DIR_DEST/
 
 # Parametrized
-make clean all run sample=$AUDIO_SAMPLE sdk=$SDK memory=$MEMORY platform=$PLATFORM mfcc=$MFCC CORE=8 # runner_args="--trace=insn"
+make clean all run sample=$AUDIO_SAMPLE sdk=$SDK memory=$MEMORY platform=$PLATFORM mfcc=$MFCC CORE=$CORES # runner_args="--trace=insn"
 
 if [[ $PLATFORM == "rtl" ]]
 then
