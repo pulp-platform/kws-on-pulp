@@ -56,6 +56,7 @@ tinytrain_size = audio_processor.get_size('tinytrain')
 print("Dataset split (Train/valid/test/tinytrain): "+ str(train_size) +"/"+str(valid_size) + "/" + str(test_size) + "/" + str(tinytrain_size))
 
 # Model generation and analysis
+# TODO: Model size/type should parametrize the quantization dictionary
 model = DSCNNL(use_bias = False) # Put to FALSE to reproduce FC layer
 # model = DSCNNS(use_bias = True) # Put to TRUE to reproduce model_bias layer
 model.to(device)
@@ -89,7 +90,7 @@ if training_parameters['freezebb']:
       print ("For ", str(name), " we require grad? ", str(param.requires_grad))
 
 start=time.clock_gettime(0)
-trainining_environment.train(model, mode='training') # TRAIN
+# trainining_environment.train(model, mode='training') # TRAIN
 # trainining_environment.train(model, mode='tinytrain') # FINETUNE
 print('Finished Training on GPU in {:.2f} seconds'.format(time.clock_gettime(0)-start))
 
@@ -182,6 +183,18 @@ precision_8 = {
             "W_bits": 7
           },
           "relu9": {
+            "x_bits": 8
+          },
+          "conv10": {
+            "W_bits": 7
+          },
+          "relu10": {
+            "x_bits": 8
+          },
+          "conv11": {
+            "W_bits": 7
+          },
+          "relu11": {
             "x_bits": 8
           },
           "fc1": {

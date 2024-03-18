@@ -90,13 +90,13 @@ cp $CUR_DIR/config_DSCNN.json $NETWORK_DIR_SRC/ # TODO: .onnx path in config_DSC
 # Copy model and it's activations to Dory
 cd dory/
 mkdir -p $NETWORK_DIR_DEST_DORY
-rm $NETWORK_DIR_DEST_DORY/model.onnx
-rm $NETWORK_DIR_DEST_DORY/out_layer*.txt
-rm $NETWORK_DIR_DEST_DORY/input.txt
+rm $CUR_DIR/dory/$NETWORK_DIR_DEST_DOR/model.onnx
+rm $CUR_DIR/dory/$NETWORK_DIR_DEST_DOR/out_layer*.txt
+rm $CUR_DIR/dory/$NETWORK_DIR_DEST_DOR/input.txt
 
-cp $CUR_DIR/$NETWORK_DIR_SRC/input.txt $NETWORK_DIR_DEST_DORY/
-cp $CUR_DIR/$NETWORK_DIR_SRC/model.onnx  $NETWORK_DIR_DEST_DORY/
-cp $CUR_DIR/$NETWORK_DIR_SRC/out_layer*.txt $NETWORK_DIR_DEST_DORY/
+cp $CUR_DIR/$NETWORK_DIR_SRC/input.txt $CUR_DIR/dory/$NETWORK_DIR_DEST_DOR/
+cp $CUR_DIR/$NETWORK_DIR_SRC/model.onnx  $CUR_DIR/dory/$NETWORK_DIR_DEST_DOR/
+cp $CUR_DIR/$NETWORK_DIR_SRC/out_layer*.txt $CUR_DIR/dory/$NETWORK_DIR_DEST_DOR/
 
 # Generate source code and weights for model inference
 # We use 64 bits for the BatchNorm and ReLU
@@ -123,6 +123,7 @@ then
   # Save .WAV as .h for L2
   python $CUR_DIR/wav_to_header.py --file $AUDIO_SAMPLE --sdk $SDK
 fi
+
 cd $CUR_DIR/$NETWORK_DIR_DEST/
 
 # Parametrized
