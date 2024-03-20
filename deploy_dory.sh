@@ -102,21 +102,42 @@ cp $CUR_DIR/$NETWORK_DIR_SRC/out_layer*.txt $CUR_DIR/dory/$NETWORK_DIR_DEST_DORY
 
 # Generate source code and weights for model inference
 # We use 64 bits for the BatchNorm and ReLU
+# Verbose
+
 if [[ $MEMORY == "3" ]]
 then
   if [[ $COMPUTE == "0" ]]
   then
-    python network_generate.py NEMO PULP.PULP_gvsoc $CUR_DIR/$NETWORK_DIR_SRC/config_DSCNN.json --app_dir $NETWORK_DIR_DEST_DORY/ --verbose_level Check_all+Perf_final --perf_layer
+    python network_generate.py NEMO PULP.PULP_gvsoc $CUR_DIR/$NETWORK_DIR_SRC/config_DSCNN.json --app_dir $NETWORK_DIR_DEST_DORY/ --verbose_level Check_all+Perf_final --perf_layer --n_trainable_layers 1
   elif [[ $COMPUTE == "1" ]]
   then
-    python network_generate.py NEMO PULP.GAP9 $CUR_DIR/$NETWORK_DIR_SRC/config_DSCNN.json --app_dir $NETWORK_DIR_DEST_DORY/ --verbose_level Check_all+Perf_final --perf_layer
+    python network_generate.py NEMO PULP.GAP9 $CUR_DIR/$NETWORK_DIR_SRC/config_DSCNN.json --app_dir $NETWORK_DIR_DEST_DORY/ --verbose_level Check_all+Perf_final --perf_layer --n_trainable_layers 1
   elif [[ $COMPUTE == "2" ]]
   then
-    python network_generate.py NEMO PULP.GAP9_NE16 $CUR_DIR/$NETWORK_DIR_SRC/config_DSCNN.json --app_dir $NETWORK_DIR_DEST_DORY/ --verbose_level Check_all+Perf_final --perf_layer
+    python network_generate.py NEMO PULP.GAP9_NE16 $CUR_DIR/$NETWORK_DIR_SRC/config_DSCNN.json --app_dir $NETWORK_DIR_DEST_DORY/ --verbose_level Check_all+Perf_final --perf_layer --n_trainable_layers 1
   fi
 else
-  python network_generate.py NEMO PULP.GAP8_L2 $CUR_DIR/$NETWORK_DIR_SRC/config_DSCNN.json --app_dir $NETWORK_DIR_DEST_DORY/ --verbose_level Check_all+Perf_final --perf_layer
+  python network_generate.py NEMO PULP.GAP8_L2 $CUR_DIR/$NETWORK_DIR_SRC/config_DSCNN.json --app_dir $NETWORK_DIR_DEST_DORY/ --verbose_level Check_all+Perf_final --perf_layer --n_trainable_layers 1
 fi
+
+
+# if [[ $MEMORY == "3" ]]
+# then
+#   if [[ $COMPUTE == "0" ]]
+#   then
+#     python network_generate.py NEMO PULP.PULP_gvsoc $CUR_DIR/$NETWORK_DIR_SRC/config_DSCNN.json --app_dir $NETWORK_DIR_DEST_DORY/ --verbose_level None --n_trainable_layers 1
+#   elif [[ $COMPUTE == "1" ]]
+#   then
+#     python network_generate.py NEMO PULP.GAP9 $CUR_DIR/$NETWORK_DIR_SRC/config_DSCNN.json --app_dir $NETWORK_DIR_DEST_DORY/ --verbose_level None --n_trainable_layers 1
+#   elif [[ $COMPUTE == "2" ]]
+#   then
+#     python network_generate.py NEMO PULP.GAP9_NE16 $CUR_DIR/$NETWORK_DIR_SRC/config_DSCNN.json --app_dir $NETWORK_DIR_DEST_DORY/ --verbose_level None --n_trainable_layers 1
+#   fi
+# else
+#   python network_generate.py NEMO PULP.GAP8_L2 $CUR_DIR/$NETWORK_DIR_SRC/config_DSCNN.json --app_dir $NETWORK_DIR_DEST_DORY/ --verbose_level None --n_trainable_layers 1
+# fi
+
+
 
 # Copy the files into our directory, preparing the MFCC integration
 mkdir -p $CUR_DIR/$NETWORK_DIR_DEST/ && cp -r $NETWORK_DIR_DEST_DORY/* $CUR_DIR/$NETWORK_DIR_DEST/
