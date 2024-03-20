@@ -28,6 +28,8 @@ rm DSCNN_DIR_DEST/src/main.c
 
 Note that the DORY-generated C code currently allows setting the number of `n_frozen_layers` in `dory/Hardware_targets/PULP/PULP_gvsoc/Templates/network_c_template.c`. This should be passed as external paramater during code generation, also accounting for the number of non-parametrizable operations (e.g., AvgPool, Identity).
 
+
+
 ## [INFERENCE] Run on GAP9
 
 To run the network on GVSOC:
@@ -49,9 +51,11 @@ This currently integrates inference and user-indicated training. An inference-on
 
 ### [TRAIN] Generate PULP TrainLib-based C code
 
+To generate the FP32 C code for the trainable segment of the network, run:
+
 ```
 cd pulp-trainlib/
-./codegen.sh /usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser/trainlib_example_dscnn/ yournetwork/ # generates net.{h,c}, initdefines.h, iodata.{h,c}
+./codegen.sh trainlib_example_dscnn/ yournetwork/ path/to/model.onnx # generates net.{h,c}, initdefines.h, iodata.{h,c}
 ```
 
 =======
