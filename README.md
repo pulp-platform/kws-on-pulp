@@ -18,7 +18,12 @@ cd ..
 cd dory/
 git submodule update --init 
 cd -
-./deploy_dory.sh gap_sdk 3 gvsoc 0 2 DSCNN_DIR_DEST DSCNN_DIR_SRC
+./deploy_dory.sh gap_sdk 3 gvsoc 0 2 DSCNN_DIR_DEST DSCNN_DIR_SRC 8
+
+# Integrate DORY-gen code into ours
+cd ..
+cp -r kws-on-pulp/DSCNN_DIR_DEST/ .
+rm DSCNN_DIR_DEST/src/main.c
 ```
 
 Note that the DORY-generated C code currently allows setting the number of `n_frozen_layers` in `dory/Hardware_targets/PULP/PULP_gvsoc/Templates/network_c_template.c`. This should be passed as external paramater during code generation, also accounting for the number of non-parametrizable operations (e.g., AvgPool, Identity).
