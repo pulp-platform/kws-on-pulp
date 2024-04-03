@@ -43,7 +43,7 @@ class DSCNN(torch.nn.Module):
 
         self.conv_blocks_list = [] 
         for block_idx in range (0, self.n_blocks):
-            self.conv_blocks_list.append(DSCNN_block(n_channels = self.n_channels, use_bias = self.use_bias, block_idx = 2*n_blocks+1).to(self.device))
+            self.conv_blocks_list.append((DSCNN_block(n_channels = self.n_channels, use_bias = self.use_bias, block_idx = 2*n_blocks+1).to(self.device)))
 
         self.conv_blocks = nn.ModuleList(self.conv_blocks_list)
 
@@ -67,68 +67,48 @@ class DSCNN(torch.nn.Module):
         return x
 
 
-class Conv_Stem_Asym(torch.nn.Module):
+class Conv_Stem_Asym(torch.nn.Sequential):
     def __init__(self, n_channels = 64, use_bias = True, block_idx = 0):
-        super(Conv_Stem_Asym, self).__init__()
 
         self.use_bias = use_bias
         self.block_idx = block_idx
 
-        self.conv = torch.nn.Conv2d(in_channels = 1, out_channels = n_channels, kernel_size = (10, 4), stride = (2, 2), bias = self.use_bias)
-        self.bn   = torch.nn.BatchNorm2d(n_channels)
-        self.relu = torch.nn.ReLU(inplace=True)
+        modules = []
+        modules += [torch.nn.Conv2d(in_channels = 1, out_channels = n_channels, kernel_size = (10, 4), stride = (2, 2), bias = self.use_bias)]
+        modules += [torch.nn.BatchNorm2d(n_channels)]
+        modules += [torch.nn.ReLU(inplace=True)]
 
-    def forward(self, x):
-
-        x = self.conv(x)
-        x = self.bn(x)
-        x = self.relu(x)
-    
-        return x
+        super().__init__(*modules)
 
 
-class Conv_Stem_Sym(torch.nn.Module):
+class Conv_Stem_Sym(torch.nn.Sequential):
     def __init__(self, n_channels = 64, use_bias = True, block_idx = 0):
-        super(Conv_Stem_Sym, self).__init__()
 
         self.use_bias = use_bias
         self.block_idx = block_idx
 
-        self.conv = torch.nn.Conv2d(in_channels = 1, out_channels = n_channels, kernel_size = (3, 3), stride = (2, 2), bias = self.use_bias)
-        self.bn   = torch.nn.BatchNorm2d(n_channels)
-        self.relu = torch.nn.ReLU(inplace=True)
+        modules = []
+        modules += [torch.nn.Conv2d(in_channels = 1, out_channels = n_channels, kernel_size = (3, 3), stride = (2, 2), bias = self.use_bias)]
+        modules += [torch.nn.BatchNorm2d(n_channels)]
+        modules += [torch.nn.ReLU(inplace=True)]
 
-    def forward(self, x):
-
-        x = self.conv(x)
-        x = self.bn(x)
-        x = self.relu(x)
-        
-        return x
+        super().__init__(*modules)
 
 
-class DSCNN_block(torch.nn.Module):
+class DSCNN_block(torch.nn.Sequential):
     def __init__(self, n_channels = 64, use_bias = True, block_idx = 0):
-        super(DSCNN_block, self).__init__()
 
         self.use_bias = use_bias
         self.block_idx = block_idx
 
-        self.conv_dw  = torch.nn.Conv2d(in_channels = n_channels, out_channels = n_channels, kernel_size = (3, 3), stride = (1, 1), groups = n_channels, bias = self.use_bias)
-        self.bn_dw    = torch.nn.BatchNorm2d(n_channels)
-        self.relu_dw  = torch.nn.ReLU(inplace=True)
-        self.conv_pw  = torch.nn.Conv2d(in_channels = n_channels, out_channels = n_channels, kernel_size = (1, 1), stride = (1, 1), bias = self.use_bias)
-        self.bn_pw    = torch.nn.BatchNorm2d(n_channels)
-        self.relu_pw  = torch.nn.ReLU(inplace=True)
+        modules = []
 
-    def forward(self, x):
-        
-        x = self.conv_dw(x)
-        x = self.bn_dw(x)    
-        x = self.relu_dw(x) 
+        modules += [ torch.nn.Conv2d(in_channels = n_channels, out_channels = n_channels, kernel_size = (3, 3), stride = (1, 1), groups = n_channels, bias = self.use_bias) ]
+        modules += [ torch.nn.BatchNorm2d(n_channels) ]
+        modules += [ torch.nn.ReLU(inplace=True) ]
+        modules += [ torch.nn.Conv2d(in_channels = n_channels, out_channels = n_channels, kernel_size = (1, 1), stride = (1, 1), bias = self.use_bias) ]
+        modules += [ torch.nn.BatchNorm2d(n_channels) ]
+        modules += [ torch.nn.ReLU(inplace=True) ]
 
-        x = self.conv_pw(x)
-        x = self.bn_pw(x)
-        x = self.relu_pw(x) 
+        super().__init__(*modules)
 
-        return x
