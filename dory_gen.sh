@@ -82,22 +82,15 @@ else
   fi
 fi
 
-mkdir $NETWORK_DIR_SRC
-
-cp $CUR_DIR/export/input.txt $NETWORK_DIR_SRC/
-cp $CUR_DIR/export/example_quantized_ql_integerized.onnx $NETWORK_DIR_SRC/model.onnx
-cp $CUR_DIR/export/out_layer*.txt $NETWORK_DIR_SRC/
-cp $CUR_DIR/config_example_quantized.json $NETWORK_DIR_SRC/ # TODO: .onnx path in config_example_quantized.json
-
 # Copy model and it's activations to Dory
 cd dory/
 mkdir -p $NETWORK_DIR_DEST_DORY
-rm $CUR_DIR/dory/$NETWORK_DIR_DEST_DORY/model.onnx
+rm $CUR_DIR/dory/$NETWORK_DIR_DEST_DORY/example_quantized_ql_integerized.onnx
 rm $CUR_DIR/dory/$NETWORK_DIR_DEST_DORY/out_layer*.txt
 rm $CUR_DIR/dory/$NETWORK_DIR_DEST_DORY/input.txt
 
 cp $CUR_DIR/$NETWORK_DIR_SRC/input.txt $CUR_DIR/dory/$NETWORK_DIR_DEST_DORY/
-cp $CUR_DIR/$NETWORK_DIR_SRC/model.onnx  $CUR_DIR/dory/$NETWORK_DIR_DEST_DORY/
+cp $CUR_DIR/$NETWORK_DIR_SRC/example_quantized_ql_integerized.onnx  $CUR_DIR/dory/$NETWORK_DIR_DEST_DORY/
 cp $CUR_DIR/$NETWORK_DIR_SRC/out_layer*.txt $CUR_DIR/dory/$NETWORK_DIR_DEST_DORY/
 
 # Generate source code and weights for model inference
@@ -108,16 +101,16 @@ if [[ $MEMORY == "3" ]]
 then
   if [[ $COMPUTE == "0" ]]
   then
-    python network_generate.py NEMO PULP.PULP_gvsoc $CUR_DIR/$NETWORK_DIR_SRC/config_example_quantized.json --app_dir $NETWORK_DIR_DEST_DORY/ --verbose_level Check_all+Perf_final --perf_layer
+    python network_generate.py Quantlab PULP.PULP_gvsoc $CUR_DIR/$NETWORK_DIR_SRC/config_example_quantized.json --app_dir $NETWORK_DIR_DEST_DORY/ --verbose_level Check_all+Perf_final --perf_layer
   elif [[ $COMPUTE == "1" ]]
   then
-    python network_generate.py NEMO PULP.GAP9 $CUR_DIR/$NETWORK_DIR_SRC/config_example_quantized.json --app_dir $NETWORK_DIR_DEST_DORY/ --verbose_level Check_all+Perf_final --perf_layer
+    python network_generate.py Quantlab PULP.GAP9 $CUR_DIR/$NETWORK_DIR_SRC/config_example_quantized.json --app_dir $NETWORK_DIR_DEST_DORY/ --verbose_level Check_all+Perf_final --perf_layer
   elif [[ $COMPUTE == "2" ]]
   then
-    python network_generate.py NEMO PULP.GAP9_NE16 $CUR_DIR/$NETWORK_DIR_SRC/config_example_quantized.json --app_dir $NETWORK_DIR_DEST_DORY/ --verbose_level Check_all+Perf_final --perf_layer
+    python network_generate.py Quantlab PULP.GAP9_NE16 $CUR_DIR/$NETWORK_DIR_SRC/config_example_quantized.json --app_dir $NETWORK_DIR_DEST_DORY/ --verbose_level Check_all+Perf_final --perf_layer
   fi
 else
-  python network_generate.py NEMO PULP.GAP8_L2 $CUR_DIR/$NETWORK_DIR_SRC/config_example_quantized.json --app_dir $NETWORK_DIR_DEST_DORY/ --verbose_level Check_all+Perf_final --perf_layer
+  python network_generate.py Quantlab PULP.GAP8_L2 $CUR_DIR/$NETWORK_DIR_SRC/config_example_quantized.json --app_dir $NETWORK_DIR_DEST_DORY/ --verbose_level Check_all+Perf_final --perf_layer
 fi
 
 # Copy the files into our directory, preparing the MFCC integration
