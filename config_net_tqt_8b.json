@@ -1,39 +1,40 @@
 {
+    "description": {},
     "data": {
         "train": {
             "dataset": {
                 "transform": {
-                    "class": "Transform",
-                    "kwargs": {
-                        "augment": true
-                    }
-                }
-            },
-            "dataloader": {
-                "bs": 256
-            }
-        },
-        "valid": {
-            "dataset": {
-                "transform": {
-                    "class": "Transform",
+                    "class": "TransformA",
                     "kwargs": {
                         "augment": false
                     }
                 }
             },
             "dataloader": {
-                "bs": 256
+                "bs": 190
             }
+        },
+        "valid": {
+            "dataset": {
+                "transform": {
+                    "class": "TransformA",
+                    "kwargs": {
+                        "augment": false
+                    }
+                }
+            },
+            "dataloader": {
+                "bs": 190
+            }
+
         }
     },
     "network": {
-        "class": "simpleCNN",
+        "class": "DSCNN",
         "kwargs": {
             "config": "standard",
-            "capacity": 1,
-            "use_bn_features": true,
-            "use_bn_classifier": true
+            "capacity": 1.0,
+            "pretrained": "/home/georgr/projects/mixed-precision-inference/ql-pact/systems/ILSVRC12/MobileNetV2/pretrained/MNv2_224_1.0.ckpt"
         },
         "quantize": {
             "function": "pact_recipe",
@@ -81,14 +82,21 @@
                         "relu9$": {},
                         "kwargs": {
                             "n_levels": 256,
-                            "init_clip": "std",
-                            "nb_std": 3,
-                            "act_kind": "relu",
+                            "init_clip": "const",
                             "noisy": false,
-                            "tqt": true,
+                            "rounding": true,
                             "learn_clip": true,
-                            "rounding": true
+                            "tqt": true
                         }
+                    },
+                    "harmonize": {
+                        "n_levels": 256,
+                        "init_clip": "max",
+                        "noisy": false,
+                        "rounding": true,
+                        "force_out_eps": true,
+                        "tqt": true,
+                        "learn_clip": true
                     }
                 }
             }
@@ -101,66 +109,53 @@
         },
         "gd": {
             "opt": {
-                "class": "PACTSGD",
+                "class": "SGD",
+                "takes_net": false,
                 "kwargs": {
-                    "pact_decay": 0.001,
-                    "lr": 0.1,
-                    "momentum": 0.9
-                },
-                "takes_net": true
+                    "lr": 0.00075,
+                    "momentum": 0.9,
+                    "weight_decay": 4e-5
+                }
             },
             "lr_sched": {
                 "class": "HandScheduler",
                 "kwargs": {
                     "schedule": {
                         "0": 1,
-                        "3": 0.1,
-                        "8": 0.01,
-                        "12": 0.001
+                        "4": 0.1,
+                        "7": 0.01
                     }
                 }
             }
         },
-        "n_epochs": 21,
+        "n_epochs": 12,
         "quantize": {
             "function": "get_pact_controllers",
             "kwargs": {
                 "schedules": {
-                    "activation": {
-                        "0": [
-                            "verbose_on",
-                            "start"
-                        ]
-                    },
                     "linear": {
-                        "0": [
-                            "verbose_on",
-                            "start"
-                        ]
+                        "0": ["start", "verbose_on"]
+                    },
+                    "activation": {
+                        "1": ["start", "verbose_on"]
                     }
                 },
                 "kwargs_linear": {
-                    "update_every": "batch"
                 },
                 "kwargs_activation": {
                     "init_clip_hi": 6.0
                 }
             }
+
         }
     },
     "meters": {
         "train": {
             "compute_profiling_statistic": false,
-            "compute_task_statistic": true,
-            "tensor_statistics": [
-             ]
+            "compute_task_statistic": true
         },
         "valid": {
-            "compute_profiling_statistic": false
+            "compute_profiling_statistic": true
         }
-    },
-    "experiment": {
-        "target_loss": "valid",
-        "ckpt_period": 5
     }
 }
