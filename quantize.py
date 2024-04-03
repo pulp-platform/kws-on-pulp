@@ -16,7 +16,6 @@ from dataset import DatasetProcessor
 from datagenerator import DatasetCreator
 from utils import parameter_generation
 from dscnn import DSCNN
-from simplecnn import simpleCNN
 
 # import the DORY backend
 from quantlib.backends.dory import export_net, export_dvsnet, DORYHarmonizePass
@@ -25,12 +24,10 @@ from quantlib.editing.fx.passes.pact import IntegerizePACTNetPass
 from quantlib.editing.fx.util import module_of_node
 from quantlib.algorithms.pact.pact_ops import *
 # organize quantization functions, datasets and transforms by network
+from pactnet import pact_recipe as quantize_net, get_pact_controllers as controllers_net
 
-from pactsimplecnn import pact_recipe as quantize_simpleCNN, get_pact_controllers as controllers_simpleCNN
-
-
+# TODO: Functional dataset management
 mdataset = None
-
 
 @dataclass
 class QuantUtil:
@@ -97,16 +94,7 @@ _MNIST_EPS = MNISTSTATS['quantize']['eps']
 # batch size is per device, determined on Nvidia RTX2080. You may have to change
 # this if you have different GPUs
 _QUANT_UTILS = {
-    # 'VGG': QuantUtil(problem='CIFAR10', topo='VGG', quantize=quantize_vgg, get_controllers=controllers_vgg, network=VGG, in_shape=(1,3,32,32), eps_in=_CIFAR10_EPS, D=2**19, bs=256, get_in_shape=None, load_dataset_fn=load_cifar10, transform=CIFAR10PACTQuantTransform, quant_transform_args={'n_q':256}, n_levels_in=256, export_fn=export_net, code_size=150000),
-    # 'MobileNetV1': QuantUtil(problem='ILSVRC12', topo='MobileNetV1', quantize=quantize_mnv1, get_controllers=controllers_mnv1, network=MobileNetV1, in_shape=(1,3,224,224), eps_in=_ILSVRC12_EPS, D=2**19, bs=96, get_in_shape=None, load_dataset_fn=load_ilsvrc12, transform=ILSVRC12PACTQuantTransform, quant_transform_args={'n_q':256}, n_levels_in=256, export_fn=export_net, code_size=135000),
-    # 'MobileNetV2': QuantUtil(problem='ILSVRC12', topo='MobileNetV2', quantize=quantize_mnv2, get_controllers=controllers_mnv2, network=MobileNetV2, in_shape=(1,3,224,224), eps_in=_ILSVRC12_EPS, D=2**19, bs=53, get_in_shape=None, load_dataset_fn=load_ilsvrc12, transform=ILSVRC12PACTQuantTransform, quant_transform_args={'n_q':256}, n_levels_in=256, export_fn=export_net, code_size=150000),
-    # 'MobileNetV3': QuantUtil(problem='ILSVRC12', topo='MobileNetV3', quantize=quantize_mnv3, get_controllers=controllers_mnv3, network=MobileNetV3, in_shape=(1,3,224,224), eps_in=_ILSVRC12_EPS, D=2**19, bs=53, get_in_shape=None, load_dataset_fn=load_ilsvrc12, transform=ILSVRC12PACTQuantTransform, quant_transform_args={'n_q':256}, n_levels_in=256, export_fn=export_net, code_size=150000),
-    # 'ResNet': QuantUtil(problem='ILSVRC12', topo='ResNet', quantize=quantize_resnet, get_controllers=controllers_resnet, network=ResNet, in_shape=(1,3,224,224), eps_in=_ILSVRC12_EPS, D=2**19, bs=53, get_in_shape=None, load_dataset_fn=load_ilsvrc12, transform=ILSVRC12PACTQuantTransform, quant_transform_args={'n_q':256}, n_levels_in=256, export_fn=export_net, code_size=160000),
-    # 'ResNetCIFAR': QuantUtil(problem='CIFAR10', topo='ResNet', quantize=quantize_resnet_cifar, get_controllers=controllers_resnet_cifar, network=ResNetCIFAR, in_shape=(1,3,32,32), eps_in=_CIFAR10_EPS, D=2**19, bs=128, get_in_shape=None, load_dataset_fn=load_cifar10, transform=CIFAR10PACTQuantTransform, quant_transform_args={'n_q':256}, n_levels_in=256, export_fn=export_net, code_size=110000),
-    # 'dvs_cnn' : QuantUtil(problem='DVS128', topo='dvs_cnn', quantize=quantize_dvsnet, get_controllers=controllers_dvsnet, network=DVSHybridNet, network_args={'inject_eps':False}, in_shape=None, eps_in=1., D=2**19, bs=128, get_in_shape=get_in_shape_dvsnet, load_dataset_fn=load_dvs128, transform=DVSAugmentTransform, n_levels_in=3, export_fn=export_dvsnet, code_size=340000),
-    # 'simpleCNN': QuantUtil(problem='MNIST', topo='simpleCNN', quantize=quantize_simpleCNN, get_controllers=controllers_simpleCNN, network=simpleCNN, in_shape=(1,1,32,32), eps_in=_MNIST_EPS, D=2**19, bs=256, get_in_shape=None, load_dataset_fn=load_mnist, transform=None, quant_transform_args={'n_q':256}, n_levels_in=256, export_fn=export_net, code_size=150000)
-    # 'simpleCNN': QuantUtil(problem='MNIST', topo='simpleCNN', quantize=quantize_simpleCNN, get_controllers=controllers_simpleCNN, network=simpleCNN, in_shape=(1,1,32,32), eps_in=_MNIST_EPS, D=2**19, bs=256, get_in_shape=None, load_dataset_fn=DatasetProcessor.get_dataset, transform=None, quant_transform_args={'n_q':256}, n_levels_in=256, export_fn=export_net, code_size=150000),
-    'DSCNN':  QuantUtil(problem='MNIST', topo='DSCNN', quantize=quantize_simpleCNN, get_controllers=controllers_simpleCNN, network=DSCNN, in_shape=(1,1,49,10), eps_in=_MNIST_EPS, D=2**19, bs=256, get_in_shape=None, load_dataset_fn=DatasetProcessor.get_dataset, transform=None, quant_transform_args={'n_q':256}, n_levels_in=256, export_fn=export_net, code_size=150000)
+    'DSCNN':  QuantUtil(problem='MNIST', topo='DSCNN', quantize=quantize_net, get_controllers=controllers_net, network=DSCNN, in_shape=(1,1,49,10), eps_in=_MNIST_EPS, D=2**19, bs=256, get_in_shape=None, load_dataset_fn=DatasetProcessor.get_dataset, transform=None, quant_transform_args={'n_q':256}, n_levels_in=256, export_fn=export_net, code_size=150000)
 }
 
 
@@ -132,7 +120,7 @@ def get_ckpt(key : str, exp_id : int, ckpt_id : Union[int, str]):
     return torch.load(ckpt_filepath)
 
 def get_network(key : str, exp_id : int, ckpt_id : Union[int, str], quantized=False):
-    with open('dscnnnetconfig.json', 'r') as fp:
+    with open('config_net.json', 'r') as fp:
         cfg = json.load(fp)
     qu = _QUANT_UTILS[key]
     quant_cfg = cfg['network']['quantize']['kwargs']
@@ -302,11 +290,8 @@ def get_new_classifier(classifier: PACTConv1d):
     return new_classifier
 
 
-
-
 def main():
-
-
+    
     parser = argparse.ArgumentParser()
     parser.add_argument("--net", type=str, default='DSCNNS', help='Network to quantize')
     parser.add_argument('--fix_channels', action='store_true', help='Fix channels of conv layers for compatibility with DORY')
@@ -318,8 +303,8 @@ def main():
                         help='Export RequantShift nodes instead of mul-add-div sequences in ONNX graph')
     parser.add_argument('--clip_inputs', action='store_true',
                         help='ghettofix to clip inputs to be unsigned')
-    parser.add_argument('--netconfig_file', type=str, default='dscnnnetconfig.json', help = 'Network configuration file')
-    parser.add_argument('--envconfig_file', type=str, default='envconfig.json', help = 'Environment configuration file')
+    parser.add_argument('--config_net_file', type=str, default='config_net.json', help = 'Network configuration file')
+    parser.add_argument('--config_env_file', type=str, default='config_env.json', help = 'Environment configuration file')
 
     args = vars(parser.parse_args())
 
@@ -338,18 +323,13 @@ def main():
     torch.manual_seed(0)
     np.random.seed(0)
 
-
-
     audio_processor = DatasetCreator(environment_parameters, training_parameters, preprocessing_parameters)
     # TODO: Functional dataset management
     global mdataset
     mdataset = DatasetProcessor("training", audio_processor, training_parameters, task = -1, device = device)
     mdataloader = DataLoader(mdataset, batch_size=training_parameters['batch_size'], shuffle=False, num_workers=0)
 
-    # qnet = DSCNN()
-    # qnet = simpleCNN(config='config.json')
-    # qnet = get_network(key = 'simpleCNN', exp_id=0, ckpt_id=0, quantized=True)
-    qnet = get_network(key = 'DSCNN', exp_id=0, ckpt_id=0, quantized=True)
+    qnet = get_network(key = args['net'], exp_id=0, ckpt_id=0, quantized=True)
 
     print ("*********")
     print (qnet)
@@ -368,15 +348,15 @@ def main():
     #     dl = get_dataloader(args['net'], exp_cfg, quantize='int', pad_img=pad_img)
     #     validate(int_net, dl, args.accuracy_print_interval, n_valid_batches=args.n_valid_batch)
 
-    with open('dscnnnetconfig.json', 'r') as fp:
+    with open(args['config_net_file'], 'r') as fp:
         exp_cfg = json.load(fp)
 
     export_name = 'example_quantized'
-    export_integerized_network(int_net, exp_cfg, args['net'], './export_dir/', export_name, pad_img=pad_img, clip=args['clip_inputs'])
+    export_integerized_network(int_net, exp_cfg, args['net'], './export/', export_name, pad_img=pad_img, clip=args['clip_inputs'])
     
     # if args.export_unquant:
     #     net_unq = get_network(args['net'], exp_id, 0, quantized=False)
-    #     export_unquant_net(net_unq, exp_cfg, args['net'], './export_dir/', export_name)
+    #     export_unquant_net(net_unq, exp_cfg, args['net'], './export/', export_name)
 
 
 if __name__ == "__main__":

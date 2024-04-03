@@ -107,7 +107,7 @@ def per_noise_accuracy(labels, predicted, noises):
 def parameter_generation(args):
 
     # Opening JSON file
-    with open(args['envconfig_file']) as json_file:
+    with open(args['config_env_file']) as json_file:
         configuration = json.load(json_file)
 
 

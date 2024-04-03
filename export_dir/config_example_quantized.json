@@ -1,8 +1,0 @@
-{
-    "BNRelu_bits": 32,
-    "onnx_file": "/usr/scratch/wetterhorn/cioflanc/teaching/classes/mlonmcu/fs2024/export_dir/example_quantized_ql_integerized.onnx",
-    "code reserved space": 150000,
-    "n_inputs": 1,
-    "input_bits": 8,
-    "input_signed": true
-}
