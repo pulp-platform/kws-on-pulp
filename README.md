@@ -12,9 +12,16 @@ In this tutorial we will understand the main steps required to use the pretraine
 
 We will employ quantlib for this purpose.
 
+```
+python quantize.py --net DSCNN --fix_channels --word_align_channels --clip_inputs
+```
+
 The resulting quantized model, saved in .onnx format, together with the per-layer activations. A configuration file, required for hardware deployment, is additionally generated. You can find the files in `export/`.
 
 ## Deployment
 
 We employ dory for this purpose.
 
+```
+./dory_gen.sh gap_sdk 3 gvsoc 0 2 generate export 8
+```

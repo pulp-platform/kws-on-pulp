@@ -293,7 +293,7 @@ def get_new_classifier(classifier: PACTConv1d):
 def main():
     
     parser = argparse.ArgumentParser()
-    parser.add_argument("--net", type=str, default='DSCNNS', help='Network to quantize')
+    parser.add_argument("--net", type=str, default='DSCNN', help='Network to quantize')
     parser.add_argument('--fix_channels', action='store_true', help='Fix channels of conv layers for compatibility with DORY')
     parser.add_argument('--no_dory_harmonize', action='store_true',
                         help='If supplied, don\'t align averagePool nodes\' associated requantization nodes and replace adders with DORYAdders')

@@ -25,7 +25,7 @@ from utils import npy_to_txt
 
 
 class DSCNN(torch.nn.Module):
-    def __init__(self, n_channels = 64, n_blocks = 4, n_classes = 12, use_bias = False, stem = 'asym', padding='asym', device = 'cpu'):
+    def __init__(self, n_channels = 64, n_blocks = 4, n_classes = 12, use_bias = True, stem = 'asym', padding='asym', device = 'cpu'):
         super(DSCNN, self).__init__()
 
         self.n_channels = n_channels
@@ -49,6 +49,8 @@ class DSCNN(torch.nn.Module):
 
         self.fc1   = torch.nn.Linear(self.n_channels, self.n_classes, bias=self.use_bias)
 
+        self._initialize_weights(seed=42)
+
 
     def forward(self, x):
 
@@ -65,6 +67,26 @@ class DSCNN(torch.nn.Module):
         x = self.fc1 (x)
 
         return x
+
+    def _initialize_weights(self, seed : int = -1):
+
+        if seed >= 0:
+            torch.manual_seed(seed)
+
+        for m in self.modules():
+
+            if isinstance(m, torch.nn.Conv2d):
+                torch.nn.init.kaiming_normal_(m.weight, mode='fan_out')
+                if m.bias is not None:
+                    torch.nn.init.zeros_(m.bias)
+
+            elif isinstance(m, torch.nn.BatchNorm2d):
+                torch.nn.init.ones_(m.weight)
+                torch.nn.init.zeros_(m.bias)
+
+            elif isinstance(m, torch.nn.Linear):
+                torch.nn.init.normal_(m.weight, 0, 0.01)
+                torch.nn.init.zeros_(m.bias)
 
 
 class Conv_Stem_Asym(torch.nn.Sequential):
