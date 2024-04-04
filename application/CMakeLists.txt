@@ -36,8 +36,6 @@ set (MODEL_L3_MEMORY 8000000)
 
 set (WAV_FILE $ENV{WAV_FILE})
 set (MFCC $ENV{MFCC})
-set (NOISE_EVAL $ENV{NOISE_EVAL})
-set (UTTR_EVAL $ENV{UTTR_EVAL})
 set (APPL $ENV{APPL})
 
 
@@ -164,8 +162,6 @@ list(APPEND TARGET_PREPROCESSOR # -DPERF
                                 -DVOLTAGE=${VOLTAGE}
                                 -DWAV_FILE=${WAV_FILE}
                                 -DMFCC=${MFCC}
-                                -DNOISE_EVAL=${NOISE_EVAL}
-                                -DUTTR_EVAL=${UTTR_EVAL}
                                 -DAPPL=${APPL}
                                 # -DPERF
                                 # -DPRINTDEB
@@ -200,7 +196,7 @@ FILE(STRINGS ${VALIDATION_FILE} VALIDATION_UTTR)
 # FLASH
 FILE(GLOB DORY_WEIGHTS ${CURDIR}generate_nemo/hex/*.hex)
 list (APPEND READFS_FILES ${DORY_WEIGHTS})
-list(APPEND READFS_FILES ${WAV_FILE}                        
+list (APPEND READFS_FILES ${WAV_FILE}                        
 )
 
 project (${TARGET_NAME} C ASM)
