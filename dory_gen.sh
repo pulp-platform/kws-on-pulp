@@ -41,7 +41,7 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/scratch/wetterhorn/cioflanc/teachin
 export CC=gcc-9.2.1
 export CXX=g++-9.2.1
 
-export GAP_SDK_DIR=/usr/scratch/wetterhorn/cioflanc/tools/gap_sdk/
+export GAP_SDK_DIR=/usr/scratch/wetterhorn/cioflanc/tools/gap_sdk_private/
 # export AUDIO_SAMPLE=/usr/scratch/wetterhorn/cioflanc/kws-on-pulp/kws-on-pulp/dataset/train/right/aa48c94a_nohash_2.wav
 export AUDIO_SAMPLE=/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser/kws-on-pulp/aa48c94a_nohash_2.wav
 export SDK=$1 # pulp_sdk, gap_sdk
