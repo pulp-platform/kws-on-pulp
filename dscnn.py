@@ -79,15 +79,15 @@ class DSCNN(torch.nn.Module):
             if isinstance(m, torch.nn.Conv2d):
                 torch.nn.init.kaiming_normal_(m.weight, mode='fan_out')
                 if m.bias is not None:
-                    torch.nn.init.zeros_(m.bias)
+                    torch.nn.init.normal_(m.bias)
 
             elif isinstance(m, torch.nn.BatchNorm2d):
-                torch.nn.init.ones_(m.weight)
-                torch.nn.init.zeros_(m.bias)
+                torch.nn.init.normal_(m.weight)
+                torch.nn.init.normal_(m.bias)
 
             elif isinstance(m, torch.nn.Linear):
                 torch.nn.init.normal_(m.weight, 0, 0.01)
-                torch.nn.init.zeros_(m.bias)
+                torch.nn.init.normal_(m.bias)
 
 
 class GenericConv2D(torch.nn.Sequential):

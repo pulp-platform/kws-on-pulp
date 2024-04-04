@@ -122,7 +122,7 @@ def get_ckpt(key : str, exp_id : int, ckpt_id : Union[int, str]):
     return torch.load(ckpt_filepath)
 
 def get_network(key : str, exp_id : int, ckpt_id : Union[int, str], quantized=False):
-    with open('config_lukanet_tqt_8b.json', 'r') as fp:
+    with open('config_net_tqt_8b.json', 'r') as fp:
         cfg = json.load(fp)
     qu = _QUANT_UTILS[key]
     quant_cfg = cfg['network']['quantize']['kwargs']
@@ -305,7 +305,7 @@ def main():
                         help='Export RequantShift nodes instead of mul-add-div sequences in ONNX graph')
     parser.add_argument('--clip_inputs', action='store_true',
                         help='ghettofix to clip inputs to be unsigned')
-    parser.add_argument('--config_net_file', type=str, default='config_lukanet_tqt_8b.json', help = 'Network configuration file')
+    parser.add_argument('--config_net_file', type=str, default='config_net_tqt_8b.json', help = 'Network configuration file')
     parser.add_argument('--config_env_file', type=str, default='config_env.json', help = 'Environment configuration file')
 
     args = vars(parser.parse_args())
@@ -338,7 +338,7 @@ def main():
     print ("*********")
 
     int_net = integerize_network(qnet, args['net'], args['fix_channels'], not args['no_dory_harmonize'], args['word_align_channels'], args['requant_node'])
-
+    # import ipdb; ipdb.set_trace()
     print ("Finished quantization.")
 
     if args['fix_channels']:
