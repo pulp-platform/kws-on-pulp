@@ -33,29 +33,7 @@
 #define SAI_SDI(itf)         (48+(itf*4)+2)
 #define SAI_SDO(itf)         (48+(itf*4)+3)
 
-// #define L2_MEMORY_SIZE MODEL_L2_MEMORY // TODO: Read from CMake
-#define L2_MEMORY_SIZE 150000 // TODO: Read from CMake
-// #define L2_MEMORY_SIZE 1404000
-
-// typedef struct float16 MFCC_IN_TYPE;
-// typedef struct float16 OUT_TYPE;
-
-// #if (DATA_TYPE==2)
-// // typedef F16_DSP MFCC_IN_TYPE;
-// // typedef F16_DSP OUT_TYPE;
-// // typedef F16 MFCC_IN_TYPE;
-// // typedef F16 OUT_TYPE;
-// // typedef float16 MFCC_IN_TYPE;
-// // typedef float16 OUT_TYPE;
-// // typedef struct float16 MFCC_IN_TYPE;
-// // typedef struct float16 OUT_TYPE;
-// #elif (DATA_TYPE==3)
-// typedef float MFCC_IN_TYPE;
-// typedef float OUT_TYPE;
-// #else
-// typedef short int OUT_TYPE;  // Save MFCCs works 
-// typedef short int MFCC_IN_TYPE; // Save MFCCs works
-// #endif
+#define L2_MEMORY_SIZE 1000000
 
 #define NORM 6
 

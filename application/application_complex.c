@@ -560,57 +560,57 @@ int application(){
     pi_freq_set(PI_FREQ_DOMAIN_CL, FREQ_CL*1000*1000);
 
 
-    // Configure User Button
-    /* set pad to gpio mode */
-    /* This will open the gpio automatically */
-    pi_pad_function_set(gpio_boot_pin_1, PI_PAD_FUNC1);
-    /* configure gpio input */
-    pi_gpio_flags_e flags_upb = PI_GPIO_INPUT;
-    pi_gpio_pin_configure(gpio_boot_pin_1, flags_upb);
+    // // Configure User Button
+    // /* set pad to gpio mode */
+    // /* This will open the gpio automatically */
+    // pi_pad_function_set(gpio_boot_pin_1, PI_PAD_FUNC1);
+    // /* configure gpio input */
+    // pi_gpio_flags_e flags_upb = PI_GPIO_INPUT;
+    // pi_gpio_pin_configure(gpio_boot_pin_1, flags_upb);
 
 
-    // Measurement preparation
-    pi_pad_function_set(gpio_pin_measurement_id, 1);
-    pi_gpio_pin_configure(gpio_pin_measurement_id, PI_GPIO_OUTPUT);
-    pi_gpio_pin_write(gpio_pin_measurement_id, 0);
-    pi_gpio_pin_write(gpio_pin_measurement_id, 0);
+    // // Measurement preparation
+    // pi_pad_function_set(gpio_pin_measurement_id, 1);
+    // pi_gpio_pin_configure(gpio_pin_measurement_id, PI_GPIO_OUTPUT);
+    // pi_gpio_pin_write(gpio_pin_measurement_id, 0);
+    // pi_gpio_pin_write(gpio_pin_measurement_id, 0);
 
-    printf ("----------------------------- Initializing backbone ---------------------------\n");
+    // printf ("----------------------------- Initializing backbone ---------------------------\n");
 
-    // Measurement start
-    pi_gpio_pin_write(gpio_pin_measurement_id, 1);
+    // // Measurement start
+    // pi_gpio_pin_write(gpio_pin_measurement_id, 1);
 
-    // Dory init
-    mem_init();
-    network_initialize(); // Absent in L2-only
-    pi_cluster_close(&cluster_dev);
+    // // Dory init
+    // mem_init();
+    // network_initialize(); // Absent in L2-only
+    // pi_cluster_close(&cluster_dev);
 
-    printf ("----------------------------- Read WAVs from filesystem ---------------------------\n");
-    L3_wavs = ram_malloc(WAVRAM);
-    printf("\nL3_wavs alloc initial\t@ %d:\t%s\n", (unsigned int)L3_wavs, L3_wavs?"Ok":"Failed");
+    // printf ("----------------------------- Read WAVs from filesystem ---------------------------\n");
+    // L3_wavs = ram_malloc(WAVRAM);
+    // printf("\nL3_wavs alloc initial\t@ %d:\t%s\n", (unsigned int)L3_wavs, L3_wavs?"Ok":"Failed");
 
-    header_struct header_info;
-    inWav = NULL;
-    inWav    = (short int *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(short)); 
-    if (inWav == NULL){
-        printf("Failed allocating inWav.\n");
-        pmsis_exit(-1);
-    }
+    // header_struct header_info;
+    // inWav = NULL;
+    // inWav    = (short int *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(short)); 
+    // if (inWav == NULL){
+    //     printf("Failed allocating inWav.\n");
+    //     pmsis_exit(-1);
+    // }
 
-    if (ReadWavFromFile(WavName, inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
-        printf("Error reading wav file\n");
-        pmsis_exit(1);
-    }
-    ram_write(L3_wavs + AUDIO_BUFFER_SIZE*sizeof(short), inWav, AUDIO_BUFFER_SIZE*sizeof(short));
-    pi_l2_free(inWav, AUDIO_BUFFER_SIZE*sizeof(short));
+    // if (ReadWavFromFile(WavName, inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+    //     printf("Error reading wav file\n");
+    //     pmsis_exit(1);
+    // }
+    // ram_write(L3_wavs + AUDIO_BUFFER_SIZE*sizeof(short), inWav, AUDIO_BUFFER_SIZE*sizeof(short));
+    // pi_l2_free(inWav, AUDIO_BUFFER_SIZE*sizeof(short));
 
 
-    BufferInList = (void*) pi_l2_malloc(BUFF_SIZE);
-    if (BufferInList == NULL) return -1;
+    // BufferInList = (void*) pi_l2_malloc(BUFF_SIZE);
+    // if (BufferInList == NULL) return -1;
 
-    pi_gpio_pin_write(gpio_pin_measurement_id, 0);
+    // pi_gpio_pin_write(gpio_pin_measurement_id, 0);
 
-    int button_was_pressed = 0;
+    // int button_was_pressed = 0;
 
     l2_buffer = NULL;
     l2_buffer = pi_l2_malloc(L2_MEMORY_SIZE);
@@ -619,8 +619,7 @@ int application(){
     }
 
     printf ("Preliminary backbone running\n");
-    void *dump;
-    network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &dump, 0, 1); // L2_input_h extra-arg for L2-only
+    network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, 0, 1); // L2_input_h extra-arg for L2-only
 
     printf ("Network run complete\n");
     pi_evt_sig_init(&inference_task);
@@ -864,7 +863,7 @@ int application(){
 
         int start_backbone = pi_time_get_us();
     
-        network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &dump, 0, 1);
+        network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, 0, 1);
 
         int end_backbone = pi_time_get_us();
         printf("Backbone: %i us\n", end_backbone - start_backbone);

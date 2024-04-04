@@ -23,10 +23,10 @@ source /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk_private/sourceme.sh # Choo
 source /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk_private/configs/gap9_evk_audio.sh
 export WAV_FILE=/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser/res/right_94de6a6a_nohash_4.wav # ORIGINAL
 
-cp -r generate/src/ application/generate/
-rm application/generate/src/main.c
-cp -r generate/inc/ application/generate/
-cp -r generate/hex/ application/generate/
+# cp -r generate/src/ application/generate/
+# rm application/generate/src/main.c
+# cp -r generate/inc/ application/generate/
+# cp -r generate/hex/ application/generate/
 
 cd application/
 

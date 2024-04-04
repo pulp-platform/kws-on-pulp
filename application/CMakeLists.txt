@@ -23,10 +23,10 @@ set (MODEL_L3_FLASH   AT_MEM_L3_DEFAULTFLASH)
 set (EXEC_FROM_FLASH true)
 set (MODEL_L3_RAM   AT_MEM_L3_DEFAULTRAM)
 
-set (FREQ_CL 240)
-set (FREQ_FC 240)
-set (FREQ_SFU 240)
-set (VOLTAGE 650)
+set (FREQ_CL 370)
+set (FREQ_FC 370)
+set (FREQ_SFU 370)
+set (VOLTAGE 800)
 set (CLUSTER_STACK_SIZE 8192)
 set (CLUSTER_SLAVE_STACK_SIZE 4096)
 set (TOTAL_STACK_SIZE $(shell expr $(CLUSTER_STACK_SIZE) \+ $(CLUSTER_SLAVE_STACK_SIZE) \* $(CLUSTER_NUM_CORES)))
@@ -42,7 +42,7 @@ set (APPL $ENV{APPL})
 
 
 set(GAP9_SDK_DIR         /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk_private/)
-set(CURDIR               /usr/scratch/wetterhorn/cioflanc/teaching/classes/mlonmcu/fs2024/application)
+set(CURDIR               /usr/scratch/wetterhorn/cioflanc/teaching/classes/mlonmcu/fs2024/application/)
 set(BUILD_DIR            ${CURDIR}/build)
 set(DSP_DIR              ${GAP9_SDK_DIR}tools/autotiler_v3/DSP_Libraries/)
 set(DSP_LUT_DIR          ${GAP9_SDK_DIR}tools/autotiler_v3/DSP_Libraries/LUT_Tables/)
@@ -119,7 +119,7 @@ list (APPEND TARGET_INCS
                          -I${TILER_INC}
                          -I${TILER_EMU_INC}
                          -I${GAP_SDK_HOME}/libs/gap_lib/include
-                         -I${CURDIR}/generate/inc
+                         -I${CURDIR}generate_nemo/inc
                          -I${GAP9_SDK_DIR}rtos/pmsis/bsp/include/bsp
                          -I${GAP9_SDK_DIR}rtos/pmsis/bsp/include/bsp/ram
                          -I${GAP9_SDK_DIR}rtos/pmsis/bsp/include/bsp/flash
@@ -139,7 +139,7 @@ set (NUM_CORES 8)
 set (GAP_SDK 1)
 set (TARGET_CHIP_FAMILY_GAP9 1)
 
-FILE (GLOB DORY_C_Sources ${CURDIR}/generate/src/*.c)
+FILE (GLOB DORY_C_Sources ${CURDIR}generate_nemo/src/*.c)
 list (APPEND TARGET_SRCS ${DORY_C_Sources})
 
 list(APPEND TARGET_CFLAGS   -O2
@@ -184,16 +184,12 @@ list(APPEND TARGET_PREPROCESSOR # -DPERF
                                 # -DPROF_NET
                                 -mhwloopalign
                                 # -DSTATS
-                                -DMATMUL_TYPE_FW_L0=${MATMUL_TYPE_FW_L0}
-                                -DMATMUL_TYPE_WG_L0=${MATMUL_TYPE_WG_L0}
-                                -DMATMUL_TYPE_IG_L0=${MATMUL_TYPE_IG_L0}
-
+                                -DSINGLE_CORE_DMA
 )
 
 set (VALIDATION_FILE /usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser/validation.txt)
 set (UTTR_FILE /usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser/res/utterances.txt)
 set (TINYTEST_FILE /usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser/res/tinytest.txt)
-set (RESTAURANT_NOISE_WAV /usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser/res/meeting_ch01_mancrop1.wav)
 
 
 FILE(STRINGS ${UTTR_FILE} UTTERANCES)
@@ -202,16 +198,10 @@ FILE(STRINGS ${VALIDATION_FILE} VALIDATION_UTTR)
 
 
 # FLASH
-FILE(GLOB DORY_WEIGHTS ${CURDIR}/generate/hex/*.hex)
+FILE(GLOB DORY_WEIGHTS ${CURDIR}generate_nemo/hex/*.hex)
 list (APPEND READFS_FILES ${DORY_WEIGHTS})
-list(APPEND READFS_FILES ${WAV_FILE}
-                         ${RESTAURANT_NOISE_WAV}
-                         # ${VALIDATION_UTTR}
-                         # ${UTTERANCES} 
-                         # ${TINYTEST_UTTR}
-                        
+list(APPEND READFS_FILES ${WAV_FILE}                        
 )
-
 
 project (${TARGET_NAME} C ASM)
 
