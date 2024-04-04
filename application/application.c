@@ -137,6 +137,7 @@ struct pi_cluster_task cl_task;
 
 static pi_event_t inference_task;
 
+static void *L3_wavs = NULL;
 
 // Configure PDM RX interface
 static int configure_pdm()
@@ -593,8 +594,6 @@ int application(){
     pi_gpio_pin_write(gpio_pin_measurement_id, 0);
     pi_gpio_pin_write(gpio_pin_measurement_id, 0);
 
-
-
     PRINTF ("----------------------------- Initializing backbone ---------------------------\n");
 
     // Measurement start
@@ -604,6 +603,334 @@ int application(){
     mem_init();
     network_initialize(); // Absent in L2-only
     pi_cluster_close(&cluster_dev);
+    
+    PRINTF ("----------------------------- Initializing classifier ---------------------------\n");
+
+    BufferInList = (void*) pi_l2_malloc(BUFF_SIZE);
+    if (BufferInList == NULL) return -1;
+
+    pi_gpio_pin_write(gpio_pin_measurement_id, 0);
+
+    int button_was_pressed = 0;
+
+
+    pi_evt_sig_init(&inference_task);
+
+    input_mic_buffer(1, 1, 0);
+
+    int iterations = 0;
+    int sfu_out_buffer_cnt_prev = 0;
+    int sfu_out_buffer_cnt_curr = 0;
+
+    MfccInSig_prev = (MFCC_IN_TYPE *) pi_l2_malloc(1 * AUDIO_BUFFER_SIZE * sizeof (MFCC_IN_TYPE));
+    int len = 0;
+    int upperlim = 0;
+    int lowerlim = 0;
+
+
+
+    printf ("----------------------------- Starting application ---------------------------\n");
+
+    
+    while (1){
+    
+        pi_gpio_pin_write(gpio_pin_measurement_id, 1);
+
+        
+        if (appl_input == "0"){
+
+            PRINTF ("----------------------------- Start acquisition ---------------------------\n");    
+
+            int start_dataacq = pi_time_get_us();    
+
+            int threshold_counter = 0;
+
+
+            MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(1 * AUDIO_BUFFER_SIZE * sizeof (MFCC_IN_TYPE));
+
+            for(int i=0;i<AUDIO_BUFFER_SIZE;i++){ 
+                MfccInSig[i] = MfccInSig_prev[i];
+            }  
+            pi_evt_wait(&inference_task);
+
+            sfu_out_buffer_cnt_curr = sfu_out_buffer_cnt;
+
+            if (sfu_out_buffer_cnt_curr > sfu_out_buffer_cnt_prev){
+                len = sfu_out_buffer_cnt_curr - sfu_out_buffer_cnt_prev;
+                upperlim = sfu_out_buffer_cnt_curr * DOUBLE_BUFF_SIZE;
+                lowerlim = 0;
+            }
+            else{
+                len = (48 - sfu_out_buffer_cnt_prev) + sfu_out_buffer_cnt_curr;
+                upperlim = BUFF_SIZE/sizeof(int32_t);
+                lowerlim = sfu_out_buffer_cnt_curr * DOUBLE_BUFF_SIZE;
+            }
+
+
+            // TODO: FIGURE OUT SCALING 2^32 or 2^31???
+
+            int outidx = 0;
+            for (int i = sfu_out_buffer_cnt_prev*DOUBLE_BUFF_SIZE; i < upperlim; i+=3){
+                // using MfccInSig_prev as buffer
+                MfccInSig_prev[outidx] = (MFCC_IN_TYPE) (((float)((int32_t *)BufferInList)[i]) / (float)(1<<31 - 1));
+                outidx++;
+            }
+            for (int i = 0; i < lowerlim; i+=3){
+                // using MfccInSig_prev as buffer
+                MfccInSig_prev[outidx] = (MFCC_IN_TYPE) (((float)((int32_t *)BufferInList)[i]) / (float)(1<<31 - 1));
+                outidx++;
+            }
+
+            int j = 0;
+            for (int i = DOUBLE_BUFF_SIZE*(len)/3; i < AUDIO_BUFFER_SIZE; i++){
+                MfccInSig[j] = MfccInSig[i];    
+                j++;
+            }
+            
+            int k = 0;
+            for (int i = AUDIO_BUFFER_SIZE - DOUBLE_BUFF_SIZE*(len)/3; i < AUDIO_BUFFER_SIZE; i++){
+                MfccInSig[i] = MfccInSig_prev[k];
+                k++;
+            }
+
+            for (int i = 0; i < AUDIO_BUFFER_SIZE; i++){
+                MfccInSig_prev[i] = MfccInSig[i];
+            }
+            sfu_out_buffer_cnt_prev = sfu_out_buffer_cnt_curr;
+            
+            MfccInSig_int16 = (int16_t *) pi_l2_malloc(sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+
+            float mean = 0;
+            for(int i=0;i<AUDIO_BUFFER_SIZE;i++){
+                MfccInSig_int16[i] = (int16_t) (MfccInSig[i] * (1<<15));
+                mean = mean + MfccInSig_int16[i]; 
+            }
+
+            mean = mean/AUDIO_BUFFER_SIZE;
+
+            // TODO: FIGURE OUT THRESHOLD
+            for(int i=0;i<AUDIO_BUFFER_SIZE;i++){
+                if(MfccInSig_int16[i] < mean - 1000 || MfccInSig_int16[i] > mean + 1000){
+                    threshold_counter++;
+                }
+            }
+
+            // printf ("threshold_counter is: %i\n", threshold_counter);
+            // TODO: FIGURE OUT NUMBER OF SAMPLES
+
+            // Commented out for measurements
+            // if (threshold_counter < 200){
+            //     printf("silence\n");
+
+            //     pi_l2_free(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+            //     pi_l2_free(MfccInSig, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+
+
+            //     int end_dataacq = pi_time_get_us(); 
+            //     // printf("Data acquisition1: %i\n", end_dataacq - start_dataacq);
+
+            //     // continue;
+            //     goto checkbutton;
+            // }
+
+            int end_dataacq = pi_time_get_us(); 
+            // printf("Data acquisition2: %i\n", end_dataacq - start_dataacq);
+
+        }
+        else if (appl_input == "1"){
+            // printf ("Reading wav...\n");
+            char utterName[130] = "usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/meeting_ch01_mancrop1.wav";
+            
+            int start_readwav = pi_time_get_us();
+            
+
+            // Classic .wav reading
+            // input_wav(0, 1, utterName, 0); // save, free, utterName, noise
+
+
+            short int *prepWav = NULL;
+            prepWav = (short int *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(short));
+
+            // Read the 0th .wav saved in RAM
+            ram_read(prepWav, L3_wavs + (0)*AUDIO_BUFFER_SIZE*sizeof(short), AUDIO_BUFFER_SIZE*sizeof(short));
+
+            MfccInSig = NULL;
+            MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
+            if (MfccInSig == NULL){
+                printf("Failed allocating MfccInSig.\n");
+                pmsis_exit(-1);
+            }
+        
+            #if (DATA_TYPE==2) || (DATA_TYPE==3)
+                for (int i=0; i<AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
+                    MfccInSig[i] = (MFCC_IN_TYPE) prepWav[i] / (1<<15);
+                }
+            #else
+                for (int i=0; i<AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
+                    MfccInSig[i]] = (MFCC_IN_TYPE) gap_fcip(((int) prepWav[i]), 15);
+                }
+            #endif
+
+            pi_l2_free(prepWav, AUDIO_BUFFER_SIZE * sizeof(short int));
+
+
+            int end_readwav = pi_time_get_us();
+            // printf("Time spent reading wav: %i\n", end_readwav - start_readwav);
+        }
+
+        // pi_gpio_pin_write(gpio_pin_measurement_id, 0);
+
+        #ifdef PERF
+        gap_fc_starttimer();
+        gap_fc_resethwtimer();
+        int start_timer_2 = gap_fc_readhwtimer();
+        #endif
+
+        PRINTF("***************************** Computing MFCC **************************\n");
+
+
+        // pi_gpio_pin_write(gpio_pin_measurement_id, 1);
+
+        gap_fc_starttimer();
+        gap_fc_resethwtimer();
+        int start_timer_mfcc = gap_fc_readhwtimer();        
+        int start_readmfcc = pi_time_get_us();
+
+        compute_mfcc();
+
+        int elapsed_timer_mfcc = gap_fc_readhwtimer() - start_timer_mfcc;
+        int end_readmfcc = pi_time_get_us();
+        printf("Compute mfcc: %d cycles\n", elapsed_timer_mfcc);
+        printf("MFCC: %i us\n", end_readmfcc - start_readmfcc);
+
+
+        #ifdef PERF
+        int elapsed_timer_2 = gap_fc_readhwtimer() - start_timer_2;
+        printf("Compute mfcc: %d cycles\n", elapsed_timer_2);
+        #endif
+
+        for (int i = 0; i < 5; i++){
+            PRINTF("out_feat[%i] = %f, ", i, out_feat[i]);
+        }
+        PRINTF("\n");
+        
+        #ifdef PERF
+        gap_fc_starttimer();
+        gap_fc_resethwtimer();
+        start_timer_2 = gap_fc_readhwtimer();    
+        #endif    
+
+        gap_fc_starttimer();
+        gap_fc_resethwtimer();
+        int start_timer_processing = gap_fc_readhwtimer();        
+        int start_readprocessing = pi_time_get_us();
+
+        feat_char = (char*) pi_l2_malloc(49 * 10 * sizeof(char));
+
+        int k = 0;
+        for (int i = 0; i < 49 * N_MELS;i++){                
+            
+            // feat_char[k] = (char) ((int) floor(out_feat[i] * pow(2, -1) * sqrt(0.05)) + 128);
+            feat_char[k] = (char) ((int) floor(out_feat[i] * 0.1118) + 128);
+
+            if (N_MELS == 40){
+                // Select 10 MFCC per window
+                if (i == 40*(k/10) + 9){
+                    i = 40*(k/10) + 39;
+                }
+            }
+
+            ((uint8_t *)l2_buffer)[k] = feat_char[k]; // Online computed MFCC
+
+            k++;
+        } 
+
+        // if DEBUG
+        dump_data_write("mfccdump.dat", feat_char, 49 * 10 * sizeof(char));
+
+
+        pi_l2_free(out_feat, 49 * N_MELS * sizeof(OUT_TYPE));
+        pi_l2_free(feat_char, 49 * 10 * sizeof(char));
+
+        int elapsed_timer_processing = gap_fc_readhwtimer() - start_timer_processing;
+        int end_readprocessing = pi_time_get_us();
+        printf("Processing: %d cycles\n", elapsed_timer_processing);
+        printf("Processing: %i us\n", end_readprocessing - start_readprocessing);
+
+        #ifdef PERF
+        int elapsed_timer_2 = gap_fc_readhwtimer() - start_timer_2;
+        printf("Convert mfcc: %d cycles\n", elapsed_timer_2);
+        #endif
+
+        // pi_gpio_pin_write(gpio_pin_measurement_id, 0);
+
+        // Extract backbone features
+        void *dump; // dump to copy FC weights, won't be used; TODO: Parametrize DORY
+
+
+        #ifdef PERF
+        gap_fc_starttimer();
+        gap_fc_resethwtimer();
+        int start_timer_4 = gap_fc_readhwtimer();        
+        #endif
+
+        PRINTF("***************************** Backbone inference **************************\n");
+
+
+        int start_backbone = pi_time_get_us();
+        
+        // pi_gpio_pin_write(gpio_pin_measurement_id, 1);
+        network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, 0, 1);
+        // pi_gpio_pin_write(gpio_pin_measurement_id, 0);
+
+        #ifdef PERF
+        int elapsed_timer_4 = gap_fc_readhwtimer() - start_timer_4;
+        printf("Backbone inference: %d cycles\n", elapsed_timer_4);
+        #endif
+
+        for (int i=0; i < 64; i++){
+            PRINTF("%i, ", ((uint8_t *) l2_buffer)[i]);
+        }
+        PRINTF("\n");
+
+        int end_backbone = pi_time_get_us();
+        // printf("Backbone: %i us\n", end_backbone - start_backbone);
+
+
+        #ifdef PERF
+        gap_fc_starttimer();
+        gap_fc_resethwtimer();
+        int start_timer_5 = gap_fc_readhwtimer();    
+        #endif    
+
+
+        #ifdef PERF
+        int elapsed_timer_5 = gap_fc_readhwtimer() - start_timer_5;
+        printf("FC inference: %d cycles\n", elapsed_timer_5);
+        #endif
+
+        #ifdef PERF
+            dump_wav_open("recording_utterance.wav", 16, 16000, 1, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+            dump_wav_write(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+            dump_wav_close();
+        #endif
+
+        // Measurements
+        // pmsis_exit(-1);
+        // return 0;
+
+
+        pi_l2_free(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+
+        int end_classif = pi_time_get_us();
+        // printf("Classifier: %i us\n", end_classif - start_classif);
+        
+        
+        
+        PRINTF("***************************** Application complete *****************************\n");
+
+    }
+
 
 
     return 0;
