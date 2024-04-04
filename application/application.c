@@ -358,8 +358,254 @@ void input_mic_buffer(int save, int free, int noise){
 }
 
 
+void input_wav(int save, int free, char* wavfile, int noise){
+    // Allocate L3 buffers for audio IN
+     
+    header_struct header_info;
+
+    int step1 = pi_time_get_us();
+
+    inWav = NULL;
+    inWav    = (short int *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(short)); 
+    if (inWav == NULL){
+        printf("Failed allocating inWav.\n");
+        pmsis_exit(-1);
+    }
+
+    PRINTF("File is: %s\n", wavfile);
+
+    int step2 = pi_time_get_us();
+
+    if (ReadWavFromFile(wavfile, inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+        printf("Error reading wav file\n");
+        pmsis_exit(1);
+    }
+
+    for (int i = 0; i < 5; i++){
+        PRINTF("inWav[%i] = %i, ", i, inWav[i]);
+    }
+    PRINTF("\n");
+
+    int step3 = pi_time_get_us();
+
+    if (noise){
+        RecordedNoise = NULL;
+        RecordedNoise = (MFCC_IN_TYPE *) pi_l2_malloc(noise_seconds*AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
+        if (RecordedNoise == NULL){
+            printf("Failed allocating RecordedNoise.\n");
+            pmsis_exit(-1);
+        }
+        #if (DATA_TYPE==2) || (DATA_TYPE==3)
+            for (int i=0; i<noise_seconds*AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
+                // READ WAV
+                RecordedNoise[i] = (MFCC_IN_TYPE) inWav[i] / (1<<15);
+                // READ TEXT
+                // RecordedNoise[i] = (MFCC_IN_TYPE) noisemeeting[i] / (1<<15);
+            }
+        #else
+            for (int i=0; i<noise_seconds*AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
+                // READ WAV
+                RecordedNoise[i] = (MFCC_IN_TYPE) gap_fcip(((int) inWav[i]), 15);
+                // READ TEXT
+                // RecordedNoise[i] = (MFCC_IN_TYPE) gap_fcip(((int) noisemeeting[i]), 15);
+            }
+        #endif
+
+    }
+    else {
+        MfccInSig = NULL;
+        MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
+        if (MfccInSig == NULL){
+            printf("Failed allocating MfccInSig.\n");
+            pmsis_exit(-1);
+        }
+    
+        #if (DATA_TYPE==2) || (DATA_TYPE==3)
+            for (int i=0; i<AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
+                MfccInSig[i] = (MFCC_IN_TYPE) inWav[i] / (1<<15);
+            }
+        #else
+            for (int i=0; i<AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
+                MfccInSig[i] = (MFCC_IN_TYPE) gap_fcip(((int) inWav[i]), 15);
+            }
+        #endif
+    }
+
+    int step4 = pi_time_get_us();
+    
+    if (save){
+        // Log WAV 
+        // TODO: use *_int16 for saving
+        if (noise){
+            dump_wav_open("noise_file.wav", 16, 16000, 1, noise_seconds*sizeof(short)*AUDIO_BUFFER_SIZE);
+            dump_wav_write(inWav, noise_seconds*sizeof(short)*AUDIO_BUFFER_SIZE);
+            dump_wav_close();
+            PRINTF("Writing wav file to noise_file.wav completed successfully\n"); 
+        }
+        else{   
+            dump_wav_open("utter_file.wav", 16, 16000, 1, sizeof(short)*AUDIO_BUFFER_SIZE);
+            dump_wav_write(inWav, sizeof(short)*AUDIO_BUFFER_SIZE);
+            dump_wav_close();
+            PRINTF("Writing wav file to utter_file.wav completed successfully\n");
+        }
+    }
+
+    int step5 = pi_time_get_us();
+
+    if (free){
+        if (noise){
+            pi_l2_free(inWav, noise_seconds*AUDIO_BUFFER_SIZE * sizeof(short));
+        }
+        else{
+            pi_l2_free(inWav, AUDIO_BUFFER_SIZE * sizeof(short));
+        }
+    }
+
+    int step6 = pi_time_get_us();
+
+}
+
+void compute_mfcc(){
+    /******
+        Compute the MFCC
+    ******/
+    out_feat = (OUT_TYPE *) pi_l2_malloc(49 * N_MELS * sizeof(OUT_TYPE));    
+
+
+    // struct pi_cluster_task task_mfcc;
+
+    struct pi_cluster_task* task_mfcc;
+    task_mfcc = pi_l2_malloc(sizeof(struct pi_cluster_task));
+    pi_cluster_task(task_mfcc, &RunMFCC, NULL);
+    pi_cluster_task_stacks(task_mfcc, NULL, SLAVE_STACK_SIZE);
+
+    pi_cluster_conf_init(&cl_conf);
+    pi_open_from_conf(&cluster_dev, &cl_conf);
+    if (pi_cluster_open(&cluster_dev))
+    {
+      return -1;
+    }
+
+    L1_Memory = pi_l1_malloc(&cluster_dev, _L1_Memory_SIZE);
+    if (L1_Memory==NULL){
+        printf("Error allocating L1\n");
+        pmsis_exit(-1);
+    }
+   
+    // pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(task_mfcc, RunMFCC, NULL));
+
+    pi_cluster_send_task_to_cl(&cluster_dev, task_mfcc);
+    pi_l2_free(task_mfcc, sizeof(struct pi_cluster_task));
+
+    pi_cluster_close(&cluster_dev);
+
+    pi_l2_free(MfccInSig, noise_seconds * AUDIO_BUFFER_SIZE * sizeof (MFCC_IN_TYPE));
+
+}
+
 
 int application(){
+
+    printf ("----------------------------- Initializing environment ---------------------------\n");
+
+    // Voltage-Frequency settings
+    uint32_t voltage =VOLTAGE;
+    pi_freq_set(PI_FREQ_DOMAIN_FC,      FREQ_FC*1000*1000);
+    pi_freq_set(PI_FREQ_DOMAIN_PERIPH,  FREQ_FC*1000*1000);
+
+#ifdef AUDIO_EVK
+    pi_pmu_voltage_set(PI_PMU_VOLTAGE_DOMAIN_CHIP, VOLTAGE);
+    pi_pmu_voltage_set(PI_PMU_VOLTAGE_DOMAIN_CHIP, VOLTAGE);
+#endif 
+
+    //PMU_set_voltage(voltage, 0);
+    printf("Set VDD voltage as %.2f, FC Frequency as %d MHz, CL Frequency = %d MHz\n", 
+        (float)voltage/1000, FREQ_FC, FREQ_CL);
+
+// #ifdef AUDIO_EVK
+//     /****
+//         Configure GPIO Output.
+//     ****/
+
+//     //struct pi_gpio_conf gpio_conf = {0};
+//     gpio_pin_o = PI_GPIO_A89; /* PI_GPIO_A02-PI_GPIO_A05 */
+//     pi_gpio_flags_e flags = PI_GPIO_OUTPUT;
+//     pi_gpio_pin_configure(gpio_pin_o, flags);
+// #endif
+
+    /****
+        Configure And Open the External Ram. 
+    ****/
+    struct pi_default_ram_conf ram_conf;
+    pi_default_ram_conf_init(&ram_conf);
+    ram_conf.baudrate = FREQ_FC*1000*1000;
+    pi_open_from_conf(&DefaultRam, &ram_conf);
+    if (pi_ram_open(&DefaultRam))
+    {
+        printf("Error ram open !\n");
+        pmsis_exit(-3);
+    }
+    printf("RAM Opened\n");
+
+    /****
+        Configure And open cluster. 
+    ****/
+    
+    pi_cluster_conf_init(&cl_conf);
+    cl_conf.cc_stack_size = STACK_SIZE;
+    cl_conf.id = 0;                /* Set cluster ID. */
+                       // Enable the special icache for the master core
+    cl_conf.icache_conf = PI_CLUSTER_MASTER_CORE_ICACHE_ENABLE |   
+                       // Enable the prefetch for all the cores, it's a 9bits mask (from bit 2 to bit 10), each bit correspond to 1 core
+                       PI_CLUSTER_ICACHE_PREFETCH_ENABLE |      
+                       // Enable the icache for all the cores
+                       PI_CLUSTER_ICACHE_ENABLE;
+    pi_open_from_conf(&cluster_dev, (void *) &cl_conf);
+    if (pi_cluster_open(&cluster_dev))
+    {
+        PRINTF("Cluster open failed !\n");
+        pmsis_exit(-4);
+    }
+    printf("Cluster Opened\n");
+    pi_freq_set(PI_FREQ_DOMAIN_CL, FREQ_CL*1000*1000);
+
+
+    // Configure User Button
+    /* set pad to gpio mode */
+    /* This will open the gpio automatically */
+    pi_pad_function_set(gpio_boot_pin_1, PI_PAD_FUNC1);
+    /* configure gpio input */
+    pi_gpio_flags_e flags_upb = PI_GPIO_INPUT;
+    pi_gpio_pin_configure(gpio_boot_pin_1, flags_upb);
+
+
+    // Measurement preparation
+
+    // gpio_pin_measurement = PI_GPIO_A89; /* PI_GPIO_A02-PI_GPIO_A05 */
+    // pi_gpio_flags_e flags = PI_GPIO_OUTPUT;
+    // pi_pad_function_set(gpio_pin_measurement, 1);
+    // pi_gpio_pin_configure(gpio_pin_measurement, flags);
+    // pi_gpio_pin_write(gpio_pin_measurement, 0);
+    // pi_gpio_pin_write(gpio_pin_measurement, 0);
+
+    pi_pad_function_set(gpio_pin_measurement_id, 1);
+    pi_gpio_pin_configure(gpio_pin_measurement_id, PI_GPIO_OUTPUT);
+    pi_gpio_pin_write(gpio_pin_measurement_id, 0);
+    pi_gpio_pin_write(gpio_pin_measurement_id, 0);
+
+
+
+    PRINTF ("----------------------------- Initializing backbone ---------------------------\n");
+
+    // Measurement start
+    pi_gpio_pin_write(gpio_pin_measurement_id, 1);
+
+    // Dory init
+    mem_init();
+    network_initialize(); // Absent in L2-only
+    pi_cluster_close(&cluster_dev);
+
+
     return 0;
 }
 
