@@ -117,7 +117,7 @@ list (APPEND TARGET_INCS
                          -I${TILER_INC}
                          -I${TILER_EMU_INC}
                          -I${GAP_SDK_HOME}/libs/gap_lib/include
-                         -I${CURDIR}generate_nemo/inc
+                         -I${CURDIR}generate/inc
                          -I${GAP9_SDK_DIR}rtos/pmsis/bsp/include/bsp
                          -I${GAP9_SDK_DIR}rtos/pmsis/bsp/include/bsp/ram
                          -I${GAP9_SDK_DIR}rtos/pmsis/bsp/include/bsp/flash
@@ -137,7 +137,7 @@ set (NUM_CORES 8)
 set (GAP_SDK 1)
 set (TARGET_CHIP_FAMILY_GAP9 1)
 
-FILE (GLOB DORY_C_Sources ${CURDIR}generate_nemo/src/*.c)
+FILE (GLOB DORY_C_Sources ${CURDIR}generate/src/*.c)
 list (APPEND TARGET_SRCS ${DORY_C_Sources})
 
 list(APPEND TARGET_CFLAGS   -O2
@@ -194,7 +194,7 @@ FILE(STRINGS ${VALIDATION_FILE} VALIDATION_UTTR)
 
 
 # FLASH
-FILE(GLOB DORY_WEIGHTS ${CURDIR}generate_nemo/hex/*.hex)
+FILE(GLOB DORY_WEIGHTS ${CURDIR}generate/hex/*.hex)
 list (APPEND READFS_FILES ${DORY_WEIGHTS})
 list (APPEND READFS_FILES ${WAV_FILE}                        
 )

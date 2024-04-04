@@ -86,7 +86,8 @@ void application(void * arg) {
 
   printf ("Starting network inference!\n");
   void * dump;
-  network_run(l2_buffer, 1000000, l2_buffer, &dump, 0, initial_dir);
+  // network_run(l2_buffer, 1000000, l2_buffer, &dump, 0, initial_dir);
+  network_run(l2_buffer, 1000000, l2_buffer, 0, initial_dir);
 
   ram_free(ram_input, input_size);
   network_terminate();

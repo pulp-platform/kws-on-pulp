@@ -16,7 +16,6 @@ from dataset import DatasetProcessor
 from datagenerator import DatasetCreator
 from utils import parameter_generation
 from dscnn import DSCNN
-from tinymldscnn import TinyMLDsCnn
 
 # import the DORY backend
 from quantlib.backends.dory import export_net, export_dvsnet, DORYHarmonizePass
@@ -95,8 +94,7 @@ _MNIST_EPS = MNISTSTATS['quantize']['eps']
 # batch size is per device, determined on Nvidia RTX2080. You may have to change
 # this if you have different GPUs
 _QUANT_UTILS = {
-    'DSCNN':  QuantUtil(problem='MNIST', topo='DSCNN', quantize=quantize_net, get_controllers=controllers_net, network=DSCNN, in_shape=(1,1,49,10), eps_in=_MNIST_EPS, D=2**19, bs=256, get_in_shape=None, load_dataset_fn=DatasetProcessor.get_dataset, transform=None, quant_transform_args={'n_q':256}, n_levels_in=256, export_fn=export_net, code_size=150000),
-    'TinyMLDsCnn':  QuantUtil(problem='MNIST', topo='TinyMLDsCnn', quantize=quantize_net, get_controllers=controllers_net, network=TinyMLDsCnn, in_shape=(1,1,49,10), eps_in=_MNIST_EPS, D=2**19, bs=256, get_in_shape=None, load_dataset_fn=DatasetProcessor.get_dataset, transform=None, quant_transform_args={'n_q':256}, n_levels_in=256, export_fn=export_net, code_size=150000)
+    'DSCNN':  QuantUtil(problem='MNIST', topo='DSCNN', quantize=quantize_net, get_controllers=controllers_net, network=DSCNN, in_shape=(1,1,49,10), eps_in=_MNIST_EPS, D=2**19, bs=256, get_in_shape=None, load_dataset_fn=DatasetProcessor.get_dataset, transform=None, quant_transform_args={'n_q':256}, n_levels_in=256, export_fn=export_net, code_size=150000)
 }
 
 

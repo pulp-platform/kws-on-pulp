@@ -57,12 +57,13 @@ typedef short int MFCC_IN_TYPE;
 #include "mem.h"
 #include "network.h"
 
-#define WAVRAM 110*2*16000
+#include "input.h"
+
+#define WAVRAM 2*16000 // int16, 1-second @ 16 kHz 
 
 // measurement
 pi_gpio_e gpio_pin_measurement;
 unsigned int gpio_pin_measurement_id = 89;
-
 
 /* 
      global variables
@@ -78,8 +79,6 @@ static struct pi_device flash;
 // Load args
 char *WavName = NULL;
 char *mfcc = NULL;
-char *noise_eval_input = NULL;
-char *uttr_eval_input = NULL;
 char *appl_input = NULL;
 
 // Arrays handling data movement
@@ -146,7 +145,7 @@ static int configure_pdm()
     int err;
 
     pi_pad_function_set(SAI_SCK(SAI_RX), PI_PAD_FUNC0);
-    pi_pad_function_set(SAI_WS(SAI_RX),  PI_PAD_FUNC0);
+    pi_pad_function_set(SAI_WS (SAI_RX), PI_PAD_FUNC0);
     pi_pad_function_set(SAI_SDI(SAI_RX), PI_PAD_FUNC0);
     pi_pad_function_set(SAI_SDO(SAI_RX), PI_PAD_FUNC0);
 
@@ -269,12 +268,6 @@ static void handle_in_transfer_end(void *arg)
 // MFCC Computation
 static void RunMFCC()
 {
-    #ifdef PERF
-        gap_cl_starttimer();
-        gap_cl_resethwtimer();
-        int start = gap_cl_readhwtimer();
-    #endif
-
     // Compute MFCC following Tensorflow settings
     #if (N_DCT == 0)
         #if (DATA_TYPE==2) || (DATA_TYPE==3)
@@ -292,11 +285,6 @@ static void RunMFCC()
         #else
         Tensorflow_MFCC(MfccInSig, out_feat, FFTTwiddles, RFFTTwiddles, SwapTable, WindowLUT, MelFBSparsity, MelFBCoeff, NORM, DCTTwiddles);
         #endif
-    #endif
-
-    #ifdef PERF
-        int elapsed = gap_cl_readhwtimer() - start;
-        printf("Total Cycles: %d over %d Frames %d Cyc/Frame\n", elapsed, 49, elapsed / 49);
     #endif
 }
 
@@ -560,57 +548,49 @@ int application(){
     pi_freq_set(PI_FREQ_DOMAIN_CL, FREQ_CL*1000*1000);
 
 
-    // // Configure User Button
-    // /* set pad to gpio mode */
-    // /* This will open the gpio automatically */
-    // pi_pad_function_set(gpio_boot_pin_1, PI_PAD_FUNC1);
-    // /* configure gpio input */
-    // pi_gpio_flags_e flags_upb = PI_GPIO_INPUT;
-    // pi_gpio_pin_configure(gpio_boot_pin_1, flags_upb);
+    // Configure User Button
+    /* set pad to gpio mode */
+    /* This will open the gpio automatically */
+    pi_pad_function_set(gpio_boot_pin_1, PI_PAD_FUNC1);
+    /* configure gpio input */
+    pi_gpio_flags_e flags_upb = PI_GPIO_INPUT;
+    pi_gpio_pin_configure(gpio_boot_pin_1, flags_upb);
 
 
-    // // Measurement preparation
-    // pi_pad_function_set(gpio_pin_measurement_id, 1);
-    // pi_gpio_pin_configure(gpio_pin_measurement_id, PI_GPIO_OUTPUT);
-    // pi_gpio_pin_write(gpio_pin_measurement_id, 0);
-    // pi_gpio_pin_write(gpio_pin_measurement_id, 0);
+    printf ("----------------------------- Initializing backbone ---------------------------\n");
 
-    // printf ("----------------------------- Initializing backbone ---------------------------\n");
+    // Dory init
+    mem_init();
+    network_initialize(); // Absent in L2-only
+    pi_cluster_close(&cluster_dev);
 
-    // // Measurement start
-    // pi_gpio_pin_write(gpio_pin_measurement_id, 1);
+    printf ("----------------------------- Read WAV from filesystem ---------------------------\n");
+    L3_wavs = ram_malloc(WAVRAM);
+    printf("\nL3_wavs alloc initial\t@ %d:\t%s\n", (unsigned int)L3_wavs, L3_wavs?"Ok":"Failed");
 
-    // // Dory init
-    // mem_init();
-    // network_initialize(); // Absent in L2-only
-    // pi_cluster_close(&cluster_dev);
+    header_struct header_info;
+    inWav = NULL;
+    inWav    = (short int *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(short)); 
+    if (inWav == NULL){
+        printf("Failed allocating inWav.\n");
+        pmsis_exit(-1);
+    }
 
-    // printf ("----------------------------- Read WAVs from filesystem ---------------------------\n");
-    // L3_wavs = ram_malloc(WAVRAM);
-    // printf("\nL3_wavs alloc initial\t@ %d:\t%s\n", (unsigned int)L3_wavs, L3_wavs?"Ok":"Failed");
+    printf ("File to save: %s\n", WavName);
+    if (ReadWavFromFile(WavName, inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+        printf("Error reading wav file\n");
+        pmsis_exit(1);
+    }
 
-    // header_struct header_info;
-    // inWav = NULL;
-    // inWav    = (short int *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(short)); 
-    // if (inWav == NULL){
-    //     printf("Failed allocating inWav.\n");
-    //     pmsis_exit(-1);
-    // }
-
-    // if (ReadWavFromFile(WavName, inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
-    //     printf("Error reading wav file\n");
-    //     pmsis_exit(1);
-    // }
-    // ram_write(L3_wavs + AUDIO_BUFFER_SIZE*sizeof(short), inWav, AUDIO_BUFFER_SIZE*sizeof(short));
-    // pi_l2_free(inWav, AUDIO_BUFFER_SIZE*sizeof(short));
+    printf ("----------------------------- Write WAV to RAM ---------------------------\n");
+    ram_write(L3_wavs, inWav, AUDIO_BUFFER_SIZE*sizeof(short));
+    pi_l2_free(inWav, AUDIO_BUFFER_SIZE*sizeof(short));
 
 
-    // BufferInList = (void*) pi_l2_malloc(BUFF_SIZE);
-    // if (BufferInList == NULL) return -1;
+    BufferInList = (void*) pi_l2_malloc(BUFF_SIZE);
+    if (BufferInList == NULL) return -1;
 
-    // pi_gpio_pin_write(gpio_pin_measurement_id, 0);
-
-    // int button_was_pressed = 0;
+    int button_was_pressed = 0;
 
     l2_buffer = NULL;
     l2_buffer = pi_l2_malloc(L2_MEMORY_SIZE);
@@ -619,6 +599,8 @@ int application(){
     }
 
     printf ("Preliminary backbone running\n");
+    void *dump;
+    // network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &dump, 0, 1); // L2_input_h extra-arg for L2-only
     network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, 0, 1); // L2_input_h extra-arg for L2-only
 
     printf ("Network run complete\n");
@@ -635,25 +617,15 @@ int application(){
     int upperlim = 0;
     int lowerlim = 0;
 
-
-
     printf ("----------------------------- Starting application ---------------------------\n");
 
-    
     while (1){
-    
-        pi_gpio_pin_write(gpio_pin_measurement_id, 1);
-
-        
+            
         if (appl_input == "0"){
 
             printf ("----------------------------- Start acquisition ---------------------------\n");    
 
-            int start_dataacq = pi_time_get_us();    
-
             int threshold_counter = 0;
-
-
             MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(1 * AUDIO_BUFFER_SIZE * sizeof (MFCC_IN_TYPE));
 
             for(int i=0;i<AUDIO_BUFFER_SIZE;i++){ 
@@ -674,9 +646,7 @@ int application(){
                 lowerlim = sfu_out_buffer_cnt_curr * DOUBLE_BUFF_SIZE;
             }
 
-
             // TODO: FIGURE OUT SCALING 2^32 or 2^31???
-
             int outidx = 0;
             for (int i = sfu_out_buffer_cnt_prev*DOUBLE_BUFF_SIZE; i < upperlim; i+=3){
                 // using MfccInSig_prev as buffer
@@ -722,45 +692,19 @@ int application(){
                     threshold_counter++;
                 }
             }
-
-            // printf ("threshold_counter is: %i\n", threshold_counter);
-            // TODO: FIGURE OUT NUMBER OF SAMPLES
-
-            // Commented out for measurements
-            // if (threshold_counter < 200){
-            //     printf("silence\n");
-
-            //     pi_l2_free(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
-            //     pi_l2_free(MfccInSig, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
-
-
-            //     int end_dataacq = pi_time_get_us(); 
-            //     // printf("Data acquisition1: %i\n", end_dataacq - start_dataacq);
-
-            //     // continue;
-            //     goto checkbutton;
-            // }
-
-            int end_dataacq = pi_time_get_us(); 
-            // printf("Data acquisition2: %i\n", end_dataacq - start_dataacq);
-
         }
         else if (appl_input == "1"){
-            // printf ("Reading wav...\n");
-            char utterName[130] = "usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/meeting_ch01_mancrop1.wav";
+
+            printf ("----------------------------- Read .wav ---------------------------\n");   
+           
             
             int start_readwav = pi_time_get_us();
             
-
-            // Classic .wav reading
-            // input_wav(0, 1, utterName, 0); // save, free, utterName, noise
-
-
             short int *prepWav = NULL;
             prepWav = (short int *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(short));
 
             // Read the 0th .wav saved in RAM
-            ram_read(prepWav, L3_wavs + (0)*AUDIO_BUFFER_SIZE*sizeof(short), AUDIO_BUFFER_SIZE*sizeof(short));
+            ram_read(prepWav, L3_wavs, AUDIO_BUFFER_SIZE*sizeof(short));
 
             MfccInSig = NULL;
             MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
@@ -779,6 +723,12 @@ int application(){
                 }
             #endif
 
+            MfccInSig_int16 = (int16_t *) pi_l2_malloc(sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+
+            for(int i=0;i<AUDIO_BUFFER_SIZE;i++){
+                MfccInSig_int16[i] = (int16_t) (MfccInSig[i] * (1<<15));
+            }
+
             pi_l2_free(prepWav, AUDIO_BUFFER_SIZE * sizeof(short int));
 
 
@@ -786,18 +736,7 @@ int application(){
             // printf("Time spent reading wav: %i\n", end_readwav - start_readwav);
         }
 
-        // pi_gpio_pin_write(gpio_pin_measurement_id, 0);
-
-        #ifdef PERF
-        gap_fc_starttimer();
-        gap_fc_resethwtimer();
-        int start_timer_2 = gap_fc_readhwtimer();
-        #endif
-
         PRINTF("***************************** Computing MFCC **************************\n");
-
-
-        // pi_gpio_pin_write(gpio_pin_measurement_id, 1);
 
         gap_fc_starttimer();
         gap_fc_resethwtimer();
@@ -831,7 +770,13 @@ int application(){
                 }
             }
 
-            ((uint8_t *)l2_buffer)[k] = feat_char[k]; // Online computed MFCC
+            // Fill input buffer
+            if (mfcc == "1"){
+                ((uint8_t *)l2_buffer)[k] = L2_input_h[k]; // Precomputed MFCC
+            }
+            else {
+                ((uint8_t *)l2_buffer)[k] = feat_char[k]; // Online computed MFCC
+            }
 
             k++;
         } 
@@ -848,36 +793,27 @@ int application(){
         printf("Processing: %d cycles\n", elapsed_timer_processing);
         printf("Processing: %i us\n", end_readprocessing - start_readprocessing);
 
+        printf("***************************** Backbone inference **************************\n");
+
+        int start_backbone = pi_time_get_us();
 
         // Extract backbone features
         void *dump; // dump to copy FC weights, won't be used; TODO: Parametrize DORY
-
-
-        #ifdef PERF
-        gap_fc_starttimer();
-        gap_fc_resethwtimer();
-        int start_timer_4 = gap_fc_readhwtimer();        
-        #endif
-
-        PRINTF("***************************** Backbone inference **************************\n");
-
-        int start_backbone = pi_time_get_us();
-    
+        // network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &dump, 0, 1);
         network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, 0, 1);
 
         int end_backbone = pi_time_get_us();
         printf("Backbone: %i us\n", end_backbone - start_backbone);
 
-        #ifdef PERF
-            dump_wav_open("recording_utterance.wav", 16, 16000, 1, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
-            dump_wav_write(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
-            dump_wav_close();
-        #endif
+        dump_wav_open("utterance.wav", 16, 16000, 1, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+        dump_wav_write(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+        dump_wav_close();        
 
         pi_l2_free(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);        
         
-        PRINTF("***************************** Application complete *****************************\n");
+        printf("***************************** Application complete *****************************\n");
 
+        return 0;
     }
 
 
@@ -893,8 +829,6 @@ int main()
     #define __STR(__s) #__s
     WavName = __XSTR(WAV_FILE); 
     mfcc = __XSTR(MFCC);
-    noise_eval_input = __XSTR(NOISE_EVAL);
-    uttr_eval_input = __XSTR(UTTR_EVAL);
     appl_input = __XSTR(APPL);
 
     return application();

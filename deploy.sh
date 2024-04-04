@@ -18,10 +18,11 @@ export GAP_RISCV_GCC_TOOLCHAIN=/usr/scratch/wetterhorn/cioflanc/tools/gap_riscv_
 source /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk_private/configs/gap9_evk_audio.sh
 export WAV_FILE=/usr/scratch/wetterhorn/cioflanc/teaching/classes/mlonmcu/fs2024/application/right_94de6a6a_nohash_4.wav # ORIGINAL
 
-# cp -r generate/src/ application/generate/
-# rm application/generate/src/main.c
-# cp -r generate/inc/ application/generate/
-# cp -r generate/hex/ application/generate/
+mkdir -p application/generate/
+cp -r generate/src/ application/generate/
+rm application/generate/src/main.c
+cp -r generate/inc/ application/generate/
+cp -r generate/hex/ application/generate/
 
 cd application/
 

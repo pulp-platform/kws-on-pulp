@@ -20,8 +20,17 @@ The resulting quantized model, saved in .onnx format, together with the per-laye
 
 ## Deployment
 
-We employ dory for this purpose.
+We employ dory for generating the C code of our quantized network:
 
 ```
-./dory_gen.sh gap_sdk 3 gvsoc 0 2 generate export 8
+./dory_gen.sh gap_sdk 3 gvsoc 0 1 generate export 8
 ```
+
+## Keyword Spotting on PULP
+
+We deploy our network using:
+
+```
+./deploy.sh gvsoc 1 0
+```
+The application reads an input, computes the MFCCs, then performs inference. The parameters represent the target platform (gvsoc/board), the input source (0 - microphone/1 - .wav stored in L3), the MFCC source (0 - online computation/1 - precomputed MFCCs stored in input.h).
