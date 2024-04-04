@@ -34,3 +34,12 @@ We deploy our network using:
 ./deploy.sh gvsoc 1 0
 ```
 The application reads an input, computes the MFCCs, then performs inference. The parameters represent the target platform (gvsoc/board), the input source (0 - microphone/1 - .wav stored in L3), the MFCC source (0 - online computation/1 - precomputed MFCCs stored in input.h).
+
+
+## TODOs
+
+- [ ] Merge conda environments
+- [ ] Fix Quantlib-generated network inference with cmake
+- [ ] Implement on-board inference. Maybe change debugger.
+- [ ] Improve README
+- [ ] Add student tasks. 
