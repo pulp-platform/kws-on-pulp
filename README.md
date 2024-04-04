@@ -43,3 +43,6 @@ The application reads an input, computes the MFCCs, then performs inference. The
 - [ ] Implement on-board inference. Maybe change debugger.
 - [ ] Improve README
 - [ ] Add student tasks. 
+
+## Dependencies
+- [GAP SDK](https://github.com/GreenWaves-Technologies/gap_sdk_private) - d45699fd
