@@ -16,6 +16,7 @@ from dataset import DatasetProcessor
 from datagenerator import DatasetCreator
 from utils import parameter_generation
 from dscnn import DSCNN
+from tinymldscnn import TinyMLDsCnn
 
 # import the DORY backend
 from quantlib.backends.dory import export_net, export_dvsnet, DORYHarmonizePass
@@ -94,7 +95,8 @@ _MNIST_EPS = MNISTSTATS['quantize']['eps']
 # batch size is per device, determined on Nvidia RTX2080. You may have to change
 # this if you have different GPUs
 _QUANT_UTILS = {
-    'DSCNN':  QuantUtil(problem='MNIST', topo='DSCNN', quantize=quantize_net, get_controllers=controllers_net, network=DSCNN, in_shape=(1,1,49,10), eps_in=_MNIST_EPS, D=2**19, bs=256, get_in_shape=None, load_dataset_fn=DatasetProcessor.get_dataset, transform=None, quant_transform_args={'n_q':256}, n_levels_in=256, export_fn=export_net, code_size=150000)
+    'DSCNN':  QuantUtil(problem='MNIST', topo='DSCNN', quantize=quantize_net, get_controllers=controllers_net, network=DSCNN, in_shape=(1,1,49,10), eps_in=_MNIST_EPS, D=2**19, bs=256, get_in_shape=None, load_dataset_fn=DatasetProcessor.get_dataset, transform=None, quant_transform_args={'n_q':256}, n_levels_in=256, export_fn=export_net, code_size=150000),
+    'TinyMLDsCnn':  QuantUtil(problem='MNIST', topo='TinyMLDsCnn', quantize=quantize_net, get_controllers=controllers_net, network=TinyMLDsCnn, in_shape=(1,1,49,10), eps_in=_MNIST_EPS, D=2**19, bs=256, get_in_shape=None, load_dataset_fn=DatasetProcessor.get_dataset, transform=None, quant_transform_args={'n_q':256}, n_levels_in=256, export_fn=export_net, code_size=150000)
 }
 
 
@@ -120,7 +122,7 @@ def get_ckpt(key : str, exp_id : int, ckpt_id : Union[int, str]):
     return torch.load(ckpt_filepath)
 
 def get_network(key : str, exp_id : int, ckpt_id : Union[int, str], quantized=False):
-    with open('config_net_tqt_8b.json', 'r') as fp:
+    with open('config_lukanet_tqt_8b.json', 'r') as fp:
         cfg = json.load(fp)
     qu = _QUANT_UTILS[key]
     quant_cfg = cfg['network']['quantize']['kwargs']
@@ -303,7 +305,7 @@ def main():
                         help='Export RequantShift nodes instead of mul-add-div sequences in ONNX graph')
     parser.add_argument('--clip_inputs', action='store_true',
                         help='ghettofix to clip inputs to be unsigned')
-    parser.add_argument('--config_net_file', type=str, default='config_net_tqt_8b.json', help = 'Network configuration file')
+    parser.add_argument('--config_net_file', type=str, default='config_lukanet_tqt_8b.json', help = 'Network configuration file')
     parser.add_argument('--config_env_file', type=str, default='config_env.json', help = 'Environment configuration file')
 
     args = vars(parser.parse_args())

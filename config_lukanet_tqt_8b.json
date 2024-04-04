@@ -41,15 +41,11 @@
             "kwargs": {
                 "config": {
                     "PACTConv2d": {
-                        "stem_block.0$": {},
-                        "conv_blocks.0.0$": {},
-                        "conv_blocks.0.3$": {},
-                        "conv_blocks.1.0$": {},
-                        "conv_blocks.1.3$": {},
-                        "conv_blocks.2.0$": {},
-                        "conv_blocks.2.3$": {},
-                        "conv_blocks.3.0$": {},
-                        "conv_blocks.3.3$": {},
+                        "net.0.net.0$": {},
+                        "net.2.net.0.net.0$": {},
+                        "net.2.net.1.net.0$": {},
+                        "net.3.net.0.net.0$": {},
+                        "net.3.net.1.net.0$": {},
                         "kwargs": {
                             "n_levels": 256,
                             "quantize": "per_channel",
@@ -60,7 +56,7 @@
                         }
                     },
                     "PACTLinear": {
-                        "fc1$": {},
+                        "net.6$": {},
                         "kwargs": {
                             "n_levels": 256,
                             "quantize": "per_layer",
@@ -71,15 +67,11 @@
                         }
                     },
                     "PACTUnsignedAct": {
-                        "stem_block.2$": {},
-                        "conv_blocks.0.2$": {},
-                        "conv_blocks.0.5$": {},
-                        "conv_blocks.1.2$": {},
-                        "conv_blocks.1.5$": {},
-                        "conv_blocks.2.2$": {},
-                        "conv_blocks.2.5$": {},
-                        "conv_blocks.3.2$": {},
-                        "conv_blocks.3.5$": {},
+                        "net.0.net.2$": {},
+                        "net.2.net.0.net.2$": {},
+                        "net.2.net.1.net.2$": {},
+                        "net.3.net.0.net.2$": {},
+                        "net.3.net.1.net.2$": {},
                         "kwargs": {
                             "n_levels": 256,
                             "nb_std": 3,
