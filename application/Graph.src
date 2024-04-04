@@ -1,0 +1,23 @@
+SFU_CreateGraph("Graph");
+
+Defines:
+    CIC_N = 8; CIC_M = 2; CIC_R = 64; CIC_Shift = 24;
+    /* CIC Filter parameters for Input 3.072 MHz, Output: 48 KHz, DynOut = N*Log2(R*M) = 8*Log2(128) = 56 => Shift = 24 for Q31, 31 for Q24 */
+
+Nodes:
+
+    PdmIn1 = Node(PDM_IN.0, CIC_N, CIC_M, CIC_R, CIC_Shift);
+    MemOut1 = Node(MEM_OUT.0);
+    MemIn1 = Node(MEM_IN.0);
+    PcmOut1 = Node(STREAM_OUT.0);
+
+Connects:
+
+    Connect(PdmIn1, MemOut1);
+    Connect(MemIn1, PcmOut1);
+
+
+
+
+SFU_CloseGraph();
+
