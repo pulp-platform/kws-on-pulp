@@ -1,7 +1,7 @@
 [submodule "dory"]
 	path = dory
-	url = git@github.com:pulp-platform/dory.git
-        branch = lukamac/pr/fix-gap9-l3-l2-tiling
+	url = git@iis-git.ee.ethz.ch:kws/dory.git
+        branch = master
 [submodule "pact-integerization-proto"]
 	path = pact-integerization-proto
 	url = git@iis-git.ee.ethz.ch:georgr/pact-integerization-proto.git

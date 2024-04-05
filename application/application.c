@@ -599,9 +599,8 @@ int application(){
     }
 
     printf ("Preliminary backbone running\n");
-    void *dump;
-    // network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &dump, 0, 1); // L2_input_h extra-arg for L2-only
-    network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, 0, 1); // L2_input_h extra-arg for L2-only
+    void *dump; // dump to copy FC weights, won't be used; TODO: Parametrize DORY
+    network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &dump, 0, 1); // L2_input_h extra-arg for L2-only
 
     printf ("Network run complete\n");
     pi_evt_sig_init(&inference_task);
@@ -799,8 +798,7 @@ int application(){
 
         // Extract backbone features
         void *dump; // dump to copy FC weights, won't be used; TODO: Parametrize DORY
-        // network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &dump, 0, 1);
-        network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, 0, 1);
+        network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &dump, 0, 1);
 
         int end_backbone = pi_time_get_us();
         printf("Backbone: %i us\n", end_backbone - start_backbone);
