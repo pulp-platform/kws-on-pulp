@@ -46,3 +46,4 @@ The application reads an input, computes the MFCCs, then performs inference. The
 
 ## Dependencies
 - [GAP SDK](https://github.com/GreenWaves-Technologies/gap_sdk_private) - 21ad5c40 (release v5.11.0)
+- Note that we use [ARM-USB-OCD-H programmer](https://github.com/analogdevicesinc/openocd/blob/master/tcl/interface/ftdi/olimex-arm-usb-ocd-h.cfg)
