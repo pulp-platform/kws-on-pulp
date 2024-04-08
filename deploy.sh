@@ -12,6 +12,7 @@ export APPL=$2
 export MFCC=$3
 
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/scratch/wetterhorn/cioflanc/miniconda3/pkgs/mpfr-4.0.2-hb69a4c5_1/lib/
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/scratch/wetterhorn/cioflanc/miniconda3/envs/kwsongap9/lib/
 export GAP_RISCV_GCC_TOOLCHAIN=/usr/scratch/wetterhorn/cioflanc/tools/gap_riscv_toolchain
 source /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk_private/configs/gap9_evk_audio.sh
 export WAV_FILE=/usr/scratch/wetterhorn/cioflanc/teaching/classes/mlonmcu/fs2024/application/right_94de6a6a_nohash_4.wav # ORIGINAL
