@@ -45,4 +45,4 @@ The application reads an input, computes the MFCCs, then performs inference. The
 - [ ] Add student tasks. 
 
 ## Dependencies
-- [GAP SDK](https://github.com/GreenWaves-Technologies/gap_sdk_private) - d45699fd
+- [GAP SDK](https://github.com/GreenWaves-Technologies/gap_sdk_private) - 21ad5c40 (release v5.11.0)
