@@ -38,7 +38,7 @@ The application reads an input, computes the MFCCs, then performs inference. The
 
 ## TODOs
 
-- [ ] Merge conda environments
+- [x] Merge conda environments
 - [x] Fix Quantlib-generated network inference with cmake
 - [ ] Implement on-board inference. Maybe change debugger.
 - [ ] Improve README
