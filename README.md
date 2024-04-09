@@ -50,3 +50,12 @@ The application reads an input, computes the MFCCs, then performs inference. The
 ## Dependencies
 - [GAP SDK](https://github.com/GreenWaves-Technologies/gap_sdk_private) - 21ad5c40 (release v5.11.0)
 - Note that we use [ARM-USB-OCD-H programmer](https://github.com/analogdevicesinc/openocd/blob/master/tcl/interface/ftdi/olimex-arm-usb-ocd-h.cfg)
+
+## Authors
+* Cristian Cioflan <<a href="mailto:cioflanc@iis.ee.ethz.ch">cioflanc@iis.ee.ethz.ch</a>>
+
+Special thanks to Philip Wiese for publishing [this](https://github.com/pulp-platform/quantlab/tree/main/examples/fx_integerization).
+
+## License
+
+The code is released under Apache 2.0, see the LICENSE file in the root of this repository for details.
