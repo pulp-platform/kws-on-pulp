@@ -41,6 +41,9 @@ The application reads an input, computes the MFCCs, then performs inference. The
 - [x] Merge conda environments
 - [x] Fix Quantlib-generated network inference with cmake
 - [x] Implement on-board inference. Maybe change debugger.
+- [ ] Add pretrained network.
+- [ ] Test quantization flow.
+- [ ] Test with Gapmod 2.0 on EVK board 3.1. 
 - [ ] Improve README
 - [ ] Add student tasks. 
 
