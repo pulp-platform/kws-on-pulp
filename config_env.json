@@ -11,7 +11,7 @@
         "noise_seed": 0
     },
     "environment_parameters": {
-        "device":"gpu",
+        "device":"cpu",
         "device_id": "1",
         "noise_dir_demand": "/usr/scratch/sassauna2/cioflanc/DEMAND",
         "noise_dir_gscv2": "/usr/scratch/sassauna2/cioflanc/dolphinGSC/speech_commands_v0.02/_background_noise_",

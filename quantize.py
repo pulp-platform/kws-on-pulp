@@ -134,13 +134,10 @@ def get_network(key : str, exp_id : int, ckpt_id : Union[int, str], quantized=Fa
     # net = qu.network(**net_cfg)
     net = qu.network()
 
-
-    print ("++++++++++++")
+    print ("Network instantiated.")
     print (net)
-    print ("++++++++++++")
 
     # Load pretrained network
-    print (torch.load(pretrained, map_location='cpu'))
     net.load_state_dict(torch.load(pretrained, map_location='cpu'))
 
     if not quantized:
@@ -166,17 +163,13 @@ def validate(net : nn.Module, dl : torch.utils.data.DataLoader, print_interval :
     net = net.eval()
     # we assume that the net is on CPU as this is required for some
     # integerization passes
-    if torch.cuda.is_available():
-        net = net.to('cuda')
-        device = 'cuda'
-        if torch.cuda.device_count() != 1:
-            net = nn.DataParallel(net)
-    else:
-        device = 'cpu'
+    device = 'cpu'
 
     n_tot = 0
     n_correct = 0
-    for i, (xb, yb) in enumerate(tqdm(dl)):
+
+    for i, batched_input in enumerate(dl):
+        xb, yb = batched_input
         yn = net(xb.to(device))
         n_tot += xb.shape[0]
         n_correct += (yn.to('cpu').argmax(dim=1) == yb).sum()
@@ -310,6 +303,7 @@ def main():
         device = torch.device('cuda')        
     else:
         device = torch.device('cpu')
+    device = torch.device('cpu')
     print (torch.version.__version__)
     print (device)
 
@@ -319,14 +313,15 @@ def main():
     audio_processor = DatasetCreator(environment_parameters, training_parameters, preprocessing_parameters)
     # TODO: Functional dataset management
     global mdataset
-    mdataset = DatasetProcessor("training", audio_processor, training_parameters, task = -1, device = device)
+    mdataset = DatasetProcessor("training", audio_processor, training_parameters, task = -1, device = 'cpu')
     mdataloader = DataLoader(mdataset, batch_size=training_parameters['batch_size'], shuffle=False, num_workers=0)
 
     qnet = get_network(key = args['net'], exp_id=0, ckpt_id=0, quantized=True, pretrained = args['pretrained'])
 
-    print ("*********")
+    print ("Network quantized")
     print (qnet)
-    print ("*********")
+
+    validate(qnet, mdataloader, 10, n_valid_batches=10)
 
     int_net = integerize_network(qnet, args['net'], args['fix_channels'], not args['no_dory_harmonize'], args['word_align_channels'], args['requant_node'])
     # import ipdb; ipdb.set_trace()
@@ -337,7 +332,7 @@ def main():
     else:
         pad_img = None
 
-    validate(int_net, mdataloader, 10, n_valid_batches=128)
+    validate(int_net, mdataloader, 10, n_valid_batches=10)
 
     with open(args['config_net_file'], 'r') as fp:
         exp_cfg = json.load(fp)

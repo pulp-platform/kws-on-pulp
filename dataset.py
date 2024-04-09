@@ -35,6 +35,8 @@ from copy import deepcopy
 import soundfile as sf
 import numpy as np
 
+import tensorflow as tf
+
 
 class DatasetProcessor(torch.utils.data.Dataset):
         
@@ -61,19 +63,12 @@ class DatasetProcessor(torch.utils.data.Dataset):
 
         self.offline_background_noise_train = self.dataset_creator.offline_background_noise_train
         self.offline_background_noise_test = self.dataset_creator.offline_background_noise_test
-        self.online_background_noise_train = self.dataset_creator.online_background_noise_train
-        self.online_background_noise_test = self.dataset_creator.online_background_noise_test
 
         self.offline_background_noise_train_name = self.dataset_creator.offline_background_noise_train_name
         self.offline_background_noise_test_name = self.dataset_creator.offline_background_noise_test_name
-        self.online_background_noise_train_name = self.dataset_creator.online_background_noise_train_name
-        self.online_background_noise_test_name = self.dataset_creator.online_background_noise_test_name
 
         self.offline_noise_train_dataset = self.dataset_creator.environment_parameters["offline_noise_train_dataset"]
         self.offline_noise_test_dataset = self.dataset_creator.environment_parameters["offline_noise_test_dataset"]
-        self.online_noise_test_dataset = self.dataset_creator.environment_parameters["online_noise_test_dataset"]
-        self.online_noise_train_dataset = self.dataset_creator.environment_parameters["online_noise_train_dataset"]
-
 
         self.data_augmentation_parameters = {}
 
@@ -113,8 +108,7 @@ class DatasetProcessor(torch.utils.data.Dataset):
         if (self.training_parameters['noise_mode'] == 'noiseless'):
             self.use_background = False
         else:
-            self.use_background = (len(self.offline_background_noise_train) and len(self.offline_background_noise_test)) or \
-            (len(self.online_background_noise_train) and len(self.online_background_noise_test))
+            self.use_background = (len(self.offline_background_noise_train) and len(self.offline_background_noise_test))
 
         # TODO: Obsolete, remove
         if (self.task == -1):    # Silence task
@@ -142,27 +136,6 @@ class DatasetProcessor(torch.utils.data.Dataset):
                 else:
                     background_index = self.task
                 wav_background_samples = self.offline_background_noise_test[background_index] 
-
-            elif (self.mode == 'odda'):
-                # task=None assumes diverse noise-utterance pairs
-                # task=idx assumes specific noise-utterance pairs
-                if (self.task is None):
-                    # TODO: Integrate argument to decide on training order
-                    # background_index = np.random.randint(len(self.online_background_noise_train)) # Random augmentation
-                    background_index = offset % len(self.online_background_noise_train) # Ordered augmentation
-                else:
-                    background_index = np.random.randint(14*self.task, 14*(self.task+1))   
-                wav_background_samples = self.online_background_noise_train[background_index]
-
-            elif (self.mode == 'odda_val'):
-                # Selecting the noises for validation/testing
-                if self.task is None:
-                    # TODO: Integrate argument to decide on training order
-                    # background_index = np.random.randint(len(self.online_background_noise_test)) # Random augmentation
-                    background_index = offset % len(self.online_background_noise_test) # Ordered augmentation    
-                else:
-                    background_index = self.task
-                wav_background_samples = self.online_background_noise_test[background_index] 
 
             assert (len(wav_background_samples) > self.preprocessing_parameters['desired_samples'])            
 
@@ -246,51 +219,7 @@ class DatasetProcessor(torch.utils.data.Dataset):
         else:
             wav_file=wav_file[:self.preprocessing_parameters['desired_samples']]
 
-        scaled_foreground = torch.mul(wav_file, self.data_augmentation_parameters['foreground_volume'])
-
-        # Padding wrt the time shift offset
-        pad_tuple=tuple(self.data_augmentation_parameters['time_shift_padding'][0])
-        padded_foreground = torch.nn.ConstantPad1d(pad_tuple,0)(scaled_foreground)
-        sliced_foreground = padded_foreground[self.data_augmentation_parameters['time_shift_offset'][0]:self.data_augmentation_parameters['time_shift_offset'][0]+self.preprocessing_parameters['desired_samples']]
-
-        # Mix in background noise        
-        background_mul = torch.mul(self.data_augmentation_parameters['background_noise'],self.data_augmentation_parameters['background_volume']).to(self.device)
-
-        # Compute SNR
-        sliced_foreground_energy = sliced_foreground**2
-        background_mul_energy = background_mul**2
-
-        avg_foreground_power = torch.mean(sliced_foreground_energy, dtype=torch.float64)
-        avg_backgroung_power = torch.mean(background_mul_energy, dtype=torch.float64)
-
-        SNR = 10 * torch.log10(avg_foreground_power/avg_backgroung_power+1e-6)
-        sum_background_mul_energy = torch.sum(background_mul_energy, dtype=torch.float64)
-        sum_sliced_foreground_energy = torch.sum(sliced_foreground_energy, dtype=torch.float64)
-
-        # TODO: Revert to single SNR @ test/evaluation
-        if (self.mode == 'training' or self.mode == 'odda'):
-            if (len(self.training_parameters['snr_range']) > 1):
-                curr_snr = np.random.uniform(self.training_parameters['snr_range'][0], self.training_parameters['snr_range'][1]) 
-            else:
-                curr_snr = self.training_parameters['snr_range'][0]
-        else:
-            # TODO: Parametrize single vs interval SNR selection for test/evaluation
-            if (len(self.training_parameters['snr_range']) > 1):
-                curr_snr = np.random.uniform(self.training_parameters['snr_range'][0], self.training_parameters['snr_range'][1]) 
-            else:
-                curr_snr = self.training_parameters['snr_range'][0]
-
-        k = torch.sqrt( ((sum_background_mul_energy**curr_snr)/(sum_sliced_foreground_energy**(curr_snr-SNR)))**(1/SNR) / sum_background_mul_energy )
-    
-        
-        background_add = sliced_foreground
-        bgnoise = torch.from_numpy(np.zeros([self.preprocessing_parameters['desired_samples'], 1]))
-
-        if (self.device.type == 'cuda'): 
-            background_add = background_add.cuda().float() 
-
-        self.bgnoise = bgnoise
-        self.background_add = background_add
+        self.background_add = wav_file
 
     # Preprocess samples to extract features
     def preprocess(self):
@@ -317,9 +246,7 @@ class DatasetProcessor(torch.utils.data.Dataset):
             if (self.device.type == 'cuda'):
                 torch.set_default_tensor_type('torch.FloatTensor')
 
-        elif (self.preprocessing_parameters['library'] == "tensorflow"):
-            import tensorflow as tf
-
+        elif (self.preprocessing_parameters['library'] == "tensorflow"):        
             tf_data = tf.convert_to_tensor(self.background_add.numpy(), dtype=tf.float32)
             tf_stfts = tf.signal.stft(tf_data, frame_length=self.preprocessing_parameters['window_size_samples'], frame_step=self.preprocessing_parameters['window_stride_samples'], fft_length=1024)
             tf_spectrograms = tf.abs(tf_stfts)
@@ -329,7 +256,9 @@ class DatasetProcessor(torch.utils.data.Dataset):
             num_spectrogram_bins = tf_stfts.shape[-1]
             linear_to_mel_weight_matrix = tf.signal.linear_to_mel_weight_matrix(40, num_spectrogram_bins, self.preprocessing_parameters['desired_samples'], 20, 4000)
             tf_spectrograms = tf.cast(tf_spectrograms, tf.float32)
-            tf_mel_spectrograms = tf.tensordot(tf_spectrograms, linear_to_mel_weight_matrix, 1)
+            tf_mel_spectrograms = np.tensordot(tf_spectrograms.numpy(), linear_to_mel_weight_matrix.numpy(), 1)
+            tf_mel_spectrograms = tf.convert_to_tensor(tf_mel_spectrograms)
+            # tf_mel_spectrograms = tf.tensordot(tf_spectrograms.numpy(), linear_to_mel_weight_matrix, 1)
             tf_mel_spectrograms.set_shape(tf_spectrograms.shape[:-1].concatenate(
                                     linear_to_mel_weight_matrix.shape[-1:]))
             tf_log_mel = tf.math.log(tf_mel_spectrograms + 1e-6)
@@ -350,7 +279,6 @@ class DatasetProcessor(torch.utils.data.Dataset):
         else:
             raise ValueError("Preprocessing library not implemented.")
 
-
         # Shift data in [0, 255] interval to match Dory request for uint8 inputs
         self.data_placeholder = torch.clamp(self.data_placeholder + 128, 0, 255)
         # Adding channel dimension
@@ -360,39 +288,8 @@ class DatasetProcessor(torch.utils.data.Dataset):
         label_index = self.word_to_index[self.sample['label']]
         self.labels_placeholder = label_index
 
-
-
-        # Prepare noise index
-        complete_noise_list = {}
-
-        if (self.task == -1 or self.training_parameters['noise_mode'] == 'noiseless'):
-            self.noises_placeholder = -1
-        else:
-            # Return the index of the noise from the complete noise list
-            # TODO: Parametrize the list to include other datasets
-            # GSCv2
-            complete_noise_list['gscv2'] = ['doing_the_dishes.wav', 'exercise_bike', 'white_noise', 'dude_miaowing', 'pink_noise', 'running_tap']
-            # DEMAND
-            complete_noise_list['demand'] = ['DKITCHEN', 'DLIVING', 'DWASHING', 'NFIELD', 'NPARK', \
-                                                                    'NRIVER', 'OHALLWAY', 'OMEETING', 'OOFFICE', 'PCAFETER', \
-                                                                    'PRESTO', 'PSTATION', 'SCAFE', 'SPSQUARE', 'STRAFFIC', \
-                                                                    'TBUS', 'TCAR', 'TMETRO', 'SILENCE']
-            # KINEM
-            complete_noise_list['kinem'] = ['drone', 'kitchen', 'meeting', 'street', 'tester']
-
-            if (self.mode == 'training'):
-                self.noises_placeholder = complete_noise_list[self.offline_noise_train_dataset].index(self.offline_background_noise_train_name[self.data_augmentation_parameters['background_index']])
-            elif (self.mode == 'validation'):
-                self.noises_placeholder = complete_noise_list[self.offline_noise_test_dataset].index(self.offline_background_noise_test_name[self.data_augmentation_parameters['background_index']]) 
-            elif (self.mode == 'odda'):
-                self.noises_placeholder = complete_noise_list[self.online_noise_train_dataset].index(self.online_background_noise_train_name[self.data_augmentation_parameters['background_index']])
-            elif (self.mode == 'odda_val'):
-                self.noises_placeholder = complete_noise_list[self.online_noise_test_dataset].index(self.online_background_noise_test_name[self.data_augmentation_parameters['background_index']]) 
-            elif (self.mode == 'testing'): # TODO: split in offline testing and online testing
-                self.noises_placeholder = complete_noise_list[self.online_noise_test_dataset].index(self.online_background_noise_test_name[self.data_augmentation_parameters['background_index']]) 
-
     def get_dataset():
-        return [self.data_placeholder, self.labels_placeholder, self.noises_placeholder, self.paths_placeholder]
+        return [self.data_placeholder, self.labels_placeholder]
 
         
     def __getitem__(self, idx):
@@ -405,7 +302,7 @@ class DatasetProcessor(torch.utils.data.Dataset):
         self.preprocess()
         end = time.time()
 
-        return self.data_placeholder, self.labels_placeholder, self.noises_placeholder, self.paths_placeholder
+        return self.data_placeholder, self.labels_placeholder
 
     
 
