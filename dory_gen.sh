@@ -101,16 +101,16 @@ if [[ $MEMORY == "3" ]]
 then
   if [[ $COMPUTE == "0" ]]
   then
-    python network_generate.py Quantlab PULP.PULP_gvsoc $CUR_DIR/$NETWORK_DIR_SRC/config_example_quantized.json --app_dir $NETWORK_DIR_DEST_DORY/ --verbose_level Check_all+Perf_final --perf_layer --n_trainable_layers 0
+    python network_generate.py Quantlab PULP.PULP_gvsoc $CUR_DIR/$NETWORK_DIR_SRC/config_example_quantized.json --app_dir $NETWORK_DIR_DEST_DORY/ --verbose_level Perf_final --n_trainable_layers 0
   elif [[ $COMPUTE == "1" ]]
   then
-    python network_generate.py Quantlab PULP.GAP9 $CUR_DIR/$NETWORK_DIR_SRC/config_example_quantized.json --app_dir $NETWORK_DIR_DEST_DORY/ --verbose_level Check_all+Perf_final --perf_layer --n_trainable_layers 0
+    python network_generate.py Quantlab PULP.GAP9 $CUR_DIR/$NETWORK_DIR_SRC/config_example_quantized.json --app_dir $NETWORK_DIR_DEST_DORY/ --verbose_level Perf_final --n_trainable_layers 0
   elif [[ $COMPUTE == "2" ]]
   then
-    python network_generate.py Quantlab PULP.GAP9_NE16 $CUR_DIR/$NETWORK_DIR_SRC/config_example_quantized.json --app_dir $NETWORK_DIR_DEST_DORY/ --verbose_level Check_all+Perf_final --perf_layer --n_trainable_layers 0
+    python network_generate.py Quantlab PULP.GAP9_NE16 $CUR_DIR/$NETWORK_DIR_SRC/config_example_quantized.json --app_dir $NETWORK_DIR_DEST_DORY/ --verbose_level Perf_final --n_trainable_layers 0
   fi
 else
-  python network_generate.py Quantlab PULP.GAP8_L2 $CUR_DIR/$NETWORK_DIR_SRC/config_example_quantized.json --app_dir $NETWORK_DIR_DEST_DORY/ --verbose_level Check_all+Perf_final --perf_layer --n_trainable_layers 0
+  python network_generate.py Quantlab PULP.GAP8_L2 $CUR_DIR/$NETWORK_DIR_SRC/config_example_quantized.json --app_dir $NETWORK_DIR_DEST_DORY/ --verbose_level Perf_final --n_trainable_layers 0
 fi
 
 # Copy the files into our directory, preparing the MFCC integration
@@ -132,9 +132,12 @@ then
   python utils/slm_to_hex.py  --input $CUR_DIR/testnet/BUILD/PULP/GCC_RISCV/slm_files/flash_stim.slm
 fi
 
+echo $CUR_DIR/$NETWORK_DIR_DEST/
+echo $CUR_DIR/application/$NETWORK_DIR_DEST/
+
 # Copy DORY-generated code to main application
-mkdir -p $CUR_DIR/../$NETWORK_DIR_DEST/
-cp -r $CUR_DIR/$NETWORK_DIR_DEST/src/ $CUR_DIR/../$NETWORK_DIR_DEST/
-cp -r $CUR_DIR/$NETWORK_DIR_DEST/inc/ $CUR_DIR/../$NETWORK_DIR_DEST/
-cp -r $CUR_DIR/$NETWORK_DIR_DEST/hex/ $CUR_DIR/../$NETWORK_DIR_DEST/
-rm $CUR_DIR/../$NETWORK_DIR_DEST/src/main.c
+mkdir -p $CUR_DIR/application/$NETWORK_DIR_DEST/
+cp -r $CUR_DIR/$NETWORK_DIR_DEST/src/ $CUR_DIR/application/$NETWORK_DIR_DEST/
+cp -r $CUR_DIR/$NETWORK_DIR_DEST/inc/ $CUR_DIR/application/$NETWORK_DIR_DEST/
+cp -r $CUR_DIR/$NETWORK_DIR_DEST/hex/ $CUR_DIR/application/$NETWORK_DIR_DEST/
+rm $CUR_DIR/application/$NETWORK_DIR_DEST/src/main.c
