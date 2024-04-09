@@ -598,11 +598,11 @@ int application(){
         printf("failed to allocate memory for l2_buffer\n");
     }
 
-    printf ("Preliminary backbone running\n");
-    void *dump; // dump to copy FC weights, won't be used; TODO: Parametrize DORY
-    network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &dump, 0, 1); // L2_input_h extra-arg for L2-only
+    // printf ("Preliminary backbone running\n");
+    // void *dump; // dump to copy FC weights, won't be used; TODO: Parametrize DORY
+    // network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &dump, 0, 1); // L2_input_h extra-arg for L2-only
+    // printf ("Network run complete\n");
 
-    printf ("Network run complete\n");
     pi_evt_sig_init(&inference_task);
 
     input_mic_buffer(1, 1, 0);
@@ -746,8 +746,7 @@ int application(){
 
         int elapsed_timer_mfcc = gap_fc_readhwtimer() - start_timer_mfcc;
         int end_readmfcc = pi_time_get_us();
-        printf("Compute mfcc: %d cycles\n", elapsed_timer_mfcc);
-        printf("MFCC: %i us\n", end_readmfcc - start_readmfcc);
+        printf("Compute mfcc: %d cycles (%i us)\n", elapsed_timer_mfcc, end_readmfcc - start_readmfcc);
 
         gap_fc_starttimer();
         gap_fc_resethwtimer();
@@ -789,11 +788,13 @@ int application(){
 
         int elapsed_timer_processing = gap_fc_readhwtimer() - start_timer_processing;
         int end_readprocessing = pi_time_get_us();
-        printf("Processing: %d cycles\n", elapsed_timer_processing);
-        printf("Processing: %i us\n", end_readprocessing - start_readprocessing);
+        printf("Processing: %d cycles (%i us)\n", elapsed_timer_processing, end_readprocessing - start_readprocessing);
 
-        printf("***************************** Backbone inference **************************\n");
+        PRINTF("***************************** Backbone inference **************************\n");
 
+        gap_fc_starttimer();
+        gap_fc_resethwtimer();
+        int start_timer_backbone = gap_fc_readhwtimer();
         int start_backbone = pi_time_get_us();
 
         // Extract backbone features
@@ -801,7 +802,12 @@ int application(){
         network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &dump, 0, 1);
 
         int end_backbone = pi_time_get_us();
-        printf("Backbone: %i us\n", end_backbone - start_backbone);
+        int elapsed_timer_backbone = gap_fc_readhwtimer() - start_timer_backbone;
+        printf("Backbone: %i cycles (%i us)\n", elapsed_timer_backbone, end_backbone - start_backbone);
+
+        int n_classes = 12;
+        predict(l2_buffer, n_classes);
+
 
         dump_wav_open("utterance.wav", 16, 16000, 1, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
         dump_wav_write(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
@@ -809,9 +815,9 @@ int application(){
 
         pi_l2_free(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);        
         
-        printf("***************************** Application complete *****************************\n");
+        PRINTF("***************************** Application complete *****************************\n");
 
-        return 0;
+        return 0; // comment out for always-on inference
     }
 
 
