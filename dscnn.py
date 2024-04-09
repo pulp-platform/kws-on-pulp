@@ -25,7 +25,7 @@ from utils import npy_to_txt
 
 
 class DSCNN(torch.nn.Module):
-    def __init__(self, n_channels = 64, n_blocks = 4, n_classes = 12, use_bias = True, stem = 'asym', padding='asym', device = 'cpu'):
+    def __init__(self, n_channels = 64, n_blocks = 4, n_classes = 12, use_bias = False, stem = 'asym', padding='asym', device = 'cpu'):
         super(DSCNN, self).__init__()
 
         self.n_channels = n_channels
@@ -44,7 +44,6 @@ class DSCNN(torch.nn.Module):
         self.conv_blocks_list = [] 
         for block_idx in range (0, self.n_blocks):
             self.conv_blocks_list.append((DSCNN_block(n_channels = self.n_channels, use_bias = self.use_bias).to(self.device)))
-            # self.conv_blocks_list.append((GenericConv2D(n_channels = 64, use_bias = self.use_bias).to(self.device)))
 
         self.conv_blocks = nn.ModuleList(self.conv_blocks_list)
 
@@ -83,68 +82,89 @@ class DSCNN(torch.nn.Module):
 
             elif isinstance(m, torch.nn.BatchNorm2d):
                 torch.nn.init.normal_(m.weight)
-                torch.nn.init.normal_(m.bias)
+                if m.bias is not None:
+                    torch.nn.init.normal_(m.bias)
 
             elif isinstance(m, torch.nn.Linear):
                 torch.nn.init.normal_(m.weight, 0, 0.01)
-                torch.nn.init.normal_(m.bias)
+                if m.bias is not None:
+                    torch.nn.init.normal_(m.bias)
 
 
-class GenericConv2D(torch.nn.Sequential):
-    def __init__(self, n_channels = 64, use_bias = True):
-
-        self.use_bias = use_bias
-
-        modules = []
-        modules += [torch.nn.Conv2d(in_channels = n_channels, out_channels = n_channels, kernel_size = (1, 1), stride = (1, 1), bias = self.use_bias)]
-        modules += [torch.nn.BatchNorm2d(n_channels)]
-        modules += [torch.nn.ReLU(inplace=True)]
-        modules += [torch.nn.Conv2d(in_channels = n_channels, out_channels = n_channels, kernel_size = (1, 1), stride = (1, 1), bias = self.use_bias)]
-        modules += [torch.nn.BatchNorm2d(n_channels)]
-        modules += [torch.nn.ReLU(inplace=True)]
-
-        super().__init__(*modules)
-
-
-
-class Conv_Stem_Asym(torch.nn.Sequential):
-    def __init__(self, n_channels = 64, use_bias = True):
+class Conv_Stem_Asym(torch.nn.Module):
+    def __init__(self, n_channels = 64, use_bias = False, block_idx = 0):
+        super(Conv_Stem_Asym, self).__init__()
 
         self.use_bias = use_bias
+        self.block_idx = block_idx
 
-        modules = []
-        modules += [torch.nn.Conv2d(in_channels = 1, out_channels = n_channels, kernel_size = (10, 4), stride = (2, 2), bias = self.use_bias)]
-        modules += [torch.nn.BatchNorm2d(n_channels)]
-        modules += [torch.nn.ReLU(inplace=True)]
+        self.conv = torch.nn.Conv2d(in_channels = 1, out_channels = n_channels, kernel_size = (10, 4), stride = (2, 2), bias = self.use_bias)
+        self.bn   = torch.nn.BatchNorm2d(n_channels)
+        self.relu = torch.nn.ReLU()
 
-        super().__init__(*modules)
+    def forward(self, x, save = False):
 
+        x = self.conv(x)
+        x = self.bn(x)
+        x = self.relu(x)
+        if (save):
+            npy_to_txt(self.block_idx, x.int().cpu().detach().numpy())
+            print ("Sum: ", str(torch.sum(x.int())))
 
-class Conv_Stem_Sym(torch.nn.Sequential):
-    def __init__(self, n_channels = 64, use_bias = True):
-
-        self.use_bias = use_bias
-
-        modules = []
-        modules += [torch.nn.Conv2d(in_channels = 1, out_channels = n_channels, kernel_size = (3, 3), stride = (2, 2), bias = self.use_bias)]
-        modules += [torch.nn.BatchNorm2d(n_channels)]
-        modules += [torch.nn.ReLU(inplace=True)]
-
-        super().__init__(*modules)
+        return x
 
 
-class DSCNN_block(torch.nn.Sequential):
-    def __init__(self, n_channels = 64, use_bias = True):
+class Conv_Stem_Sym(torch.nn.Module):
+    def __init__(self, n_channels = 64, use_bias = False, block_idx = 0):
+        super(Conv_Stem_Sym, self).__init__()
 
         self.use_bias = use_bias
+        self.block_idx = block_idx
 
-        modules = []
-        modules += [ torch.nn.Conv2d(in_channels = n_channels, out_channels = n_channels, kernel_size = (3, 3), stride = (1, 1), groups = n_channels, bias = self.use_bias) ]
-        modules += [ torch.nn.BatchNorm2d(n_channels) ]
-        modules += [ torch.nn.ReLU(inplace=True) ]
-        modules += [ torch.nn.Conv2d(in_channels = n_channels, out_channels = n_channels, kernel_size = (1, 1), stride = (1, 1), bias = self.use_bias) ]
-        modules += [ torch.nn.BatchNorm2d(n_channels) ]
-        modules += [ torch.nn.ReLU(inplace=True) ]
+        self.conv = torch.nn.Conv2d(in_channels = 1, out_channels = n_channels, kernel_size = (3, 3), stride = (2, 2), bias = self.use_bias)
+        self.bn   = torch.nn.BatchNorm2d(n_channels)
+        self.relu = torch.nn.ReLU()
 
-        super().__init__(*modules)
+    def forward(self, x, save = False):
+
+        x = self.conv(x)
+        x = self.bn(x)
+        x = self.relu(x)
+        if (save):
+            npy_to_txt(self.block_idx, x.int().cpu().detach().numpy())
+            print ("Sum: ", str(torch.sum(x.int())))
+
+        return x
+
+
+class DSCNN_block(torch.nn.Module):
+    def __init__(self, n_channels = 64, use_bias = False, block_idx = 0):
+        super(DSCNN_block, self).__init__()
+
+        self.use_bias = use_bias
+        self.block_idx = block_idx
+
+        self.conv_dw  = torch.nn.Conv2d(in_channels = n_channels, out_channels = n_channels, kernel_size = (3, 3), stride = (1, 1), groups = n_channels, bias = self.use_bias)
+        self.bn_dw    = torch.nn.BatchNorm2d(n_channels)
+        self.relu_dw  = torch.nn.ReLU()
+        self.conv_pw  = torch.nn.Conv2d(in_channels = n_channels, out_channels = n_channels, kernel_size = (1, 1), stride = (1, 1), bias = self.use_bias)
+        self.bn_pw    = torch.nn.BatchNorm2d(n_channels)
+        self.relu_pw  = torch.nn.ReLU()
+
+    def forward(self, x, save = False):
+        
+        x = self.conv_dw(x)
+        x = self.bn_dw(x)    
+        x = self.relu_dw(x) 
+        if (save):
+            npy_to_txt(self.block_idx, x.int().cpu().detach().numpy())
+            print ("Sum: ", str(torch.sum(x.int())))
+        x = self.conv_pw(x)
+        x = self.bn_pw(x)
+        x = self.relu_pw(x) 
+        if (save):
+            npy_to_txt(self.block_idx+1, x.int().cpu().detach().numpy())
+            print ("Sum: ", str(torch.sum(x.int())))
+
+        return x
 

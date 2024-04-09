@@ -119,7 +119,7 @@ def get_ckpt(key : str, exp_id : int, ckpt_id : Union[int, str]):
     ckpt_filepath = get_topology_dir(key).joinpath(f'logs/exp{exp_id:04}/fold0/saves/{ckpt_str}.ckpt')
     return torch.load(ckpt_filepath)
 
-def get_network(key : str, exp_id : int, ckpt_id : Union[int, str], quantized=False):
+def get_network(key : str, exp_id : int, ckpt_id : Union[int, str], quantized=False, pretrained='model.pth'):
     with open('config_net_tqt_8b.json', 'r') as fp:
         cfg = json.load(fp)
     qu = _QUANT_UTILS[key]
@@ -139,22 +139,14 @@ def get_network(key : str, exp_id : int, ckpt_id : Union[int, str], quantized=Fa
     print (net)
     print ("++++++++++++")
 
+    # Load pretrained network
+    print (torch.load(pretrained, map_location='cpu'))
+    net.load_state_dict(torch.load(pretrained, map_location='cpu'))
+
     if not quantized:
         print ("The network is not to be quantized. Returning...")
         return net.eval()
     quant_net = qu.quantize(net, **quant_cfg)
-
-    # TODO: Load pretrained network
-    # ckpt = get_ckpt(key, exp_id, ckpt_id)
-    # state_dict = ckpt['net']
-    # # the checkpoint may be from a nn.DataParallel instance, so we need to
-    # # strip the 'module.' from all the keys
-    # if all(k.startswith('module.') for k in state_dict.keys()):
-    #     state_dict = {k.lstrip('module.'): v for k, v in state_dict.items()}
-    # quant_net.load_state_dict(state_dict)
-    # qctrls = qu.get_controllers(quant_net, **ctrl_cfg)
-    # for ctrl, sd in zip(qctrls, ckpt['qnt_ctrls']):
-    #     ctrl.load_state_dict(sd)
 
     # we don't want to train this network anymore
     return quant_net.eval()
@@ -294,6 +286,7 @@ def main():
     
     parser = argparse.ArgumentParser()
     parser.add_argument("--net", type=str, default='DSCNN', help='Network to quantize')
+    parser.add_argument("--pretrained", type=str, default='model.pth', help='Path to pretrained model')
     parser.add_argument('--fix_channels', action='store_true', help='Fix channels of conv layers for compatibility with DORY')
     parser.add_argument('--no_dory_harmonize', action='store_true',
                         help='If supplied, don\'t align averagePool nodes\' associated requantization nodes and replace adders with DORYAdders')
@@ -329,7 +322,7 @@ def main():
     mdataset = DatasetProcessor("training", audio_processor, training_parameters, task = -1, device = device)
     mdataloader = DataLoader(mdataset, batch_size=training_parameters['batch_size'], shuffle=False, num_workers=0)
 
-    qnet = get_network(key = args['net'], exp_id=0, ckpt_id=0, quantized=True)
+    qnet = get_network(key = args['net'], exp_id=0, ckpt_id=0, quantized=True, pretrained = args['pretrained'])
 
     print ("*********")
     print (qnet)
