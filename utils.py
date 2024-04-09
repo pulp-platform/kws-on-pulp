@@ -23,11 +23,6 @@ import json
 import csv
 
 import numpy as np
-import seaborn as sn
-import pandas as pd
-import matplotlib.pyplot as plt
-
-from sklearn.metrics import confusion_matrix
 
 
 def save_histogram(criterion, data, word):
@@ -72,20 +67,6 @@ def remove_txt():
     for file in filtered_files:
         path_to_file = os.path.join(directory, file)
         os.remove(path_to_file)
-
-
-def conf_matrix(labels, predicted, training_parameters):
-    # Plotting confusion matrix
-
-    labels = labels.cpu()
-    predicted = predicted.cpu()
-    cm = confusion_matrix(labels, predicted)
-    cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
-    df_cm = pd.DataFrame(cm, index = [i for i in ['silence','unknown']+training_parameters['wanted_words']],
-                  columns = [i for i in ['silence','unknown']+training_parameters['wanted_words']])
-    plt.figure(figsize = (10,7))
-    sn.heatmap(df_cm, annot=True)
-    plt.show()
 
 
 def per_noise_accuracy(labels, predicted, noises):

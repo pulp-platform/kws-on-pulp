@@ -337,9 +337,7 @@ def main():
     else:
         pad_img = None
 
-    # if args.validate_tq:
-    #     dl = get_dataloader(args['net'], exp_cfg, quantize='int', pad_img=pad_img)
-    #     validate(int_net, dl, args.accuracy_print_interval, n_valid_batches=args.n_valid_batch)
+    validate(int_net, mdataloader, 10, n_valid_batches=128)
 
     with open(args['config_net_file'], 'r') as fp:
         exp_cfg = json.load(fp)

@@ -26,9 +26,6 @@ import re
 import glob
 import time
 import torch
-import torchaudio
-import torchvision
-# import librosa
 import csv
 
 from collections import Counter, OrderedDict
@@ -37,8 +34,6 @@ from copy import deepcopy
 
 import soundfile as sf
 import numpy as np
-
-# import tensorflow as tf
 
 
 class DatasetProcessor(torch.utils.data.Dataset):
@@ -308,6 +303,7 @@ class DatasetProcessor(torch.utils.data.Dataset):
                          'f_min':20, 'f_max':4000, 'n_mels':self.preprocessing_parameters['n_mels']}
 
         if (self.preprocessing_parameters['library'] == "pytorch"):
+            import torchaudio
 
             if (self.device.type == 'cuda'):
                 torch.set_default_tensor_type('torch.cuda.FloatTensor') 
@@ -322,6 +318,8 @@ class DatasetProcessor(torch.utils.data.Dataset):
                 torch.set_default_tensor_type('torch.FloatTensor')
 
         elif (self.preprocessing_parameters['library'] == "tensorflow"):
+            import tensorflow as tf
+
             tf_data = tf.convert_to_tensor(self.background_add.numpy(), dtype=tf.float32)
             tf_stfts = tf.signal.stft(tf_data, frame_length=self.preprocessing_parameters['window_size_samples'], frame_step=self.preprocessing_parameters['window_stride_samples'], fft_length=1024)
             tf_spectrograms = tf.abs(tf_stfts)
@@ -337,15 +335,17 @@ class DatasetProcessor(torch.utils.data.Dataset):
             tf_log_mel = tf.math.log(tf_mel_spectrograms + 1e-6)
             tf_mfccs = tf.signal.mfccs_from_log_mel_spectrograms(tf_log_mel)[..., :self.preprocessing_parameters['feature_bin_count']]
             mfcc = torch.Tensor(tf_mfccs.numpy())
-            self.data_placeholder[0] = mfcc
+            self.data_placeholder = mfcc
 
         elif (self.preprocessing_parameters['library'] == "librosa"):
+            import librosa
+
             S = librosa.feature.melspectrogram(y=self.background_add.numpy(), sr=self.preprocessing_parameters['desired_samples'], n_mels=40, fmin=20, fmax=4000, hop_length=320, win_length=640, n_fft=640, norm=None, htk=True, center=False, power=2)
             mfcc = librosa.feature.mfcc(S=np.log(S+1e-6), n_mfcc=40, norm='ortho')[:self.preprocessing_parameters['feature_bin_count'], :]
             for col in range(0, mfcc.shape[1]):
                 mfcc[0][col] = mfcc[0][col]*np.sqrt(2)
             mfcc = mfcc.T
-            self.data_placeholder[0] = mfcc
+            self.data_placeholder = mfcc
 
         else:
             raise ValueError("Preprocessing library not implemented.")
