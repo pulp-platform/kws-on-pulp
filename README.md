@@ -41,7 +41,7 @@ The parameters represent, in order:
 We deploy our network using:
 
 ```
-./deploy.sh gvsoc 1 0
+./deploy.sh gvsoc 0 0
 ```
 The application reads an input, computes the MFCCs, then performs inference. The parameters represent, in order:
 - the target platform (gvsoc/board). Make sure to selec the desired platform in the configmenu as well. The other options (e.g., Gapmod v1.0, EVK board 1.3) can stay as they are.
