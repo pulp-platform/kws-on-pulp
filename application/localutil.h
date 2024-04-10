@@ -22,7 +22,7 @@ void dump_wav_write(void *data, int size);
 
 void dump_wav_close();
 
-void dump_data_write(char *filename, void *data, int size);
+// void dump_data_write(char *filename, void *data, int size);
 
 
 #endif /* LOCALUTIL_H */

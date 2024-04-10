@@ -780,7 +780,7 @@ int application(){
         } 
 
         // if DEBUG
-        dump_data_write("mfccdump.dat", feat_char, 49 * 10 * sizeof(char));
+        // dump_data_write("mfccdump.dat", feat_char, 49 * 10 * sizeof(char));
 
 
         pi_l2_free(out_feat, 49 * N_MELS * sizeof(OUT_TYPE));

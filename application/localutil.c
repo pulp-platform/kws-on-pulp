@@ -1,4 +1,8 @@
 #include "localutil.h"
+#include <pmsis.h>
+#include <bsp/fs.h>
+#include <bsp/flash/hyperflash.h>
+#include "bsp/fs/hostfs.h"
 
 
 
@@ -260,26 +264,26 @@ void dump_wav_close()
     pi_fs_unmount(&fs_wav);
 }
 
-void dump_data_write(char *filename, void *data, int size)
-{
+// void dump_data_write(char *filename, void *data, int size)
+// {
 
-    static struct pi_device fs_data;
-    static pi_fs_file_t * file_data;
-    struct pi_hostfs_conf conf;
+//     static struct pi_device fs_data;
+//     static pi_fs_file_t * file_data;
+//     struct pi_hostfs_conf conf;
 
-    pi_hostfs_conf_init(&conf);
-    pi_open_from_conf(&fs_data, &conf);
-    if (pi_fs_mount(&fs_data))
-     return;
+//     pi_hostfs_conf_init(&conf);
+//     pi_open_from_conf(&fs_data, &conf);
+//     if (pi_fs_mount(&fs_data))
+//      return;
 
-    file_data = pi_fs_open(&fs_data, filename, PI_FS_FLAGS_WRITE);
-    if (file_data == 0)
-    {
-        printf("Failed to open file_data, %s\n", filename);
-        return;
-    }
+//     file_data = pi_fs_open(&fs_data, filename, PI_FS_FLAGS_WRITE);
+//     if (file_data == 0)
+//     {
+//         printf("Failed to open file_data, %s\n", filename);
+//         return;
+//     }
 
-    pi_fs_write(file_data, data,  size);
-    pi_fs_close(file_data);
-    pi_fs_unmount(&fs_data);
-}
+//     pi_fs_write(file_data, data,  size);
+//     pi_fs_close(file_data);
+//     pi_fs_unmount(&fs_data);
+// }
