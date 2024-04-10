@@ -2,9 +2,6 @@
 	path = dory
 	url = git@iis-git.ee.ethz.ch:kws/dory.git
         branch = master
-[submodule "pact-integerization-proto"]
-	path = pact-integerization-proto
-	url = git@iis-git.ee.ethz.ch:georgr/pact-integerization-proto.git
 [submodule "quantlib"]
 	path = quantlib
 	url = git@github.com:pulp-platform/quantlib.git
