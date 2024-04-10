@@ -59,6 +59,7 @@ The application reads an input, computes the MFCCs, then performs inference. The
 - [ ] Fix quantization accuracy drop.
 - [x] Fix data acquision on EVK board 3.1. 
 - [x] Fix .wav saving with release v5.17.0 of GAP SDK.
+- [ ] Create VM Ubuntu 22.04 with preinstalled GAP SDK v5.17.0, the current repository, and (some) keyword spotting data for quantization calibration and validation.
 - [ ] Improve README.
 - [ ] Add student tasks. 
 
