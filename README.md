@@ -25,6 +25,16 @@ We employ dory for generating the C code of our quantized network:
 ```
 ./dory_gen.sh gap_sdk 3 gvsoc 0 1 generate export 8
 ```
+The parameters represent, in order:
+- the target SDK
+- the highest memory available in the hierarchy (L2/L3)
+- the target platform
+- the mfcc computation (online/offline)
+- the main computational unit. 0 - PULP GVSOC, 1 - GAP9 cluster (recommended), 2 - GAP9 NE16 accelerator (recommended)
+- the destination directory for the generated code
+- the source directory of the pretrained network
+- the number of cores to perform inference on
+
 
 ## Keyword Spotting on PULP
 
@@ -33,7 +43,10 @@ We deploy our network using:
 ```
 ./deploy.sh gvsoc 1 0
 ```
-The application reads an input, computes the MFCCs, then performs inference. The parameters represent the target platform (gvsoc/board), the input source (0 - microphone/1 - .wav stored in L3), the MFCC source (0 - online computation/1 - precomputed MFCCs stored in input.h).
+The application reads an input, computes the MFCCs, then performs inference. The parameters represent, in order:
+- the target platform (gvsoc/board). Make sure to selec the desired platform in the configmenu as well. The other options (e.g., Gapmod v1.0, EVK board 1.3) can stay as they are.
+- the input source (0 - microphone/1 - .wav stored in L3). For on-board data acquisition, make sure to place a jumper on J7 and a jumper on PIN 1-2 of CN9.
+- the MFCC source (0 - online computation/1 - precomputed MFCCs stored in input.h).
 
 
 ## TODOs
@@ -44,8 +57,8 @@ The application reads an input, computes the MFCCs, then performs inference. The
 - [x] Add pretrained network.
 - [x] Tested backbone inference and classification with Gapmod 2.0 on EVK board 3.1.
 - [ ] Fix quantization accuracy drop.
-- [ ] Fix data acquision on EVK board 3.1. 
-- [ ] Fix .wav saving with release v5.17.0 of GAP SDK.
+- [x] Fix data acquision on EVK board 3.1. 
+- [x] Fix .wav saving with release v5.17.0 of GAP SDK.
 - [ ] Improve README.
 - [ ] Add student tasks. 
 
