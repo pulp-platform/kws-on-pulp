@@ -1,5 +1,5 @@
 __pycache__
-*.pth
+pretrained/
 export/*
 generate/*
 application/build/
