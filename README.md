@@ -16,7 +16,7 @@ We will employ quantlib for this purpose.
 python quantize.py --net DSCNN --fix_channels --word_align_channels --clip_inputs
 ```
 
-The resulting quantized model, saved in .onnx format, together with the per-layer activations. A configuration file, required for hardware deployment, is additionally generated. You can find the files in `export/`.
+We obtain a quantized model, saved in .onnx format, together with the per-layer activations. A configuration file, required for hardware deployment, is additionally generated. You can find the files in `export/`.
 
 ## Deployment
 
@@ -42,19 +42,25 @@ The application reads an input, computes the MFCCs, then performs inference. The
 - [x] Fix Quantlib-generated network inference with cmake
 - [x] Implement on-board inference. Maybe change debugger.
 - [x] Add pretrained network.
+- [x] Tested backbone inference and classification with Gapmod 2.0 on EVK board 3.1.
 - [ ] Fix quantization accuracy drop.
-- [ ] Test with Gapmod 2.0 on EVK board 3.1. 
-- [ ] Improve README
+- [ ] Fix data acquision on EVK board 3.1. 
+- [ ] Fix .wav saving with release v5.17.0 of GAP SDK.
+- [ ] Improve README.
 - [ ] Add student tasks. 
 
 ## Dependencies
+### Gapmod 1.0 with EVK board 1.2
 - [GAP SDK](https://github.com/GreenWaves-Technologies/gap_sdk_private) - 21ad5c40 (release v5.11.0)
-- Note that we use [ARM-USB-OCD-H programmer](https://github.com/analogdevicesinc/openocd/blob/master/tcl/interface/ftdi/olimex-arm-usb-ocd-h.cfg)
+- [ARM-USB-OCD-H programmer](https://github.com/analogdevicesinc/openocd/blob/master/tcl/interface/ftdi/olimex-arm-usb-ocd-h.cfg)
+### Gapmod 2.0 with EVK board 3.1
+- [GAP SDK](https://github.com/GreenWaves-Technologies/gap_sdk_private) - 6b88f1e2 (release v5.17.0)
+- Direct USB programming
 
 ## Authors
 * Cristian Cioflan <<a href="mailto:cioflanc@iis.ee.ethz.ch">cioflanc@iis.ee.ethz.ch</a>>
 
-Special thanks to Philip Wiese for publishing [this](https://github.com/pulp-platform/quantlab/tree/main/examples/fx_integerization).
+Special thanks to Philip Wiese for publishing [this example](https://github.com/pulp-platform/quantlab/tree/main/examples/fx_integerization).
 
 ## License
 
