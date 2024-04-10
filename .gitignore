@@ -4,3 +4,4 @@ export/*
 generate/*
 application/build/
 application/generate/
+pulpdemo*
