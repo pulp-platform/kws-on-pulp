@@ -289,7 +289,7 @@ static void RunMFCC()
 }
 
 
-void input_mic_buffer(int save, int free, int noise){
+void configure_microphone(int save, int free, int noise){
 
     int err;
 
@@ -341,8 +341,6 @@ void input_mic_buffer(int save, int free, int noise){
 
     // pi_i2s_ioctl(&sai_dev_rx, PI_I2S_IOCTL_STOP, NULL);
     // // pi_i2s_ioctl(&sai_dev_tx, PI_I2S_IOCTL_STOP, NULL);
-
-    printf("Finish rec!\n");
 
 }
 
@@ -598,14 +596,9 @@ int application(){
         printf("failed to allocate memory for l2_buffer\n");
     }
 
-    // printf ("Preliminary backbone running\n");
-    // void *dump; // dump to copy FC weights, won't be used; TODO: Parametrize DORY
-    // network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &dump, 0, 1); // L2_input_h extra-arg for L2-only
-    // printf ("Network run complete\n");
-
     pi_evt_sig_init(&inference_task);
 
-    input_mic_buffer(1, 1, 0);
+    configure_microphone(1, 1, 0);
 
     int iterations = 0;
     int sfu_out_buffer_cnt_prev = 0;
@@ -622,7 +615,7 @@ int application(){
             
         if (appl_input == "0"){
 
-            printf ("----------------------------- Start acquisition ---------------------------\n");    
+            // ----------------------------- Start acquisition ---------------------------    
 
             int threshold_counter = 0;
             MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(1 * AUDIO_BUFFER_SIZE * sizeof (MFCC_IN_TYPE));
@@ -694,7 +687,7 @@ int application(){
         }
         else if (appl_input == "1"){
 
-            printf ("----------------------------- Read .wav ---------------------------\n");   
+            // ----------------------------- Read .wav ---------------------------   
            
             
             int start_readwav = pi_time_get_us();
@@ -735,7 +728,7 @@ int application(){
             // printf("Time spent reading wav: %i\n", end_readwav - start_readwav);
         }
 
-        PRINTF("***************************** Computing MFCC **************************\n");
+        // ***************************** Computing MFCC ************************** 
 
         gap_fc_starttimer();
         gap_fc_resethwtimer();
@@ -746,7 +739,9 @@ int application(){
 
         int elapsed_timer_mfcc = gap_fc_readhwtimer() - start_timer_mfcc;
         int end_readmfcc = pi_time_get_us();
+        #ifdef PERF
         printf("Compute mfcc: %d cycles (%i us)\n", elapsed_timer_mfcc, end_readmfcc - start_readmfcc);
+        #endif
 
         gap_fc_starttimer();
         gap_fc_resethwtimer();
@@ -788,9 +783,11 @@ int application(){
 
         int elapsed_timer_processing = gap_fc_readhwtimer() - start_timer_processing;
         int end_readprocessing = pi_time_get_us();
+        #ifdef PERF
         printf("Processing: %d cycles (%i us)\n", elapsed_timer_processing, end_readprocessing - start_readprocessing);
+        #endif 
 
-        PRINTF("***************************** Backbone inference **************************\n");
+        // ***************************** Backbone inference **************************
 
         gap_fc_starttimer();
         gap_fc_resethwtimer();
@@ -803,19 +800,23 @@ int application(){
 
         int end_backbone = pi_time_get_us();
         int elapsed_timer_backbone = gap_fc_readhwtimer() - start_timer_backbone;
+        #ifdef PERF
         printf("Backbone: %i cycles (%i us)\n", elapsed_timer_backbone, end_backbone - start_backbone);
+        #endif 
 
         int n_classes = 12;
         predict(l2_buffer, n_classes);
 
-
+        #ifdef PERF
+        // Saving .wav is slow and will affect sampling
         dump_wav_open("utterance.wav", 16, 16000, 1, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
         dump_wav_write(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
         dump_wav_close();        
+        #endif
 
         pi_l2_free(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);        
         
-        PRINTF("***************************** Application complete *****************************\n");
+        // ***************************** Application complete *****************************
 
         return 0; // comment out for always-on inference
     }

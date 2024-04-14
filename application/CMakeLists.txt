@@ -23,9 +23,9 @@ set (MODEL_L3_FLASH   AT_MEM_L3_DEFAULTFLASH)
 set (EXEC_FROM_FLASH true)
 set (MODEL_L3_RAM   AT_MEM_L3_DEFAULTRAM)
 
-set (FREQ_CL 240)
-set (FREQ_FC 240)
-set (FREQ_SFU 240)
+set (FREQ_CL 50)
+set (FREQ_FC 50)
+set (FREQ_SFU 50)
 set (VOLTAGE 650)
 set (CLUSTER_STACK_SIZE 8192)
 set (CLUSTER_SLAVE_STACK_SIZE 4096)
@@ -162,7 +162,6 @@ list(APPEND TARGET_PREPROCESSOR # -DPERF
                                 -DWAV_FILE=${WAV_FILE}
                                 -DMFCC=${MFCC}
                                 -DAPPL=${APPL}
-                                # -DPERF
                                 # -DPRINTDEB
                                 # -DPRINT_INOUT
                                 # -DCHECKSUM
