@@ -219,7 +219,74 @@ class DatasetProcessor(torch.utils.data.Dataset):
         else:
             wav_file=wav_file[:self.preprocessing_parameters['desired_samples']]
 
-        self.background_add = wav_file
+        scaled_foreground = torch.mul(wav_file, self.data_augmentation_parameters['foreground_volume'])
+
+        # Padding wrt the time shift offset
+        pad_tuple=tuple(self.data_augmentation_parameters['time_shift_padding'][0])
+        padded_foreground = torch.nn.ConstantPad1d(pad_tuple,0)(scaled_foreground)
+        sliced_foreground = padded_foreground[self.data_augmentation_parameters['time_shift_offset'][0]:self.data_augmentation_parameters['time_shift_offset'][0]+self.preprocessing_parameters['desired_samples']]
+
+        # Mix in background noise        
+        background_mul = torch.mul(self.data_augmentation_parameters['background_noise'],self.data_augmentation_parameters['background_volume']).to(self.device)
+
+        # Compute SNR
+        sliced_foreground_energy = sliced_foreground**2
+        background_mul_energy = background_mul**2
+
+        avg_foreground_power = torch.mean(sliced_foreground_energy, dtype=torch.float64)
+        avg_backgroung_power = torch.mean(background_mul_energy, dtype=torch.float64)
+
+        SNR = 10 * torch.log10(avg_foreground_power/avg_backgroung_power+1e-6)
+        sum_background_mul_energy = torch.sum(background_mul_energy, dtype=torch.float64)
+        sum_sliced_foreground_energy = torch.sum(sliced_foreground_energy, dtype=torch.float64)
+
+        # TODO: Revert to single SNR @ test/evaluation
+        if (self.mode == 'training' or self.mode == 'odda'):
+            if (len(self.training_parameters['snr_range']) > 1):
+                curr_snr = np.random.uniform(self.training_parameters['snr_range'][0], self.training_parameters['snr_range'][1]) 
+            else:
+                curr_snr = self.training_parameters['snr_range'][0]
+        else:
+            # TODO: Parametrize single vs interval SNR selection for test/evaluation
+            if (len(self.training_parameters['snr_range']) > 1):
+                curr_snr = np.random.uniform(self.training_parameters['snr_range'][0], self.training_parameters['snr_range'][1]) 
+            else:
+                curr_snr = self.training_parameters['snr_range'][0]
+
+        k = torch.sqrt( ((sum_background_mul_energy**curr_snr)/(sum_sliced_foreground_energy**(curr_snr-SNR)))**(1/SNR) / sum_background_mul_energy )
+    
+        # Add reverb
+        if (self.training_parameters['reverb'] == "true" and ((self.mode == "odda") or (self.mode == "odda_val") or (self.mode == "testing") )):
+            sliced_foreground_reverb = reverb.gen_signal(self.data_augmentation_parameters['reverb_room'], self.data_augmentation_parameters['anechoic_room'],
+                signal=sliced_foreground.cpu().numpy(), fs=self.preprocessing_parameters['desired_samples'])
+            sliced_foreground = torch.tensor(sliced_foreground_reverb).cuda()
+
+        if (self.use_background):
+            # NOTE: Is this the best way to bypass SNR-based scaling?
+            # NOTE: The comparison yields False because snr_range is a list. 
+            # All the experiments on kinem until 4.03 were performed without SNR scaling
+            if (self.training_parameters['snr_range'][0] != 1000 and avg_foreground_power != 0):
+                # Normalize SNR to value
+                # Add the noise to the foreground
+
+                bgnoise = torch.mul(background_mul, k)[:,0]
+                background_add = torch.add(bgnoise, sliced_foreground)
+
+                # augmenting with "silence"
+                if (torch.sum(background_mul_energy) == 0): # if the noise is null (== silence)
+                    bgnoise = torch.mul(background_mul, 1)[:,0]
+                    background_add = torch.add(bgnoise, sliced_foreground)
+            else:
+                # Add the noise * NF
+                background_add = torch.add(background_mul[:,0], sliced_foreground)
+                bgnoise = background_mul[:,0]
+
+        else:
+            background_add = sliced_foreground
+            bgnoise = torch.from_numpy(np.zeros([self.preprocessing_parameters['desired_samples'], 1]))
+            
+        self.bgnoise = bgnoise
+        self.background_add = background_add
 
     # Preprocess samples to extract features
     def preprocess(self):
@@ -254,11 +321,12 @@ class DatasetProcessor(torch.utils.data.Dataset):
             if power:
                     tf_spectrograms = tf_spectrograms ** 2
             num_spectrogram_bins = tf_stfts.shape[-1]
-            linear_to_mel_weight_matrix = tf.signal.linear_to_mel_weight_matrix(40, num_spectrogram_bins, self.preprocessing_parameters['desired_samples'], 20, 4000)
+            linear_to_mel_weight_matrix = tf.signal.linear_to_mel_weight_matrix(self.preprocessing_parameters['n_mels'], num_spectrogram_bins, self.preprocessing_parameters['desired_samples'], 20, 4000)
             tf_spectrograms = tf.cast(tf_spectrograms, tf.float32)
+            # tf_mel_spectrograms = tf.tensordot(tf_spectrograms.numpy(), linear_to_mel_weight_matrix, 1)
+            # Numpy patch
             tf_mel_spectrograms = np.tensordot(tf_spectrograms.numpy(), linear_to_mel_weight_matrix.numpy(), 1)
             tf_mel_spectrograms = tf.convert_to_tensor(tf_mel_spectrograms)
-            # tf_mel_spectrograms = tf.tensordot(tf_spectrograms.numpy(), linear_to_mel_weight_matrix, 1)
             tf_mel_spectrograms.set_shape(tf_spectrograms.shape[:-1].concatenate(
                                     linear_to_mel_weight_matrix.shape[-1:]))
             tf_log_mel = tf.math.log(tf_mel_spectrograms + 1e-6)

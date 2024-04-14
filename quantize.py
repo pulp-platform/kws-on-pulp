@@ -28,6 +28,7 @@ from pactnet import pact_recipe as quantize_net, get_pact_controllers as control
 
 # TODO: Functional dataset management
 mdataset = None
+mdataloader = None
 
 @dataclass
 class QuantUtil:
@@ -139,6 +140,9 @@ def get_network(key : str, exp_id : int, ckpt_id : Union[int, str], quantized=Fa
 
     # Load pretrained network
     net.load_state_dict(torch.load(pretrained, map_location='cpu'))
+
+    print("Validation of loaded network")
+    validate(net, mdataloader, 10, n_valid_batches=10)
 
     if not quantized:
         print ("The network is not to be quantized. Returning...")
@@ -314,6 +318,7 @@ def main():
     # TODO: Functional dataset management
     global mdataset
     mdataset = DatasetProcessor("training", audio_processor, training_parameters, task = -1, device = 'cpu')
+    global mdataloader
     mdataloader = DataLoader(mdataset, batch_size=training_parameters['batch_size'], shuffle=False, num_workers=0)
 
     qnet = get_network(key = args['net'], exp_id=0, ckpt_id=0, quantized=True, pretrained = args['pretrained'])
