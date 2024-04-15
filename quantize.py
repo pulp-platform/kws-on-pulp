@@ -111,7 +111,7 @@ def get_ckpt(key : str, exp_id : int, ckpt_id : Union[int, str]):
     return torch.load(ckpt_filepath)
 
 def get_network(key : str, exp_id : int, ckpt_id : Union[int, str], quantized=False, pretrained='model.pth'):
-    with open('config_net_pact_8b.json', 'r') as fp:
+    with open('config_net_tqt_8b.json', 'r') as fp:
         cfg = json.load(fp)
     qu = _QUANT_UTILS[key]
     quant_cfg = cfg['network']['quantize']['kwargs']
@@ -176,9 +176,9 @@ def validate(net : nn.Module, dl : torch.utils.data.DataLoader, print_interval :
         quantizer.clip_lo.data = torch.tensor(0)
         quantizer.clip_hi.data = torch.tensor(255)
         quantizer.started |= True
-        # eps = mtransforms_list[-1].get_eps()
-        # div_by_eps = lambda x: torch.round(x/eps)
-        div_by_eps = lambda x: torch.round(x)
+        eps = mtransforms_list[-1].get_eps()
+        div_by_eps = lambda x: torch.round(x/eps)
+        # div_by_eps = lambda x: torch.round(x)
         mtransforms_list.append(Lambda(div_by_eps))
         mtransforms = Compose(mtransforms_list)
 
@@ -186,18 +186,9 @@ def validate(net : nn.Module, dl : torch.utils.data.DataLoader, print_interval :
         xb, yb = batched_input
 
         if integerized:
-            # print (xb[0])
             xb = mtransforms(xb)
-            # print (xb[0])
-
-            # xb = xb.to(torch.int).to(torch.float32)
-            # print (xb)
-
-
+            # xb = xb.to(torch.int).to(torch.float32) # sufficient if eps==1
         yn = net(xb.to(device))
-        # print (yn)
-        # print (torch.max(yn))
-        # print(torch.max(yn.abs()))
         n_tot += xb.shape[0]
 
         if integerized:
@@ -323,7 +314,7 @@ def main():
                         help='Export RequantShift nodes instead of mul-add-div sequences in ONNX graph')
     parser.add_argument('--clip_inputs', action='store_true',
                         help='ghettofix to clip inputs to be unsigned')
-    parser.add_argument('--config_net_file', type=str, default='config_net_pact_8b.json', help = 'Network configuration file')
+    parser.add_argument('--config_net_file', type=str, default='config_net_tqt_8b.json', help = 'Network configuration file')
     parser.add_argument('--config_env_file', type=str, default='config_env.json', help = 'Environment configuration file')
 
     args = vars(parser.parse_args())
