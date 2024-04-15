@@ -11,7 +11,7 @@
                 }
             },
             "dataloader": {
-                "bs": 190
+                "bs": 10
             }
         },
         "valid": {
@@ -24,7 +24,7 @@
                 }
             },
             "dataloader": {
-                "bs": 190
+                "bs": 10
             }
 
         }
@@ -82,12 +82,15 @@
                         "conv_blocks.3.relu_pw": {},
                         "kwargs": {
                             "n_levels": 256,
-                            "nb_std": 3,
-                            "init_clip": "const",
+                            "nb_std": 256,
+                            "init_clip": "max",
                             "noisy": false,
                             "rounding": true,
                             "learn_clip": true,
-                            "tqt": true
+                            "tqt": true,
+                            "upper_percentile": 1.0,
+                            "lower_percentile": 0.0,
+                            "leaky": 0.0
                         }
                     },
                     "harmonize": {
@@ -98,8 +101,8 @@
                     "learn_clip": true,
                     "init_clip": "std",
                     "tqt": true,
-                    "infer_outact": false,
-                    "infer_sign": false
+                    "infer_outact": true,
+                    "infer_sign": true
                     }
                 }
             }

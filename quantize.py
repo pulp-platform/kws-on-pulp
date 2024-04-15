@@ -11,11 +11,15 @@ from typing import Union, Optional
 from tqdm import tqdm
 from torch import nn, fx
 
+from quantlib.algorithms.pact import PACTAsymmetricAct
 from torch.utils.data import DataLoader
 from dataset import DatasetProcessor
 from datagenerator import DatasetCreator
 from utils import parameter_generation
 from dscnn import DSCNN
+
+from torchvision.transforms import Compose
+from torchvision.transforms import Lambda
 
 # import the DORY backend
 from quantlib.backends.dory import export_net, export_dvsnet, DORYHarmonizePass
@@ -23,6 +27,7 @@ from quantlib.backends.dory import export_net, export_dvsnet, DORYHarmonizePass
 from quantlib.editing.fx.passes.pact import IntegerizePACTNetPass
 from quantlib.editing.fx.util import module_of_node
 from quantlib.algorithms.pact.pact_ops import *
+from quantlib.algorithms.pact.util import almost_symm_quant
 # organize quantization functions, datasets and transforms by network
 from pactnet import pact_recipe as quantize_net, get_pact_controllers as controllers_net
 
@@ -75,22 +80,7 @@ def get_valid_dataset(key : str, cfg : dict, quantize : str, pad_img : Optional[
 
     return mdataset
 
-MNISTSTATS =\
-    {
-        'normalize':
-            {
-                'mean': (0.1307, ),
-                'std':  (0.3081, )
-            },
-        'quantize':
-            {
-                'min': -0.4240739,
-                'max': 2.8215435,
-                'eps': 0.025356385856866837
-            }
-    }
-
-_MNIST_EPS = MNISTSTATS['quantize']['eps']
+_MNIST_EPS = 0.39
 
 # batch size is per device, determined on Nvidia RTX2080. You may have to change
 # this if you have different GPUs
@@ -121,7 +111,7 @@ def get_ckpt(key : str, exp_id : int, ckpt_id : Union[int, str]):
     return torch.load(ckpt_filepath)
 
 def get_network(key : str, exp_id : int, ckpt_id : Union[int, str], quantized=False, pretrained='model.pth'):
-    with open('config_net_tqt_8b.json', 'r') as fp:
+    with open('config_net_pact_8b.json', 'r') as fp:
         cfg = json.load(fp)
     qu = _QUANT_UTILS[key]
     quant_cfg = cfg['network']['quantize']['kwargs']
@@ -163,7 +153,7 @@ def get_dataloader(key : str, cfg : dict, quantize : str, pad_img : Optional[int
     return torch.utils.data.DataLoader(ds, bs)
 
 
-def validate(net : nn.Module, dl : torch.utils.data.DataLoader, print_interval : int = 10, n_valid_batches : int = None):
+def validate(net : nn.Module, dl : torch.utils.data.DataLoader, print_interval : int = 10, n_valid_batches : int = None, integerized : bool = False):
     net = net.eval()
     # we assume that the net is on CPU as this is required for some
     # integerization passes
@@ -172,10 +162,49 @@ def validate(net : nn.Module, dl : torch.utils.data.DataLoader, print_interval :
     n_tot = 0
     n_correct = 0
 
+
+
+    if integerized:
+        # Add input transforms
+        mtransforms_list = []
+        # mtransforms_list.append(PACTAsymmetricAct(n_levels=256, symm=True, learn_clip=False, init_clip='max', act_kind='identity'))
+        mtransforms_list.append(PACTAsymmetricAct(n_levels=256, symm=False, learn_clip=False, init_clip='max', act_kind='identity'))
+        quantizer = mtransforms_list[-1]
+        # set clip_lo to negative max abs of CIFAR10
+        maximum_abs = 255
+        clip_lo, clip_hi = almost_symm_quant(maximum_abs, 255)
+        quantizer.clip_lo.data = torch.tensor(0)
+        quantizer.clip_hi.data = torch.tensor(255)
+        quantizer.started |= True
+        # eps = mtransforms_list[-1].get_eps()
+        # div_by_eps = lambda x: torch.round(x/eps)
+        div_by_eps = lambda x: torch.round(x)
+        mtransforms_list.append(Lambda(div_by_eps))
+        mtransforms = Compose(mtransforms_list)
+
     for i, batched_input in enumerate(dl):
         xb, yb = batched_input
+
+        if integerized:
+            # print (xb[0])
+            xb = mtransforms(xb)
+            # print (xb[0])
+
+            # xb = xb.to(torch.int).to(torch.float32)
+            # print (xb)
+
+
         yn = net(xb.to(device))
+        # print (yn)
+        # print (torch.max(yn))
+        # print(torch.max(yn.abs()))
         n_tot += xb.shape[0]
+
+        if integerized:
+            print (yn[0])
+            print (yn.to('cpu').argmax(dim=1))
+            print (yb)
+
         n_correct += (yn.to('cpu').argmax(dim=1) == yb).sum()
         if ((i+1)%print_interval == 0):
             print(f'Accuracy after {i+1} batches: {n_correct/n_tot}')
@@ -202,7 +231,7 @@ def integerize_network(net : nn.Module, key : str, fix_channels : bool, dory_har
     in_shp = qu.in_shape
     int_pass = IntegerizePACTNetPass(shape_in=in_shp, eps_in=qu.eps_in, D=qu.D, n_levels_in=qu.n_levels_in, fix_channel_numbers=fix_channels, requant_node=requant_node)
 
-    print (qu.eps_in)
+    print ("qu.eps_in: ", qu.eps_in)
     int_net = int_pass(net)
     if fix_channels:
         # we may have modified the # of input channels so we need to adjust the
@@ -218,13 +247,14 @@ def integerize_network(net : nn.Module, key : str, fix_channels : bool, dory_har
         #   as custom "QuantAdd" ONNX nodes
         dory_harmonize_pass = DORYHarmonizePass(in_shape=in_shp)
         int_net = dory_harmonize_pass(int_net)
-
+    # import ipdb; ipdb.set_trace()
     return int_net
 
 def export_integerized_network(net : nn.Module, cfg : dict, key : str, export_dir : str, name : str, in_idx : int = 42, pad_img : Optional[int] = None, clip : bool = False, change_n_levels : int = None):
     qu = _QUANT_UTILS[key]
     # use a real image from the validation set
     ds = get_valid_dataset(key, cfg, quantize='int', pad_img=pad_img, clip=clip)
+
     test_input = ds[in_idx][0].unsqueeze(0)
     print (test_input.shape)
     if key == 'dvs_cnn':
@@ -293,7 +323,7 @@ def main():
                         help='Export RequantShift nodes instead of mul-add-div sequences in ONNX graph')
     parser.add_argument('--clip_inputs', action='store_true',
                         help='ghettofix to clip inputs to be unsigned')
-    parser.add_argument('--config_net_file', type=str, default='config_net_tqt_8b.json', help = 'Network configuration file')
+    parser.add_argument('--config_net_file', type=str, default='config_net_pact_8b.json', help = 'Network configuration file')
     parser.add_argument('--config_env_file', type=str, default='config_env.json', help = 'Environment configuration file')
 
     args = vars(parser.parse_args())
@@ -321,6 +351,24 @@ def main():
     global mdataloader
     mdataloader = DataLoader(mdataset, batch_size=training_parameters['batch_size'], shuffle=False, num_workers=0)
 
+    # compute eps_in
+    maximum = 0
+    minimum = 256
+    for idx, sample in enumerate(mdataloader):
+        input_sample, label_sample = sample
+        if (torch.max(input_sample) > maximum):
+            maximum = torch.max(input_sample)
+        if (torch.min(input_sample) < minimum):
+            minimum = torch.min(input_sample)
+
+        if idx == 10:
+            break
+
+    print (maximum)
+    print (minimum)
+    eps_in = (maximum - minimum) / 256
+    print (eps_in)
+
     qnet = get_network(key = args['net'], exp_id=0, ckpt_id=0, quantized=True, pretrained = args['pretrained'])
 
     print ("Network quantized")
@@ -337,7 +385,7 @@ def main():
     else:
         pad_img = None
 
-    validate(int_net, mdataloader, 10, n_valid_batches=10)
+    validate(int_net, mdataloader, 10, 10, True)
 
     with open(args['config_net_file'], 'r') as fp:
         exp_cfg = json.load(fp)
