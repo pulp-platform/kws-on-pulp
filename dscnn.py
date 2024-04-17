@@ -64,7 +64,7 @@ class LinearTester (torch.nn.Module):
 
 
 class DSCNNFlat(torch.nn.Module):
-    def __init__(self, use_bias=True):
+    def __init__(self, use_bias=False):
         super(DSCNNFlat, self).__init__()
 
         self.pad1  = nn.ConstantPad2d((1, 1, 5, 5), value=0.0)
@@ -118,19 +118,19 @@ class DSCNNFlat(torch.nn.Module):
         for m in self.modules():
 
             if isinstance(m, torch.nn.Conv2d):
-                torch.nn.init.normal_(m.weight)
+                torch.nn.init.constant_(m.weight, 0.1)
                 if m.bias is not None:
-                    torch.nn.init.normal_(m.bias)
+                    torch.nn.init.constant_(m.bias, 0.1)
 
             elif isinstance(m, torch.nn.BatchNorm2d):
-                torch.nn.init.normal_(m.weight)
+                torch.nn.init.constant_(m.weight, 0.1)
                 if m.bias is not None:
-                    torch.nn.init.normal_(m.bias)
+                    torch.nn.init.constant_(m.bias, 0.1)
 
             elif isinstance(m, torch.nn.Linear):
-                torch.nn.init.normal_(m.weight)
+                torch.nn.init.constant_(m.weight, 0.1)
                 if m.bias is not None:
-                    torch.nn.init.normal_(m.bias)
+                    torch.nn.init.constant_(m.bias, 0.1)
 
         
     def forward(self, x):
@@ -230,19 +230,19 @@ class DSCNN(torch.nn.Module):
         for m in self.modules():
 
             if isinstance(m, torch.nn.Conv2d):
-                torch.nn.init.normal_(m.weight)
+                torch.nn.init.constant_(m.weight, 0.1)
                 if m.bias is not None:
-                    torch.nn.init.normal_(m.bias)
+                    torch.nn.init.constant_(m.bias, 0.1)
 
             elif isinstance(m, torch.nn.BatchNorm2d):
-                torch.nn.init.normal_(m.weight)
+                torch.nn.init.constant_(m.weight, 0.1)
                 if m.bias is not None:
-                    torch.nn.init.normal_(m.bias)
+                    torch.nn.init.constant_(m.bias, 0.1)
 
             elif isinstance(m, torch.nn.Linear):
-                torch.nn.init.normal_(m.weight)
+                torch.nn.init.constant_(m.weight, 0.1)
                 if m.bias is not None:
-                    torch.nn.init.normal_(m.bias)
+                    torch.nn.init.constant_(m.bias, 0.1)
 
 
 

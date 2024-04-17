@@ -26,6 +26,8 @@
 # limitations under the License.
  
 
+import argparse
+import os
 import copy
 import torch 
 import numpy as np
@@ -45,6 +47,11 @@ from quantlib.editing.fx.passes.pact.pact_util import PACT_OPS, PACT_OPS_INT, \
 from quantlib.editing.fx.passes.pact import AnnotateEpsPass
 
 from dscnn import DSCNN, DSCNNFlat, LinearTester
+from utils import parameter_generation
+
+from torch.utils.data import DataLoader
+from dataset import DatasetProcessor
+from datagenerator import DatasetCreator
 
 
 NLEVELSACTS = 2**8
@@ -77,6 +84,7 @@ _LinQuantArgs = {
     'tqt': True
 }
 
+
 _IntegerQuantArgs = copy.deepcopy(_ActQuantArgs)
 _LinearQuantArgs = copy.deepcopy(_LinQuantArgs)
 _PactifyQuantArgs = copy.deepcopy(_ActQuantArgs)
@@ -85,23 +93,89 @@ _IntegerQuantArgs['learn_clip'] = False
 _LinearQuantArgs['quantize'] = 'per_layer'
 
 
+def validate (network, dataloader):
+    
+    network.eval()
+    n_tot = 0
+    n_correct = 0
+
+    for i, batched_input in enumerate(dataloader):
+        xb, yb = batched_input
+        yn = network(xb.to(device))
+        n_tot += xb.shape[0]
+        n_correct += (yn.to('cpu').argmax(dim=1) == yb).sum()
+        if ((i+1)%10 == 0):
+            print(f'Accuracy after {i+1} batches: {n_correct/n_tot}')
+        if (i+1) == 10:
+            break
+    print(f'Final accuracy: {n_correct/n_tot}')
+
+
+
 if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--net", type=str, default='DSCNN', help='Network to quantize')
+    parser.add_argument("--pretrained", type=str, default='model.pth', help='Path to pretrained model')
+    parser.add_argument('--fix_channels', action='store_true', help='Fix channels of conv layers for compatibility with DORY')
+    parser.add_argument('--no_dory_harmonize', action='store_true',
+                        help='If supplied, don\'t align averagePool nodes\' associated requantization nodes and replace adders with DORYAdders')
+    parser.add_argument('--word_align_channels', action='store_true',
+                        help='Fix channels of conv layers so (#input_ch * #input_bits) is a multiple of 32 to work around XpulpNN HW bug')
+    parser.add_argument('--requant_node', action='store_true',
+                        help='Export RequantShift nodes instead of mul-add-div sequences in ONNX graph')
+    parser.add_argument('--clip_inputs', action='store_true',
+                        help='ghettofix to clip inputs to be unsigned')
+    parser.add_argument('--config_net_file', type=str, default='config_net_tqt_8b.json', help = 'Network configuration file')
+    parser.add_argument('--config_env_file', type=str, default='config_env.json', help = 'Environment configuration file')
+
+    args = vars(parser.parse_args())
+
+    # Parameter generation
+    environment_parameters, preprocessing_parameters, training_parameters, experimental_parameters = parameter_generation(args) 
+
+    # Device setup
+    os.environ["CUDA_VISIBLE_DEVICES"] = environment_parameters['device_id']
+    if torch.cuda.is_available() and environment_parameters['device'] == 'gpu':
+        device = torch.device('cuda')        
+    else:
+        device = torch.device('cpu')
+    device = torch.device('cpu')
+    print (torch.version.__version__)
+    print (device)
 
     torch.manual_seed(0)
     np.random.seed(0)
 
-    inputs_fp = torch.randn(1, 1, 49, 10)
-    # inputs_fp = torch.randint(0, 255, (1, 1, 49, 10))
-    # inputs_fp = torch.randint(0, 255, (1, 10))
+    audio_processor = DatasetCreator(environment_parameters, training_parameters, preprocessing_parameters)
+    mdataset = DatasetProcessor("training", audio_processor, training_parameters, task = -1, device = 'cpu')
+    mdataloader = DataLoader(mdataset, batch_size=training_parameters['batch_size'], shuffle=False, num_workers=0)
+
+    torch.manual_seed(0)
+    np.random.seed(0)
+
+    # inputs_fp = torch.randn(1, 1, 49, 10)
+    inputs_fp = torch.randint(0, 255, (1, 1, 49, 10)).float()
+    # inputs_fp = torch.randn(1, 10)
     eps_in = tuple(getAdhocEpsList(NLEVELSACTS, inputs_fp))
     print (eps_in)
     rounded_input = roundTensors([inputs_fp], eps_in)
 
     EEGFormerMHSA_fp = DSCNN()
+
+    # load pretrained model
+    EEGFormerMHSA_fp.load_state_dict(torch.load(args['pretrained'], map_location='cpu'))
+
     EEGFormerMHSA_traced_fp = PACT_symbolic_trace(EEGFormerMHSA_fp)
+
+    validate (EEGFormerMHSA_fp, mdataloader)
 
     golden_output = EEGFormerMHSA_fp(*rounded_input)
     traced_fp_output = EEGFormerMHSA_traced_fp(*rounded_input)
+
+    mdataloader = DataLoader(mdataset, batch_size=training_parameters['batch_size'], shuffle=False, num_workers=0)
+    validate (EEGFormerMHSA_traced_fp, mdataloader)
+
     print(f"[EEGFormer] MAE FP32 (Traced)       : {torch.abs(golden_output - traced_fp_output).mean():.6f}")
 
     mse = torch.sum((golden_output-traced_fp_output)*(golden_output-traced_fp_output))
@@ -114,12 +188,12 @@ if __name__ == "__main__":
         qserrnr = -10*np.log10(mse.detach().numpy()/gtsum.detach().numpy())
         qquantsnr = -10*np.log10(prsum.detach().numpy()/gtsum.detach().numpy())
         print("[EEGFormer] FP32 qserrnr: ", qserrnr)
-        print("[EEGFormer] FP32 qquantsnr: ", qquantsnr)
+        # print("[EEGFormer] FP32 qquantsnr: ", qquantsnr)
     else:
         qserrnr =  10*np.log10(gtsum.detach().numpy()/mse.detach().numpy())
         qquantsnr = 10*np.log10(gtsum.detach().numpy()/prsum.detach().numpy())
         print("[EEGFormer] FP32 qserrnr: ", qserrnr)
-        print("[EEGFormer] FP32 qquantsnr: ", qquantsnr)
+        # print("[EEGFormer] FP32 qquantsnr: ", qquantsnr)
 
     print ("______________________________________________________________________")
 
@@ -161,8 +235,6 @@ if __name__ == "__main__":
 
     optimizer = torch.optim.Adam(EEGFormerMHSA_traced_fq.parameters(), lr=0)
 
-
-
     fakeTrain(EEGFormerMHSA_traced_fq, rounded_input, 0, optimizer)
 
     for epoch in range(EPOCHS):
@@ -182,6 +254,9 @@ if __name__ == "__main__":
     print ("______________________________________________________________________")
 
     output_fq = EEGFormerMHSA_traced_fq(*rounded_input)
+
+    mdataloader = DataLoader(mdataset, batch_size=training_parameters['batch_size'], shuffle=False, num_workers=0)
+    validate (EEGFormerMHSA_traced_fq, mdataloader)
     print(f"[EEGFormer] MAE FakeQuant (Post-PQT): {torch.abs(golden_output - output_fq).mean():.6f}")
 
     mse = torch.sum((golden_output-output_fq)*(golden_output-output_fq))
@@ -194,12 +269,12 @@ if __name__ == "__main__":
         qserrnr = -10*np.log10(mse.detach().numpy()/gtsum.detach().numpy())
         qquantsnr = -10*np.log10(prsum.detach().numpy()/gtsum.detach().numpy())
         print("[EEGFormer] FP32 qserrnr: ", qserrnr)
-        print("[EEGFormer] FP32 qquantsnr: ", qquantsnr)
+        # print("[EEGFormer] FP32 qquantsnr: ", qquantsnr)
     else:
         qserrnr =  10*np.log10(gtsum.detach().numpy()/mse.detach().numpy())
         qquantsnr = 10*np.log10(gtsum.detach().numpy()/prsum.detach().numpy())
         print("[EEGFormer] FP32 qserrnr: ", qserrnr)
-        print("[EEGFormer] FP32 qquantsnr: ", qquantsnr)
+        # print("[EEGFormer] FP32 qquantsnr: ", qquantsnr)
     print ("______________________________________________________________________")
 
     _AnnotateEpsPass.apply(EEGFormerMHSA_traced_fq)
@@ -235,6 +310,9 @@ if __name__ == "__main__":
 
     outputInt = int_fx_model(*integerizedInputs)
     outputEpsInt = [out * eps for out, eps in zip(outputInt, epsOut)]
+
+    mdataloader = DataLoader(mdataset, batch_size=training_parameters['batch_size'], shuffle=False, num_workers=0)
+    validate (int_fx_model, mdataloader)
     print(f"[EEGFormer] MAE TrueQuant (Post-INT): {torch.abs(golden_output - outputEpsInt[0]).mean():.6f}")
 
     mse = torch.sum((golden_output-outputEpsInt[0])*(golden_output-outputEpsInt[0]))
@@ -247,12 +325,12 @@ if __name__ == "__main__":
         qserrnr = -10*np.log10(mse.detach().numpy()/gtsum.detach().numpy())
         qquantsnr = -10*np.log10(prsum.detach().numpy()/gtsum.detach().numpy())
         print("[EEGFormer] FP32 qserrnr: ", qserrnr)
-        print("[EEGFormer] FP32 qquantsnr: ", qquantsnr)
+        # print("[EEGFormer] FP32 qquantsnr: ", qquantsnr)
     else:
         qserrnr =  10*np.log10(gtsum.detach().numpy()/mse.detach().numpy())
         qquantsnr = 10*np.log10(gtsum.detach().numpy()/prsum.detach().numpy())
         print("[EEGFormer] FP32 qserrnr: ", qserrnr)
-        print("[EEGFormer] FP32 qquantsnr: ", qquantsnr)
+        # print("[EEGFormer] FP32 qquantsnr: ", qquantsnr)
  
     # export_net(net=copy.deepcopy(int_fx_model),
                # in_data=tuple(integerizedInputs),
