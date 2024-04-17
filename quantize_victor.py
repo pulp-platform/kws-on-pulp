@@ -94,6 +94,7 @@ if __name__ == "__main__":
     # inputs_fp = torch.randint(0, 255, (1, 1, 49, 10))
     # inputs_fp = torch.randint(0, 255, (1, 10))
     eps_in = tuple(getAdhocEpsList(NLEVELSACTS, inputs_fp))
+    print (eps_in)
     rounded_input = roundTensors([inputs_fp], eps_in)
 
     EEGFormerMHSA_fp = DSCNN()
@@ -102,6 +103,26 @@ if __name__ == "__main__":
     golden_output = EEGFormerMHSA_fp(*rounded_input)
     traced_fp_output = EEGFormerMHSA_traced_fp(*rounded_input)
     print(f"[EEGFormer] MAE FP32 (Traced)       : {torch.abs(golden_output - traced_fp_output).mean():.6f}")
+
+    mse = torch.sum((golden_output-traced_fp_output)*(golden_output-traced_fp_output))
+    prsum = torch.sum(traced_fp_output*traced_fp_output)
+    gtsum = torch.sum(golden_output*golden_output)
+
+    if (mse == 0):
+        print ("[EEGFormer] FP32 mse: 0")
+    elif (gtsum < mse):
+        qserrnr = -10*np.log10(mse.detach().numpy()/gtsum.detach().numpy())
+        qquantsnr = -10*np.log10(prsum.detach().numpy()/gtsum.detach().numpy())
+        print("[EEGFormer] FP32 qserrnr: ", qserrnr)
+        print("[EEGFormer] FP32 qquantsnr: ", qquantsnr)
+    else:
+        qserrnr =  10*np.log10(gtsum.detach().numpy()/mse.detach().numpy())
+        qquantsnr = 10*np.log10(gtsum.detach().numpy()/prsum.detach().numpy())
+        print("[EEGFormer] FP32 qserrnr: ", qserrnr)
+        print("[EEGFormer] FP32 qquantsnr: ", qquantsnr)
+
+    print ("______________________________________________________________________")
+
 
     vitPass = ViTCanonAndApprox(_ActQuantArgs, _LinearQuantArgs, _PactifyQuantArgs, _IntegerQuantArgs)
     # EEGFormerMHSA_traced_fp = foldConstant(EEGFormerMHSA_traced_fp, matchShapeNode, inputs_fp)
@@ -140,6 +161,8 @@ if __name__ == "__main__":
 
     optimizer = torch.optim.Adam(EEGFormerMHSA_traced_fq.parameters(), lr=0)
 
+
+
     fakeTrain(EEGFormerMHSA_traced_fq, rounded_input, 0, optimizer)
 
     for epoch in range(EPOCHS):
@@ -156,8 +179,28 @@ if __name__ == "__main__":
         EEGFormerMHSA_traced_fq.eval()
         fakeValidate(EEGFormerMHSA_traced_fq, rounded_input, epoch)
 
+    print ("______________________________________________________________________")
+
     output_fq = EEGFormerMHSA_traced_fq(*rounded_input)
     print(f"[EEGFormer] MAE FakeQuant (Post-PQT): {torch.abs(golden_output - output_fq).mean():.6f}")
+
+    mse = torch.sum((golden_output-output_fq)*(golden_output-output_fq))
+    prsum = torch.sum(output_fq*output_fq)
+    gtsum = torch.sum(golden_output*golden_output)
+
+    if (mse == 0):
+        print ("[EEGFormer] FP32 mse: 0")
+    elif (gtsum < mse):
+        qserrnr = -10*np.log10(mse.detach().numpy()/gtsum.detach().numpy())
+        qquantsnr = -10*np.log10(prsum.detach().numpy()/gtsum.detach().numpy())
+        print("[EEGFormer] FP32 qserrnr: ", qserrnr)
+        print("[EEGFormer] FP32 qquantsnr: ", qquantsnr)
+    else:
+        qserrnr =  10*np.log10(gtsum.detach().numpy()/mse.detach().numpy())
+        qquantsnr = 10*np.log10(gtsum.detach().numpy()/prsum.detach().numpy())
+        print("[EEGFormer] FP32 qserrnr: ", qserrnr)
+        print("[EEGFormer] FP32 qquantsnr: ", qquantsnr)
+    print ("______________________________________________________________________")
 
     _AnnotateEpsPass.apply(EEGFormerMHSA_traced_fq)
 
@@ -193,6 +236,23 @@ if __name__ == "__main__":
     outputInt = int_fx_model(*integerizedInputs)
     outputEpsInt = [out * eps for out, eps in zip(outputInt, epsOut)]
     print(f"[EEGFormer] MAE TrueQuant (Post-INT): {torch.abs(golden_output - outputEpsInt[0]).mean():.6f}")
+
+    mse = torch.sum((golden_output-outputEpsInt[0])*(golden_output-outputEpsInt[0]))
+    prsum = torch.sum(outputEpsInt[0]*outputEpsInt[0])
+    gtsum = torch.sum(golden_output*golden_output)
+
+    if (mse == 0):
+        print ("[EEGFormer] FP32 mse: 0")
+    elif (gtsum < mse):
+        qserrnr = -10*np.log10(mse.detach().numpy()/gtsum.detach().numpy())
+        qquantsnr = -10*np.log10(prsum.detach().numpy()/gtsum.detach().numpy())
+        print("[EEGFormer] FP32 qserrnr: ", qserrnr)
+        print("[EEGFormer] FP32 qquantsnr: ", qquantsnr)
+    else:
+        qserrnr =  10*np.log10(gtsum.detach().numpy()/mse.detach().numpy())
+        qquantsnr = 10*np.log10(gtsum.detach().numpy()/prsum.detach().numpy())
+        print("[EEGFormer] FP32 qserrnr: ", qserrnr)
+        print("[EEGFormer] FP32 qquantsnr: ", qquantsnr)
  
     # export_net(net=copy.deepcopy(int_fx_model),
                # in_data=tuple(integerizedInputs),
