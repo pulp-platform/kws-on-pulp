@@ -106,8 +106,15 @@ def validate (network, dataloader, integerized = False):
 
         if (integerized):
 
+            # Victor
             xb = roundTensors([xb], eps_in)[0]
+
+            # Simplification
             # xb = xb.int().float()
+
+            # Scale
+            xb = xb * 255./255 
+            xb = xb.type(torch.uint8).type(torch.float)
 
 
         yn = network(xb.to(device))
@@ -176,12 +183,12 @@ if __name__ == "__main__":
     print ("eps_in: ", eps_in)
     rounded_input = roundTensors([inputs_fp], eps_in)
 
-    # EEGFormerMHSA_fp = DSCNN()
-    EEGFormerMHSA_fp = DSCNNFlat()
-
+    
+    # EEGFormerMHSA_fp = DSCNNFlat()
 
     # load pretrained model
-    # EEGFormerMHSA_fp.load_state_dict(torch.load(args['pretrained'], map_location='cpu'))
+    EEGFormerMHSA_fp = DSCNN()
+    EEGFormerMHSA_fp.load_state_dict(torch.load(args['pretrained'], map_location='cpu'))
 
     EEGFormerMHSA_traced_fp = PACT_symbolic_trace(EEGFormerMHSA_fp)
 

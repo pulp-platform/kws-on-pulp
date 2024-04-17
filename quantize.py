@@ -83,8 +83,8 @@ def get_valid_dataset(key : str, cfg : dict, quantize : str, pad_img : Optional[
 
     return mdataset
 
-_MNIST_EPS = 0.99
-# _MNIST_EPS = 0.39
+# _MNIST_EPS = 0.99
+_MNIST_EPS = 0.39
 
 # batch size is per device, determined on Nvidia RTX2080. You may have to change
 # this if you have different GPUs
@@ -136,7 +136,7 @@ def get_network(key : str, exp_id : int, ckpt_id : Union[int, str], quantized=Fa
     net.load_state_dict(torch.load(pretrained, map_location='cpu'))
 
     print("Validation of FP32 loaded network")
-    # validate(net, mdataloader, 10, n_valid_batches=10)
+    validate(net, mdataloader, 10, n_valid_batches=10)
 
     if not quantized:
         print ("The network is not to be quantized. Returning...")
@@ -191,8 +191,13 @@ def validate(net : nn.Module, dl : torch.utils.data.DataLoader, print_interval :
         xb, yb = batched_input
 
         if integerized:
-            xb = mtransforms(xb).to(torch.int).to(torch.float32)
+
+            # xb = mtransforms(xb).to(torch.int).to(torch.float32)
+
             # xb = xb.to(torch.int).to(torch.float32) # sufficient if eps==1
+
+            xb = xb * 255./255 
+            xb = xb.type(torch.uint8).type(torch.float)
 
         yn = net(xb.to(device))
 
@@ -370,7 +375,7 @@ def main():
     # print ("Network quantized")
     # print (qnet)
     print ("Validate FQ network")
-    # validate(qnet, mdataloader, 10, n_valid_batches=10)
+    validate(qnet, mdataloader, 10, n_valid_batches=10)
 
     int_net = integerize_network(qnet, args['net'], args['fix_channels'], not args['no_dory_harmonize'], args['word_align_channels'], args['requant_node'])
     # import ipdb; ipdb.set_trace()
@@ -390,11 +395,9 @@ def main():
     out_int_scaled = out_int/255
     mae = torch.mean(torch.abs(out_int_scaled-out_fq))
 
-    import ipdb; ipdb.set_trace() 
-
     print (mae)
 
-    # validate(int_net.float(), mdataloader, 10, 10, True)
+    validate(int_net.float(), mdataloader, 10, 10, True)
 
     with open(args['config_net_file'], 'r') as fp:
         exp_cfg = json.load(fp)
