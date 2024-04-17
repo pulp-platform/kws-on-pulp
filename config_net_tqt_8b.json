@@ -11,7 +11,7 @@
                 }
             },
             "dataloader": {
-                "bs": 10
+                "bs": 256
             }
         },
         "valid": {
@@ -24,7 +24,7 @@
                 }
             },
             "dataloader": {
-                "bs": 10
+                "bs": 256
             }
 
         }
@@ -33,8 +33,7 @@
         "class": "DSCNN",
         "kwargs": {
             "config": "standard",
-            "capacity": 1.0,
-            "pretrained": "/home/georgr/projects/mixed-precision-inference/ql-pact/systems/ILSVRC12/MobileNetV2/pretrained/MNv2_224_1.0.ckpt"
+            "capacity": 1.0
         },
         "quantize": {
             "function": "pact_recipe",
