@@ -60,6 +60,8 @@ UPPERPERCENTILE = 99.9
 LOWERPERCENTILE = 0.1
 EPOCHS = 5
 
+eps_in = None
+
 _ActQuantArgs = {
     'n_levels': NLEVELSACTS,
     'act_kind': 'identity',
@@ -93,7 +95,7 @@ _IntegerQuantArgs['learn_clip'] = False
 _LinearQuantArgs['quantize'] = 'per_layer'
 
 
-def validate (network, dataloader):
+def validate (network, dataloader, integerized = False):
     
     network.eval()
     n_tot = 0
@@ -101,6 +103,13 @@ def validate (network, dataloader):
 
     for i, batched_input in enumerate(dataloader):
         xb, yb = batched_input
+
+        if (integerized):
+
+            xb = roundTensors([xb], eps_in)[0]
+            # xb = xb.int().float()
+
+
         yn = network(xb.to(device))
         n_tot += xb.shape[0]
         n_correct += (yn.to('cpu').argmax(dim=1) == yb).sum()
@@ -154,17 +163,25 @@ if __name__ == "__main__":
     torch.manual_seed(0)
     np.random.seed(0)
 
-    # inputs_fp = torch.randn(1, 1, 49, 10)
-    inputs_fp = torch.randint(0, 255, (1, 1, 49, 10)).float()
+    inputs_fp = torch.randn(1, 1, 49, 10)
+    # inputs_fp = torch.randint(0, 255, (1, 1, 49, 10)).float()
     # inputs_fp = torch.randn(1, 10)
+
+    for i, batched_input in enumerate(mdataloader):
+        xb, yb = batched_input
+        break
+    inputs_fp = xb[:1] 
+
     eps_in = tuple(getAdhocEpsList(NLEVELSACTS, inputs_fp))
-    print (eps_in)
+    print ("eps_in: ", eps_in)
     rounded_input = roundTensors([inputs_fp], eps_in)
 
-    EEGFormerMHSA_fp = DSCNN()
+    # EEGFormerMHSA_fp = DSCNN()
+    EEGFormerMHSA_fp = DSCNNFlat()
+
 
     # load pretrained model
-    EEGFormerMHSA_fp.load_state_dict(torch.load(args['pretrained'], map_location='cpu'))
+    # EEGFormerMHSA_fp.load_state_dict(torch.load(args['pretrained'], map_location='cpu'))
 
     EEGFormerMHSA_traced_fp = PACT_symbolic_trace(EEGFormerMHSA_fp)
 
@@ -256,7 +273,7 @@ if __name__ == "__main__":
     output_fq = EEGFormerMHSA_traced_fq(*rounded_input)
 
     mdataloader = DataLoader(mdataset, batch_size=training_parameters['batch_size'], shuffle=False, num_workers=0)
-    validate (EEGFormerMHSA_traced_fq, mdataloader)
+    validate (EEGFormerMHSA_traced_fq, mdataloader, integerized = True)
     print(f"[EEGFormer] MAE FakeQuant (Post-PQT): {torch.abs(golden_output - output_fq).mean():.6f}")
 
     mse = torch.sum((golden_output-output_fq)*(golden_output-output_fq))
@@ -312,7 +329,7 @@ if __name__ == "__main__":
     outputEpsInt = [out * eps for out, eps in zip(outputInt, epsOut)]
 
     mdataloader = DataLoader(mdataset, batch_size=training_parameters['batch_size'], shuffle=False, num_workers=0)
-    validate (int_fx_model, mdataloader)
+    validate (int_fx_model, mdataloader, integerized = True)
     print(f"[EEGFormer] MAE TrueQuant (Post-INT): {torch.abs(golden_output - outputEpsInt[0]).mean():.6f}")
 
     mse = torch.sum((golden_output-outputEpsInt[0])*(golden_output-outputEpsInt[0]))
