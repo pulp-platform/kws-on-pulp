@@ -177,7 +177,7 @@ def validate(net : nn.Module, dl : torch.utils.data.DataLoader, print_interval :
         # mtransforms_list.append(PACTUnsignedAct(n_levels=256, symm=False, learn_clip=False, init_clip='max', act_kind='identity'))
         quantizer = mtransforms_list[-1]
         # set clip_lo to negative max abs of CIFAR10
-        maximum_abs = 1
+        maximum_abs = 10
         clip_lo, clip_hi = almost_symm_quant(maximum_abs, 256)
         # quantizer.clip_lo.data = torch.tensor(0)
         # quantizer.clip_hi.data = torch.tensor(255)

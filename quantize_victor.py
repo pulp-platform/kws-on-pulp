@@ -104,10 +104,16 @@ def validate (network, dataloader, integerized = False):
     for i, batched_input in enumerate(dataloader):
         xb, yb = batched_input
 
+        print (torch.min(xb))
+        print (torch.max(xb))
+
         if (integerized):
 
             # Victor
             xb = roundTensors([xb], eps_in)[0]
+
+            print (torch.min(xb))
+            print (torch.max(xb))
 
             # Simplification
             # xb = xb.int().float()
