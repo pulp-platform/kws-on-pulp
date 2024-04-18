@@ -113,8 +113,8 @@ def validate (network, dataloader, integerized = False):
             # xb = xb.int().float()
 
             # Scale
-            xb = xb * 255./255 
-            xb = xb.type(torch.uint8).type(torch.float)
+            # xb = xb * 255./255 
+            # xb = xb.type(torch.uint8).type(torch.float)
 
 
         yn = network(xb.to(device))
@@ -132,7 +132,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--net", type=str, default='DSCNN', help='Network to quantize')
-    parser.add_argument("--pretrained", type=str, default='model.pth', help='Path to pretrained model')
+    parser.add_argument("--pretrained", type=str, default='model_int.pth', help='Path to pretrained model {model_int,model_uint}.pth.')
     parser.add_argument('--fix_channels', action='store_true', help='Fix channels of conv layers for compatibility with DORY')
     parser.add_argument('--no_dory_harmonize', action='store_true',
                         help='If supplied, don\'t align averagePool nodes\' associated requantization nodes and replace adders with DORYAdders')
@@ -242,11 +242,21 @@ if __name__ == "__main__":
                                                             init_clip_hi=6.,
                                                             init_clip_lo=-6.,
                                                             verbose=True)
+    # actController = quantlib.algorithms.pact.PACTActController(modules=act_list,
+    #                                                         schedule=actSchedule,
+    #                                                         init_clip_hi=10000.,
+    #                                                         init_clip_lo=-10000.,
+    #                                                         verbose=True)
     linearController = quantlib.algorithms.pact.PACTLinearController(modules=linop_list,
                                                                     schedule=schedule,
                                                                     init_clip_hi=16.,
                                                                     init_clip_lo=-16.,
                                                                     verbose=True)
+    # linearController = quantlib.algorithms.pact.PACTLinearController(modules=linop_list,
+    #                                                                 schedule=schedule,
+    #                                                                 init_clip_hi=10000.,
+    #                                                                 init_clip_lo=-10000.,
+    #                                                                 verbose=True)
     integerController = quantlib.algorithms.pact.PACTIntegerModulesController(adder_list)
     epsController = quantlib.algorithms.pact.PACTEpsController(fx_model=EEGFormerMHSA_traced_fq,
                                                             modules=eps_list,

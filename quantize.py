@@ -84,7 +84,8 @@ def get_valid_dataset(key : str, cfg : dict, quantize : str, pad_img : Optional[
     return mdataset
 
 # _MNIST_EPS = 0.99
-_MNIST_EPS = 0.39
+# _MNIST_EPS = 0.39 # for 0-255 data
+_MNIST_EPS = 0.0328 # for standardized 0-1 data 
 
 # batch size is per device, determined on Nvidia RTX2080. You may have to change
 # this if you have different GPUs
@@ -171,15 +172,20 @@ def validate(net : nn.Module, dl : torch.utils.data.DataLoader, print_interval :
     if integerized:
         # Add input transforms
         mtransforms_list = []
-        # mtransforms_list.append(PACTAsymmetricAct(n_levels=256, symm=True, learn_clip=False, init_clip='max', act_kind='identity'))
-        mtransforms_list.append(PACTAsymmetricAct(n_levels=256, symm=False, learn_clip=False, init_clip='max', act_kind='identity'))
+        mtransforms_list.append(PACTAsymmetricAct(n_levels=256, symm=True, learn_clip=False, init_clip='max', act_kind='identity'))
+        # mtransforms_list.append(PACTAsymmetricAct(n_levels=256, symm=False, learn_clip=False, init_clip='max', act_kind='identity'))
         # mtransforms_list.append(PACTUnsignedAct(n_levels=256, symm=False, learn_clip=False, init_clip='max', act_kind='identity'))
         quantizer = mtransforms_list[-1]
         # set clip_lo to negative max abs of CIFAR10
-        maximum_abs = 255
-        clip_lo, clip_hi = almost_symm_quant(maximum_abs, 255)
-        quantizer.clip_lo.data = torch.tensor(0)
-        quantizer.clip_hi.data = torch.tensor(255)
+        maximum_abs = 1
+        clip_lo, clip_hi = almost_symm_quant(maximum_abs, 256)
+        # quantizer.clip_lo.data = torch.tensor(0)
+        # quantizer.clip_hi.data = torch.tensor(255)
+        print ("Clips")
+        print (clip_lo)
+        print (clip_hi)
+        quantizer.clip_lo.data = torch.tensor(clip_lo)
+        quantizer.clip_hi.data = torch.tensor(clip_hi)
         quantizer.started |= True
         eps = mtransforms_list[-1].get_eps()
         div_by_eps = lambda x: torch.round(x/eps)
@@ -192,12 +198,12 @@ def validate(net : nn.Module, dl : torch.utils.data.DataLoader, print_interval :
 
         if integerized:
 
-            # xb = mtransforms(xb).to(torch.int).to(torch.float32)
+            xb = mtransforms(xb).to(torch.int).to(torch.float32)
 
             # xb = xb.to(torch.int).to(torch.float32) # sufficient if eps==1
 
-            xb = xb * 255./255 
-            xb = xb.type(torch.uint8).type(torch.float)
+            # xb = xb * 255./255 
+            # xb = xb.type(torch.uint8).type(torch.float)
 
         yn = net(xb.to(device))
 
@@ -314,7 +320,7 @@ def main():
     
     parser = argparse.ArgumentParser()
     parser.add_argument("--net", type=str, default='DSCNN', help='Network to quantize')
-    parser.add_argument("--pretrained", type=str, default='model.pth', help='Path to pretrained model')
+    parser.add_argument("--pretrained", type=str, default='model_int.pth', help='Path to pretrained model {model_int,model_uint}.pth.')
     parser.add_argument('--fix_channels', action='store_true', help='Fix channels of conv layers for compatibility with DORY')
     parser.add_argument('--no_dory_harmonize', action='store_true',
                         help='If supplied, don\'t align averagePool nodes\' associated requantization nodes and replace adders with DORYAdders')
@@ -352,23 +358,23 @@ def main():
     global mdataloader
     mdataloader = DataLoader(mdataset, batch_size=training_parameters['batch_size'], shuffle=False, num_workers=0)
 
-    # compute eps_in
-    maximum = 0
-    minimum = 256
-    for idx, sample in enumerate(mdataloader):
-        input_sample, label_sample = sample
-        if (torch.max(input_sample) > maximum):
-            maximum = torch.max(input_sample)
-        if (torch.min(input_sample) < minimum):
-            minimum = torch.min(input_sample)
+    # # compute eps_in
+    # maximum = 127
+    # minimum = -128
+    # for idx, sample in enumerate(mdataloader):
+    #     input_sample, label_sample = sample
+    #     if (torch.max(input_sample) > maximum):
+    #         maximum = torch.max(input_sample)
+    #     if (torch.min(input_sample) < minimum):
+    #         minimum = torch.min(input_sample)
 
-        if idx == 10:
-            break
+    #     if idx == 10:
+    #         break
 
-    print (maximum)
-    print (minimum)
-    eps_in = (maximum - minimum) / 256
-    print (eps_in)
+    # print (maximum)
+    # print (minimum)
+    # eps_in = (maximum - minimum) / 256
+    # print (eps_in)
 
     qnet = get_network(key = args['net'], exp_id=0, ckpt_id=0, quantized=True, pretrained = args['pretrained'])
 
@@ -389,13 +395,14 @@ def main():
 
 
 
-    mri = torch.randint(0, 255, [1,1,49,10])
-    out_int = int_net((mri).int().float())
-    out_fq = qnet((mri).float())
-    out_int_scaled = out_int/255
-    mae = torch.mean(torch.abs(out_int_scaled-out_fq))
+    # # mri = torch.randint(0, 255, [1,1,49,10])
+    # mri = torch.randn(1, 1, 49, 10)
+    # out_int = int_net((mri).int().float())
+    # out_fq = qnet((mri).float())
+    # out_int_scaled = out_int/255
+    # mae = torch.mean(torch.abs(out_int_scaled-out_fq))
 
-    print (mae)
+    # print (mae)
 
     validate(int_net.float(), mdataloader, 10, 10, True)
 
