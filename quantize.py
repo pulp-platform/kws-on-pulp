@@ -343,6 +343,8 @@ def main():
     
     fakeTrain(qnet, roundedFakeBatch, 0, optimizer, [])
 
+    validate(qnet, mdataloader, 10, n_valid_batches=10)
+
     print("==================================== Fine-tuning Clipping Bounds ====================================")
 
     for epochs in range(2):
