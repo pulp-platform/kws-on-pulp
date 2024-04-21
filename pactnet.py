@@ -31,6 +31,7 @@ import quantlib.editing.lightweight.rules as qlr
 from quantlib.editing.lightweight.rules import LightweightRule
 from quantlib.editing.lightweight.rules.filters import VariadicOrFilter, NameFilter, TypeFilter
 from quantlib.editing.fx.passes.pact import HarmonizePACTNetPass, PACT_symbolic_trace
+from quantlib.editing.fx.passes.pact import AnnotateEpsPass
 
 from quantlib.algorithms.pact.pact_ops import *
 from quantlib.algorithms.pact.pact_controllers import *
@@ -78,7 +79,7 @@ def pact_recipe(net : nn.Module,
 
 
     prec_override_spec = {}
-     # the precision_spec_file is (for example) dumped by a Bayesian Bits
+    # the precision_spec_file is (for example) dumped by a Bayesian Bits
     # training run and overrides the 'n_levels' spec from config.json
     if precision_spec_file is not None:
         print(f"Overriding precision specification from config.json with spec from <{precision_spec_file}>...")
@@ -160,4 +161,8 @@ def get_pact_controllers(net : nn.Module, schedules : dict, kwargs_linear : dict
     act_ctrl = PACTActController(act_modules, schedules["activation"], **kwargs_activation)
     intadd_ctrl = PACTIntegerModulesController(intadd_modules)
 
-    return lin_ctrl, act_ctrl, intadd_ctrl
+    # CIOFLANC: parametrize
+    _AnnotateEpsPass = AnnotateEpsPass(0.39, n_levels_in=256)
+    eps_ctrl = PACTEpsController(fx_model = net, eps_list = [0.39], schedule = {0:'start'}, tracer = PACT_symbolic_trace, eps_pass = _AnnotateEpsPass)
+
+    return lin_ctrl, act_ctrl, intadd_ctrl, eps_ctrl

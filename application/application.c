@@ -60,6 +60,7 @@ typedef short int MFCC_IN_TYPE;
 #include "input.h"
 
 #define WAVRAM 2*16000 // int16, 1-second @ 16 kHz 
+#define EPSILON 0.3818
 
 // measurement
 pi_gpio_e gpio_pin_measurement;
@@ -643,11 +644,13 @@ int application(){
             for (int i = sfu_out_buffer_cnt_prev*DOUBLE_BUFF_SIZE; i < upperlim; i+=3){
                 // using MfccInSig_prev as buffer
                 MfccInSig_prev[outidx] = (MFCC_IN_TYPE) (((float)((int32_t *)BufferInList)[i]) / (float)(1<<31 - 1));
+                MfccInSig_prev[outidx] /= EPSILON;
                 outidx++;
             }
             for (int i = 0; i < lowerlim; i+=3){
                 // using MfccInSig_prev as buffer
                 MfccInSig_prev[outidx] = (MFCC_IN_TYPE) (((float)((int32_t *)BufferInList)[i]) / (float)(1<<31 - 1));
+                MfccInSig_prev[outidx] /= EPSILON;
                 outidx++;
             }
 

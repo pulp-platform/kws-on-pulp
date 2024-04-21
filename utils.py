@@ -24,6 +24,9 @@ import csv
 
 import numpy as np
 
+global DEBUG
+DEBUG = False
+
 
 def save_histogram(criterion, data, word):
     with open(criterion+"_"+word+'.csv', 'a', encoding="ISO-8859-1", newline='') as myfile:
@@ -180,7 +183,8 @@ def parameter_generation(args):
     # Experimental parameters
     configuration['experimental_parameters']['date'] = str(datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S"))
 
-    print ("------------ Complete configuration ------------")
-    print (configuration)
+    if DEBUG:
+        print ("------------ Complete configuration ------------")
+        print (configuration)
 
     return configuration['environment_parameters'], configuration['preprocessing_parameters'], configuration['training_parameters'], configuration['experimental_parameters']

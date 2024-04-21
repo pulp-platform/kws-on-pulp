@@ -351,6 +351,8 @@ class DatasetProcessor(torch.utils.data.Dataset):
         self.data_placeholder = torch.clamp(self.data_placeholder + 128, 0, 255)
         # Adding channel dimension
         self.data_placeholder = torch.reshape(self.data_placeholder, (-1, self.data_placeholder.size(dim=0), self.data_placeholder.size(dim=1)))
+        # Standardize
+        # self.data_placeholder = (self.data_placeholder - torch.mean(self.data_placeholder)) / torch.std(self.data_placeholder)
 
         # Prepare labels
         label_index = self.word_to_index[self.sample['label']]
