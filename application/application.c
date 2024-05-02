@@ -644,13 +644,11 @@ int application(){
             for (int i = sfu_out_buffer_cnt_prev*DOUBLE_BUFF_SIZE; i < upperlim; i+=3){
                 // using MfccInSig_prev as buffer
                 MfccInSig_prev[outidx] = (MFCC_IN_TYPE) (((float)((int32_t *)BufferInList)[i]) / (float)(1<<31 - 1));
-                MfccInSig_prev[outidx] /= EPSILON;
                 outidx++;
             }
             for (int i = 0; i < lowerlim; i+=3){
                 // using MfccInSig_prev as buffer
                 MfccInSig_prev[outidx] = (MFCC_IN_TYPE) (((float)((int32_t *)BufferInList)[i]) / (float)(1<<31 - 1));
-                MfccInSig_prev[outidx] /= EPSILON;
                 outidx++;
             }
 
@@ -756,8 +754,9 @@ int application(){
         int k = 0;
         for (int i = 0; i < 49 * N_MELS;i++){                
             
-            // feat_char[k] = (char) ((int) floor(out_feat[i] * pow(2, -1) * sqrt(0.05)) + 128);
-            feat_char[k] = (char) ((int) floor(out_feat[i] * 0.1118) + 128);
+            // pow(2, -1) * sqrt(0.05) = 0.1118
+            // feat_char[k] = (char) ((int) floor(out_feat[i] * 0.1118) + 128); // NEMO
+            feat_char[k] = (char) ((int) floor(out_feat[i] * 0.1118) + 128) * EPSILON; // Quantlib
 
             if (N_MELS == 40){
                 // Select 10 MFCC per window
