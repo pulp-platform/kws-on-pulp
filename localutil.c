@@ -145,6 +145,8 @@ int predict (void * l2_buffer, int n_classes){
 
 void dump_wav_open(char *filename, int width, int sampling_rate, int nb_channels, int size)
 {
+
+    printf("Saving .wav");
     unsigned int idx = 0;
     unsigned int sz = WAV_HEADER_SIZE + size;
 

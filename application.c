@@ -894,7 +894,6 @@ void evaluate_tinytest(int pre){
 
             ram_read(prepWav, L3_wavs + (100+tinytestidx)*AUDIO_BUFFER_SIZE*sizeof(short), AUDIO_BUFFER_SIZE*sizeof(short));
 
-
             MfccInSig = NULL;
             MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
             if (MfccInSig == NULL){
@@ -1147,7 +1146,8 @@ void evaluate_tinytest(int pre){
         {
           return -1;
         }
-
+        
+        int predidx = 0;
         unsigned int args_inference_classifier[6];
         args_inference_classifier[0] = (unsigned int) l2_buffer;
         args_inference_classifier[1] = (unsigned int) dump;
@@ -1156,6 +1156,7 @@ void evaluate_tinytest(int pre){
         args_inference_classifier[4] = (unsigned int) 0; // init = 1
         args_inference_classifier[5] = (unsigned int) tinytestidx + 2; // tinytest already ordered
         args_inference_classifier[6] = (float *) &ce_loss;
+        args_inference_classifier[7] = (int *) &predidx;
 
         pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, args_inference_classifier));
         pi_cluster_close(&cluster_dev);
@@ -1817,7 +1818,8 @@ int application(void){
         #ifdef PERF
         gap_fc_starttimer();
         gap_fc_resethwtimer();
-        int start_timer_2 = gap_fc_readhwtimer();
+        int start_timer_mfcc = gap_fc_readhwtimer();        
+        int start_readmfcc = pi_time_get_us();
         #endif
 
         PRINTF("***************************** Computing MFCC **************************\n");
@@ -1825,22 +1827,15 @@ int application(void){
 
         // pi_gpio_pin_write(gpio_pin_measurement_id, 1);
 
-        gap_fc_starttimer();
-        gap_fc_resethwtimer();
-        int start_timer_mfcc = gap_fc_readhwtimer();        
-        int start_readmfcc = pi_time_get_us();
 
         compute_mfcc();
 
+        
+        #ifdef PERF
         int elapsed_timer_mfcc = gap_fc_readhwtimer() - start_timer_mfcc;
         int end_readmfcc = pi_time_get_us();
         printf("Compute mfcc: %d cycles\n", elapsed_timer_mfcc);
         printf("MFCC: %i us\n", end_readmfcc - start_readmfcc);
-
-
-        #ifdef PERF
-        int elapsed_timer_2 = gap_fc_readhwtimer() - start_timer_2;
-        printf("Compute mfcc: %d cycles\n", elapsed_timer_2);
         #endif
 
         for (int i = 0; i < 5; i++){
@@ -1851,13 +1846,10 @@ int application(void){
         #ifdef PERF
         gap_fc_starttimer();
         gap_fc_resethwtimer();
-        start_timer_2 = gap_fc_readhwtimer();    
-        #endif    
-
-        gap_fc_starttimer();
-        gap_fc_resethwtimer();
         int start_timer_processing = gap_fc_readhwtimer();        
         int start_readprocessing = pi_time_get_us();
+        #endif    
+
 
         feat_char = (char*) pi_l2_malloc(49 * 10 * sizeof(char));
 
@@ -1886,20 +1878,18 @@ int application(void){
         } 
 
         // if DEBUG
-        dump_data_write("mfccdump.dat", feat_char, 49 * 10 * sizeof(char));
+        // dump_data_write("mfccdump.dat", feat_char, 49 * 10 * sizeof(char));
 
 
         pi_l2_free(out_feat, 49 * N_MELS * sizeof(OUT_TYPE));
         pi_l2_free(feat_char, 49 * 10 * sizeof(char));
 
+
+        #ifdef PERF
         int elapsed_timer_processing = gap_fc_readhwtimer() - start_timer_processing;
         int end_readprocessing = pi_time_get_us();
         printf("Processing: %d cycles\n", elapsed_timer_processing);
         printf("Processing: %i us\n", end_readprocessing - start_readprocessing);
-
-        #ifdef PERF
-        int elapsed_timer_2 = gap_fc_readhwtimer() - start_timer_2;
-        printf("Convert mfcc: %d cycles\n", elapsed_timer_2);
         #endif
 
         // pi_gpio_pin_write(gpio_pin_measurement_id, 0);
@@ -1948,7 +1938,6 @@ int application(void){
         // pi_gpio_pin_write(gpio_pin_measurement_id, 1);
 
 
-
         int start_classif = pi_time_get_us();
 
 
@@ -1959,7 +1948,7 @@ int application(void){
           return -1;
         }
 
-
+        int predidx = 0;
         unsigned int args_inference_classifier[6];
         args_inference_classifier[0] = (unsigned int) l2_buffer;
         args_inference_classifier[1] = (unsigned int) dump;
@@ -1968,6 +1957,8 @@ int application(void){
         args_inference_classifier[4] = (unsigned int) 0; // init = 1
         args_inference_classifier[5] = (unsigned int) 0; // tinytest already ordered
         args_inference_classifier[6] = (float *) &ce_loss;
+        args_inference_classifier[7] = (int *) &predidx;
+
 
         pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, args_inference_classifier));
         pi_cluster_close(&cluster_dev);
@@ -2011,8 +2002,8 @@ int application(void){
 
         checkbutton:
         button_was_pressed = 0;
-        button_was_pressed = read_button();
-        button_was_pressed = 0; // measurement
+        // button_was_pressed = read_button();
+        button_was_pressed = 1; // measurement
 
         if (button_was_pressed){
 
@@ -2068,27 +2059,30 @@ int application(void){
             // evaluate_validation(0);
             int endevaluationtime = pi_time_get_us();
             printf("Evaluation time: %i\n", endevaluationtime - evaluationtime);
-            pi_gpio_pin_write(gpio_pin_measurement_id, 0);
+
+            // pi_gpio_pin_write(gpio_pin_measurement_id, 0);
 
             printf("***************************** Finished pre-ODDA evaluation, now training... *****************************\n");
 
 
-            pi_gpio_pin_write(gpio_pin_measurement_id, 1);
+            // pi_gpio_pin_write(gpio_pin_measurement_id, 1);
+
             int traintime = pi_time_get_us();
             // train model with noisy data
             train_wavsrc();
             int endtraintime = pi_time_get_us();
             printf("Train time: %i\n", endtraintime - traintime);
-            pi_gpio_pin_write(gpio_pin_measurement_id, 0);
+
+            // pi_gpio_pin_write(gpio_pin_measurement_id, 0);
 
             printf ("----------------------------- Post-ODDA evaluation -----------------------------\n");
 
 
-            pi_gpio_pin_write(gpio_pin_measurement_id, 1);
+            // pi_gpio_pin_write(gpio_pin_measurement_id, 1);
             // evaluate improvement
             evaluate_tinytest(1);
             // evaluate_validation(1);
-            pi_gpio_pin_write(gpio_pin_measurement_id, 0);
+            // pi_gpio_pin_write(gpio_pin_measurement_id, 0);
 
             if (noise_eval_input == "0"){
                pi_l2_free(RecordedNoise, noise_seconds*AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
