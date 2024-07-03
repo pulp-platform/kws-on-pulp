@@ -17,3 +17,4 @@ res/
 validation.csv
 testing.csv
 DSCNN*
+*/experiments_*
