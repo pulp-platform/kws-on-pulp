@@ -254,7 +254,7 @@ static int configure_pdm()
     return res;
 }
 
-// PMSIS SFU
+// Configure PMSIS SFU transfer
 static void handle_out_transfer_end(void *arg)
 {
     pi_sfu_enqueue(sfu_graph, memout_port, &sfu_out_buffers[sfu_out_buffer_idx]);
@@ -282,40 +282,7 @@ static void handle_out_transfer_end(void *arg)
     sfu_out_buffer_idx ^= 1;
 }
 
-// MFCC Computation
-static void RunMFCC()
-{
-    #ifdef PERF
-        gap_cl_starttimer();
-        gap_cl_resethwtimer();
-        int start = gap_cl_readhwtimer();
-    #endif
-
-    // Compute MFCC following Tensorflow settings
-    #if (N_DCT == 0)
-        #if (DATA_TYPE==2) || (DATA_TYPE==3)
-        Tensorflow_MFCC(MfccInSig, out_feat, FFTTwiddles, RFFTTwiddles, SwapTable, WindowLUT, MelFBSparsity, MelFBCoeff);
-        #elif (DATA_TYPE==1)
-        Tensorflow_MFCC(MfccInSig, out_feat, FFTTwiddles, SwapTable, WindowLUT, MelFBSparsity, MelFBCoeff, NORM);
-        #else
-        Tensorflow_MFCC(MfccInSig, out_feat, FFTTwiddles, RFFTTwiddles, SwapTable, WindowLUT, MelFBSparsity, MelFBCoeff, NORM);
-        #endif
-    #else
-        #if (DATA_TYPE==2) || (DATA_TYPE==3)
-        Tensorflow_MFCC(MfccInSig, out_feat, FFTTwiddles, RFFTTwiddles, SwapTable, WindowLUT, MelFBSparsity, MelFBCoeff, DCTTwiddles);
-        #elif (DATA_TYPE==1)
-        Tensorflow_MFCC(MfccInSig, out_feat, FFTTwiddles, SwapTable, WindowLUT, MelFBSparsity, MelFBCoeff, NORM, DCTTwiddles);
-        #else
-        Tensorflow_MFCC(MfccInSig, out_feat, FFTTwiddles, RFFTTwiddles, SwapTable, WindowLUT, MelFBSparsity, MelFBCoeff, NORM, DCTTwiddles);
-        #endif
-    #endif
-
-    #ifdef PERF
-        int elapsed = gap_cl_readhwtimer() - start;
-        printf("Total Cycles: %d over %d Frames %d Cyc/Frame\n", elapsed, 49, elapsed / 49);
-    #endif
-}
-
+// Set up microphone for recording
 void microphone_setup(){
 
     // Open SFU with default frequency
@@ -469,20 +436,49 @@ void input_wav(int save, int free, char* wavfile, int noise){
 
 }
 
+// Initialize MFCC computation
+static void RunMFCC()
+{
+    #ifdef PERF
+        gap_cl_starttimer();
+        gap_cl_resethwtimer();
+        int start = gap_cl_readhwtimer();
+    #endif
+
+    // Compute MFCC following Tensorflow settings
+    #if (N_DCT == 0)
+        #if (DATA_TYPE==2) || (DATA_TYPE==3)
+        Tensorflow_MFCC(MfccInSig, out_feat, FFTTwiddles, RFFTTwiddles, SwapTable, WindowLUT, MelFBSparsity, MelFBCoeff);
+        #elif (DATA_TYPE==1)
+        Tensorflow_MFCC(MfccInSig, out_feat, FFTTwiddles, SwapTable, WindowLUT, MelFBSparsity, MelFBCoeff, NORM);
+        #else
+        Tensorflow_MFCC(MfccInSig, out_feat, FFTTwiddles, RFFTTwiddles, SwapTable, WindowLUT, MelFBSparsity, MelFBCoeff, NORM);
+        #endif
+    #else
+        #if (DATA_TYPE==2) || (DATA_TYPE==3)
+        Tensorflow_MFCC(MfccInSig, out_feat, FFTTwiddles, RFFTTwiddles, SwapTable, WindowLUT, MelFBSparsity, MelFBCoeff, DCTTwiddles);
+        #elif (DATA_TYPE==1)
+        Tensorflow_MFCC(MfccInSig, out_feat, FFTTwiddles, SwapTable, WindowLUT, MelFBSparsity, MelFBCoeff, NORM, DCTTwiddles);
+        #else
+        Tensorflow_MFCC(MfccInSig, out_feat, FFTTwiddles, RFFTTwiddles, SwapTable, WindowLUT, MelFBSparsity, MelFBCoeff, NORM, DCTTwiddles);
+        #endif
+    #endif
+
+    #ifdef PERF
+        int elapsed = gap_cl_readhwtimer() - start;
+        printf("Total Cycles: %d over %d Frames %d Cyc/Frame\n", elapsed, 49, elapsed / 49);
+    #endif
+}
+
+// Set up MFCC computation
 void compute_mfcc(){
-    /******
-        Compute the MFCC
-    ******/
-    out_feat = (OUT_TYPE *) pi_l2_malloc(49 * N_MELS * sizeof(OUT_TYPE));    
-
-
-    // struct pi_cluster_task task_mfcc;
-
+   
     struct pi_cluster_task* task_mfcc;
     task_mfcc = pi_l2_malloc(sizeof(struct pi_cluster_task));
+    out_feat = (OUT_TYPE *) pi_l2_malloc(49 * N_MELS * sizeof(OUT_TYPE)); 
+
     pi_cluster_task(task_mfcc, &RunMFCC, NULL);
     pi_cluster_task_stacks(task_mfcc, NULL, SLAVE_STACK_SIZE);
-
     pi_cluster_conf_init(&cl_conf);
     pi_open_from_conf(&cluster_dev, &cl_conf);
     if (pi_cluster_open(&cluster_dev))
@@ -495,17 +491,14 @@ void compute_mfcc(){
         printf("Error allocating L1\n");
         pmsis_exit(-1);
     }
-   
-    // pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(task_mfcc, RunMFCC, NULL));
 
     pi_cluster_send_task_to_cl(&cluster_dev, task_mfcc);
     pi_l2_free(task_mfcc, sizeof(struct pi_cluster_task));
 
     pi_cluster_close(&cluster_dev);
-
     pi_l2_free(MfccInSig, noise_seconds * AUDIO_BUFFER_SIZE * sizeof (MFCC_IN_TYPE));
-
 }
+
 
 void evaluate_validation(int was_trained){
 
