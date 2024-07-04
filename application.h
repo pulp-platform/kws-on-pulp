@@ -68,4 +68,9 @@
 # define PRINTF printf
 #endif  /* DEBUG */
 
+enum source {
+  ONLINE,
+  OFFLINE
+}; 
+
 #endif /* APPLICATION_H */
