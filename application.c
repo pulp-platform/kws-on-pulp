@@ -1154,20 +1154,26 @@ void evaluate_tinytest(int pre){
         pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, args_inference_classifier));
         pi_cluster_close(&cluster_dev);
 
-        // printf("CE loss: %f\n", ce_loss);
+        printf("EVALUATE loss: %f\n", ce_loss);
+
+        int classidx = tinytestidx + 2;
 
         if (pre == 0){
-            ce_loss_pre += ce_loss;
+            ce_loss_pre_val += (ce_loss < 0) ? -ce_loss : ce_loss;
+            correct_pre_val += (predidx == classidx);
         }
         else{
-            ce_loss_post += ce_loss;
+            ce_loss_post_val += (ce_loss < 0) ? -ce_loss : ce_loss;
+            correct_post_val += (predidx == classidx);
         }
+
 
         
     // #ifdef  AUDIO_EVK
     //     // block until next input audio frame is ready
     //     pi_gpio_pin_write(gpio_pin_o, 0);
     // #endif
+
     }
 
 
@@ -1992,9 +1998,9 @@ int application(void){
         // #endif
 
         checkbutton:
-        button_was_pressed = 0;
+        // button_was_pressed = 0;
         // button_was_pressed = read_button();
-        // button_was_pressed = 1; // measurement
+        button_was_pressed = 1; // measurement
 
         if (button_was_pressed){
 
