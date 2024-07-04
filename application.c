@@ -257,60 +257,30 @@ static int configure_pdm()
 // PMSIS SFU
 static void handle_out_transfer_end(void *arg)
 {
-    // unsigned int t1 = pi_perf_fc_read(PI_PERF_CYCLES);
-    // printf("handle_out_transfer_end(): t1=%d, cnt=%d, idx=%d\n",
-    //     t1, sfu_out_buffer_cnt, sfu_out_buffer_idx);
-
     pi_sfu_enqueue(sfu_graph, memout_port, &sfu_out_buffers[sfu_out_buffer_idx]);
-
     /*
      * Buffer received from MEM_OUT.
      * Here we just do a simple copy to the MEM_IN buffer that is not currently being transferred.
      */
     int in_idx = sfu_in_buffer_idx ^ 1;
     int out_idx = sfu_out_buffer_idx;
-        
     int start;
     int elapsed;
 
     memcpy(BufferInList+sfu_out_buffer_cnt*DOUBLE_BUFF_SIZE*sizeof(int32_t), sfu_out_buffers[out_idx].data, DOUBLE_BUFF_SIZE*sizeof(int32_t));
-
-
     sfu_out_buffer_cnt++;
-
-    // elapsed = gap_fc_readhwtimer() - start;
-    // printf("memcpy time: %d\n", elapsed);
 
     if (sfu_out_buffer_cnt*DOUBLE_BUFF_SIZE*sizeof(int32_t) >= BUFF_SIZE) { // one seccond is added to the main buffer
         sfu_buffer_filled = 1;
     }
-
     if (sfu_out_buffer_cnt == BUFF_SIZE/DOUBLE_BUFF_SIZE/sizeof(int32_t)){
         sfu_out_buffer_cnt = 0;
     }
-
     if (sfu_buffer_filled){
         pi_evt_push(&inference_task);
     }
-
-    // pi_evt_push(&inference_task);
-
     sfu_out_buffer_idx ^= 1;
 }
-
-
-static void handle_in_transfer_end(void *arg)
-{
-    // unsigned int t1 = pi_perf_fc_read(PI_PERF_CYCLES);
-    // printf("handle_in_transfer_end(): t1=%d, cnt=%d, idx=%d\n",
-    //     t1, sfu_in_buffer_cnt, sfu_in_buffer_idx);
-
-    pi_sfu_enqueue(sfu_graph, memin_port, &sfu_in_buffers[sfu_in_buffer_idx]);
-
-    sfu_in_buffer_cnt++;
-    sfu_in_buffer_idx ^= 1;
-}
-
 
 // MFCC Computation
 static void RunMFCC()
@@ -346,9 +316,7 @@ static void RunMFCC()
     #endif
 }
 
-void input_mic_buffer(int save, int free, int noise){
-
-    int err;
+void microphone_setup(){
 
     // Open SFU with default frequency
     pi_sfu_conf_t conf = { .sfu_frequency=0 };
@@ -371,54 +339,26 @@ void input_mic_buffer(int save, int free, int noise){
     }
 
     // Configure interfaces
-    err = configure_pdm();
+    int err = configure_pdm();
     if (err != 0)
         printf("PDM interface init failed\n");
     printf("PDM Rx interface configured\n");
 
     // Get port refs
-    // memin_port = pi_sfu_mem_port_get(sfu_graph, SFU_Name(Graph, MemIn1));
-    // if (memin_port == NULL)
-        // printf("Failed to get memin_port references\n");
     memout_port = pi_sfu_mem_port_get(sfu_graph, SFU_Name(Graph, MemOut1));
     if (memout_port == NULL)
         printf("Failed to get memout_port references\n");
 
-     // Prepare buffer transfer callbacks
+    // Prepare buffer transfer callbacks
     pi_evt_callback_irq_init(&sfu_out_task, handle_out_transfer_end, NULL);
-    // pi_evt_callback_irq_init(&sfu_in_task, handle_in_transfer_end, NULL);
-
     // Enqueue first two buffers on each side
     for (int i = 0; i < NB_BUF_IN_RING; i++)
     {
         sfu_out_buffers[i].task = &sfu_out_task;
         pi_sfu_enqueue(sfu_graph, memout_port, &sfu_out_buffers[i]);
     }
-    // for (int i = 0; i < NB_BUF_IN_RING; i++)
-    // {
-    //     sfu_in_buffers[i].task = &sfu_in_task;
-    //     pi_sfu_enqueue(sfu_graph, memin_port, &sfu_in_buffers[i]);
-    // }
-
     pi_sfu_graph_load(sfu_graph);
-
     pi_i2s_ioctl(&sai_dev_rx, PI_I2S_IOCTL_START, NULL);
-    // pi_i2s_ioctl(&sai_dev_tx, PI_I2S_IOCTL_START, NULL);
-
-    // pi_time_wait_us(2000000);
-    // pi_time_wait_us(100000);
-
-    // pi_i2s_ioctl(&sai_dev_rx, PI_I2S_IOCTL_STOP, NULL);
-    // // pi_i2s_ioctl(&sai_dev_tx, PI_I2S_IOCTL_STOP, NULL);
-
-
-    // pi_sfu_graph_unload(sfu_graph);
-
-    // pi_sfu_graph_close(sfu_graph);
-
-
-    // printf("Finish rec!\n");
-
 }
 
 
@@ -1582,7 +1522,7 @@ int application(void){
 
     pi_evt_sig_init(&inference_task);
 
-    input_mic_buffer(1, 1, 0);
+    microphone_setup();
 
     int iterations = 0;
     int sfu_out_buffer_cnt_prev = 0;
