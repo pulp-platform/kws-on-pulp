@@ -254,51 +254,6 @@ static int configure_pdm()
     return res;
 }
 
-// Configure I2S Tx interface
-static int configure_i2s()
-{
-    int err;
-
-    pi_pad_function_set(SAI_SCK(SAI_TX), PI_PAD_FUNC0);
-    pi_pad_function_set(SAI_WS(SAI_TX),  PI_PAD_FUNC0);
-    pi_pad_function_set(SAI_SDI(SAI_TX), PI_PAD_FUNC0);
-    pi_pad_function_set(SAI_SDO(SAI_TX), PI_PAD_FUNC0);
-
-    int32_t stream_ch;
-    struct pi_i2s_conf i2s_conf;
-    pi_i2s_conf_init(&i2s_conf);
-
-    i2s_conf.itf = SAI_TX;
-    i2s_conf.frame_clk_freq = FREQ_PCM;
-    i2s_conf.slot_width = 32;
-    i2s_conf.channels = 1;
-
-    pi_open_from_conf(&sai_dev_tx, &i2s_conf);
-    if (pi_i2s_open(&sai_dev_tx))
-        printf("Failed to open SAI %d in I2S mode\n", SAI_TX);
-
-    // Tx slot
-    pi_sfu_i2s_itf_id_t itf_id = {SAI_TX, 1};
-    err = pi_sfu_graph_i2s_bind(sfu_graph, SFU_Name(Graph, PcmOut1), &itf_id, &stream_ch);
-    if (err != 0)
-    {
-        printf("Unable to bind I2S(SAI: %d, Ch: %d) to SFU STREAM block\n", SAI_TX, 0);
-        return -1;
-    }
-
-    struct pi_i2s_channel_conf i2s_slot_conf;
-    pi_i2s_channel_conf_init(&i2s_slot_conf);
-    i2s_slot_conf.options = PI_I2S_OPT_IS_TX | PI_I2S_OPT_ENABLED;
-    i2s_slot_conf.word_size = 32;
-    i2s_slot_conf.format = PI_I2S_CH_FMT_DATA_ORDER_MSB | PI_I2S_CH_FMT_DATA_ALIGN_LEFT | PI_I2S_CH_FMT_DATA_SIGN_NO_EXTEND;
-    i2s_slot_conf.stream_id = stream_ch;
-
-    if (pi_i2s_channel_conf_set(&sai_dev_tx, 0, &i2s_slot_conf))
-        return -1;
-
-    return 0;
-}
-
 // PMSIS SFU
 static void handle_out_transfer_end(void *arg)
 {
@@ -420,11 +375,6 @@ void input_mic_buffer(int save, int free, int noise){
     if (err != 0)
         printf("PDM interface init failed\n");
     printf("PDM Rx interface configured\n");
-
-    // err = configure_i2s();
-    // if (err != 0)
-    //     printf("I2S interface init failed\n");
-    // printf("I2S Tx interface configured\n");
 
     // Get port refs
     // memin_port = pi_sfu_mem_port_get(sfu_graph, SFU_Name(Graph, MemIn1));
