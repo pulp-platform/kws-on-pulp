@@ -284,17 +284,11 @@ void net_step(void *args)
 
 
   if (op_mode == EVALUATE){
-    printf("A\n");
     forward();
-    printf("B\n");
     pulp_1dsoftmax_fp32_fw(&layer0_out);
-    printf("C\n");
     *predidx_ptr = predict_float_local(layer0_out.data, 12);
-    printf("D\n");
     compute_loss();
-    printf("E\n");
     *application_loss = loss;
-    printf("F\n");
   }
 
   if (op_mode == TRAIN){
