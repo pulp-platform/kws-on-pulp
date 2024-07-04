@@ -54,7 +54,7 @@ set (NUM_MATMULS 24)
 
 set(GAP9_SDK_DIR         $ENV{GAP_SDK_HOME})
 set(BUILD_DIR            ${CMAKE_CURRENT_SOURCE_DIR}/build)
-set(TRAINLIB_DIR         ${CMAKE_CURRENT_SOURCE_DIR}/trainlib_example_dscnn/fc_plugin_experiments/dscnns_fp16)
+set(TRAINLIB_DIR         ${CMAKE_CURRENT_SOURCE_DIR}/trainlib_example_dscnn/DSCNNS_FP32_NOB)
 set(DSP_DIR              ${GAP9_SDK_DIR}/tools/autotiler_v3/DSP_Libraries/)
 set(DSP_LUT_DIR          ${GAP9_SDK_DIR}/tools/autotiler_v3/DSP_Libraries/LUT_Tables/)
 set(EMUL_DIR             ${GAP9_SDK_DIR}/tools/autotiler_v3/Emulation/)

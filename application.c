@@ -788,16 +788,11 @@ void evaluate_validation(pre){
 
             unsigned int args_inference_classifier[6];
             args_inference_classifier[0] = (unsigned int) l2_buffer;
-            args_inference_classifier[1] = (unsigned int) dump;
-            args_inference_classifier[2] = (unsigned int) L2_FC_weights_float;
-            args_inference_classifier[3] = (unsigned int) 2; // inference=0/update=1/evaluate=2
-            args_inference_classifier[4] = (unsigned int) 0; // init = 1
-            args_inference_classifier[5] = (unsigned int) classidx; // tinytest already ordered
-            args_inference_classifier[6] = (float *) &ce_loss;
-            args_inference_classifier[7] = (int *) &predidx;
-
-
-
+            args_inference_classifier[1] = (unsigned int) L2_FC_weights_float;
+            args_inference_classifier[2] = (unsigned int) 3; // evaluate
+            args_inference_classifier[3] = (unsigned int) classidx; // tinytest already ordered
+            args_inference_classifier[4] = (float *) &ce_loss;
+            args_inference_classifier[5] = (int *) &predidx;
 
             pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, args_inference_classifier));
             pi_cluster_close(&cluster_dev);
@@ -1150,13 +1145,11 @@ void evaluate_tinytest(int pre){
         int predidx = 0;
         unsigned int args_inference_classifier[6];
         args_inference_classifier[0] = (unsigned int) l2_buffer;
-        args_inference_classifier[1] = (unsigned int) dump;
-        args_inference_classifier[2] = (unsigned int) L2_FC_weights_float;
-        args_inference_classifier[3] = (unsigned int) 2; // inference=0/update=1/evaluate=2
-        args_inference_classifier[4] = (unsigned int) 0; // init = 1
-        args_inference_classifier[5] = (unsigned int) tinytestidx + 2; // tinytest already ordered
-        args_inference_classifier[6] = (float *) &ce_loss;
-        args_inference_classifier[7] = (int *) &predidx;
+        args_inference_classifier[1] = (unsigned int) L2_FC_weights_float;
+        args_inference_classifier[2] = (unsigned int) 3; // evaluate
+        args_inference_classifier[3] = (unsigned int) tinytestidx + 2; // tinytest already ordered
+        args_inference_classifier[4] = (float *) &ce_loss;
+        args_inference_classifier[5] = (int *) &predidx;
 
         pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, args_inference_classifier));
         pi_cluster_close(&cluster_dev);
@@ -1331,18 +1324,18 @@ void train_wavsrc(){
           return -1;
         }
 
+        int predidx;
         unsigned int args_train_classifier[6];
         args_train_classifier[0] = (unsigned int) l2_buffer;
-        args_train_classifier[1] = (unsigned int) L2_FC_weights_int8;
-        args_train_classifier[2] = (unsigned int) L2_FC_weights_float;
-        args_train_classifier[3] = (unsigned int) 1; // update = 1
-        if (uttridx == 0 && epidx == 0)
-            args_train_classifier[4] = (unsigned int) 1; // init = 1
-        else
-            args_train_classifier[4] = (unsigned int) 0; // init = 0   
-        
-        args_train_classifier[5] = (unsigned int) classidx;
-        args_train_classifier[6] = (float*) &ce_loss;
+        args_train_classifier[1] = (unsigned int) L2_FC_weights_float;
+        args_train_classifier[2] = (unsigned int) 2; // train
+        // if (uttridx == 0 && epidx == 0)
+        //     args_train_classifier[2] = (unsigned int) 1; // init = 1
+        // else
+        //     args_train_classifier[2] = (unsigned int) 0; // init = 0   
+        args_train_classifier[3] = (unsigned int) classidx;
+        args_train_classifier[4] = (float*) &ce_loss;
+        args_train_classifier[5] = (int *) &predidx;
 
         pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, args_train_classifier));
 
@@ -1630,14 +1623,14 @@ int application(void){
         printf("failed to allocate memory for L2_FC_weights_float\n");
     }
 
+    int predidx;
     unsigned int args_init_classifier[6];
     args_init_classifier[0] = (unsigned int) l2_buffer;
-    args_init_classifier[1] = (unsigned int) L2_FC_weights_int8; // Weights buffer
-    args_init_classifier[2] = (unsigned int) L2_FC_weights_float;
-    args_init_classifier[3] = (unsigned int) 0; // update = 0
-    args_init_classifier[4] = (unsigned int) 1; // init = 0
-    args_init_classifier[5] = (unsigned int) 100; // dummy class
-    args_init_classifier[6] = (float*) &ce_loss;
+    args_init_classifier[1] = (unsigned int) L2_FC_weights_float;
+    args_init_classifier[2] = (unsigned int) 0; // initialize
+    args_init_classifier[3] = (unsigned int) 0; // classidx (placeholder)
+    args_init_classifier[4] = (float*) &ce_loss;
+    args_init_classifier[5] = (int *) &predidx;
 
     pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, args_init_classifier));
 
@@ -1951,13 +1944,11 @@ int application(void){
         int predidx = 0;
         unsigned int args_inference_classifier[6];
         args_inference_classifier[0] = (unsigned int) l2_buffer;
-        args_inference_classifier[1] = (unsigned int) dump;
-        args_inference_classifier[2] = (unsigned int) L2_FC_weights_float;
-        args_inference_classifier[3] = (unsigned int) 0; // update = 1
-        args_inference_classifier[4] = (unsigned int) 0; // init = 1
-        args_inference_classifier[5] = (unsigned int) 0; // tinytest already ordered
-        args_inference_classifier[6] = (float *) &ce_loss;
-        args_inference_classifier[7] = (int *) &predidx;
+        args_inference_classifier[1] = (unsigned int) L2_FC_weights_float;
+        args_inference_classifier[2] = (unsigned int) 1; // inference
+        args_inference_classifier[3] = (unsigned int) 0; // classidx (placeholder)
+        args_inference_classifier[4] = (float *) &ce_loss;
+        args_inference_classifier[5] = (int *) &predidx;
 
 
         pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, args_inference_classifier));
@@ -2003,7 +1994,7 @@ int application(void){
         checkbutton:
         button_was_pressed = 0;
         // button_was_pressed = read_button();
-        button_was_pressed = 1; // measurement
+        // button_was_pressed = 1; // measurement
 
         if (button_was_pressed){
 
