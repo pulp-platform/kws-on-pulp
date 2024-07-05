@@ -113,14 +113,6 @@ struct pi_device* ram = &DefaultRam;
 //     int val_gpio;
 // #endif
 
-
-
-
-//static struct pi_default_flash_conf flash_conf;
-static pi_fs_file_t * file[1];
-static struct pi_device fs;
-static struct pi_device flash;
-
 // Load args
 char *WavName = NULL;
 int mfcc_src = NULL;
@@ -128,52 +120,27 @@ int noise_train_src = NULL;
 int uttr_train_src = NULL;
 int uttr_inf_src = NULL;
 
-// Arrays handling data movement
-short int *inWav;
-MFCC_IN_TYPE *MfccInSig;
-MFCC_IN_TYPE *MfccInSig_prev;
-int16_t *MfccInSig_int16; // for saving
-MFCC_IN_TYPE *RecordedNoise;
-int16_t *RecordedNoise_int16; // for saving
-OUT_TYPE *out_feat;
-char * feat_char;
 
 void *l2_buffer;
-void * L2_FC_weights_float;
-void *L2_FC_weights_int8;
+void *l2_buffer_wgt_upd;
 
-SFU_uDMA_Channel_T *ChanOutCtxt_0;
+/* Global variables for microphone recording */
 void * BufferInList;
-void * BufferOutList;
-
 // PMSIS SFU
-// SFU
 static pi_sfu_graph_t *sfu_graph;
-static uint8_t sfu_input_id;
-static uint8_t sfu_output_id;
-
 // SAI used for receiving and sending PDM
 static pi_device_t sai_dev_rx;
-static pi_device_t sai_dev_tx;
-
 // Audio buffers
 static pi_sfu_buffer_t sfu_out_buffers[NB_BUF_IN_RING]; // Buffers for SFU(MEM_OUT) -> L2 transfers
-static pi_sfu_buffer_t sfu_in_buffers[NB_BUF_IN_RING]; // BUffers for L2 -> SFU(MEM_IN) transfer
 static int sfu_out_buffer_idx = 0;
 static int sfu_out_buffer_cnt = 0;
-static int sfu_in_buffer_idx = 0;
-static int sfu_in_buffer_cnt = 0;
-
 static pi_evt_t sfu_out_task;
-static pi_evt_t sfu_in_task;
-
-static pi_sfu_mem_port_t * memin_port;
 static pi_sfu_mem_port_t * memout_port;
-
 static int sfu_buffer_filled = 0;
 
 int noise_seconds = 1;
 
+/* Read button */
 static const pi_gpio_e gpio_boot_pin_1 = PAD_GPIO_UPB;
 
 // Global declaration 
@@ -262,7 +229,6 @@ static void handle_out_transfer_end(void *arg)
      * Buffer received from MEM_OUT.
      * Here we just do a simple copy to the MEM_IN buffer that is not currently being transferred.
      */
-    int in_idx = sfu_in_buffer_idx ^ 1;
     int out_idx = sfu_out_buffer_idx;
     int start;
     int elapsed;
@@ -336,8 +302,7 @@ void input_wav(int save, int free, char* wavfile, int noise){
 
     int step1 = pi_time_get_us();
 
-    inWav = NULL;
-    inWav    = (short int *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(short)); 
+    short int *inWav = (short int *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(short)); 
     if (inWav == NULL){
         printf("Failed allocating inWav.\n");
         pmsis_exit(-1);
@@ -359,8 +324,9 @@ void input_wav(int save, int free, char* wavfile, int noise){
 
     int step3 = pi_time_get_us();
 
+    MFCC_IN_TYPE *RecordedNoise;
+    MFCC_IN_TYPE *MfccInSig;
     if (noise){
-        RecordedNoise = NULL;
         RecordedNoise = (MFCC_IN_TYPE *) pi_l2_malloc(noise_seconds*AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
         if (RecordedNoise == NULL){
             printf("Failed allocating RecordedNoise.\n");
@@ -384,8 +350,7 @@ void input_wav(int save, int free, char* wavfile, int noise){
 
     }
     else {
-        MfccInSig = NULL;
-        MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
+        MFCC_IN_TYPE *MfccInSig;
         if (MfccInSig == NULL){
             printf("Failed allocating MfccInSig.\n");
             pmsis_exit(-1);
@@ -433,11 +398,10 @@ void input_wav(int save, int free, char* wavfile, int noise){
     }
 
     int step6 = pi_time_get_us();
-
 }
 
 // Initialize MFCC computation
-static void RunMFCC()
+static void mfcc_kernel(void *args_mfcc)
 {
     #ifdef PERF
         gap_cl_starttimer();
@@ -445,22 +409,26 @@ static void RunMFCC()
         int start = gap_cl_readhwtimer();
     #endif
 
+    unsigned int * args = (unsigned int *) args_mfcc;
+    MFCC_IN_TYPE * MfccInputSignal = (MFCC_IN_TYPE *) args[0];
+    OUT_TYPE * MfccOutputSignal = (OUT_TYPE *) args[1];
+
     // Compute MFCC following Tensorflow settings
     #if (N_DCT == 0)
         #if (DATA_TYPE==2) || (DATA_TYPE==3)
-        Tensorflow_MFCC(MfccInSig, out_feat, FFTTwiddles, RFFTTwiddles, SwapTable, WindowLUT, MelFBSparsity, MelFBCoeff);
+        Tensorflow_MFCC(MfccInputSignal, MfccOutputSignal, FFTTwiddles, RFFTTwiddles, SwapTable, WindowLUT, MelFBSparsity, MelFBCoeff);
         #elif (DATA_TYPE==1)
-        Tensorflow_MFCC(MfccInSig, out_feat, FFTTwiddles, SwapTable, WindowLUT, MelFBSparsity, MelFBCoeff, NORM);
+        Tensorflow_MFCC(MfccInputSignal, MfccOutputSignal, FFTTwiddles, SwapTable, WindowLUT, MelFBSparsity, MelFBCoeff, NORM);
         #else
-        Tensorflow_MFCC(MfccInSig, out_feat, FFTTwiddles, RFFTTwiddles, SwapTable, WindowLUT, MelFBSparsity, MelFBCoeff, NORM);
+        Tensorflow_MFCC(MfccInputSignal, MfccOutputSignal, FFTTwiddles, RFFTTwiddles, SwapTable, WindowLUT, MelFBSparsity, MelFBCoeff, NORM);
         #endif
     #else
         #if (DATA_TYPE==2) || (DATA_TYPE==3)
-        Tensorflow_MFCC(MfccInSig, out_feat, FFTTwiddles, RFFTTwiddles, SwapTable, WindowLUT, MelFBSparsity, MelFBCoeff, DCTTwiddles);
+        Tensorflow_MFCC(MfccInputSignal, MfccOutputSignal, FFTTwiddles, RFFTTwiddles, SwapTable, WindowLUT, MelFBSparsity, MelFBCoeff, DCTTwiddles);
         #elif (DATA_TYPE==1)
-        Tensorflow_MFCC(MfccInSig, out_feat, FFTTwiddles, SwapTable, WindowLUT, MelFBSparsity, MelFBCoeff, NORM, DCTTwiddles);
+        Tensorflow_MFCC(MfccInputSignal, MfccOutputSignal, FFTTwiddles, SwapTable, WindowLUT, MelFBSparsity, MelFBCoeff, NORM, DCTTwiddles);
         #else
-        Tensorflow_MFCC(MfccInSig, out_feat, FFTTwiddles, RFFTTwiddles, SwapTable, WindowLUT, MelFBSparsity, MelFBCoeff, NORM, DCTTwiddles);
+        Tensorflow_MFCC(MfccInputSignal, MfccOutputSignal, FFTTwiddles, RFFTTwiddles, SwapTable, WindowLUT, MelFBSparsity, MelFBCoeff, NORM, DCTTwiddles);
         #endif
     #endif
 
@@ -471,13 +439,16 @@ static void RunMFCC()
 }
 
 // Set up MFCC computation
-void compute_mfcc(){
+void mfcc_computation(MFCC_IN_TYPE * MfccInputSignal, OUT_TYPE * MfccOutputSignal){
    
     struct pi_cluster_task* task_mfcc;
     task_mfcc = pi_l2_malloc(sizeof(struct pi_cluster_task));
-    out_feat = (OUT_TYPE *) pi_l2_malloc(49 * N_MELS * sizeof(OUT_TYPE)); 
 
-    pi_cluster_task(task_mfcc, &RunMFCC, NULL);
+    unsigned int args_mfcc[0];
+    args_mfcc[0] = (unsigned int) MfccInputSignal;
+    args_mfcc[1] = (unsigned int) MfccOutputSignal;
+
+    pi_cluster_task(task_mfcc, &mfcc_kernel, args_mfcc);
     pi_cluster_task_stacks(task_mfcc, NULL, SLAVE_STACK_SIZE);
     pi_cluster_conf_init(&cl_conf);
     pi_open_from_conf(&cluster_dev, &cl_conf);
@@ -494,9 +465,7 @@ void compute_mfcc(){
 
     pi_cluster_send_task_to_cl(&cluster_dev, task_mfcc);
     pi_l2_free(task_mfcc, sizeof(struct pi_cluster_task));
-
     pi_cluster_close(&cluster_dev);
-    pi_l2_free(MfccInSig, noise_seconds * AUDIO_BUFFER_SIZE * sizeof (MFCC_IN_TYPE));
 }
 
 
@@ -521,8 +490,7 @@ void evaluate_validation(int was_trained){
 
             // Read .wav
             header_struct header_info;
-            inWav = NULL;
-            inWav    = (short int *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(short)); 
+            short int *inWav = (short int *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(short)); 
             if (inWav == NULL){
                 printf("Failed allocating inWav.\n");
                 pmsis_exit(-1);
@@ -592,8 +560,7 @@ void evaluate_validation(int was_trained){
                     break;
             }
 
-            MfccInSig = NULL;
-            MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
+            MFCC_IN_TYPE *MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
             if (MfccInSig == NULL){
                 printf("Failed allocating MfccInSig.\n");
                 pmsis_exit(-1);
@@ -614,20 +581,21 @@ void evaluate_validation(int was_trained){
             int noisesamplestart = 0;
                 
             for (int samplepos = 0; samplepos < AUDIO_BUFFER_SIZE; samplepos++){
-                MfccInSig[samplepos] = MfccInSig[samplepos] + 1*RecordedNoise[noisesamplestart+samplepos];
+                // MfccInSig[samplepos] = MfccInSig[samplepos] + 1*RecordedNoise[noisesamplestart+samplepos]; // CIOFLANC: Add RecordedNoise
+                MfccInSig[samplepos] = MfccInSig[samplepos];
             }
 
-            compute_mfcc();  
-
+            OUT_TYPE *MfccOutSig = (OUT_TYPE *) pi_l2_malloc(49 * N_MELS * sizeof(OUT_TYPE));
+            mfcc_computation(MfccInSig, MfccOutSig);  
             pi_l2_free(MfccInSig, AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE)); 
             
-            feat_char = (char*) pi_l2_malloc(49 * 10 * sizeof(char));
+            char * MfccOutSig_uint8 = (char*) pi_l2_malloc(49 * 10 * sizeof(char));
 
             int k = 0;
             for (int i = 0; i < 49 * N_MELS;i++){                
                 
-                // feat_char[k] = (char) ((int) floor(out_feat[i] * pow(2, -1) * sqrt(0.05)) + 128);
-                feat_char[k] = (char) ((int) floor(out_feat[i] * 0.1118) + 128);
+                // MfccOutSig_uint8[k] = (char) ((int) floor(MfccOutSig[i] * pow(2, -1) * sqrt(0.05)) + 128);
+                MfccOutSig_uint8[k] = (char) ((int) floor(MfccOutSig[i] * 0.1118) + 128);
 
                 if (N_MELS == 40){
                     // Select 10 MFCC per window
@@ -641,14 +609,14 @@ void evaluate_validation(int was_trained){
                     ((uint8_t *)l2_buffer)[k] = L2_input_h[k]; // Precomputed MFCC
                 }
                 else {
-                    ((uint8_t *)l2_buffer)[k] = feat_char[k]; // Online computed MFCC
+                    ((uint8_t *)l2_buffer)[k] = MfccOutSig_uint8[k]; // Online computed MFCC
                 }
 
                 k++;
             } 
 
-            pi_l2_free(out_feat, 49 * N_MELS * sizeof(OUT_TYPE));
-            pi_l2_free(feat_char, 49 * 10 * sizeof(char));
+            pi_l2_free(MfccOutSig, 49 * N_MELS * sizeof(OUT_TYPE));
+            pi_l2_free(MfccOutSig_uint8, 49 * 10 * sizeof(char));
 
 
             // Extract backbone features
@@ -670,7 +638,7 @@ void evaluate_validation(int was_trained){
 
             unsigned int args_inference_classifier[6];
             args_inference_classifier[0] = (unsigned int) l2_buffer;
-            args_inference_classifier[1] = (unsigned int) L2_FC_weights_float;
+            args_inference_classifier[1] = (unsigned int) l2_buffer_wgt_upd;
             args_inference_classifier[2] = (unsigned int) 3; // evaluate
             args_inference_classifier[3] = (unsigned int) classidx; // tinytest already ordered
             args_inference_classifier[4] = (float *) &ce_loss;
@@ -727,6 +695,9 @@ void evaluate_tinytest(int was_trained){
         savewav = 1; 
         #endif
 
+        MFCC_IN_TYPE *MfccInSig;
+        OUT_TYPE *MfccOutSig;
+
         if (uttr_train_src == OFFLINE) {
 
             // Read from WAV       
@@ -768,7 +739,6 @@ void evaluate_tinytest(int was_trained){
 
             ram_read(prepWav, L3_wavs + (100+tinytestidx)*AUDIO_BUFFER_SIZE*sizeof(short), AUDIO_BUFFER_SIZE*sizeof(short));
 
-            MfccInSig = NULL;
             MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
             if (MfccInSig == NULL){
                 printf("Failed allocating MfccInSig.\n");
@@ -791,7 +761,6 @@ void evaluate_tinytest(int was_trained){
         else if (uttr_train_src == ONLINE) {
 
             // Read from MIC
-            MfccInSig = NULL;
             MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
 
             if (MfccInSig == NULL){
@@ -862,49 +831,52 @@ void evaluate_tinytest(int was_trained){
         int noisesamplestart = 0;
         if (uttr_train_src == OFFLINE) {
             for (int samplepos = 0; samplepos < AUDIO_BUFFER_SIZE; samplepos++){
-                MfccInSig[samplepos] = MfccInSig[samplepos] + 1*RecordedNoise[noisesamplestart+samplepos];
+                // MfccInSig[samplepos] = MfccInSig[samplepos] + 1*RecordedNoise[noisesamplestart+samplepos];
+                MfccInSig[samplepos] = MfccInSig[samplepos]; // CIOFLANC: Add RecordedNoise
             }
         }
 
-        if (savewav){
-            MfccInSig_int16 = (int16_t *) pi_l2_malloc (sizeof(int16_t) * AUDIO_BUFFER_SIZE);
-            RecordedNoise_int16 = (int16_t *) pi_l2_malloc (sizeof(int16_t) * AUDIO_BUFFER_SIZE);
-            for (int i = 0; i < AUDIO_BUFFER_SIZE; i++){
-                MfccInSig_int16[i] = (int16_t) (MfccInSig[i] * (1<<15));
-                RecordedNoise_int16[i] = (int16_t) (RecordedNoise[i] * (1<<15));
-            }
-            // Save the noise-augmented recording
-            dump_wav_open("utter.wav", 16, 16000, 1, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
-            dump_wav_write(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
-            dump_wav_close();
+        // if (savewav){
+        //     int16_t *MfccInSig_int16 = (int16_t *) pi_l2_malloc (sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+        //     int16_t *RecordedNoise_int16 = (int16_t *) pi_l2_malloc (sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+        //     for (int i = 0; i < AUDIO_BUFFER_SIZE; i++){
+        //         MfccInSig_int16[i] = (int16_t) (MfccInSig[i] * (1<<15));
+        //         RecordedNoise_int16[i] = (int16_t) (RecordedNoise[i] * (1<<15));
+        //     }
+        //     // Save the noise-augmented recording
+        //     dump_wav_open("utter.wav", 16, 16000, 1, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+        //     dump_wav_write(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+        //     dump_wav_close();
 
-            PRINTF("Writing wav file to utter.wav completed successfully\n");
-            for (int samplepos = 0; samplepos < AUDIO_BUFFER_SIZE; samplepos++){
-                MfccInSig_int16[samplepos] = (int16_t)(MfccInSig[samplepos] * (1<<15)) + 1*RecordedNoise_int16[noisesamplestart+samplepos];
-            }
-            // Save the noise-augmented recording
-            dump_wav_open("utter_noise.wav", 16, 16000, 1, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
-            dump_wav_write(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
-            dump_wav_close();
-            pi_l2_free(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
-            pi_l2_free(RecordedNoise_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+        //     PRINTF("Writing wav file to utter.wav completed successfully\n");
+        //     for (int samplepos = 0; samplepos < AUDIO_BUFFER_SIZE; samplepos++){
+        //         MfccInSig_int16[samplepos] = (int16_t)(MfccInSig[samplepos] * (1<<15)) + 1*RecordedNoise_int16[noisesamplestart+samplepos];
+        //     }
+        //     // Save the noise-augmented recording
+        //     dump_wav_open("utter_noise.wav", 16, 16000, 1, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+        //     dump_wav_write(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+        //     dump_wav_close();
+        //     pi_l2_free(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+        //     pi_l2_free(RecordedNoise_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
 
-            PRINTF("Writing wav file to utter_noise.wav completed successfully\n");
-        }
+        //     PRINTF("Writing wav file to utter_noise.wav completed successfully\n");
+        // }
 
         #ifdef MEASURE
         int end_readeval = pi_time_get_us();
         printf ("Loaded and scaled data for evaluation: %i us\n", end_readeval - start_readeval);
         #endif
 
-        compute_mfcc();
+        MfccOutSig = (OUT_TYPE *) pi_l2_malloc(49 * N_MELS * sizeof(OUT_TYPE)); 
+        mfcc_computation(MfccInSig, MfccOutSig);
+        pi_l2_free(MfccInSig, AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE)); 
 
-        feat_char = (char*) pi_l2_malloc(49 * 10 * sizeof(char));
+        char * MfccOutSig_uint8 = (char*) pi_l2_malloc(49 * 10 * sizeof(char));
         int k = 0;
         for (int i = 0; i < 49 * N_MELS;i++){                
             
-            // feat_char[k] = (char) ((int) floor(out_feat[i] * pow(2, -1) * sqrt(0.05)) + 128); // 23.883617 QSNR w/ float
-            feat_char[k] = (char) ((int) floor(out_feat[i] * 0.1118) + 128);
+            // MfccOutSig_uint8[k] = (char) ((int) floor(MfccOutSig[i] * pow(2, -1) * sqrt(0.05)) + 128); // 23.883617 QSNR w/ float
+            MfccOutSig_uint8[k] = (char) ((int) floor(MfccOutSig[i] * 0.1118) + 128);
 
             if (N_MELS == 40){
                 // Select 10 MFCC per window
@@ -917,13 +889,13 @@ void evaluate_tinytest(int was_trained){
                 ((uint8_t *)l2_buffer)[k] = L2_input_h[k]; // Precomputed MFCC
             }
             else {
-                ((uint8_t *)l2_buffer)[k] = feat_char[k]; // Online computed MFCC
+                ((uint8_t *)l2_buffer)[k] = MfccOutSig_uint8[k]; // Online computed MFCC
             }
             k++;
         } 
 
-        pi_l2_free(out_feat, 49 * N_MELS * sizeof(OUT_TYPE));
-        pi_l2_free(feat_char, 49 * 10 * sizeof(char));
+        pi_l2_free(MfccOutSig, 49 * N_MELS * sizeof(OUT_TYPE));
+        pi_l2_free(MfccOutSig_uint8, 49 * 10 * sizeof(char));
 
         for (int k = 0; k < 49 * 10; k++){
             // Data saving to elude re-recording the evaluation samples. TODO: organize workflow
@@ -931,68 +903,68 @@ void evaluate_tinytest(int was_trained){
                 if (was_trained == 0){
                     switch (tinytestidx) {
                         case 0:
-                            yes[k] = feat_char[k];
+                            yes[k] = MfccOutSig_uint8[k];
                             break;
                         case 1: 
-                            no[k] = feat_char[k];
+                            no[k] = MfccOutSig_uint8[k];
                             break;
                         case 2:
-                            up[k] = feat_char[k];
+                            up[k] = MfccOutSig_uint8[k];
                             break;
                         case 3:
-                            down[k] = feat_char[k];
+                            down[k] = MfccOutSig_uint8[k];
                             break;
                         case 4:
-                            left[k] = feat_char[k];
+                            left[k] = MfccOutSig_uint8[k];
                             break;
                         case 5:
-                            right[k] = feat_char[k];
+                            right[k] = MfccOutSig_uint8[k];
                             break;
                         case 6:
-                            on[k] = feat_char[k];
+                            on[k] = MfccOutSig_uint8[k];
                             break;
                         case 7:
-                            off[k] = feat_char[k];
+                            off[k] = MfccOutSig_uint8[k];
                             break;
                         case 8:
-                            stop[k] = feat_char[k];
+                            stop[k] = MfccOutSig_uint8[k];
                             break;
                         case 9:
-                            go[k] = feat_char[k];
+                            go[k] = MfccOutSig_uint8[k];
                             break;
                     } 
                 }
                 else{
                     switch (tinytestidx) {
                         case 0:
-                            feat_char[k] = yes[k];
+                            MfccOutSig_uint8[k] = yes[k];
                             break;
                         case 1: 
-                            feat_char[k] = no[k];
+                            MfccOutSig_uint8[k] = no[k];
                             break;
                         case 2:
-                            feat_char[k] = up[k];
+                            MfccOutSig_uint8[k] = up[k];
                             break;
                         case 3:
-                            feat_char[k] = down[k];
+                            MfccOutSig_uint8[k] = down[k];
                             break;
                         case 4:
-                            feat_char[k] = left[k];
+                            MfccOutSig_uint8[k] = left[k];
                             break;
                         case 5:
-                            feat_char[k] = right[k];
+                            MfccOutSig_uint8[k] = right[k];
                             break;
                         case 6:
-                            feat_char[k] = on[k];
+                            MfccOutSig_uint8[k] = on[k];
                             break;
                         case 7:
-                            feat_char[k] = off[k];
+                            MfccOutSig_uint8[k] = off[k];
                             break;
                         case 8:
-                            feat_char[k] = stop[k];
+                            MfccOutSig_uint8[k] = stop[k];
                             break;
                         case 9:
-                            feat_char[k] = go[k];
+                            MfccOutSig_uint8[k] = go[k];
                             break;
                     } 
                 }
@@ -1018,7 +990,7 @@ void evaluate_tinytest(int was_trained){
         int predidx = 0;
         unsigned int args_inference_classifier[6];
         args_inference_classifier[0] = (unsigned int) l2_buffer;
-        args_inference_classifier[1] = (unsigned int) L2_FC_weights_float;
+        args_inference_classifier[1] = (unsigned int) l2_buffer_wgt_upd;
         args_inference_classifier[2] = (unsigned int) 3; // evaluate
         args_inference_classifier[3] = (unsigned int) tinytestidx + 2; // tinytest already ordered
         args_inference_classifier[4] = (float *) &ce_loss;
@@ -1120,8 +1092,9 @@ void train_wavsrc(){
 
         ram_read(prepWav, L3_wavs + ((classidx-2)*10+sampleidx)*AUDIO_BUFFER_SIZE*sizeof(short), AUDIO_BUFFER_SIZE*sizeof(short));
 
-        MfccInSig = NULL;
-        MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
+        MFCC_IN_TYPE *MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
+        OUT_TYPE *MfccOutSig = (OUT_TYPE *) pi_l2_malloc(49 * N_MELS * sizeof(OUT_TYPE)); 
+
         if (MfccInSig == NULL){
             printf("Failed allocating MfccInSig.\n");
             pmsis_exit(-1);
@@ -1145,19 +1118,21 @@ void train_wavsrc(){
         if (localaddnoise){
             samplestart = 0; // TODO: random sample between (0, len(wav)-16000)
             for (int samplepos = 0; samplepos < AUDIO_BUFFER_SIZE; samplepos++){
-                MfccInSig[samplepos] = MfccInSig[samplepos] + 1*RecordedNoise[samplestart+samplepos]; 
+                // MfccInSig[samplepos] = MfccInSig[samplepos] + 1*RecordedNoise[samplestart+samplepos]; // CIOFLANC: Add RecordedNoise
+                MfccInSig[samplepos] = MfccInSig[samplepos]; 
             }
         }
 
-        compute_mfcc();
+        mfcc_computation(MfccInSig, MfccOutSig);
+        pi_l2_free(MfccInSig, AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE)); 
 
-        feat_char = (char*) pi_l2_malloc(49 * 10 * sizeof(char));
+        char * MfccOutSig_uint8 = (char*) pi_l2_malloc(49 * 10 * sizeof(char));
 
         int k = 0;
         for (int i = 0; i < 49 * N_MELS;i++){                
             
-            // feat_char[k] = (char) ((int) floor(out_feat[i] * pow(2, -1) * sqrt(0.05)) + 128); // 23.883617 QSNR w/ float
-            feat_char[k] = (char) ((int) floor(out_feat[i] * 0.1118) + 128);
+            // MfccOutSig_uint8[k] = (char) ((int) floor(MfccOutSig[i] * pow(2, -1) * sqrt(0.05)) + 128); // 23.883617 QSNR w/ float
+            MfccOutSig_uint8[k] = (char) ((int) floor(MfccOutSig[i] * 0.1118) + 128);
 
             if (N_MELS == 40){
                 // Select 10 MFCC per window
@@ -1171,19 +1146,20 @@ void train_wavsrc(){
                 ((uint8_t *)l2_buffer)[k] = L2_input_h[k]; // Precomputed MFCC
             }
             else {
-                ((uint8_t *)l2_buffer)[k] = feat_char[k]; // Online computed MFCC
+                ((uint8_t *)l2_buffer)[k] = MfccOutSig_uint8[k]; // Online computed MFCC
             }
 
             k++;
         } 
 
-        pi_l2_free(out_feat, 49 * N_MELS * sizeof(OUT_TYPE));
-        pi_l2_free(feat_char, 49 * 10 * sizeof(char));
+        pi_l2_free(MfccOutSig, 49 * N_MELS * sizeof(OUT_TYPE));
+        pi_l2_free(MfccOutSig_uint8, 49 * 10 * sizeof(char));
 
 
         PRINTF ("********** Run inferecene **********\n");
         // Extract backbone features
-        network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &L2_FC_weights_int8, 0, 1); // L2_input_h extra-arg for L2-only
+        void *dump;
+        network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &dump, 0, 1); // L2_input_h extra-arg for L2-only
 
 
         pi_cluster_conf_init(&cl_conf);
@@ -1196,7 +1172,7 @@ void train_wavsrc(){
         int predidx;
         unsigned int args_train_classifier[6];
         args_train_classifier[0] = (unsigned int) l2_buffer;
-        args_train_classifier[1] = (unsigned int) L2_FC_weights_float;
+        args_train_classifier[1] = (unsigned int) l2_buffer_wgt_upd;
         args_train_classifier[2] = (unsigned int) 2; // train
         // if (uttridx == 0 && epidx == 0)
         //     args_train_classifier[2] = (unsigned int) 1; // init = 1
@@ -1342,8 +1318,7 @@ int application(void){
 
         header_struct header_info;
 
-        inWav = NULL;
-        inWav    = (short int *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(short)); 
+        short int *inWav = (short int *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(short)); 
         if (inWav == NULL){
             printf("Failed allocating inWav.\n");
             pmsis_exit(-1);
@@ -1430,26 +1405,20 @@ int application(void){
 
     for (int i = 0; i < 10; i++) {
 
-        inWav = NULL;
-        inWav    = (short int *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(short)); 
+        short int *inWav = (short int *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(short)); 
         if (inWav == NULL){
             printf("Failed allocating inWav.\n");
             pmsis_exit(-1);
         }
-
         header_struct header_info;
-
         if (ReadWavFromFile(tinytestutter[i], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
             printf("Error reading wav file\n");
             pmsis_exit(1);
         }
-
         ram_write(L3_wavs + (100+i)*AUDIO_BUFFER_SIZE*sizeof(short), inWav, AUDIO_BUFFER_SIZE*sizeof(short));
 
         pi_l2_free(inWav, AUDIO_BUFFER_SIZE*sizeof(short));
     }
-
-
     printf ("Finished tinytest allocation\n");
 
 
@@ -1473,7 +1442,8 @@ int application(void){
     if (l2_buffer == NULL) {
         printf("failed to allocate memory for l2_buffer\n");
     }
-    network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &L2_FC_weights_int8, 0, 1); // L2_input_h extra-arg for L2-only
+    void *dump;
+    network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &dump, 0, 1); // L2_input_h extra-arg for L2-only
 
     // Run classifier
     pi_cluster_conf_init(&cl_conf);
@@ -1485,17 +1455,17 @@ int application(void){
     
     PRINTF ("----------------------------- Initializing classifier ---------------------------\n");
 
-    // L2_FC_weights_float = pi_l2_malloc (64 * 12 * 4); // DSCNN S
-    L2_FC_weights_float = pi_l2_malloc (172 * 12 * 4); // DSCNN M
-    // L2_FC_weights_float = pi_l2_malloc (276 * 12 * 4); // DSCNN L
-    if (L2_FC_weights_float == NULL) {
-        printf("failed to allocate memory for L2_FC_weights_float\n");
+    l2_buffer_wgt_upd = pi_l2_malloc (64 * 12 * 4); // DSCNN S
+    // l2_buffer_wgt_upd = pi_l2_malloc (172 * 12 * 4); // DSCNN M
+    // l2_buffer_wgt_upd = pi_l2_malloc (276 * 12 * 4); // DSCNN L
+    if (l2_buffer_wgt_upd == NULL) {
+        printf("failed to allocate memory for l2_buffer_wgt_upd\n");
     }
 
     int predidx;
     unsigned int args_init_classifier[6];
     args_init_classifier[0] = (unsigned int) l2_buffer;
-    args_init_classifier[1] = (unsigned int) L2_FC_weights_float;
+    args_init_classifier[1] = (unsigned int) l2_buffer_wgt_upd;
     args_init_classifier[2] = (unsigned int) 0; // initialize
     args_init_classifier[3] = (unsigned int) 0; // classidx (placeholder)
     args_init_classifier[4] = (float*) &ce_loss;
@@ -1520,6 +1490,11 @@ int application(void){
     int iterations = 0;
     int sfu_out_buffer_cnt_prev = 0;
     int sfu_out_buffer_cnt_curr = 0;
+
+    MFCC_IN_TYPE * MfccInSig;
+    MFCC_IN_TYPE * MfccInSig_prev;
+    int16_t *MfccInSig_int16;
+    OUT_TYPE *MfccOutSig;
 
     MfccInSig_prev = (MFCC_IN_TYPE *) pi_l2_malloc(1 * AUDIO_BUFFER_SIZE * sizeof (MFCC_IN_TYPE));
     int len = 0;
@@ -1635,23 +1610,16 @@ int application(void){
 
         }
         else if (uttr_inf_src == OFFLINE){
-            // printf ("Reading wav...\n");
-            char utterName[130] = "usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser_audiov2/tiny_denoiser/res/meeting_ch01_mancrop1.wav";
+
+            PRINTF ("***************************** Reading wav *****************************\n");
             
             int start_readwav = pi_time_get_us();
             
-
-            // Classic .wav reading
-            // input_wav(0, 1, utterName, 0); // save, free, utterName, noise
-
-
+            // Read the 0th .wav saved in RAM
             short int *prepWav = NULL;
             prepWav = (short int *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(short));
-
-            // Read the 0th .wav saved in RAM
             ram_read(prepWav, L3_wavs + (0)*AUDIO_BUFFER_SIZE*sizeof(short), AUDIO_BUFFER_SIZE*sizeof(short));
 
-            MfccInSig = NULL;
             MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
             if (MfccInSig == NULL){
                 printf("Failed allocating MfccInSig.\n");
@@ -1670,6 +1638,8 @@ int application(void){
 
             pi_l2_free(prepWav, AUDIO_BUFFER_SIZE * sizeof(short int));
 
+            // Used for .wav saving
+            MfccInSig_int16 = (int16_t *) pi_l2_malloc(sizeof(int16_t) * AUDIO_BUFFER_SIZE);
 
             int end_readwav = pi_time_get_us();
             // printf("Time spent reading wav: %i\n", end_readwav - start_readwav);
@@ -1690,7 +1660,9 @@ int application(void){
         // pi_gpio_pin_write(gpio_pin_measurement_id, 1);
 
 
-        compute_mfcc();
+        MfccOutSig = (OUT_TYPE *) pi_l2_malloc(49 * N_MELS * sizeof(OUT_TYPE)); 
+        mfcc_computation(MfccInSig, MfccOutSig);
+        pi_l2_free(MfccInSig, AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE)); 
 
         
         #ifdef PERF
@@ -1701,7 +1673,7 @@ int application(void){
         #endif
 
         for (int i = 0; i < 5; i++){
-            PRINTF("out_feat[%i] = %f, ", i, out_feat[i]);
+            PRINTF("MfccOutSig[%i] = %f, ", i, MfccOutSig[i]);
         }
         PRINTF("\n");
         
@@ -1712,14 +1684,16 @@ int application(void){
         int start_readprocessing = pi_time_get_us();
         #endif    
 
-
-        feat_char = (char*) pi_l2_malloc(49 * 10 * sizeof(char));
+        char *MfccOutSig_uint8 = (char*) pi_l2_malloc(49 * N_MELS * sizeof(char));
 
         int k = 0;
         for (int i = 0; i < 49 * N_MELS;i++){                
             
-            // feat_char[k] = (char) ((int) floor(out_feat[i] * pow(2, -1) * sqrt(0.05)) + 128);
-            feat_char[k] = (char) ((int) floor(out_feat[i] * 0.1118) + 128);
+            // printf("Test \n");
+            printf("MfccOutSig[%i] \n", i);
+            printf("l2_buffer[%i] \n", k);
+            // MfccOutSig_uint8[k] = (char) ((int) floor(MfccOutSig[i] * pow(2, -1) * sqrt(0.05)) + 128);
+            MfccOutSig_uint8[k] = (char) ((int) floor(MfccOutSig[i] * 0.1118) + 128);
 
             if (N_MELS == 40){
                 // Select 10 MFCC per window
@@ -1733,18 +1707,19 @@ int application(void){
                 ((uint8_t *)l2_buffer)[k] = L2_input_h[k]; // Precomputed MFCC
             }
             else {
-                ((uint8_t *)l2_buffer)[k] = feat_char[k]; // Online computed MFCC
+                ((uint8_t *)l2_buffer)[k] = MfccOutSig_uint8[k]; // Online computed MFCC
             }
 
             k++;
         } 
 
         // if DEBUG
-        // dump_data_write("mfccdump.dat", feat_char, 49 * 10 * sizeof(char));
+        // dump_data_write("mfccdump.dat", MfccOutSig_uint8, 49 * 10 * sizeof(char));
 
 
-        pi_l2_free(out_feat, 49 * N_MELS * sizeof(OUT_TYPE));
-        pi_l2_free(feat_char, 49 * 10 * sizeof(char));
+
+        pi_l2_free(MfccOutSig, 49 * N_MELS * sizeof(OUT_TYPE));
+        pi_l2_free(MfccOutSig_uint8, 49 * 10 * sizeof(char));
 
 
         #ifdef PERF
@@ -1756,8 +1731,6 @@ int application(void){
 
         // pi_gpio_pin_write(gpio_pin_measurement_id, 0);
 
-        // Extract backbone features
-        void *dump; // dump to copy FC weights, won't be used; TODO: Parametrize DORY
 
 
         #ifdef PERF
@@ -1766,12 +1739,17 @@ int application(void){
         int start_timer_4 = gap_fc_readhwtimer();        
         #endif
 
-        PRINTF("***************************** Backbone inference **************************\n");
+        PRINTF ("***************************** Backbone inference **************************\n");
 
 
         int start_backbone = pi_time_get_us();
         
+
+        
+        
         // pi_gpio_pin_write(gpio_pin_measurement_id, 1);
+        // Extract backbone features
+        void *dump; // dump to copy FC weights, won't be used; TODO: Parametrize DORY
         network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &dump, 0, 1); // L2_input_h extra-arg for L2-only
         // pi_gpio_pin_write(gpio_pin_measurement_id, 0);
 
@@ -1781,7 +1759,7 @@ int application(void){
         #endif
 
         for (int i=0; i < 64; i++){
-            PRINTF("%i, ", ((uint8_t *) l2_buffer)[i]);
+            printf("%i, ", ((uint8_t *) l2_buffer)[i]);
         }
         PRINTF("\n");
 
@@ -1795,7 +1773,7 @@ int application(void){
         int start_timer_5 = gap_fc_readhwtimer();    
         #endif    
 
-        PRINTF("***************************** Classsifier inference **************************\n");
+        PRINTF ("***************************** Classsifier inference **************************\n");
 
         // pi_gpio_pin_write(gpio_pin_measurement_id, 1);
 
@@ -1813,7 +1791,7 @@ int application(void){
         int predidx = 0;
         unsigned int args_inference_classifier[6];
         args_inference_classifier[0] = (unsigned int) l2_buffer;
-        args_inference_classifier[1] = (unsigned int) L2_FC_weights_float;
+        args_inference_classifier[1] = (unsigned int) l2_buffer_wgt_upd;
         args_inference_classifier[2] = (unsigned int) 1; // inference
         args_inference_classifier[3] = (unsigned int) 0; // classidx (placeholder)
         args_inference_classifier[4] = (float *) &ce_loss;
@@ -1844,16 +1822,11 @@ int application(void){
         // pmsis_exit(-1);
         // return 0;
 
-
         pi_l2_free(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
 
         int end_classif = pi_time_get_us();
         // printf("Classifier: %i us\n", end_classif - start_classif);
         
-        
-        
-        PRINTF("***************************** Application complete *****************************\n");
-
         
         // #ifdef  AUDIO_EVK
         //     // block until next input audio frame is ready
@@ -1866,9 +1839,6 @@ int application(void){
         // button_was_pressed = 1; // measurement
 
         if (button_was_pressed){
-
-            
-
             if (noise_train_src == ONLINE){
 
                 printf ("----------------------------- Button pressed, recording noise ---------------------------\n");
@@ -1876,8 +1846,7 @@ int application(void){
                 // wait 1s (for the previous non-noise content to be cleaned)
                 pi_time_wait_us (1000000);
 
-                RecordedNoise = NULL;
-                RecordedNoise = (MFCC_IN_TYPE *) pi_l2_malloc(noise_seconds*AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
+                MFCC_IN_TYPE * RecordedNoise = (MFCC_IN_TYPE *) pi_l2_malloc(noise_seconds*AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
                 if (RecordedNoise == NULL){
                     printf("Failed allocating RecordedNoise.\n");
                     pmsis_exit(-1);
@@ -1897,7 +1866,7 @@ int application(void){
 
                 char noiseName[130] = "/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser/res/meeting_ch01_mancrop1.wav";
                 // input_mic(1, 1, 1); // save, free, noise // Forcefully recording noise from recording
-                input_wav(0, 1, noiseName, 1); // save, free, NoiseName, noise
+                // input_wav(0, 1, noiseName, 1); // save, free, NoiseName, noise
             }
 
             pi_gpio_pin_write(gpio_pin_measurement_id, 1);
@@ -1944,9 +1913,9 @@ int application(void){
             // evaluate_validation(1);
             // pi_gpio_pin_write(gpio_pin_measurement_id, 0);
 
-            if (noise_train_src == ONLINE){
-               pi_l2_free(RecordedNoise, noise_seconds*AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
-            }
+            // if (noise_train_src == ONLINE){
+            //    pi_l2_free(RecordedNoise, noise_seconds*AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE)); // CIOFLANC: Add RecordedNoise
+            // }
 
 
             // if (ce_loss_pre > ce_loss_post){
@@ -1976,12 +1945,6 @@ int application(void){
             return; // breaking loop early
 
         }
-
-
-        PRINTF ("----------------------------- Round completed ---------------------------\n");
-
-
-
 
         // // block until next input audio frame is ready
         // #ifdef  AUDIO_EVK
