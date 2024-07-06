@@ -124,51 +124,48 @@ void evaluate_validation(int was_trained){
         int sampleidx = 0;
         while (sampleidx < 350) {
 
-            if (sampleidx%100 == 0){
+            if (sampleidx % 100 == 0){
                 printf ("Now evaluating sample %i\n", sampleidx);
             }
-            MFCC_IN_TYPE *MfccInSig;
+            MFCC_IN_TYPE * MfccInSig = NULL;
 
             switch(classidx){
                 case 2:
-                    wav_to_array("/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser/res/meeting_ch01_mancrop1.wav", MfccInSig, 0, 0);
+                    wav_to_array(WavName, MfccInSig, 0, 0);
                     break;
                 case 3:
-                    wav_to_array("/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser/res/meeting_ch01_mancrop1.wav", MfccInSig, 0, 0);
+                    wav_to_array(WavName, MfccInSig, 0, 0);
                     break;
                 case 4:
-                    wav_to_array("/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser/res/meeting_ch01_mancrop1.wav", MfccInSig, 0, 0);
+                    wav_to_array(WavName, MfccInSig, 0, 0);
                     break;
                 case 5:
-                    wav_to_array("/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser/res/meeting_ch01_mancrop1.wav", MfccInSig, 0, 0);
+                    wav_to_array(WavName, MfccInSig, 0, 0);
                     break;
                 case 6:
-                    wav_to_array("/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser/res/meeting_ch01_mancrop1.wav", MfccInSig, 0, 0);
+                    wav_to_array(WavName, MfccInSig, 0, 0);
                     break;
                 case 7:
-                    wav_to_array("/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser/res/meeting_ch01_mancrop1.wav", MfccInSig, 0, 0);
+                    wav_to_array(WavName, MfccInSig, 0, 0);
                     break;
                 case 8:
-                    wav_to_array("/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser/res/meeting_ch01_mancrop1.wav", MfccInSig, 0, 0);
+                    wav_to_array(WavName, MfccInSig, 0, 0);
                     break;
                 case 9:
-                    wav_to_array("/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser/res/meeting_ch01_mancrop1.wav", MfccInSig, 0, 0);
+                    wav_to_array(WavName, MfccInSig, 0, 0);
                     break;
                 case 10:
-                    wav_to_array("/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser/res/meeting_ch01_mancrop1.wav", MfccInSig, 0, 0);
+                    wav_to_array(WavName, MfccInSig, 0, 0);
                     break;
                 case 11:
-                    wav_to_array("/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser/res/meeting_ch01_mancrop1.wav", MfccInSig, 0, 0);
+                    wav_to_array(WavName, MfccInSig, 0, 0);
                     break;
             }
-
-            printf("Redundant\n");
-
-            int noisesamplestart = 0;                
-            for (int samplepos = 0; samplepos < AUDIO_BUFFER_SIZE; samplepos++){
-                // MfccInSig[samplepos] = MfccInSig[samplepos] + 1*RecordedNoise[noisesamplestart+samplepos]; // CIOFLANC: Add RecordedNoise
-                MfccInSig[samplepos] = 0;
-            }
+            // int noisesamplestart = 0;                
+            // for (int samplepos = 0; samplepos < AUDIO_BUFFER_SIZE; samplepos++){
+            //     // MfccInSig[samplepos] = MfccInSig[samplepos] + 1*RecordedNoise[noisesamplestart+samplepos]; // CIOFLANC: Add RecordedNoise
+            //     MfccInSig[samplepos] = 0;
+            // }
 
             printf("Preprocessing\n");
             preprocess(MfccInSig, l2_buffer, mfcc_src);
@@ -177,8 +174,6 @@ void evaluate_validation(int was_trained){
             // Extract backbone features
             void *dump; // dump to copy FC weights, won't be used; TODO: Parametrize DORY
             network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &dump, 0, 1); // L2_input_h extra-arg for L2-only
-
-            printf("Inference\n");
 
             for (int i=0; i < 64; i++){
                 PRINTF("%i, ", ((uint8_t *) l2_buffer)[i]);
@@ -1285,9 +1280,8 @@ int application(void){
 
                 printf ("----------------------------- Button pressed, loading noise ---------------------------\n");
 
-                char noiseName[130] = "/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser/res/meeting_ch01_mancrop1.wav";
                 MFCC_IN_TYPE * RecordedNoise;
-                wav_to_array(noiseName, RecordedNoise, 1, 0); // NoiseName, noise, save
+                wav_to_array(WavName, RecordedNoise, 1, 0); // NoiseName, noise, save
             }
 
             pi_gpio_pin_write(gpio_pin_measurement_id, 1);

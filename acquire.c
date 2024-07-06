@@ -127,25 +127,19 @@ void microphone_setup(){
 
 
 void wav_to_array(char* wavfile, MFCC_IN_TYPE* buffer, int noise, int save){
-    // Allocate L3 buffers for audio IN
-     
+    
+    // Allocate L3 buffers for audio IN     
     header_struct header_info;
 
-    printf ("Init\n");
     short int *inWav = (short int *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(short)); 
     if (inWav == NULL){
         printf("Failed allocating inWav.\n");
         pmsis_exit(-1);
     }
-
-
     if (ReadWavFromFile(wavfile, inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
         printf("Error reading wav file\n");
         pmsis_exit(1);
     }
-
-    printf ("Read .wav\n");
-
     for (int i = 0; i < 5; i++){
         PRINTF("inWav[%i] = %i, ", i, inWav[i]);
     }
@@ -171,7 +165,6 @@ void wav_to_array(char* wavfile, MFCC_IN_TYPE* buffer, int noise, int save){
 
     }
     else {
-    	printf ("Alloc buffer\n");
         buffer = (MFCC_IN_TYPE *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
         if (buffer == NULL){
             printf("Failed allocating buffer.\n");
@@ -187,7 +180,6 @@ void wav_to_array(char* wavfile, MFCC_IN_TYPE* buffer, int noise, int save){
                 buffer[i] = (MFCC_IN_TYPE) gap_fcip(((int) inWav[i]), 15);
             }
         #endif
-        printf ("parsed buffer\n");
     }
     
     if (save){
@@ -206,11 +198,11 @@ void wav_to_array(char* wavfile, MFCC_IN_TYPE* buffer, int noise, int save){
             PRINTF("Writing wav file to utter_file.wav completed successfully\n");
         }
     }
+    
     if (noise){
         pi_l2_free(inWav, NOISE_LEN_S*AUDIO_BUFFER_SIZE * sizeof(short));
     }
     else{
         pi_l2_free(inWav, AUDIO_BUFFER_SIZE * sizeof(short));
     }
-    printf ("saved buffer\n");
 }
