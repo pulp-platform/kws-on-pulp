@@ -132,36 +132,38 @@ void evaluate_validation(int was_trained){
                 printf("Failed allocating MfccInSig.\n");
                 pmsis_exit(-1);
             }
+            // validation.h: val_class_2
+            // testing.h: test_class_2
             switch(classidx){
                 case 2:
-                    wav_to_array(WavName, MfccInSig, 0, 0);
+                    wav_to_array(test_class_2, MfccInSig, 0, 0);
                     break;
                 case 3:
-                    wav_to_array(WavName, MfccInSig, 0, 0);
+                    wav_to_array(test_class_3, MfccInSig, 0, 0);
                     break;
                 case 4:
-                    wav_to_array(WavName, MfccInSig, 0, 0);
+                    wav_to_array(test_class_4, MfccInSig, 0, 0);
                     break;
                 case 5:
-                    wav_to_array(WavName, MfccInSig, 0, 0);
+                    wav_to_array(test_class_5, MfccInSig, 0, 0);
                     break;
                 case 6:
-                    wav_to_array(WavName, MfccInSig, 0, 0);
+                    wav_to_array(test_class_6, MfccInSig, 0, 0);
                     break;
                 case 7:
-                    wav_to_array(WavName, MfccInSig, 0, 0);
+                    wav_to_array(test_class_7, MfccInSig, 0, 0);
                     break;
                 case 8:
-                    wav_to_array(WavName, MfccInSig, 0, 0);
+                    wav_to_array(test_class_8, MfccInSig, 0, 0);
                     break;
                 case 9:
-                    wav_to_array(WavName, MfccInSig, 0, 0);
+                    wav_to_array(test_class_9, MfccInSig, 0, 0);
                     break;
                 case 10:
-                    wav_to_array(WavName, MfccInSig, 0, 0);
+                    wav_to_array(test_class_10, MfccInSig, 0, 0);
                     break;
                 case 11:
-                    wav_to_array(WavName, MfccInSig, 0, 0);
+                    wav_to_array(test_class_11, MfccInSig, 0, 0);
                     break;
             }
 
