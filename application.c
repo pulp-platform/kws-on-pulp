@@ -159,7 +159,6 @@ static MFCC_IN_TYPE *MfccInSig_buff[tinytestsize];
 
 static void *L3_wavs = NULL;
 
-static float ce_loss;
 static float ce_loss_pre;
 static float ce_loss_post;
 static float ce_loss_pre_val;
@@ -630,7 +629,8 @@ void evaluate_validation(int was_trained){
               return -1;
             }
 
-            int predidx = 0;
+            int predidx = -1;
+            float ce_loss = 0.;
 
             unsigned int args_inference_classifier[6];
             args_inference_classifier[0] = (unsigned int) l2_buffer;
@@ -673,7 +673,7 @@ void evaluate_validation(int was_trained){
 
 void evaluate_tinytest(int was_trained){
 
-    if (was_trained == 0){
+    if (uttr_train_src == ONLINE && was_trained == 0){
         for (int tinytestidx = 0; tinytestidx < tinytestsize; tinytestidx++){
             MfccInSig_buff[tinytestidx] = (MFCC_IN_TYPE *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
         }
@@ -814,6 +814,7 @@ void evaluate_tinytest(int was_trained){
                     mfccidx++;
                 }
             }
+
             else{
                 for (int i = 0; i < AUDIO_BUFFER_SIZE; i++){
                     MfccInSig[i] = MfccInSig_buff[tinytestidx][i];
@@ -824,8 +825,9 @@ void evaluate_tinytest(int was_trained){
             // #endif
         }
 
-        int noisesamplestart = 0;
+        
         if (uttr_train_src == OFFLINE) {
+            int noisesamplestart = 0;
             for (int samplepos = 0; samplepos < AUDIO_BUFFER_SIZE; samplepos++){
                 // MfccInSig[samplepos] = MfccInSig[samplepos] + 1*RecordedNoise[noisesamplestart+samplepos];
                 MfccInSig[samplepos] = MfccInSig[samplepos]; // CIOFLANC: Add RecordedNoise
@@ -890,10 +892,10 @@ void evaluate_tinytest(int was_trained){
 
         pi_l2_free(MfccOutSig, N_MFCC_WINS * N_MELS * sizeof(OUT_TYPE));
 
-        for (int k = 0; k < N_MFCC_WINS * N_MELS; k++){
-            // Data saving to elude re-recording the evaluation samples. TODO: organize workflow
-            if (uttr_train_src == ONLINE) {
-                if (was_trained == 0){
+        if (uttr_train_src == ONLINE) {
+            for (int k = 0; k < N_MFCC_WINS * N_MELS; k++){
+                // Data saving to elude re-recording the evaluation samples. TODO: organize workflow
+                if (was_trained == 0) {
                     switch (tinytestidx) {
                         case 0:
                             yes[k] = ((uint8_t *)l2_buffer)[k];
@@ -981,6 +983,8 @@ void evaluate_tinytest(int was_trained){
         }
         
         int predidx = 0;
+        float ce_loss = 0.;
+
         unsigned int args_inference_classifier[6];
         args_inference_classifier[0] = (unsigned int) l2_buffer;
         args_inference_classifier[1] = (unsigned int) l2_buffer_wgt_upd;
@@ -1007,7 +1011,7 @@ void evaluate_tinytest(int was_trained){
         //     pi_gpio_pin_write(gpio_pin_o, 0);
         // #endif
     }
-    if (was_trained == 1){
+    if (uttr_train_src == ONLINE && was_trained == 1){
         for (int tinytestidx = 0; tinytestidx < tinytestsize; tinytestidx++){
             pi_l2_free(MfccInSig_buff[tinytestidx], AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
         }
@@ -1156,7 +1160,8 @@ void train_wavsrc(){
           return -1;
         }
 
-        int predidx;
+        int predidx = -1;
+        float ce_loss = 0.;
         unsigned int args_train_classifier[6];
         args_train_classifier[0] = (unsigned int) l2_buffer;
         args_train_classifier[1] = (unsigned int) l2_buffer_wgt_upd;
@@ -1449,7 +1454,8 @@ int application(void){
         printf("failed to allocate memory for l2_buffer_wgt_upd\n");
     }
 
-    int predidx;
+    int predidx = -1;
+    float ce_loss = 0.;
     unsigned int args_init_classifier[6];
     args_init_classifier[0] = (unsigned int) l2_buffer;
     args_init_classifier[1] = (unsigned int) l2_buffer_wgt_upd;
@@ -1766,7 +1772,8 @@ int application(void){
           return -1;
         }
 
-        int predidx = 0;
+        int predidx = -1;
+        float ce_loss = 0.;
         unsigned int args_inference_classifier[6];
         args_inference_classifier[0] = (unsigned int) l2_buffer;
         args_inference_classifier[1] = (unsigned int) l2_buffer_wgt_upd;
@@ -1814,7 +1821,7 @@ int application(void){
         checkbutton:
         button_was_pressed = 0;
         // button_was_pressed = read_button();
-        // button_was_pressed = 1; // measurement
+        button_was_pressed = 1; // measurement
 
         if (button_was_pressed){
             if (noise_train_src == ONLINE){
