@@ -13,6 +13,7 @@
 
 #include "globals.h"
 
-#define WAVRAM 110*2*16000
+#define __XSTR(__s) __STR(__s)
+#define __STR(__s) #__s
 
 #endif /* APPLICATION_H */

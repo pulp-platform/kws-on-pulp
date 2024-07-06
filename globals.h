@@ -6,6 +6,7 @@
 #define SCALE_IN denoiser_dns_Input_1_OUT_SCALE
 #define SCALE_OUT denoiser_dns_Output_1_OUT_SCALE
 
+#define WAVRAM 110*2*16000
 #define DOUBLE_BUFF_SIZE (1000)
 // #define BUFF_SIZE (48*1024*4)
 #define BUFF_SIZE (48*1000*4)
@@ -64,7 +65,6 @@ enum source {
   OFFLINE
 }; 
 
-
 // PMSIS SFU
 #include "sfu_pmsis_runtime.h"
 #include "Graph_L2_Descr.h" // pdm_in_test
@@ -74,9 +74,6 @@ enum source {
 #define FREQ_PCM (48000)
 #define SAI_RX (1)
 #define SAI_TX (0)
-
-
-
 
 
 // Global declaration for cluster setup
@@ -107,9 +104,6 @@ void *l2_buffer;
 void *l2_buffer_wgt_upd;
 
 MFCC_IN_TYPE *MfccInSig_buff[N_TINYTEST];
-
-// #include "tinytest.h"
-// #include "utterances.h"
 
 // tinytest samples
 static char tinytestutter[40][200] = {

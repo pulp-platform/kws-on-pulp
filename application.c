@@ -26,28 +26,12 @@
 // PULP TrainLib
 #include "net.h"
 
-#include "noise_meeting.h"
+// Noise for testing
+#include "noise.h"
 
-
-
-// measurement
-// unsigned int GPIOs = PI_GPIO_A89;
-// unsigned int GPIOs = 89;
-// #define WRITE_GPIO(x) pi_gpio_pin_write(GPIOs,x)
+// Measurement
 pi_gpio_e gpio_pin_measurement;
 unsigned int gpio_pin_measurement_id = 89;
-
-/* 
-     global variables
-*/
-struct pi_device DefaultRam; 
-struct pi_device* ram = &DefaultRam;
-
-// #ifdef AUDIO_EVK
-//     // GPIO defines
-//     pi_gpio_e gpio_pin_o; /* PI_GPIO_A02-PI_GPIO_A05 */
-//     int val_gpio;
-// #endif
 
 // Load args
 char *WavName = NULL;
@@ -58,20 +42,14 @@ int uttr_inf_src = NULL;
 
 /* Read button */
 static const pi_gpio_e gpio_boot_pin_1 = PAD_GPIO_UPB;
-
-
-int read_button(){
-    int button_is_pressed;
-    pi_gpio_pin_read(gpio_boot_pin_1, &button_is_pressed);
-    return button_is_pressed;
+int read_button(int * button_pressed){
+    pi_gpio_pin_read(gpio_boot_pin_1, &button_pressed);
 }
 
 
 int application(void){
 
-
     printf ("----------------------------- Initializing environment ---------------------------\n");
-
 
     // Voltage-Frequency settings
     uint32_t voltage =VOLTAGE;
@@ -87,20 +65,11 @@ int application(void){
     printf("Set VDD voltage as %.2f, FC Frequency as %d MHz, CL Frequency = %d MHz\n", 
         (float)voltage/1000, FREQ_FC, FREQ_CL);
 
-// #ifdef AUDIO_EVK
-//     /****
-//         Configure GPIO Output.
-//     ****/
-
-//     //struct pi_gpio_conf gpio_conf = {0};
-//     gpio_pin_o = PI_GPIO_A89; /* PI_GPIO_A02-PI_GPIO_A05 */
-//     pi_gpio_flags_e flags = PI_GPIO_OUTPUT;
-//     pi_gpio_pin_configure(gpio_pin_o, flags);
-// #endif
-
     /****
         Configure And Open the External Ram. 
     ****/
+    struct pi_device DefaultRam; 
+    struct pi_device* ram = &DefaultRam;
     struct pi_default_ram_conf ram_conf;
     pi_default_ram_conf_init(&ram_conf);
     ram_conf.baudrate = FREQ_FC*1000*1000;
@@ -115,7 +84,6 @@ int application(void){
     /****
         Configure And open cluster. 
     ****/
-    
     pi_cluster_conf_init(&cl_conf);
     cl_conf.cc_stack_size = STACK_SIZE;
     cl_conf.id = 0;                /* Set cluster ID. */
@@ -139,28 +107,15 @@ int application(void){
     /* set pad to gpio mode */
     /* This will open the gpio automatically */
     pi_pad_function_set(gpio_boot_pin_1, PI_PAD_FUNC1);
-    /* configure gpio input */
     pi_gpio_flags_e flags_upb = PI_GPIO_INPUT;
     pi_gpio_pin_configure(gpio_boot_pin_1, flags_upb);
 
 
     // Measurement preparation
-
-    // gpio_pin_measurement = PI_GPIO_A89; /* PI_GPIO_A02-PI_GPIO_A05 */
-    // pi_gpio_flags_e flags = PI_GPIO_OUTPUT;
-    // pi_pad_function_set(gpio_pin_measurement, 1);
-    // pi_gpio_pin_configure(gpio_pin_measurement, flags);
-    // pi_gpio_pin_write(gpio_pin_measurement, 0);
-    // pi_gpio_pin_write(gpio_pin_measurement, 0);
-
     pi_pad_function_set(gpio_pin_measurement_id, 1);
     pi_gpio_pin_configure(gpio_pin_measurement_id, PI_GPIO_OUTPUT);
     pi_gpio_pin_write(gpio_pin_measurement_id, 0);
     pi_gpio_pin_write(gpio_pin_measurement_id, 0);
-
-
-
-    PRINTF ("----------------------------- Initializing backbone ---------------------------\n");
 
     // Measurement start
     pi_gpio_pin_write(gpio_pin_measurement_id, 1);
@@ -170,20 +125,15 @@ int application(void){
     network_initialize(); // Absent in L2-only
     pi_cluster_close(&cluster_dev);
 
-
-    // removed for measurements
-    // printf ("----------------------------- Read WAVs from filesystem ---------------------------\n");
+    PRINTF ("----------------------------- Read WAVs from filesystem ---------------------------\n");
 
     L3_wavs = ram_malloc(WAVRAM);
     printf("\nL3_wavs alloc initial\t@ %d:\t%s\n", (unsigned int)L3_wavs, L3_wavs?"Ok":"Failed");
 
-
     int startwavreading = pi_time_get_us();
-
     for (int i = 0; i < 100; i++) {
 
         header_struct header_info;
-
         short int *inWav = (short int *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(short)); 
         if (inWav == NULL){
             printf("Failed allocating inWav.\n");
@@ -251,7 +201,6 @@ int application(void){
             }
         }         
 
-        // RAM write takes 701 us, RAM read takes 690
         ram_write(L3_wavs + i*AUDIO_BUFFER_SIZE*sizeof(short), inWav, AUDIO_BUFFER_SIZE*sizeof(short));
         
         // remove for measurements
@@ -262,12 +211,7 @@ int application(void){
         pi_l2_free(inWav, AUDIO_BUFFER_SIZE*sizeof(short));
 
     }
-
-    printf ("Finished train allocation\n");
-
-    // remove for measurements
-    // printf("100/110 samples read.\n");
-
+    PRINTF("100/110 samples read.\n");
 
     for (int i = 0; i < 10; i++) {
 
@@ -285,25 +229,11 @@ int application(void){
 
         pi_l2_free(inWav, AUDIO_BUFFER_SIZE*sizeof(short));
     }
-    printf ("Finished tinytest allocation\n");
 
-
-    // remove for measurements
     int endwavreading = pi_time_get_us();
-    // printf("110/110 samples read, WAV reading is complete in %d us.\n", endwavreading - startwavreading);
-    
+    PRINTF("110/110 samples read, WAV reading is complete in %d us.\n", endwavreading - startwavreading);
 
-
-    // /* Remove RAM memory */
-    // void network_terminate() {
-    //   ram_free(L3_weights, L3_WEIGHTS_SIZE);
-    //   ram_free(L3_input, L3_INPUT_SIZE);
-    //   ram_free(L3_output, L3_OUTPUT_SIZE);
-    // }
-
-
-    // TODO: Comment in
-    // DORY - TrainLib FC weights copy
+    /* Backbone inference */
     l2_buffer = pi_l2_malloc(L2_MEMORY_SIZE);
     if (l2_buffer == NULL) {
         printf("failed to allocate memory for l2_buffer\n");
@@ -311,7 +241,7 @@ int application(void){
     void *dump;
     network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &dump, 0, 1); // L2_input_h extra-arg for L2-only
 
-    // Run classifier
+    /* Classifier preparation */
     pi_cluster_conf_init(&cl_conf);
     pi_open_from_conf(&cluster_dev, &cl_conf);
     if (pi_cluster_open(&cluster_dev))
@@ -319,8 +249,7 @@ int application(void){
       return -1;
     }
     
-    PRINTF ("----------------------------- Initializing classifier ---------------------------\n");
-
+    // CIOFLANC: Parametrize
     l2_buffer_wgt_upd = pi_l2_malloc (64 *N_CLASSES * 4); // DSCNN S
     // l2_buffer_wgt_upd = pi_l2_malloc (172 *N_CLASSES * 4); // DSCNN M
     // l2_buffer_wgt_upd = pi_l2_malloc (276 *N_CLASSES * 4); // DSCNN L
@@ -328,6 +257,7 @@ int application(void){
         printf("failed to allocate memory for l2_buffer_wgt_upd\n");
     }
 
+    /* Classifier inference */
     int predidx = -1;
     float ce_loss = 0.;
     unsigned int args_init_classifier[6];
@@ -339,95 +269,80 @@ int application(void){
     args_init_classifier[5] = (int *) &predidx;
 
     pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, args_init_classifier));
-
     pi_cluster_close(&cluster_dev);
 
     BufferInList = (void*) pi_l2_malloc(BUFF_SIZE);
     if (BufferInList == NULL) return -1;
 
-    pi_gpio_pin_write(gpio_pin_measurement_id, 0);
-
-    int button_was_pressed = 0;
-
-
-    pi_evt_sig_init(&inference_task);
-
-    microphone_setup();
-
-    int iterations = 0;
+    /* Preparing recording */
+    int button_pressed = 0;
     int sfu_out_buffer_cnt_prev = 0;
     int sfu_out_buffer_cnt_curr = 0;
+    int buffer_len = 0;
+    int buffer_upperlim = 0;
+    int buffer_lowerlim = 0;
+    pi_evt_sig_init(&inference_task);
+    microphone_setup();
 
+    /* Preparing preprocessing */
     MFCC_IN_TYPE * MfccInSig;
     MFCC_IN_TYPE * MfccInSig_prev;
     int16_t *MfccInSig_int16;
     OUT_TYPE *MfccOutSig;
-
     MfccInSig_prev = (MFCC_IN_TYPE *) pi_l2_malloc(1 * AUDIO_BUFFER_SIZE * sizeof (MFCC_IN_TYPE));
-    int len = 0;
-    int upperlim = 0;
-    int lowerlim = 0;
 
+    // Manually handling silence
+    int threshold_counter = 0;
+    
     printf ("----------------------------- Starting application ---------------------------\n");
 
-    
     while (1){
     
-        pi_gpio_pin_write(gpio_pin_measurement_id, 1);
-
         
         if (uttr_inf_src == ONLINE){
 
             PRINTF ("----------------------------- Start acquisition ---------------------------\n");    
 
             int start_dataacq = pi_time_get_us();    
-
-            int threshold_counter = 0;
-
+            
 
             MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(1 * AUDIO_BUFFER_SIZE * sizeof (MFCC_IN_TYPE));
-
             for(int i=0;i<AUDIO_BUFFER_SIZE;i++){ 
                 MfccInSig[i] = MfccInSig_prev[i];
             }  
             pi_evt_wait(&inference_task);
 
             sfu_out_buffer_cnt_curr = sfu_out_buffer_cnt;
-
             if (sfu_out_buffer_cnt_curr > sfu_out_buffer_cnt_prev){
-                len = sfu_out_buffer_cnt_curr - sfu_out_buffer_cnt_prev;
-                upperlim = sfu_out_buffer_cnt_curr * DOUBLE_BUFF_SIZE;
-                lowerlim = 0;
+                buffer_len = sfu_out_buffer_cnt_curr - sfu_out_buffer_cnt_prev;
+                buffer_upperlim = sfu_out_buffer_cnt_curr * DOUBLE_BUFF_SIZE;
+                buffer_lowerlim = 0;
             }
             else{
-                len = (48 - sfu_out_buffer_cnt_prev) + sfu_out_buffer_cnt_curr;
-                upperlim = BUFF_SIZE/sizeof(int32_t);
-                lowerlim = sfu_out_buffer_cnt_curr * DOUBLE_BUFF_SIZE;
+                buffer_len = (48 - sfu_out_buffer_cnt_prev) + sfu_out_buffer_cnt_curr;
+                buffer_upperlim = BUFF_SIZE/sizeof(int32_t);
+                buffer_lowerlim = sfu_out_buffer_cnt_curr * DOUBLE_BUFF_SIZE;
             }
 
-
-            // TODO: FIGURE OUT SCALING 2^32 or 2^31???
-
             int outidx = 0;
-            for (int i = sfu_out_buffer_cnt_prev*DOUBLE_BUFF_SIZE; i < upperlim; i+=3){
+            for (int i = sfu_out_buffer_cnt_prev*DOUBLE_BUFF_SIZE; i < buffer_upperlim; i+=3){
                 // using MfccInSig_prev as buffer
                 MfccInSig_prev[outidx] = (MFCC_IN_TYPE) (((float)((int32_t *)BufferInList)[i]) / (float)(1<<31 - 1));
                 outidx++;
             }
-            for (int i = 0; i < lowerlim; i+=3){
+            for (int i = 0; i < buffer_lowerlim; i+=3){
                 // using MfccInSig_prev as buffer
                 MfccInSig_prev[outidx] = (MFCC_IN_TYPE) (((float)((int32_t *)BufferInList)[i]) / (float)(1<<31 - 1));
                 outidx++;
             }
 
             int j = 0;
-            for (int i = DOUBLE_BUFF_SIZE*(len)/3; i < AUDIO_BUFFER_SIZE; i++){
+            for (int i = DOUBLE_BUFF_SIZE*(buffer_len)/3; i < AUDIO_BUFFER_SIZE; i++){
                 MfccInSig[j] = MfccInSig[i];    
                 j++;
             }
-            
             int k = 0;
-            for (int i = AUDIO_BUFFER_SIZE - DOUBLE_BUFF_SIZE*(len)/3; i < AUDIO_BUFFER_SIZE; i++){
+            for (int i = AUDIO_BUFFER_SIZE - DOUBLE_BUFF_SIZE*(buffer_len)/3; i < AUDIO_BUFFER_SIZE; i++){
                 MfccInSig[i] = MfccInSig_prev[k];
                 k++;
             }
@@ -438,13 +353,11 @@ int application(void){
             sfu_out_buffer_cnt_prev = sfu_out_buffer_cnt_curr;
             
             MfccInSig_int16 = (int16_t *) pi_l2_malloc(sizeof(int16_t) * AUDIO_BUFFER_SIZE);
-
             float mean = 0;
             for(int i=0;i<AUDIO_BUFFER_SIZE;i++){
                 MfccInSig_int16[i] = (int16_t) (MfccInSig[i] * (1<<15));
                 mean = mean + MfccInSig_int16[i]; 
             }
-
             mean = mean/AUDIO_BUFFER_SIZE;
 
             // TODO: FIGURE OUT THRESHOLD
@@ -454,26 +367,17 @@ int application(void){
                 }
             }
 
-            // printf ("threshold_counter is: %i\n", threshold_counter);
-            // TODO: FIGURE OUT NUMBER OF SAMPLES
-
             // Commented out for measurements
             // if (threshold_counter < 200){
             //     printf("silence\n");
-
+            //     threshold_counter = 0;
             //     pi_l2_free(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
             //     pi_l2_free(MfccInSig, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
-
-
-            //     int end_dataacq = pi_time_get_us(); 
-            //     // printf("Data acquisition1: %i\n", end_dataacq - start_dataacq);
-
-            //     // continue;
             //     goto checkbutton;
             // }
 
             int end_dataacq = pi_time_get_us(); 
-            // printf("Data acquisition2: %i\n", end_dataacq - start_dataacq);
+            PRINTF ("Data acquisition: %i\n", end_dataacq - start_dataacq);
 
         }
         else if (uttr_inf_src == OFFLINE){
@@ -509,10 +413,8 @@ int application(void){
             MfccInSig_int16 = (int16_t *) pi_l2_malloc(sizeof(int16_t) * AUDIO_BUFFER_SIZE);
 
             int end_readwav = pi_time_get_us();
-            // printf("Time spent reading wav: %i\n", end_readwav - start_readwav);
+            PRINTF("Reading .wav: %i\n", end_readwav - start_readwav);
         }
-
-        // pi_gpio_pin_write(gpio_pin_measurement_id, 0);
 
         #ifdef PERF
         gap_fc_starttimer();
@@ -524,30 +426,19 @@ int application(void){
         preprocess(MfccInSig, l2_buffer, mfcc_src);
 
         PRINTF ("***************************** Backbone inference **************************\n");
-
-
         int start_backbone = pi_time_get_us();
         
-        
-        // pi_gpio_pin_write(gpio_pin_measurement_id, 1);
         // Extract backbone features
         void *dump; // dump to copy FC weights, won't be used; TODO: Parametrize DORY
         network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &dump, 0, 1); // L2_input_h extra-arg for L2-only
-        // pi_gpio_pin_write(gpio_pin_measurement_id, 0);
 
         #ifdef PERF
         int elapsed_timer_4 = gap_fc_readhwtimer() - start_timer_4;
         printf("Backbone inference: %d cycles\n", elapsed_timer_4);
         #endif
 
-        for (int i=0; i < 64; i++){
-            PRINTF("%i, ", ((uint8_t *) l2_buffer)[i]);
-        }
-        PRINTF("\n");
-
         int end_backbone = pi_time_get_us();
-        // printf("Backbone: %i us\n", end_backbone - start_backbone);
-
+        PRINTF("Backbone: %i us\n", end_backbone - start_backbone);
 
         #ifdef PERF
         gap_fc_starttimer();
@@ -557,11 +448,7 @@ int application(void){
 
         PRINTF ("***************************** Classsifier inference **************************\n");
 
-        // pi_gpio_pin_write(gpio_pin_measurement_id, 1);
-
-
         int start_classif = pi_time_get_us();
-
 
         pi_cluster_conf_init(&cl_conf);
         pi_open_from_conf(&cluster_dev, &cl_conf);
@@ -580,15 +467,12 @@ int application(void){
         args_inference_classifier[4] = (float *) &ce_loss;
         args_inference_classifier[5] = (int *) &predidx;
 
-
         pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, args_inference_classifier));
         pi_cluster_close(&cluster_dev);
 
         pi_gpio_pin_write(gpio_pin_measurement_id, 0);
 
-
-        // Finished measurement
-        // printf("***************************** Finished measurements *****************************\n");
+        PRINTF("***************************** Finished measurements *****************************\n");
        
         #ifdef PERF
         int elapsed_timer_5 = gap_fc_readhwtimer() - start_timer_5;
@@ -608,20 +492,14 @@ int application(void){
         pi_l2_free(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
 
         int end_classif = pi_time_get_us();
-        // printf("Classifier: %i us\n", end_classif - start_classif);
+        PRINTF("Classifier inference: %i us\n", end_classif - start_classif);
         
-        
-        // #ifdef  AUDIO_EVK
-        //     // block until next input audio frame is ready
-        //     pi_gpio_pin_write(gpio_pin_o, 0);
-        // #endif
-
         checkbutton:
-        button_was_pressed = 0;
-        // button_was_pressed = read_button();
-        button_was_pressed = 1; // measurement
+        button_pressed = 0;
+        // read_button(&button_pressed);
+        // button_pressed = 1; // measurement
 
-        if (button_was_pressed){
+        if (button_pressed){
             if (noise_train_src == ONLINE){
 
                 printf ("----------------------------- Button pressed, recording noise ---------------------------\n");
@@ -654,8 +532,6 @@ int application(void){
             pi_gpio_pin_write(gpio_pin_measurement_id, 1);
 
             int evaluationtime = pi_time_get_us();
-            // evaluate before training
-
 
             ce_loss_pre = 0;
             ce_loss_post = 0;
@@ -664,38 +540,25 @@ int application(void){
             correct_pre_val = 0;
             correct_post_val = 0;
 
-
             printf ("----------------------------- Pre-ODDA evaluation -----------------------------\n");
             
             // TODO: Add online/offline decision
             evaluate_tinytest(0);
-            // evaluate_largetest(0);
-            int endevaluationtime = pi_time_get_us();
-            printf("Evaluation time: %i\n", endevaluationtime - evaluationtime);
 
-            // pi_gpio_pin_write(gpio_pin_measurement_id, 0);
+            int endevaluationtime = pi_time_get_us();
+            PRINTF("Evaluation time: %i\n", endevaluationtime - evaluationtime);
 
             printf("***************************** Finished pre-ODDA evaluation, now training... *****************************\n");
 
-
-            // pi_gpio_pin_write(gpio_pin_measurement_id, 1);
-
             int traintime = pi_time_get_us();
-            // train model with noisy data
             train();
             int endtraintime = pi_time_get_us();
-            printf("Train time: %i\n", endtraintime - traintime);
-
-            // pi_gpio_pin_write(gpio_pin_measurement_id, 0);
+            PRINTF("Train time: %i\n", endtraintime - traintime);
 
             printf ("----------------------------- Post-ODDA evaluation -----------------------------\n");
 
-
             // TODO: Add online/offline decision
             evaluate_tinytest(1);
-
-
-            // printf ("***************************** ODDA complete *****************************\n");
 
             pmsis_exit(0);
             return; // breaking loop early
@@ -707,9 +570,8 @@ int application(void){
         //     pi_gpio_pin_write(gpio_pin_o, 0);
         // #endif
 
-        // TODO: Trigger inference every 250 ms
-        // pi_time_wait_us(250); // microseconds
-
+        // // TODO: Trigger inference every 250 ms
+        // pi_time_wait_us(250);
 
     }
 
@@ -721,10 +583,6 @@ int application(void){
 
 int main()
 {
-    PRINTF("\n\n\t *** Application ***\n\n");
-
-    #define __XSTR(__s) __STR(__s)
-    #define __STR(__s) #__s
     WavName = __XSTR(WAV_FILE); 
     mfcc_src = __XSTR(MFCC) == "0" ? 0 : 1;
     noise_train_src = __XSTR(NOISE_EVAL) == "0" ? 0 : 1;
@@ -733,13 +591,3 @@ int main()
 
     return application();
 }
-
-
-
-
-// Example :)
-// Everytime a buffer is finished, you re-enqueue itself. THen you pingpong the buffer out index
-// KConfig/Menuconfig for SFU for example
-// Memout comes from the PDM, Memin sends to the I2S
-// when buffer received: pi_evt_push (to send a new event) -> in while(1) you wait for the event (pi_even_wait)
-// pi_even_init() when I finished my comp task
