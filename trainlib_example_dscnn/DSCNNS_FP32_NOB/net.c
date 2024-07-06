@@ -56,8 +56,6 @@ int predict_float_local (void * array, int n_classes){
   int max_idx = 0;
   char prediction[10];
   for (int i = 0; i < n_classes; i++){
-    
-    printf ("d[%i] = %f\n", i, ((float*) array)[i]);
 
     #ifdef VERBOSE
     printf ("d[%i] = %f\n", i, ((float*) array)[i]);
@@ -305,7 +303,6 @@ void net_step(void *args)
     *loss_ptr = loss;
 
     printf("Loss is (local): %f\n", loss);
-    printf("Loss is (local): %f\n", *loss_ptr);
   }
 
   if (op_mode == TRAIN){

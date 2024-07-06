@@ -75,7 +75,6 @@ void mfcc_computation(MFCC_IN_TYPE * MfccInputSignal, OUT_TYPE * MfccOutputSigna
         printf("Error allocating L1\n");
         pmsis_exit(-1);
     }
-
     pi_cluster_send_task_to_cl(&cluster_dev, task_mfcc);
     pi_l2_free(task_mfcc, sizeof(struct pi_cluster_task));
     pi_cluster_close(&cluster_dev);
@@ -84,25 +83,16 @@ void mfcc_computation(MFCC_IN_TYPE * MfccInputSignal, OUT_TYPE * MfccOutputSigna
 
 void preprocess(MFCC_IN_TYPE * input_buffer, uint8_t * output_buffer, int input_src){
 
-    printf ("1\n");
-
     OUT_TYPE * MfccOutSig = NULL;
 
-    printf ("1.2\n");
     MfccOutSig = (OUT_TYPE *) pi_l2_malloc(N_MFCC_WINS * N_MELS * sizeof(OUT_TYPE)); 
     if (MfccOutSig==NULL){
         printf("Error allocating MfccOutSig\n");
         pmsis_exit(-1);
     }
-
-    printf ("1.3\n");
+    
     mfcc_computation(input_buffer, MfccOutSig);
-
-    printf ("2\n");
-        
     pi_l2_free(input_buffer, AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE)); 
-
-    printf ("3\n");
 
     int k = 0;
     for (int i = 0; i < N_MFCC_WINS * N_MELS; i++){                
@@ -124,10 +114,5 @@ void preprocess(MFCC_IN_TYPE * input_buffer, uint8_t * output_buffer, int input_
         }
         k++;
     } 
-
-    printf ("4\n");
-
     pi_l2_free(MfccOutSig, N_MFCC_WINS * N_MELS * sizeof(OUT_TYPE));
-    
-
 }

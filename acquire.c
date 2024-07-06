@@ -146,7 +146,7 @@ void wav_to_array(char* wavfile, MFCC_IN_TYPE* buffer, int noise, int save){
     PRINTF("\n");
 
     if (noise){
-        buffer = (MFCC_IN_TYPE *) pi_l2_malloc(NOISE_LEN_S*AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
+        // buffer = (MFCC_IN_TYPE *) pi_l2_malloc(NOISE_LEN_S*AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
         if (buffer == NULL){
             printf("Failed allocating buffer.\n");
             pmsis_exit(-1);
@@ -165,7 +165,7 @@ void wav_to_array(char* wavfile, MFCC_IN_TYPE* buffer, int noise, int save){
 
     }
     else {
-        buffer = (MFCC_IN_TYPE *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
+        // buffer = (MFCC_IN_TYPE *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
         if (buffer == NULL){
             printf("Failed allocating buffer.\n");
             pmsis_exit(-1);

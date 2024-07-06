@@ -127,8 +127,11 @@ void evaluate_validation(int was_trained){
             if (sampleidx % 100 == 0){
                 printf ("Now evaluating sample %i\n", sampleidx);
             }
-            MFCC_IN_TYPE * MfccInSig = NULL;
-
+            MFCC_IN_TYPE * MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
+            if (MfccInSig == NULL){
+                printf("Failed allocating MfccInSig.\n");
+                pmsis_exit(-1);
+            }
             switch(classidx){
                 case 2:
                     wav_to_array(WavName, MfccInSig, 0, 0);
@@ -161,15 +164,14 @@ void evaluate_validation(int was_trained){
                     wav_to_array(WavName, MfccInSig, 0, 0);
                     break;
             }
-            // int noisesamplestart = 0;                
-            // for (int samplepos = 0; samplepos < AUDIO_BUFFER_SIZE; samplepos++){
-            //     // MfccInSig[samplepos] = MfccInSig[samplepos] + 1*RecordedNoise[noisesamplestart+samplepos]; // CIOFLANC: Add RecordedNoise
-            //     MfccInSig[samplepos] = 0;
-            // }
 
-            printf("Preprocessing\n");
+            int noisesamplestart = 0;                
+            for (int samplepos = 0; samplepos < AUDIO_BUFFER_SIZE; samplepos++){
+                // MfccInSig[samplepos] = MfccInSig[samplepos] + 1*RecordedNoise[noisesamplestart+samplepos]; // CIOFLANC: Add RecordedNoise
+                MfccInSig[samplepos] = 0;
+            }
+
             preprocess(MfccInSig, l2_buffer, mfcc_src);
-            printf("Prep inference\n");
 
             // Extract backbone features
             void *dump; // dump to copy FC weights, won't be used; TODO: Parametrize DORY
@@ -1280,7 +1282,7 @@ int application(void){
 
                 printf ("----------------------------- Button pressed, loading noise ---------------------------\n");
 
-                MFCC_IN_TYPE * RecordedNoise;
+                MFCC_IN_TYPE * RecordedNoise = (MFCC_IN_TYPE *) pi_l2_malloc(NOISE_LEN_S * AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
                 wav_to_array(WavName, RecordedNoise, 1, 0); // NoiseName, noise, save
             }
 
