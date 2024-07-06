@@ -53,6 +53,10 @@ typedef short int MFCC_IN_TYPE; // Save MFCCs works
 #define N_MFCC_MELS 10
 #define N_MFCC_WINS 49
 
+#define N_CLASSES 12
+
+
+#define NOISE_LEN_S 1
 
 enum source {
   ONLINE,
@@ -60,11 +64,43 @@ enum source {
 }; 
 
 
+// PMSIS SFU
+#include "sfu_pmsis_runtime.h"
+#include "Graph_L2_Descr.h" // pdm_in_test
+
+#define NB_BUF_IN_RING 2
+#define FREQ_PDM_BIT (3072000)
+#define FREQ_PCM (48000)
+#define SAI_RX (1)
+#define SAI_TX (0)
 
 
-// Global declaration 
+
+
+
+// Global declaration for cluster setup
 struct pi_device cluster_dev;
 struct pi_cluster_conf cl_conf;
 struct pi_cluster_task cl_task;
+
+// Triggering event for recording
+pi_event_t inference_task;
+
+// Global declaration for microphone recording
+/* Global variables for microphone recording */
+void * BufferInList;
+// PMSIS SFU
+pi_sfu_graph_t *sfu_graph;
+// SAI used for receiving and sending PDM
+pi_device_t sai_dev_rx;
+// Audio buffers
+pi_sfu_buffer_t sfu_out_buffers[NB_BUF_IN_RING]; // Buffers for SFU(MEM_OUT) -> L2 transfers
+int sfu_out_buffer_idx;
+int sfu_out_buffer_cnt;
+pi_evt_t sfu_out_task;
+pi_sfu_mem_port_t * memout_port;
+int sfu_buffer_filled;
+
+
 
 #endif /* GLOBALS_H */

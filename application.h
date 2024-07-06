@@ -13,4 +13,6 @@
 
 #include "globals.h"
 
+#define WAVRAM 110*2*16000
+
 #endif /* APPLICATION_H */

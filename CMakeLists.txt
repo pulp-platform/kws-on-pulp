@@ -122,6 +122,7 @@ list (APPEND TARGET_SRCS
                          ${MAIN}
                          dac.c
                          localutil.c
+                         acquire.c
                          preprocess.c
                          ${BUILD_DIR}/Graph_L2_Descr.c
                          ${BUILD_DIR}/L2_Descr_Table.c
