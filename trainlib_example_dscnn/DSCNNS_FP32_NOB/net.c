@@ -56,7 +56,9 @@ int predict_float_local (void * array, int n_classes){
   int max_idx = 0;
   char prediction[10];
   for (int i = 0; i < n_classes; i++){
-          
+    
+    printf ("d[%i] = %f\n", i, ((float*) array)[i]);
+
     #ifdef VERBOSE
     printf ("d[%i] = %f\n", i, ((float*) array)[i]);
     #endif
@@ -254,7 +256,7 @@ void net_step(void *args)
   void * upd_WGT_l0 = (void *) real_args[1];
   enum mode op_mode = (int) real_args[2];
   int classidx = (int) real_args[3];
-  float *application_loss = (float*) real_args[4];
+  float *loss_ptr = (float*) real_args[4];
   int *predidx_ptr = (int *) real_args[5];
 
 
@@ -294,8 +296,16 @@ void net_step(void *args)
     forward();
     pulp_1dsoftmax_fp32_fw(&layer0_out);
     *predidx_ptr = predict_float_local(layer0_out.data, 12);
+    for (int i=0; i < layer0_out.dim; i++){
+      if(layer0_out.data[i] == 0){
+        layer0_out.data[i] += 1e-10;
+      }
+    }
     compute_loss();
-    *application_loss = loss;
+    *loss_ptr = loss;
+
+    printf("Loss is (local): %f\n", loss);
+    printf("Loss is (local): %f\n", *loss_ptr);
   }
 
   if (op_mode == TRAIN){
@@ -309,8 +319,13 @@ void net_step(void *args)
     for (int epoch=0; epoch<EPOCHS; epoch++){
       forward();
       pulp_1dsoftmax_fp32_fw(&layer0_out);
+      for (int i=0; i < layer0_out.dim; i++){
+        if(layer0_out.data[i] == 0){
+          layer0_out.data[i] += 1e-10;
+        }
+      }
       compute_loss();
-      *application_loss = loss;
+      *loss_ptr = loss;
       backward();
       update_weights();
     }
