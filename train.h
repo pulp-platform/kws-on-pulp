@@ -23,5 +23,7 @@ char stop[N_MFCC_MELS * N_MFCC_WINS];
 char go[N_MFCC_MELS * N_MFCC_WINS];
 
 void evaluate_largetest(int was_trained);
+void evaluate_tinytest(int was_trained);
+void evaluate_online(int was_trained);
 
 #endif /* __train_H__ */

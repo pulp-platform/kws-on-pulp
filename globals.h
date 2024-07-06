@@ -54,6 +54,7 @@ typedef short int MFCC_IN_TYPE; // Save MFCCs works
 #define N_MFCC_WINS 49
 
 #define N_CLASSES 12
+#define N_TINYTEST 10
 
 
 #define NOISE_LEN_S 1
@@ -101,9 +102,11 @@ pi_evt_t sfu_out_task;
 pi_sfu_mem_port_t * memout_port;
 int sfu_buffer_filled;
 
+void *L3_wavs;
 void *l2_buffer;
 void *l2_buffer_wgt_upd;
 
+MFCC_IN_TYPE *MfccInSig_buff[N_TINYTEST];
 
 
 
