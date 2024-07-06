@@ -592,13 +592,17 @@ void evaluate_validation(int was_trained){
             mfcc_computation(MfccInSig, MfccOutSig);  
             pi_l2_free(MfccInSig, AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE)); 
             
-            char * MfccOutSig_uint8 = (char*) pi_l2_malloc(N_MFCC_WINS * N_MELS * sizeof(char));
-
             int k = 0;
             for (int i = 0; i < N_MFCC_WINS * N_MELS;i++){                
                 
-                // MfccOutSig_uint8[k] = (char) ((int) floor(MfccOutSig[i] * pow(2, -1) * sqrt(0.05)) + 128);
-                MfccOutSig_uint8[k] = (char) ((int) floor(MfccOutSig[i] * 0.1118) + 128);
+                // Fill input buffer
+                if (mfcc_src == OFFLINE){
+                    ((uint8_t *)l2_buffer)[k] = L2_input_h[k]; // Precomputed MFCC
+                }
+                else {
+                    // ((uint8_t *)l2_buffer)[k] = (char) ((int) floor(MfccOutSig[i] * pow(2, -1) * sqrt(0.05)) + 128);
+                    ((uint8_t *)l2_buffer)[k] = (char) ((int) floor(MfccOutSig[i] * 0.1118) + 128); // Online computed MFCC
+                }
 
                 if (N_MELS == 40){
                     // Select 10 MFCC per window
@@ -606,21 +610,10 @@ void evaluate_validation(int was_trained){
                         i = 40*(k/10) + 39;
                     }
                 }
-
-                // Fill input buffer
-                if (mfcc_src == OFFLINE){
-                    ((uint8_t *)l2_buffer)[k] = L2_input_h[k]; // Precomputed MFCC
-                }
-                else {
-                    ((uint8_t *)l2_buffer)[k] = MfccOutSig_uint8[k]; // Online computed MFCC
-                }
-
                 k++;
             } 
 
             pi_l2_free(MfccOutSig, N_MFCC_WINS * N_MELS * sizeof(OUT_TYPE));
-            pi_l2_free(MfccOutSig_uint8, N_MFCC_WINS * N_MELS * sizeof(char));
-
 
             // Extract backbone features
             void *dump; // dump to copy FC weights, won't be used; TODO: Parametrize DORY
@@ -874,12 +867,17 @@ void evaluate_tinytest(int was_trained){
         mfcc_computation(MfccInSig, MfccOutSig);
         pi_l2_free(MfccInSig, AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE)); 
 
-        char * MfccOutSig_uint8 = (char*) pi_l2_malloc(N_MFCC_WINS * N_MELS * sizeof(char));
         int k = 0;
         for (int i = 0; i < N_MFCC_WINS * N_MELS;i++){                
             
-            // MfccOutSig_uint8[k] = (char) ((int) floor(MfccOutSig[i] * pow(2, -1) * sqrt(0.05)) + 128); // 23.883617 QSNR w/ float
-            MfccOutSig_uint8[k] = (char) ((int) floor(MfccOutSig[i] * 0.1118) + 128);
+            // Fill input buffer
+            if (mfcc_src == OFFLINE){
+                ((uint8_t *)l2_buffer)[k] = L2_input_h[k]; // Precomputed MFCC
+            }
+            else {
+                // ((uint8_t *)l2_buffer)[k] = (char) ((int) floor(MfccOutSig[i] * pow(2, -1) * sqrt(0.05)) + 128);
+                ((uint8_t *)l2_buffer)[k] = (char) ((int) floor(MfccOutSig[i] * 0.1118) + 128); // Online computed MFCC
+            }
 
             if (N_MELS == 40){
                 // Select 10 MFCC per window
@@ -887,18 +885,10 @@ void evaluate_tinytest(int was_trained){
                     i = 40*(k/10) + 39;
                 }
             }
-            // Fill input buffer
-            if (mfcc_src == OFFLINE){
-                ((uint8_t *)l2_buffer)[k] = L2_input_h[k]; // Precomputed MFCC
-            }
-            else {
-                ((uint8_t *)l2_buffer)[k] = MfccOutSig_uint8[k]; // Online computed MFCC
-            }
             k++;
         } 
 
         pi_l2_free(MfccOutSig, N_MFCC_WINS * N_MELS * sizeof(OUT_TYPE));
-        pi_l2_free(MfccOutSig_uint8, N_MFCC_WINS * N_MELS * sizeof(char));
 
         for (int k = 0; k < N_MFCC_WINS * N_MELS; k++){
             // Data saving to elude re-recording the evaluation samples. TODO: organize workflow
@@ -906,68 +896,68 @@ void evaluate_tinytest(int was_trained){
                 if (was_trained == 0){
                     switch (tinytestidx) {
                         case 0:
-                            yes[k] = MfccOutSig_uint8[k];
+                            yes[k] = ((uint8_t *)l2_buffer)[k];
                             break;
                         case 1: 
-                            no[k] = MfccOutSig_uint8[k];
+                            no[k] = ((uint8_t *)l2_buffer)[k];
                             break;
                         case 2:
-                            up[k] = MfccOutSig_uint8[k];
+                            up[k] = ((uint8_t *)l2_buffer)[k];
                             break;
                         case 3:
-                            down[k] = MfccOutSig_uint8[k];
+                            down[k] = ((uint8_t *)l2_buffer)[k];
                             break;
                         case 4:
-                            left[k] = MfccOutSig_uint8[k];
+                            left[k] = ((uint8_t *)l2_buffer)[k];
                             break;
                         case 5:
-                            right[k] = MfccOutSig_uint8[k];
+                            right[k] = ((uint8_t *)l2_buffer)[k];
                             break;
                         case 6:
-                            on[k] = MfccOutSig_uint8[k];
+                            on[k] = ((uint8_t *)l2_buffer)[k];
                             break;
                         case 7:
-                            off[k] = MfccOutSig_uint8[k];
+                            off[k] = ((uint8_t *)l2_buffer)[k];
                             break;
                         case 8:
-                            stop[k] = MfccOutSig_uint8[k];
+                            stop[k] = ((uint8_t *)l2_buffer)[k];
                             break;
                         case 9:
-                            go[k] = MfccOutSig_uint8[k];
+                            go[k] = ((uint8_t *)l2_buffer)[k];
                             break;
                     } 
                 }
                 else{
                     switch (tinytestidx) {
                         case 0:
-                            MfccOutSig_uint8[k] = yes[k];
+                            ((uint8_t *)l2_buffer)[k] = yes[k];
                             break;
                         case 1: 
-                            MfccOutSig_uint8[k] = no[k];
+                            ((uint8_t *)l2_buffer)[k] = no[k];
                             break;
                         case 2:
-                            MfccOutSig_uint8[k] = up[k];
+                            ((uint8_t *)l2_buffer)[k] = up[k];
                             break;
                         case 3:
-                            MfccOutSig_uint8[k] = down[k];
+                            ((uint8_t *)l2_buffer)[k] = down[k];
                             break;
                         case 4:
-                            MfccOutSig_uint8[k] = left[k];
+                            ((uint8_t *)l2_buffer)[k] = left[k];
                             break;
                         case 5:
-                            MfccOutSig_uint8[k] = right[k];
+                            ((uint8_t *)l2_buffer)[k] = right[k];
                             break;
                         case 6:
-                            MfccOutSig_uint8[k] = on[k];
+                            ((uint8_t *)l2_buffer)[k] = on[k];
                             break;
                         case 7:
-                            MfccOutSig_uint8[k] = off[k];
+                            ((uint8_t *)l2_buffer)[k] = off[k];
                             break;
                         case 8:
-                            MfccOutSig_uint8[k] = stop[k];
+                            ((uint8_t *)l2_buffer)[k] = stop[k];
                             break;
                         case 9:
-                            MfccOutSig_uint8[k] = go[k];
+                            ((uint8_t *)l2_buffer)[k] = go[k];
                             break;
                     } 
                 }
@@ -1129,13 +1119,17 @@ void train_wavsrc(){
         mfcc_computation(MfccInSig, MfccOutSig);
         pi_l2_free(MfccInSig, AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE)); 
 
-        char * MfccOutSig_uint8 = (char*) pi_l2_malloc(N_MFCC_WINS * N_MELS * sizeof(char));
-
         int k = 0;
         for (int i = 0; i < N_MFCC_WINS * N_MELS;i++){                
             
-            // MfccOutSig_uint8[k] = (char) ((int) floor(MfccOutSig[i] * pow(2, -1) * sqrt(0.05)) + 128); // 23.883617 QSNR w/ float
-            MfccOutSig_uint8[k] = (char) ((int) floor(MfccOutSig[i] * 0.1118) + 128);
+            // Fill input buffer
+            if (mfcc_src == OFFLINE){
+                ((uint8_t *)l2_buffer)[k] = L2_input_h[k]; // Precomputed MFCC
+            }
+            else {
+                // ((uint8_t *)l2_buffer)[k] = (char) ((int) floor(MfccOutSig[i] * pow(2, -1) * sqrt(0.05)) + 128);
+                ((uint8_t *)l2_buffer)[k] = (char) ((int) floor(MfccOutSig[i] * 0.1118) + 128); // Online computed MFCC
+            }
 
             if (N_MELS == 40){
                 // Select 10 MFCC per window
@@ -1143,20 +1137,10 @@ void train_wavsrc(){
                     i = 40*(k/10) + 39;
                 }
             }
-
-            // Fill input buffer
-            if (mfcc_src == OFFLINE){
-                ((uint8_t *)l2_buffer)[k] = L2_input_h[k]; // Precomputed MFCC
-            }
-            else {
-                ((uint8_t *)l2_buffer)[k] = MfccOutSig_uint8[k]; // Online computed MFCC
-            }
-
             k++;
         } 
 
         pi_l2_free(MfccOutSig, N_MFCC_WINS * N_MELS * sizeof(OUT_TYPE));
-        pi_l2_free(MfccOutSig_uint8, N_MFCC_WINS * N_MELS * sizeof(char));
 
 
         PRINTF ("********** Run inferecene **********\n");
@@ -1498,7 +1482,6 @@ int application(void){
     MFCC_IN_TYPE * MfccInSig_prev;
     int16_t *MfccInSig_int16;
     OUT_TYPE *MfccOutSig;
-    char *MfccOutSig_uint8;
 
     MfccInSig_prev = (MFCC_IN_TYPE *) pi_l2_malloc(1 * AUDIO_BUFFER_SIZE * sizeof (MFCC_IN_TYPE));
     int len = 0;
@@ -1664,6 +1647,7 @@ int application(void){
         // pi_gpio_pin_write(gpio_pin_measurement_id, 1);
 
 
+        MfccOutSig = NULL;
         MfccOutSig = (OUT_TYPE *) pi_l2_malloc(N_MFCC_WINS * N_MELS * sizeof(OUT_TYPE)); 
         mfcc_computation(MfccInSig, MfccOutSig);
         pi_l2_free(MfccInSig, AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE)); 
@@ -1688,34 +1672,23 @@ int application(void){
         int start_readprocessing = pi_time_get_us();
         #endif    
 
-        MfccOutSig_uint8 = (char *) pi_l2_malloc(N_MFCC_WINS * N_MELS * sizeof(char));
-
         int k = 0;
-        for (int i = 0; i < N_MFCC_WINS * N_MELS;i++){                
-
-            // MfccOutSig_uint8[k] = (char) ((int) floor(MfccOutSig[i] * pow(2, -1) * sqrt(0.05)) + 128);
-            // MfccOutSig_uint8[k] = (char) ((int) floor(MfccOutSig[i] * 0.1118) + 128);
-
-            // printf ("MfccOutSig[%i] = %i\n", i, MfccOutSig[i]);
-            // printf ("MfccOutSig_uint8[%i] = %i\n", k, MfccOutSig_uint8[k]);
-
-
-            MfccOutSig_uint8[k] = (char) ((int) (floor(MfccOutSig[i] * 0.1118)) + 128);
-            // printf ("MfccOutSig_uint8[%i] = %i\n", k, MfccOutSig_uint8[k]);
+        for (int i = 0; i < N_MFCC_WINS * N_MELS; i++){                
+            
+            // Fill input buffer
+            if (mfcc_src == OFFLINE){
+                ((uint8_t *)l2_buffer)[k] = L2_input_h[k]; // Precomputed MFCC
+            }
+            else {
+                // ((uint8_t *)l2_buffer)[k] = (char) ((int) floor(MfccOutSig[i] * pow(2, -1) * sqrt(0.05)) + 128);
+                ((uint8_t *)l2_buffer)[k] = (char) ((int) floor(MfccOutSig[i] * 0.1118) + 128); // Online computed MFCC
+            }
 
             if (N_MELS == 40){
                 // Select 10 MFCC per window
                 if (i == 40*(k/10) + 9){
                     i = 40*(k/10) + 39;
                 }
-            }
-
-            // Fill input buffer
-            if (mfcc_src == OFFLINE){
-                ((uint8_t *)l2_buffer)[k] = L2_input_h[k]; // Precomputed MFCC
-            }
-            else {
-                ((uint8_t *)l2_buffer)[k] = MfccOutSig_uint8[k]; // Online computed MFCC
             }
             k++;
         } 
@@ -1726,8 +1699,6 @@ int application(void){
 
 
         pi_l2_free(MfccOutSig, N_MFCC_WINS * N_MELS * sizeof(OUT_TYPE));
-        pi_l2_free(MfccOutSig_uint8, N_MFCC_WINS * N_MELS * sizeof(char));
-
 
         #ifdef PERF
         int elapsed_timer_processing = gap_fc_readhwtimer() - start_timer_processing;
