@@ -101,6 +101,10 @@ pi_evt_t sfu_out_task;
 pi_sfu_mem_port_t * memout_port;
 int sfu_buffer_filled;
 
+void *l2_buffer;
+void *l2_buffer_wgt_upd;
+
+
 
 
 #endif /* GLOBALS_H */

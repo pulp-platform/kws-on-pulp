@@ -124,6 +124,7 @@ list (APPEND TARGET_SRCS
                          localutil.c
                          acquire.c
                          preprocess.c
+                         train.c
                          ${BUILD_DIR}/Graph_L2_Descr.c
                          ${BUILD_DIR}/L2_Descr_Table.c
                          ${GAP9_SDK_DIR}/rtos/sfu/SFU_RT.c
