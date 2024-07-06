@@ -16,34 +16,6 @@
 
 #include "application.h"
 
-#define DATA_TYPE 2 // TODO: Understand why this works
-#if (DATA_TYPE==2)
-// typedef F16_DSP MFCC_IN_TYPE;
-// typedef F16_DSP OUT_TYPE;
-// typedef F16 MFCC_IN_TYPE;
-// typedef F16 OUT_TYPE;
-// typedef f16 MFCC_IN_TYPE;
-// typedef f16 OUT_TYPE;
-typedef float16 MFCC_IN_TYPE;
-typedef float16 OUT_TYPE;
-// typedef struct float16 MFCC_IN_TYPE;
-// typedef struct float16 OUT_TYPE;
-#elif (DATA_TYPE==3)
-typedef float MFCC_IN_TYPE;
-typedef float OUT_TYPE;
-#else
-typedef short int OUT_TYPE;  // Save MFCCs works 
-typedef short int MFCC_IN_TYPE; // Save MFCCs works
-#endif
-
-
-// #define DATA_TYPE 1
-// typedef short int OUT_TYPE;  // Save MFCCs works 
-// typedef short int MFCC_IN_TYPE; // Save MFCCs works
-
-// L2
-#include "input.h"
-
 // Peripherals
 #include "Gap.h"
 #include "bsp/ram.h"
@@ -59,21 +31,6 @@ typedef short int MFCC_IN_TYPE; // Save MFCCs works
 #define FREQ_PCM (48000)
 #define SAI_RX (1)
 #define SAI_TX (0)
-
-#define N_MFCC_MELS 10
-#define N_MFCC_WINS 49
-
-
-// MFCC
-#include "MFCC_params.h"
-#include "MfccKernels.h"
-#include "DCTTwiddles.def"
-#include "MelFBSparsity.def"
-#include "WindowLUT.def"
-#include "FFTTwiddles.def"
-#include "RFFTTwiddles.def"
-#include "MelFBCoeff.def"
-#include "SwapTable.def"
 
 // DORY
 #include "mem.h"
@@ -93,6 +50,10 @@ typedef short int MFCC_IN_TYPE; // Save MFCCs works
 #include "testing.h"
 
 #include "noise_meeting.h"
+
+
+// SIMPLIFICATION
+#include "preprocess.h"
 
 // measurement
 // unsigned int GPIOs = PI_GPIO_A89;
@@ -146,10 +107,7 @@ int noise_seconds = 1;
 /* Read button */
 static const pi_gpio_e gpio_boot_pin_1 = PAD_GPIO_UPB;
 
-// Global declaration 
-struct pi_device cluster_dev;
-struct pi_cluster_conf cl_conf;
-struct pi_cluster_task cl_task;
+
 
 static pi_event_t inference_task;
 
@@ -402,73 +360,7 @@ void input_wav(int save, int free, char* wavfile, int noise){
     int step6 = pi_time_get_us();
 }
 
-// Initialize MFCC computation
-static void mfcc_kernel(void *args_mfcc)
-{
-    #ifdef PERF
-        gap_cl_starttimer();
-        gap_cl_resethwtimer();
-        int start = gap_cl_readhwtimer();
-    #endif
 
-    unsigned int * args = (unsigned int *) args_mfcc;
-    MFCC_IN_TYPE * MfccInputSignal = (MFCC_IN_TYPE *) args[0];
-    OUT_TYPE * MfccOutputSignal = (OUT_TYPE *) args[1];
-
-    // Compute MFCC following Tensorflow settings
-    #if (N_DCT == 0)
-        #if (DATA_TYPE==2) || (DATA_TYPE==3)
-        Tensorflow_MFCC(MfccInputSignal, MfccOutputSignal, FFTTwiddles, RFFTTwiddles, SwapTable, WindowLUT, MelFBSparsity, MelFBCoeff);
-        #elif (DATA_TYPE==1)
-        Tensorflow_MFCC(MfccInputSignal, MfccOutputSignal, FFTTwiddles, SwapTable, WindowLUT, MelFBSparsity, MelFBCoeff, NORM);
-        #else
-        Tensorflow_MFCC(MfccInputSignal, MfccOutputSignal, FFTTwiddles, RFFTTwiddles, SwapTable, WindowLUT, MelFBSparsity, MelFBCoeff, NORM);
-        #endif
-    #else
-        #if (DATA_TYPE==2) || (DATA_TYPE==3)
-        Tensorflow_MFCC(MfccInputSignal, MfccOutputSignal, FFTTwiddles, RFFTTwiddles, SwapTable, WindowLUT, MelFBSparsity, MelFBCoeff, DCTTwiddles);
-        #elif (DATA_TYPE==1)
-        Tensorflow_MFCC(MfccInputSignal, MfccOutputSignal, FFTTwiddles, SwapTable, WindowLUT, MelFBSparsity, MelFBCoeff, NORM, DCTTwiddles);
-        #else
-        Tensorflow_MFCC(MfccInputSignal, MfccOutputSignal, FFTTwiddles, RFFTTwiddles, SwapTable, WindowLUT, MelFBSparsity, MelFBCoeff, NORM, DCTTwiddles);
-        #endif
-    #endif
-
-    #ifdef PERF
-        int elapsed = gap_cl_readhwtimer() - start;
-        printf("Total Cycles: %d over %d Frames %d Cyc/Frame\n", elapsed, N_MFCC_WINS, elapsed / N_MFCC_WINS);
-    #endif
-}
-
-// Set up MFCC computation
-void mfcc_computation(MFCC_IN_TYPE * MfccInputSignal, OUT_TYPE * MfccOutputSignal){
-   
-    struct pi_cluster_task* task_mfcc;
-    task_mfcc = pi_l2_malloc(sizeof(struct pi_cluster_task));
-
-    unsigned int args_mfcc[0];
-    args_mfcc[0] = (unsigned int) MfccInputSignal;
-    args_mfcc[1] = (unsigned int) MfccOutputSignal;
-
-    pi_cluster_task(task_mfcc, &mfcc_kernel, args_mfcc);
-    pi_cluster_task_stacks(task_mfcc, NULL, SLAVE_STACK_SIZE);
-    pi_cluster_conf_init(&cl_conf);
-    pi_open_from_conf(&cluster_dev, &cl_conf);
-    if (pi_cluster_open(&cluster_dev))
-    {
-      return -1;
-    }
-
-    L1_Memory = pi_l1_malloc(&cluster_dev, _L1_Memory_SIZE);
-    if (L1_Memory==NULL){
-        printf("Error allocating L1\n");
-        pmsis_exit(-1);
-    }
-
-    pi_cluster_send_task_to_cl(&cluster_dev, task_mfcc);
-    pi_l2_free(task_mfcc, sizeof(struct pi_cluster_task));
-    pi_cluster_close(&cluster_dev);
-}
 
 
 void evaluate_validation(int was_trained){
@@ -587,32 +479,7 @@ void evaluate_validation(int was_trained){
                 MfccInSig[samplepos] = MfccInSig[samplepos];
             }
 
-            OUT_TYPE *MfccOutSig = (OUT_TYPE *) pi_l2_malloc(N_MFCC_WINS * N_MELS * sizeof(OUT_TYPE));
-            mfcc_computation(MfccInSig, MfccOutSig);  
-            pi_l2_free(MfccInSig, AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE)); 
-            
-            int k = 0;
-            for (int i = 0; i < N_MFCC_WINS * N_MELS;i++){                
-                
-                // Fill input buffer
-                if (mfcc_src == OFFLINE){
-                    ((uint8_t *)l2_buffer)[k] = L2_input_h[k]; // Precomputed MFCC
-                }
-                else {
-                    // ((uint8_t *)l2_buffer)[k] = (char) ((int) floor(MfccOutSig[i] * pow(2, -1) * sqrt(0.05)) + 128);
-                    ((uint8_t *)l2_buffer)[k] = (char) ((int) floor(MfccOutSig[i] * 0.1118) + 128); // Online computed MFCC
-                }
-
-                if (N_MELS == 40){
-                    // Select 10 MFCC per window
-                    if (i == 40*(k/10) + 9){
-                        i = 40*(k/10) + 39;
-                    }
-                }
-                k++;
-            } 
-
-            pi_l2_free(MfccOutSig, N_MFCC_WINS * N_MELS * sizeof(OUT_TYPE));
+            preprocess(MfccInSig, l2_buffer, mfcc_src);
 
             // Extract backbone features
             void *dump; // dump to copy FC weights, won't be used; TODO: Parametrize DORY
@@ -865,32 +732,7 @@ void evaluate_tinytest(int was_trained){
         printf ("Loaded and scaled data for evaluation: %i us\n", end_readeval - start_readeval);
         #endif
 
-        MfccOutSig = (OUT_TYPE *) pi_l2_malloc(N_MFCC_WINS * N_MELS * sizeof(OUT_TYPE)); 
-        mfcc_computation(MfccInSig, MfccOutSig);
-        pi_l2_free(MfccInSig, AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE)); 
-
-        int k = 0;
-        for (int i = 0; i < N_MFCC_WINS * N_MELS;i++){                
-            
-            // Fill input buffer
-            if (mfcc_src == OFFLINE){
-                ((uint8_t *)l2_buffer)[k] = L2_input_h[k]; // Precomputed MFCC
-            }
-            else {
-                // ((uint8_t *)l2_buffer)[k] = (char) ((int) floor(MfccOutSig[i] * pow(2, -1) * sqrt(0.05)) + 128);
-                ((uint8_t *)l2_buffer)[k] = (char) ((int) floor(MfccOutSig[i] * 0.1118) + 128); // Online computed MFCC
-            }
-
-            if (N_MELS == 40){
-                // Select 10 MFCC per window
-                if (i == 40*(k/10) + 9){
-                    i = 40*(k/10) + 39;
-                }
-            }
-            k++;
-        } 
-
-        pi_l2_free(MfccOutSig, N_MFCC_WINS * N_MELS * sizeof(OUT_TYPE));
+        preprocess(MfccInSig, l2_buffer, mfcc_src);
 
         if (uttr_train_src == ONLINE) {
             for (int k = 0; k < N_MFCC_WINS * N_MELS; k++){
@@ -1090,7 +932,6 @@ void train_wavsrc(){
         ram_read(prepWav, L3_wavs + ((classidx-2)*10+sampleidx)*AUDIO_BUFFER_SIZE*sizeof(short), AUDIO_BUFFER_SIZE*sizeof(short));
 
         MFCC_IN_TYPE *MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
-        OUT_TYPE *MfccOutSig = (OUT_TYPE *) pi_l2_malloc(N_MFCC_WINS * N_MELS * sizeof(OUT_TYPE)); 
 
         if (MfccInSig == NULL){
             printf("Failed allocating MfccInSig.\n");
@@ -1120,31 +961,7 @@ void train_wavsrc(){
             }
         }
 
-        mfcc_computation(MfccInSig, MfccOutSig);
-        pi_l2_free(MfccInSig, AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE)); 
-
-        int k = 0;
-        for (int i = 0; i < N_MFCC_WINS * N_MELS;i++){                
-            
-            // Fill input buffer
-            if (mfcc_src == OFFLINE){
-                ((uint8_t *)l2_buffer)[k] = L2_input_h[k]; // Precomputed MFCC
-            }
-            else {
-                // ((uint8_t *)l2_buffer)[k] = (char) ((int) floor(MfccOutSig[i] * pow(2, -1) * sqrt(0.05)) + 128);
-                ((uint8_t *)l2_buffer)[k] = (char) ((int) floor(MfccOutSig[i] * 0.1118) + 128); // Online computed MFCC
-            }
-
-            if (N_MELS == 40){
-                // Select 10 MFCC per window
-                if (i == 40*(k/10) + 9){
-                    i = 40*(k/10) + 39;
-                }
-            }
-            k++;
-        } 
-
-        pi_l2_free(MfccOutSig, N_MFCC_WINS * N_MELS * sizeof(OUT_TYPE));
+        preprocess(MfccInSig, l2_buffer, mfcc_src);
 
 
         PRINTF ("********** Run inferecene **********\n");
@@ -1647,88 +1464,12 @@ int application(void){
         int start_readmfcc = pi_time_get_us();
         #endif
 
-        PRINTF("***************************** Computing MFCC **************************\n");
-
-
-        // pi_gpio_pin_write(gpio_pin_measurement_id, 1);
-
-
-        MfccOutSig = NULL;
-        MfccOutSig = (OUT_TYPE *) pi_l2_malloc(N_MFCC_WINS * N_MELS * sizeof(OUT_TYPE)); 
-        mfcc_computation(MfccInSig, MfccOutSig);
-        pi_l2_free(MfccInSig, AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE)); 
-
-        
-        #ifdef PERF
-        int elapsed_timer_mfcc = gap_fc_readhwtimer() - start_timer_mfcc;
-        int end_readmfcc = pi_time_get_us();
-        printf("Compute mfcc: %d cycles\n", elapsed_timer_mfcc);
-        printf("MFCC: %i us\n", end_readmfcc - start_readmfcc);
-        #endif
-
-        for (int i = 0; i < 5; i++){
-            PRINTF("MfccOutSig[%i] = %f, ", i, MfccOutSig[i]);
-        }
-        PRINTF("\n");
-        
-        #ifdef PERF
-        gap_fc_starttimer();
-        gap_fc_resethwtimer();
-        int start_timer_processing = gap_fc_readhwtimer();        
-        int start_readprocessing = pi_time_get_us();
-        #endif    
-
-        int k = 0;
-        for (int i = 0; i < N_MFCC_WINS * N_MELS; i++){                
-            
-            // Fill input buffer
-            if (mfcc_src == OFFLINE){
-                ((uint8_t *)l2_buffer)[k] = L2_input_h[k]; // Precomputed MFCC
-            }
-            else {
-                // ((uint8_t *)l2_buffer)[k] = (char) ((int) floor(MfccOutSig[i] * pow(2, -1) * sqrt(0.05)) + 128);
-                ((uint8_t *)l2_buffer)[k] = (char) ((int) floor(MfccOutSig[i] * 0.1118) + 128); // Online computed MFCC
-            }
-
-            if (N_MELS == 40){
-                // Select 10 MFCC per window
-                if (i == 40*(k/10) + 9){
-                    i = 40*(k/10) + 39;
-                }
-            }
-            k++;
-        } 
-
-        // if DEBUG
-        // dump_data_write("mfccdump.dat", MfccOutSig_uint8, 49 * 10 * sizeof(char));
-
-
-
-        pi_l2_free(MfccOutSig, N_MFCC_WINS * N_MELS * sizeof(OUT_TYPE));
-
-        #ifdef PERF
-        int elapsed_timer_processing = gap_fc_readhwtimer() - start_timer_processing;
-        int end_readprocessing = pi_time_get_us();
-        printf("Processing: %d cycles\n", elapsed_timer_processing);
-        printf("Processing: %i us\n", end_readprocessing - start_readprocessing);
-        #endif
-
-        // pi_gpio_pin_write(gpio_pin_measurement_id, 0);
-
-
-
-        #ifdef PERF
-        gap_fc_starttimer();
-        gap_fc_resethwtimer();
-        int start_timer_4 = gap_fc_readhwtimer();        
-        #endif
+        preprocess(MfccInSig, l2_buffer, mfcc_src);
 
         PRINTF ("***************************** Backbone inference **************************\n");
 
 
         int start_backbone = pi_time_get_us();
-        
-
         
         
         // pi_gpio_pin_write(gpio_pin_measurement_id, 1);
@@ -1821,7 +1562,7 @@ int application(void){
         checkbutton:
         button_was_pressed = 0;
         // button_was_pressed = read_button();
-        button_was_pressed = 1; // measurement
+        // button_was_pressed = 1; // measurement
 
         if (button_was_pressed){
             if (noise_train_src == ONLINE){
