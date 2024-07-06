@@ -3,6 +3,8 @@
 
 #include "globals.h"
 
+#define TRAIN_EPS 1
+
 static float ce_loss_pre;
 static float ce_loss_post;
 static float ce_loss_pre_val;
@@ -22,6 +24,7 @@ char off[N_MFCC_MELS * N_MFCC_WINS];
 char stop[N_MFCC_MELS * N_MFCC_WINS];
 char go[N_MFCC_MELS * N_MFCC_WINS];
 
+void train();
 void evaluate_largetest(int was_trained);
 void evaluate_tinytest(int was_trained);
 void evaluate_online(int was_trained);

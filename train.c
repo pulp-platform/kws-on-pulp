@@ -12,6 +12,126 @@
 #include "net.h"
 
 
+void train(){
+
+    int sampleidx;
+    int classidx;
+
+    for (int epidx = 0; epidx < TRAIN_EPS; epidx++) {
+        for (int uttridx = 0; uttridx < 100; uttridx++){
+
+        sampleidx = uttridx / 10;
+        classidx = uttridx % 10 + 2; // no SILENCE, no UNKNOWN
+
+        char *utterance;
+        switch (classidx) {
+            case 0: // 0
+                continue; // TODO: Get data 
+                utterance = class_0[sampleidx];
+                break;
+            case 1: // 0
+                continue; // TODO: Get data 
+                utterance = class_1[sampleidx];
+                break;
+            case 2:
+                utterance = class_2[sampleidx];
+                break;
+            case 3:
+                utterance = class_3[sampleidx];
+                break;
+            case 4:
+                utterance = class_4[sampleidx];
+                break;
+            case 5:
+                utterance = class_5[sampleidx];
+                break;
+            case 6:
+                utterance = class_6[sampleidx];
+                break;
+            case 7:
+                utterance = class_7[sampleidx];
+                break;
+            case 8:
+                utterance = class_8[sampleidx];
+                break;
+            case 9:
+                utterance = class_9[sampleidx];
+                break;
+            case 10:
+                utterance = class_10[sampleidx];
+                break;
+            case 11:
+                utterance = class_11[sampleidx];
+                break;
+        }
+
+        // Load utterance directly reading .wav
+        // wav_to_array(utterance, MfccInSig, 0, 0);  // utterance, noise, save
+
+        // Load utterance from RAM
+        short int *prepWav = NULL;
+        prepWav = (short int *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(short));
+        ram_read(prepWav, L3_wavs + ((classidx-2)*10+sampleidx)*AUDIO_BUFFER_SIZE*sizeof(short), AUDIO_BUFFER_SIZE*sizeof(short));
+
+        MFCC_IN_TYPE *MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
+        if (MfccInSig == NULL){
+            printf("Failed allocating MfccInSig.\n");
+            pmsis_exit(-1);
+        }
+    
+        #if (DATA_TYPE==2) || (DATA_TYPE==3)
+            for (int i=0; i<AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
+                MfccInSig[i] = (MFCC_IN_TYPE) prepWav[i] / (1<<15);
+            }
+        #else
+            for (int i=0; i<AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
+                MfccInSig[i]] = (MFCC_IN_TYPE) gap_fcip(((int) prepWav[i]), 15);
+            }
+        #endif
+
+        pi_l2_free(prepWav, AUDIO_BUFFER_SIZE * sizeof(short int));
+
+        int noisesamplestart = 0;
+        for (int samplepos = 0; samplepos < AUDIO_BUFFER_SIZE; samplepos++){
+            // MfccInSig[samplepos] = MfccInSig[samplepos] + 1*RecordedNoise[noisesamplestart+samplepos];
+            MfccInSig[samplepos] = MfccInSig[samplepos]; // CIOFLANC: Add RecordedNoise
+        }
+
+        preprocess(MfccInSig, l2_buffer, 0);
+
+        // Extract backbone features
+        void *dump;
+        network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &dump, 0, 1); // L2_input_h extra-arg for L2-only
+
+        pi_cluster_conf_init(&cl_conf);
+        pi_open_from_conf(&cluster_dev, &cl_conf);
+        if (pi_cluster_open(&cluster_dev))
+        {
+          return -1;
+        }
+
+        int predidx = -1;
+        float ce_loss = 0.;
+        unsigned int args_train_classifier[6];
+        args_train_classifier[0] = (unsigned int) l2_buffer;
+        args_train_classifier[1] = (unsigned int) l2_buffer_wgt_upd;
+        args_train_classifier[2] = (unsigned int) 2; // train
+        // CIOFLANC: Should we INITIALIZE the weights again?
+        // if (uttridx == 0 && epidx == 0)
+        //     args_train_classifier[2] = (unsigned int) 1; // init = 1
+        // else
+        //     args_train_classifier[2] = (unsigned int) 0; // init = 0   
+        args_train_classifier[3] = (unsigned int) classidx;
+        args_train_classifier[4] = (float*) &ce_loss;
+        args_train_classifier[5] = (int *) &predidx;
+
+        pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, args_train_classifier));
+        pi_cluster_close(&cluster_dev);
+        }
+    }
+}
+
+
 void evaluate_online(int was_trained){
 
     if (was_trained == 0){
@@ -19,7 +139,6 @@ void evaluate_online(int was_trained){
             MfccInSig_buff[tinytestidx] = (MFCC_IN_TYPE *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
         }
     }
-
     for (int tinytestidx = 0; tinytestidx < N_TINYTEST; tinytestidx++){ // only non-unknown
         // printf ("-----------------------------Loop evaluation (itteration %i)-------------------------\n", tinytestidx);
 
@@ -44,7 +163,6 @@ void evaluate_online(int was_trained){
         }            
 
         if (was_trained == 0) {
-
             switch(tinytestidx){
                 case 0:
                     printf("---------------- Pronounce yes --------------\n");
@@ -80,20 +198,17 @@ void evaluate_online(int was_trained){
 
             // clean up buffer
             pi_time_wait_us(1000000);
-
-            // read recording
-            int mfccidx = 0;
             pi_evt_wait(&inference_task);
 
+            // read recording
             printf("Filling input buffer...\n");  
-            
+            int mfccidx = 0;
             for (int i = 0; i < BUFF_SIZE; i+=3){
                 MfccInSig[mfccidx] = (MFCC_IN_TYPE) (((float)((int32_t *)BufferInList)[i]) / (float)(1<<31 - 1));
                 MfccInSig_buff[tinytestidx][mfccidx] = MfccInSig[mfccidx];
                 mfccidx++;
             }
         }
-
         else {
             for (int i = 0; i < AUDIO_BUFFER_SIZE; i++){
                 MfccInSig[i] = MfccInSig_buff[tinytestidx][i];
@@ -261,9 +376,24 @@ void evaluate_online(int was_trained){
         }
     }
 
+    if (was_trained == 1) {
+        if (ce_loss_pre_val > ce_loss_post_val){
+            printf("\x1B[32m *** Successfully reduced loss by %f from %f to %f *** \x1B[0m\n", ce_loss_pre_val-ce_loss_post_val, ce_loss_pre_val, ce_loss_post_val);
+        }
+        else{
+            printf ("\x1B[31m *** Unsuccessful adaptation, try again. Loss increased from %f to %f *** \x1B[0m\n", ce_loss_pre_val, ce_loss_post_val);
+        }
+
+        if (correct_pre_val/350 * 100 < correct_post_val/350*100){
+            printf("\x1B[32m *** Successfully increased accuracy by %f from %f to %f *** \x1B[0m\n", correct_post_val/350*100-correct_pre_val/350 * 100, correct_pre_val/350 * 100, correct_post_val/350*100);
+        }
+        else{
+            printf ("\x1B[31m *** Unsuccessful adaptation, try again. Accuracy decreased from %f to %f *** \x1B[0m\n", correct_pre_val/350 * 100, correct_post_val/350*100);
+        }
+    }
+
+
 }
-
-
 
 
 void evaluate_tinytest(int was_trained){
@@ -426,8 +556,23 @@ void evaluate_tinytest(int was_trained){
         //     pi_gpio_pin_write(gpio_pin_o, 0);
         // #endif
     }
-}
 
+    if (was_trained == 1) {
+        if (ce_loss_pre_val > ce_loss_post_val){
+            printf("\x1B[32m *** Successfully reduced loss by %f from %f to %f *** \x1B[0m\n", ce_loss_pre_val-ce_loss_post_val, ce_loss_pre_val, ce_loss_post_val);
+        }
+        else{
+            printf ("\x1B[31m *** Unsuccessful adaptation, try again. Loss increased from %f to %f *** \x1B[0m\n", ce_loss_pre_val, ce_loss_post_val);
+        }
+
+        if (correct_pre_val/350 * 100 < correct_post_val/350*100){
+            printf("\x1B[32m *** Successfully increased accuracy by %f from %f to %f *** \x1B[0m\n", correct_post_val/350*100-correct_pre_val/350 * 100, correct_pre_val/350 * 100, correct_post_val/350*100);
+        }
+        else{
+            printf ("\x1B[31m *** Unsuccessful adaptation, try again. Accuracy decreased from %f to %f *** \x1B[0m\n", correct_pre_val/350 * 100, correct_post_val/350*100);
+        }
+    }
+}
 
 
 void evaluate_largetest(int was_trained){
@@ -533,5 +678,23 @@ void evaluate_largetest(int was_trained){
         printf("ce_loss_pre_val=%f, correct_pre_val=%f\n", ce_loss_pre_val, correct_pre_val);
         printf("ce_loss_post_val=%f, correct_post_val=%f\n", ce_loss_post_val, correct_post_val);        
     }
-    return 0; 
+    
+
+    if (was_trained == 1) {
+        if (ce_loss_pre_val > ce_loss_post_val){
+            printf("\x1B[32m *** Successfully reduced loss by %f from %f to %f *** \x1B[0m\n", ce_loss_pre_val-ce_loss_post_val, ce_loss_pre_val, ce_loss_post_val);
+        }
+        else{
+            printf ("\x1B[31m *** Unsuccessful adaptation, try again. Loss increased from %f to %f *** \x1B[0m\n", ce_loss_pre_val, ce_loss_post_val);
+        }
+
+        if (correct_pre_val/350 * 100 < correct_post_val/350*100){
+            printf("\x1B[32m *** Successfully increased accuracy by %f from %f to %f *** \x1B[0m\n", correct_post_val/350*100-correct_pre_val/350 * 100, correct_pre_val/350 * 100, correct_post_val/350*100);
+        }
+        else{
+            printf ("\x1B[31m *** Unsuccessful adaptation, try again. Accuracy decreased from %f to %f *** \x1B[0m\n", correct_pre_val/350 * 100, correct_post_val/350*100);
+        }
+    }
 }
+
+
