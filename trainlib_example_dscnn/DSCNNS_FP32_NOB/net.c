@@ -257,7 +257,6 @@ void net_step(void *args)
   float *loss_ptr = (float*) real_args[4];
   int *predidx_ptr = (int *) real_args[5];
 
-
   // TODO: Discuss sample management per epoch
   float *L2_weights = (float *) pi_l2_malloc (WGT_SIZE_L0 * sizeof(float));
   if (op_mode == INITIALIZE) {        
@@ -272,7 +271,8 @@ void net_step(void *args)
   }
 
   // float eps_in = 0.1802; // TODO: CMake argument
-  float eps_in = 1;
+  // float eps_in = 1; // DEBUG
+  float eps_in = 0.01;
   for (int i = 0; i < IN_SIZE; i++){
       INPUT[i] = ((float) (((uint8_t *) l2_buffer)[i])) * eps_in;
   }
@@ -284,15 +284,43 @@ void net_step(void *args)
   // printf("Testing DNN initialization forward..");
 
   if (op_mode == INFERENCE){
+
     forward();
+    #ifdef VERBOSE
+    printf("Forward\n");
+    for (int i = 0; i < 12; i++){
+      printf ("d[%i] = %f\n", i, ((float*) layer0_out.data)[i]);
+    }
+    #endif
+
     pulp_1dsoftmax_fp32_fw(&layer0_out);
+    #ifdef VERBOSE
+    printf("Softmax\n");
+    for (int i = 0; i < 12; i++){
+      printf ("d[%i] = %f\n", i, ((float*) layer0_out.data)[i]);
+    }
+    #endif
     *predidx_ptr = predict_float_local(layer0_out.data, 12);
   }
 
 
   if (op_mode == EVALUATE){
+
     forward();
+    #ifdef VERBOSE
+    printf("Forward\n");
+    for (int i = 0; i < 12; i++){
+      printf ("d[%i] = %f\n", i, ((float*) layer0_out.data)[i]);
+    }
+    #endif
+
     pulp_1dsoftmax_fp32_fw(&layer0_out);
+    #ifdef VERBOSE
+    printf("Softmax\n");
+    for (int i = 0; i < 12; i++){
+      printf ("d[%i] = %f\n", i, ((float*) layer0_out.data)[i]);
+    }
+    #endif
     *predidx_ptr = predict_float_local(layer0_out.data, 12);
     for (int i=0; i < layer0_out.dim; i++){
       if(layer0_out.data[i] == 0){
@@ -301,8 +329,7 @@ void net_step(void *args)
     }
     compute_loss();
     *loss_ptr = loss;
-
-    printf("Loss is (local): %f\n", loss);
+    
   }
 
   if (op_mode == TRAIN){

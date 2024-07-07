@@ -435,12 +435,23 @@ int application(void){
 
         preprocess(MfccInSig, l2_buffer, mfcc_src);
 
-        PRINTF ("***************************** Backbone inference **************************\n");
+        for (int idx = 0; idx < 490; idx++){
+            printf ("mfcc[%i] = %u, ", idx, ((uint8_t *)l2_buffer)[idx]);
+        }
+        printf("\n");
+
+        printf ("***************************** Backbone inference **************************\n");
         int start_backbone = pi_time_get_us();
         
+
         // Extract backbone features
         void *dump; // dump to copy FC weights, won't be used; TODO: Parametrize DORY
         network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &dump, 0, 1); // L2_input_h extra-arg for L2-only
+
+        for (int idx = 0; idx < 64; idx++){
+            printf ("backbone[%i] = %u, ", idx, ((uint8_t *)l2_buffer)[idx]);
+        }
+        printf("\n");
 
         #ifdef PERF
         int elapsed_timer_4 = gap_fc_readhwtimer() - start_timer_4;
@@ -507,7 +518,7 @@ int application(void){
         checkbutton:
         button_pressed = 0;
         read_button(&button_pressed);
-        // button_pressed = 1; // measurement
+        button_pressed = 1; // measurement
 
         if (button_pressed){
             if (noise_train_src == ONLINE){
