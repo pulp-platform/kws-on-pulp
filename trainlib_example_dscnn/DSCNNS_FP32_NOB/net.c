@@ -329,7 +329,7 @@ void net_step(void *args)
     }
     compute_loss();
     *loss_ptr = loss;
-    
+
   }
 
   if (op_mode == TRAIN){
@@ -356,8 +356,10 @@ void net_step(void *args)
 
     // Return updated weights
     for (int i = 0; i < WGT_SIZE_L0; i++) {
+      printf ("layer0_wgt.data[%i] = %f, ", i, layer0_wgt.data[i]);
       ((float*)upd_WGT_l0)[i] = layer0_wgt.data[i];
     }
+    printf ("\n");
 
   }
   // TODO: REMOVE???
