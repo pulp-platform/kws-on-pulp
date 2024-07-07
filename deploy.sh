@@ -52,3 +52,6 @@ then
     /usr/scratch/wetterhorn/cioflanc/tools/cmake-3.19.5-Linux-x86_64/bin/cmake --build build --target run
 fi
 
+
+# function cmake { /usr/scratch/wetterhorn/cioflanc/tools/cmake-3.19.5-Linux-x86_64/bin/cmake "$@" ; }
+# ./openocd -f $GAP_SDK_HOME/utils/openocd/tcl/interface/ftdi/olimex-arm-usb-ocd-h.cfg -f $GAP_SDK_HOME/utils/openocd_tools/tcl/gap9revb.tcl
