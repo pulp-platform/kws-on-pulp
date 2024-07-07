@@ -52,8 +52,8 @@ int uttr_inf_src = NULL;
 
 /* Read button */
 static const pi_gpio_e gpio_boot_pin_1 = PAD_GPIO_UPB;
-int read_button(int * button_pressed){
-    pi_gpio_pin_read(gpio_boot_pin_1, &button_pressed);
+void read_button(int * button_pressed){
+    pi_gpio_pin_read(gpio_boot_pin_1, button_pressed);
 }
 
 
@@ -215,7 +215,7 @@ int application(void){
         
         // remove for measurements
         if (i%10 == 0){
-            // printf(" %i/110 samples read.\n", i);
+            printf(" %i/110 samples read.\n", i);
         }
 
         pi_l2_free(inWav, AUDIO_BUFFER_SIZE*sizeof(short));
@@ -506,7 +506,7 @@ int application(void){
         
         checkbutton:
         button_pressed = 0;
-        // read_button(&button_pressed);
+        read_button(&button_pressed);
         // button_pressed = 1; // measurement
 
         if (button_pressed){
