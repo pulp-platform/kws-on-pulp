@@ -270,9 +270,9 @@ void net_step(void *args)
     }  
   }
 
-  // float eps_in = 0.1802; // TODO: CMake argument
+  float eps_in = 0.1802; // TODO: CMake argument
   // float eps_in = 1; // DEBUG
-  float eps_in = 0.01;
+  // float eps_in = 0.01;
   for (int i = 0; i < IN_SIZE; i++){
       INPUT[i] = ((float) (((uint8_t *) l2_buffer)[i])) * eps_in;
   }
@@ -356,10 +356,10 @@ void net_step(void *args)
 
     // Return updated weights
     for (int i = 0; i < WGT_SIZE_L0; i++) {
-      printf ("layer0_wgt.data[%i] = %f, ", i, layer0_wgt.data[i]);
+      // printf ("layer0_wgt.data[%i] = %f, ", i, layer0_wgt.data[i]);
       ((float*)upd_WGT_l0)[i] = layer0_wgt.data[i];
     }
-    printf ("\n");
+    // printf ("\n");
 
   }
   // TODO: REMOVE???
