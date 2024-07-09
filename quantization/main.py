@@ -57,13 +57,13 @@ print("Dataset split (Train/valid/test/tinytrain): "+ str(train_size) +"/"+str(v
 
 # Model generation and analysis
 # TODO: Model size/type should parametrize the quantization dictionary
-model = DSCNNL(use_bias = False) # Put to FALSE to reproduce FC layer
+model = DSCNNS(use_bias = False) # Put to FALSE to reproduce FC layer
 # model = DSCNNS(use_bias = True) # Put to TRUE to reproduce model_bias layer
 model.to(device)
 
 summary(model,(1,49,data_processing_parameters['feature_bin_count']))
 dummy_input = torch.rand(1, 1,49,data_processing_parameters['feature_bin_count']).to(device)
-count_ops(model, dummy_input)
+# count_ops(model, dummy_input)
 
 # Training initialization
 trainining_environment = Train(audio_processor, training_parameters, model, device)
@@ -90,7 +90,7 @@ if training_parameters['freezebb']:
       print ("For ", str(name), " we require grad? ", str(param.requires_grad))
 
 start=time.clock_gettime(0)
-# trainining_environment.train(model, mode='training') # TRAIN
+trainining_environment.train(model, mode='training') # TRAIN
 # trainining_environment.train(model, mode='tinytrain') # FINETUNE
 print('Finished Training on GPU in {:.2f} seconds'.format(time.clock_gettime(0)-start))
 
@@ -185,18 +185,18 @@ precision_8 = {
           "relu9": {
             "x_bits": 8
           },
-          "conv10": {
-            "W_bits": 7
-          },
-          "relu10": {
-            "x_bits": 8
-          },
-          "conv11": {
-            "W_bits": 7
-          },
-          "relu11": {
-            "x_bits": 8
-          },
+          # "conv10": {
+          #   "W_bits": 7
+          # },
+          # "relu10": {
+          #   "x_bits": 8
+          # },
+          # "conv11": {
+          #   "W_bits": 7
+          # },
+          # "relu11": {
+          #   "x_bits": 8
+          # },
           "fc1": {
             "W_bits": 7
           }
@@ -213,7 +213,7 @@ quantized_model.reset_alpha_act()
 # quit() # early stop to simply save a validation set for NNTOOL
 
 # Remove biases after FQ stage
-# quantized_model.remove_bias()
+# quantized_model.remove_bias() # DEBUG
 
 print("\nFakeQuantized @ 8b accuracy (calibrated):")
 acc = trainining_environment.validate(model=quantized_model, mode='testing', batch_size=128)

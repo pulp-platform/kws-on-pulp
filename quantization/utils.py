@@ -113,7 +113,7 @@ def parameter_generation():
     # 'data_dir':'/usr/scratch/wetterhorn/cioflanc/kws-on-pulp/kws-on-pulp/wavsrc', # GVSOC
     'data_dir':'/usr/scratch/sassauna2/cioflanc/dolphinGSC/speech_commands_v0.02',
     'data_url':'https://storage.googleapis.com/download.tensorflow.org/data/speech_commands_v0.02.tar.gz',
-    'epochs':1,
+    'epochs':20,
     # 'batch_size':1,  # GVSOC # GAP9
     # 'batch_size':64,  # GVSOC # 10 if only a dozen samples are available
     'batch_size':128,
