@@ -5,3 +5,6 @@
 [submodule "kws-on-pulp"]
 	path = kws-on-pulp
 	url = git@iis-git.ee.ethz.ch:kws/kws-on-pulp.git
+[submodule "kws-on-gap9"]
+	path = kws-on-gap9
+	url = git@iis-git.ee.ethz.ch:kws/kws-on-gap9.git
