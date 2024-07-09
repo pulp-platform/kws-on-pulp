@@ -15,7 +15,6 @@ We will employ quantlib for this purpose.
 ```
 python quantize.py --net DSCNN --fix_channels --word_align_channels --clip_inputs
 
-python quantize_victor.py # more mature
 ```
 
 We obtain a quantized model, saved in .onnx format, together with the per-layer activations. A configuration file, required for hardware deployment, is additionally generated. You can find the files in `export/`.

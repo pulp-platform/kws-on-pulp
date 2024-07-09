@@ -314,7 +314,8 @@ def main():
     print("Data range of input data: ", torch.min(mdataset[0][0]), torch.max(mdataset[0][0]))
 
     print("==================================== Loading pre-trained network ====================================")
-    qnet = get_network(key = args['net'], exp_id=0, ckpt_id=0, quantized=True, pretrained = args['pretrained'])
+    pretrained = 'model_uint.pth'
+    qnet = get_network(key = args['net'], exp_id=0, ckpt_id=0, quantized=True, pretrained = pretrained)
 
     print("==================================== Fake Quantizing network ====================================")
     linop_list = [i for i in qnet.modules() if isinstance(i, qa.pact._PACTLinOp)]
@@ -338,6 +339,8 @@ def main():
     min_val = [torch.min(i) for i in fakeBatch_list]
     min_of_min = min(min_val)
     eps_computed = (max_of_max - min_of_min) / 255
+
+    print("EPS computed: ", eps_computed)
 
     roundedFakeBatch = roundTensors(fakeBatch_list, torch.tensor((eps_computed,)))[0]
     
