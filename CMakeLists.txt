@@ -54,7 +54,8 @@ set (NUM_MATMULS 24)
 
 set(GAP9_SDK_DIR         $ENV{GAP_SDK_HOME})
 set(BUILD_DIR            ${CMAKE_CURRENT_SOURCE_DIR}/build)
-set(TRAINLIB_DIR         ${CMAKE_CURRENT_SOURCE_DIR}/trainlib_example_dscnn/DSCNNS_FP32_NOB)
+set(TRAINLIB_DIR         ${CMAKE_CURRENT_SOURCE_DIR}/DSCNNS_DIR_DEST_NEMO_FP32)
+set(DORY_DIR             ${CMAKE_CURRENT_SOURCE_DIR}/DSCNNS_DIR_DEST_NEMO)
 set(DSP_DIR              ${GAP9_SDK_DIR}/tools/autotiler_v3/DSP_Libraries/)
 set(DSP_LUT_DIR          ${GAP9_SDK_DIR}/tools/autotiler_v3/DSP_Libraries/LUT_Tables/)
 set(EMUL_DIR             ${GAP9_SDK_DIR}/tools/autotiler_v3/Emulation/)
@@ -137,7 +138,7 @@ list (APPEND TARGET_INCS
                          -I${TILER_INC}
                          -I${TILER_EMU_INC}
                          -I${GAP_SDK_HOME}/libs/gap_lib/include
-                         -I${CMAKE_CURRENT_SOURCE_DIR}/kws-on-pulp/experiment_performance/dscnns/DSCNN_DIR_DEST/inc
+                         -I${DORY_DIR}/inc
                          -I${GAP9_SDK_DIR}/rtos/pmsis/bsp/include/bsp
                          -I${GAP9_SDK_DIR}/rtos/pmsis/bsp/include/bsp/ram
                          -I${GAP9_SDK_DIR}/rtos/pmsis/bsp/include/bsp/flash
@@ -160,9 +161,9 @@ set (NUM_CORES 8)
 set (GAP_SDK 1)
 set (TARGET_CHIP_FAMILY_GAP9 1)
 
-FILE (GLOB DORY_C_Sources ${CMAKE_CURRENT_SOURCE_DIR}/kws-on-pulp/experiment_performance/dscnns/DSCNN_DIR_DEST/src/*.c)
+FILE (GLOB DORY_C_Sources ${DORY_DIR}/src/*.c)
 list (APPEND TARGET_SRCS ${DORY_C_Sources})
-list (REMOVE_ITEM TARGET_SRCS ${CMAKE_CURRENT_SOURCE_DIR}/kws-on-pulp/experiment_performance/dscnns/DSCNN_DIR_DEST/src/main.c) # Incompatible declaration
+list (REMOVE_ITEM TARGET_SRCS ${DORY_DIR}/src/main.c) # Incompatible declaration
 
 # TRAINLIB
 
@@ -238,7 +239,7 @@ FILE(STRINGS ${VALIDATION_FILE} VALIDATION_UTTR)
 
 
 # FLASH
-FILE(GLOB DORY_WEIGHTS ${CMAKE_CURRENT_SOURCE_DIR}/kws-on-pulp/experiment_performance/dscnns/DSCNN_DIR_DEST/hex/*.hex)
+FILE(GLOB DORY_WEIGHTS ${DORY_DIR}/hex/*.hex)
 list (APPEND READFS_FILES ${DORY_WEIGHTS})
 list(APPEND READFS_FILES ${WAV_FILE}
                          ${RESTAURANT_NOISE_WAV}
