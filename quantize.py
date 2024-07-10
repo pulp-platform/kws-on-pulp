@@ -36,6 +36,7 @@ from dataclasses import dataclass, field
 from typing import Union, Optional
 from rich.progress import track
 from torch import nn, fx
+from copy import deepcopy
 
 from torch.utils.data import DataLoader
 from dataset import DatasetProcessor
@@ -141,6 +142,20 @@ def get_network(key : str, exp_id : int, ckpt_id : Union[int, str], quantized=Fa
 
     print("Validation of FP32 loaded network")
     validate(net, mdataloader, 10, n_valid_batches=10)
+
+    dummy_input = torch.randn(1, 1, 49, 10, requires_grad=True).to('cpu')
+    dummy_model_fp32 = deepcopy(net).to('cpu')
+    torch.onnx.export(dummy_model_fp32,               # model being run
+          dummy_input,                         # model input (or a tuple for multiple inputs)
+          "export/model_fp32.onnx",   # where to save the model (can be a file or file-like object)
+          export_params=True,        # store the trained parameter weights inside the model file
+          opset_version=10,          # the ONNX version to export the model to
+          do_constant_folding=True,  # whether to execute constant folding for optimization
+          input_names = ['input'],   # the model's input names
+          output_names = ['output'], # the model's output names
+          dynamic_axes={'input' : {0 : 'batch_size'},    # variable length axes
+                        'output' : {0 : 'batch_size'}})
+
 
     if not quantized:
         print ("The network is not to be quantized. Returning...")
