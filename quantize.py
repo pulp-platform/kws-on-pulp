@@ -37,7 +37,6 @@ from typing import Union, Optional
 from rich.progress import track
 from torch import nn, fx
 
-import quantlib.algorithms as qa
 from torch.utils.data import DataLoader
 from dataset import DatasetProcessor
 from datagenerator import DatasetCreator
@@ -52,6 +51,8 @@ from quantlib.editing.fx.util import module_of_node
 from quantlib.algorithms.pact.pact_ops import *
 # organize quantization functions, datasets and transforms by network
 from pactnet import pact_recipe as quantize_net, get_pact_controllers as controllers_net
+
+import quantlib.algorithms as qa
 
 from quantUtils import roundTensors
 
@@ -273,7 +274,7 @@ def main():
     
     parser = argparse.ArgumentParser()
     parser.add_argument("--net", type=str, default='DSCNN', help='Network to quantize')
-    parser.add_argument("--pretrained", type=str, default='model_int.pth', help='Path to pretrained model {model_int,model_uint}.pth.')
+    parser.add_argument("--pretrained", type=str, default='model_uint.pth', help='Path to pretrained model {model_int,model_uint}.pth.')
     parser.add_argument('--fix_channels', action='store_true', help='Fix channels of conv layers for compatibility with DORY')
     parser.add_argument('--no_dory_harmonize', action='store_true',
                         help='If supplied, don\'t align averagePool nodes\' associated requantization nodes and replace adders with DORYAdders')
