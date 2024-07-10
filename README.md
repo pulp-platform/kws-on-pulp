@@ -4,14 +4,26 @@ This project enables the deployment of a keyword spotting neural network on GAP9
 
 ## Preliminary steps
 
-### Pretrain ONNX model
-
 ```
 git submodule update --init
+```
+
+### Pretrain ONNX model
+
+Train the model, export it in FP32, and quantize it to INT8 through Nemo. 
+```
 cd kws-on-pulp/quantization
 python main.py
 cd ..
 ```
+
+Alternatively, a pretrained model can be exported to FP32 and then quantized to INT8 through Quantlib.
+```
+cd kws-on-gap9/
+python quantize.py --net DSCNN --fix_channels --word_align_channels --clip_inputs
+cd ..
+``` 
+
 ### [INFERENCE] Generate DORY-based C code for GAP9
 
 ```
@@ -55,7 +67,7 @@ To generate the FP32 C code for the trainable segment of the network, run:
 
 ```
 cd pulp-trainlib/
-./codegen.sh trainlib_example_dscnn/ yournetwork/ path/to/model.onnx # generates net.{h,c}, initdefines.h, iodata.{h,c}
+./codegen.sh path/to/dest/ network/ path/to/model.onnx # generates net.{h,c}, initdefines.h, iodata.{h}
 ```
 
 =======
