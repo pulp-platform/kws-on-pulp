@@ -1,5 +1,0 @@
-menu "ODDA APP menu"
-	
-endmenu
-
-source "$(GAP_SDK_HOME)/utils/kconfig/Kconfig"
