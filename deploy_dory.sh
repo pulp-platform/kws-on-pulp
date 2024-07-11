@@ -29,6 +29,7 @@ if [ "$1" == "-h" ] ; then
     echo "COMPUTE: 0 (PULP GVSOC), 1 (GAP9 multicore), 2 (GAP9 NE16)"
     echo "NETWORK_DIR_DEST: Destination directory"
     echo "NETWORK_DIR_SRC: Source directory"
+    echo "CORE: number of inference cores"
     exit 0
 fi
 
@@ -84,10 +85,10 @@ fi
 
 mkdir $NETWORK_DIR_SRC
 
-cp $CUR_DIR/quantization/input.txt $NETWORK_DIR_SRC/
-cp $CUR_DIR/quantization/model_int8.onnx $NETWORK_DIR_SRC/model.onnx
-cp $CUR_DIR/quantization/out_layer*.txt $NETWORK_DIR_SRC/
-cp $CUR_DIR/config_DSCNN.json $NETWORK_DIR_SRC/ # TODO: .onnx path in config_DSCNN.json
+cp $CUR_DIR/quantization/DSCNNS_QUANTLIB/input.txt $NETWORK_DIR_SRC/
+cp $CUR_DIR/quantization/DSCNNS_QUANTLIB/model_int8.onnx $NETWORK_DIR_SRC/model.onnx
+cp $CUR_DIR/quantization/DSCNNS_QUANTLIB/out_layer*.txt $NETWORK_DIR_SRC/
+cp $CUR_DIR/config_DSCNN_QUANTLIB.json $NETWORK_DIR_SRC/ # TODO: .onnx path in config_DSCNN_QUANTLIB.json
 
 # Copy model and it's activations to Dory
 cd dory/
@@ -108,16 +109,16 @@ if [[ $MEMORY == "3" ]]
 then
   if [[ $COMPUTE == "0" ]]
   then
-    python network_generate.py NEMO PULP.PULP_gvsoc $CUR_DIR/$NETWORK_DIR_SRC/config_DSCNN.json --app_dir $NETWORK_DIR_DEST_DORY/ --verbose_level Check_all+Perf_final --perf_layer --n_trainable_layers 1
+    python network_generate.py Quantlab PULP.PULP_gvsoc $CUR_DIR/$NETWORK_DIR_SRC/config_DSCNN_QUANTLIB.json --app_dir $NETWORK_DIR_DEST_DORY/ --verbose_level Check_all+Perf_final --perf_layer --n_trainable_layers 1
   elif [[ $COMPUTE == "1" ]]
   then
-    python network_generate.py NEMO PULP.GAP9 $CUR_DIR/$NETWORK_DIR_SRC/config_DSCNN.json --app_dir $NETWORK_DIR_DEST_DORY/ --verbose_level Check_all+Perf_final --perf_layer --n_trainable_layers 1
+    python network_generate.py Quantlab PULP.GAP9 $CUR_DIR/$NETWORK_DIR_SRC/config_DSCNN_QUANTLIB.json --app_dir $NETWORK_DIR_DEST_DORY/ --verbose_level Check_all+Perf_final --perf_layer --n_trainable_layers 1
   elif [[ $COMPUTE == "2" ]]
   then
-    python network_generate.py NEMO PULP.GAP9_NE16 $CUR_DIR/$NETWORK_DIR_SRC/config_DSCNN.json --app_dir $NETWORK_DIR_DEST_DORY/ --verbose_level Check_all+Perf_final --perf_layer --n_trainable_layers 1
+    python network_generate.py Quantlab PULP.GAP9_NE16 $CUR_DIR/$NETWORK_DIR_SRC/config_DSCNN_QUANTLIB.json --app_dir $NETWORK_DIR_DEST_DORY/ --verbose_level Check_all+Perf_final --perf_layer --n_trainable_layers 1
   fi
 else
-  python network_generate.py NEMO PULP.GAP8_L2 $CUR_DIR/$NETWORK_DIR_SRC/config_DSCNN.json --app_dir $NETWORK_DIR_DEST_DORY/ --verbose_level Check_all+Perf_final --perf_layer --n_trainable_layers 1
+  python network_generate.py Quantlab PULP.GAP8_L2 $CUR_DIR/$NETWORK_DIR_SRC/config_DSCNN_QUANTLIB.json --app_dir $NETWORK_DIR_DEST_DORY/ --verbose_level Check_all+Perf_final --perf_layer --n_trainable_layers 1
 fi
 
 
@@ -125,16 +126,16 @@ fi
 # then
 #   if [[ $COMPUTE == "0" ]]
 #   then
-#     python network_generate.py NEMO PULP.PULP_gvsoc $CUR_DIR/$NETWORK_DIR_SRC/config_DSCNN.json --app_dir $NETWORK_DIR_DEST_DORY/ --verbose_level None --n_trainable_layers 1
+#     python network_generate.py Quantlab PULP.PULP_gvsoc $CUR_DIR/$NETWORK_DIR_SRC/config_DSCNN_QUANTLIB.json --app_dir $NETWORK_DIR_DEST_DORY/ --verbose_level None --n_trainable_layers 1
 #   elif [[ $COMPUTE == "1" ]]
 #   then
-#     python network_generate.py NEMO PULP.GAP9 $CUR_DIR/$NETWORK_DIR_SRC/config_DSCNN.json --app_dir $NETWORK_DIR_DEST_DORY/ --verbose_level None --n_trainable_layers 1
+#     python network_generate.py Quantlab PULP.GAP9 $CUR_DIR/$NETWORK_DIR_SRC/config_DSCNN_QUANTLIB.json --app_dir $NETWORK_DIR_DEST_DORY/ --verbose_level None --n_trainable_layers 1
 #   elif [[ $COMPUTE == "2" ]]
 #   then
-#     python network_generate.py NEMO PULP.GAP9_NE16 $CUR_DIR/$NETWORK_DIR_SRC/config_DSCNN.json --app_dir $NETWORK_DIR_DEST_DORY/ --verbose_level None --n_trainable_layers 1
+#     python network_generate.py Quantlab PULP.GAP9_NE16 $CUR_DIR/$NETWORK_DIR_SRC/config_DSCNN_QUANTLIB.json --app_dir $NETWORK_DIR_DEST_DORY/ --verbose_level None --n_trainable_layers 1
 #   fi
 # else
-#   python network_generate.py NEMO PULP.GAP8_L2 $CUR_DIR/$NETWORK_DIR_SRC/config_DSCNN.json --app_dir $NETWORK_DIR_DEST_DORY/ --verbose_level None --n_trainable_layers 1
+#   python network_generate.py Quantlab PULP.GAP8_L2 $CUR_DIR/$NETWORK_DIR_SRC/config_DSCNN_QUANTLIB.json --app_dir $NETWORK_DIR_DEST_DORY/ --verbose_level None --n_trainable_layers 1
 # fi
 
 

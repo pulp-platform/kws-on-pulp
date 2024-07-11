@@ -90,7 +90,7 @@ if training_parameters['freezebb']:
       print ("For ", str(name), " we require grad? ", str(param.requires_grad))
 
 start=time.clock_gettime(0)
-trainining_environment.train(model, mode='training') # TRAIN
+# trainining_environment.train(model, mode='training') # TRAIN
 # trainining_environment.train(model, mode='tinytrain') # FINETUNE
 print('Finished Training on GPU in {:.2f} seconds'.format(time.clock_gettime(0)-start))
 
@@ -254,12 +254,15 @@ l = len(list(quantized_model.named_modules()))
 eps = OrderedDict([])
 for i,(n,l) in enumerate(quantized_model.named_modules()):
     eps[n] = quantized_model.get_eps_at(n, eps_in=255./255)
-print (eps)
 
-# eps_avg = eps['avg'] # 0.1138 # OLD
 eps_avg = eps['avg'] 
 
-print (eps_avg)
+# Save eps
+f = open("epsilons.txt", "w")
+for i,(n,l) in enumerate(quantized_model.named_modules()):
+  f.write(str(i)+ ", " + str(n) + ", " + str(l) + ", " + str(eps[n])+ ", " + "\n")
+f.close()
+
 
 # Saving the model
 nemo.utils.export_onnx('model_int8.onnx', quantized_model, quantized_model, (1, 49, 10))
