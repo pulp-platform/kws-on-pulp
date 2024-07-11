@@ -45,9 +45,9 @@ from utils import parameter_generation
 from dscnn import DSCNN
 
 # import the DORY backend
-from quantlib.backends.dory import export_net, DORYHarmonizePass
+from quantlib.backends.dory import export_net, DORYHarmonizePass, PACT_symbolic_trace
 # import the PACT/TQT integerization pass
-from quantlib.editing.fx.passes.pact import IntegerizePACTNetPass
+from quantlib.editing.fx.passes.pact import IntegerizePACTNetPass, AnnotateEpsPass
 from quantlib.editing.fx.util import module_of_node
 from quantlib.algorithms.pact.pact_ops import *
 # organize quantization functions, datasets and transforms by network
@@ -336,7 +336,8 @@ def main():
     print("==================================== Fake Quantizing network ====================================")
     linop_list = [i for i in qnet.modules() if isinstance(i, qa.pact._PACTLinOp)]
     act_list = [i for i in qnet.modules() if isinstance(i, qa.pact._PACTActivation)]
-
+    eps_list = [i for i in qnet.modules() if isinstance(i, qa.pact._PACTEps)]
+    
     # SCHEREMO: First fix acts and linears, then fix epses
 
     schedule = {1: "start", (2): ["freeze"]}
@@ -344,6 +345,8 @@ def main():
 
     actController = qa.pact.PACTActController(act_list, actSchedule, init_clip_hi=6., init_clip_lo=-6.)
     linearController = qa.pact.PACTLinearController(linop_list, schedule, init_clip_hi=16., init_clip_lo=-16.)
+    _AnnotateEpsPass = AnnotateEpsPass(0.39, n_levels_in=256)
+    espController = qa.pact.PACTEpsController(qnet, modules = eps_list, schedule = {0:'start'}, tracer = PACT_symbolic_trace, eps_pass = _AnnotateEpsPass)
 
     quantControllers = [actController, linearController]
 
@@ -376,13 +379,16 @@ def main():
         for ctrlr in quantControllers:
             ctrlr.step_pre_validation_epoch(epochs) 
 
-    print("Clipping values:")
-    print(qnet.stem_block.conv.clipping_params)
+    # print("Clipping values:")
+    # print(qnet.stem_block.conv.clipping_params)
     
     print ("==================================== Integerize network ====================================")
 
     _QUANT_UTILS['DSCNN'].eps_in = eps_computed
+
     int_net = integerize_network(qnet, args['net'], args['fix_channels'], not args['no_dory_harmonize'], args['word_align_channels'], args['requant_node'])
+
+
     
     print("==================================== Validating Integerized Network ====================================")
     validate(int_net, mdataloader, 10, n_valid_batches=10, integerized=True, eps=eps_computed)
@@ -400,6 +406,23 @@ def main():
     print("==================================== Exporting Integerized Network ====================================")
     export_name = 'example_quantized'
     export_integerized_network(int_net, exp_cfg, args['net'], './export/', export_name, pad_img=pad_img, clip=args['clip_inputs'])
+
+    
+
+    eps_list = []
+    nodelist = [i for i in int_net.modules()]
+    for node in nodelist[0]._graph.nodes:
+        if hasattr(node, 'meta'):
+            if "quant" in node.meta:
+                print (node.meta['quant'].eps_in)
+                print (node.meta['quant'].eps_in[0])
+                eps_list.append(node.meta['quant'].eps_in[0].numpy())
+
+    # Save eps
+    f = open("epsilons.txt", "w")
+    for eps in eps_list:
+      f.write(str(eps)+ ", " + "\n")
+    f.close()
 
 if __name__ == "__main__":
     main()
