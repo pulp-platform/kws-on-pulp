@@ -414,9 +414,18 @@ def main():
     for node in nodelist[0]._graph.nodes:
         if hasattr(node, 'meta'):
             if "quant" in node.meta:
-                print (node.meta['quant'].eps_in)
-                print (node.meta['quant'].eps_in[0])
-                eps_list.append(node.meta['quant'].eps_in[0].numpy())
+                if isinstance(node.meta['quant'].eps_in[0], list):
+                    if isinstance(node.meta['quant'].eps_in[0][0], list):
+                        eps_list.append(node.meta['quant'].eps_in[0][0][0].numpy())
+                    else:
+                        # TODO: extract list element
+                        if isinstance(node.meta['quant'].eps_in[0][0].numpy(), list):
+                            eps_list.append(node.meta['quant'].eps_in[0][0].numpy()[0])
+                            
+                        else:
+                            eps_list.append(node.meta['quant'].eps_in[0][0].numpy())
+                else:
+                    eps_list.append(node.meta['quant'].eps_in[0].numpy())
 
     # Save eps
     f = open("epsilons.txt", "w")
