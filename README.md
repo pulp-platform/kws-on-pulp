@@ -18,14 +18,14 @@ cd ..
 
 ### Pretrain ONNX model
 
-Train the model, export it in FP32, and quantize it to INT8 through Nemo. 
+Train the model, export it in FP32, and quantize it to INT8 through Nemo. Note: set the model accordingly in `config_DSCNN.json`.
 ```
 cd kws-on-pulp/quantization
 python main.py
 cd ../..
 ```
 
-Alternatively, a pretrained model can be exported to FP32 and then quantized to INT8 through Quantlib.
+Alternatively, a pretrained model can be exported to FP32 and then quantized to INT8 through Quantlib. Note: set the model accordingly in `config_DSCNN.json`.
 ```
 cd kws-on-gap9/
 python quantize.py --net DSCNN --fix_channels --word_align_channels --clip_inputs
@@ -48,7 +48,7 @@ To generate the FP32 C code for the trainable segment of the network, run:
 
 ```
 cd pulp-trainlib/
-./codegen.sh path/to/dest/ network/ path/to/model.onnx  # generates net.{h,c}, initdefines.h, iodata.{h}
+./codegen.sh path/to/dest/ network/ path/to/model.onnx --start_at MatMul  # generates net.{h,c}, initdefines.h, iodata.{h}
 ```
 
 ## [INFERENCE] Run on GAP9

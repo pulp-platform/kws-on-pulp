@@ -436,9 +436,9 @@ int application(void){
         preprocess(MfccInSig, l2_buffer, mfcc_src);
 
         for (int idx = 0; idx < 490; idx++){
-            printf ("mfcc[%i] = %u, ", idx, ((uint8_t *)l2_buffer)[idx]);
+            PRINTF ("mfcc[%i] = %u, ", idx, ((uint8_t *)l2_buffer)[idx]);
         }
-        printf("\n");
+        PRINTF("\n");
 
         printf ("***************************** Backbone inference **************************\n");
         int start_backbone = pi_time_get_us();
@@ -449,9 +449,9 @@ int application(void){
         network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &dump, 0, 1); // L2_input_h extra-arg for L2-only
 
         for (int idx = 0; idx < 64; idx++){
-            printf ("backbone[%i] = %u, ", idx, ((uint8_t *)l2_buffer)[idx]);
+            PRINTF ("backbone[%i] = %u, ", idx, ((uint8_t *)l2_buffer)[idx]);
         }
-        printf("\n");
+        PRINTF("\n");
 
         #ifdef PERF
         int elapsed_timer_4 = gap_fc_readhwtimer() - start_timer_4;
