@@ -428,7 +428,7 @@ def main():
                     eps_list.append(node.meta['quant'].eps_in[0].numpy())
 
     # Save eps
-    f = open("epsilons.txt", "w")
+    f = open("export/epsilons.txt", "w")
     for eps in eps_list:
       f.write(str(eps)+ ", " + "\n")
     f.close()
