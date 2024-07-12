@@ -399,6 +399,8 @@ int application(void){
             // Read the 0th .wav saved in RAM
             short int *prepWav = NULL;
             prepWav = (short int *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(short));
+
+            // Read first sample in RAM (yes)
             ram_read(prepWav, L3_wavs + (0)*AUDIO_BUFFER_SIZE*sizeof(short), AUDIO_BUFFER_SIZE*sizeof(short));
 
             MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
@@ -436,9 +438,9 @@ int application(void){
         preprocess(MfccInSig, l2_buffer, mfcc_src);
 
         for (int idx = 0; idx < 490; idx++){
-            PRINTF ("mfcc[%i] = %u, ", idx, ((uint8_t *)l2_buffer)[idx]);
+            printf ("mfcc[%i] = %u, ", idx, ((uint8_t *)l2_buffer)[idx]);
         }
-        PRINTF("\n");
+        printf("\n");
 
         printf ("***************************** Backbone inference **************************\n");
         int start_backbone = pi_time_get_us();
@@ -449,9 +451,9 @@ int application(void){
         network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &dump, 0, 1); // L2_input_h extra-arg for L2-only
 
         for (int idx = 0; idx < 64; idx++){
-            PRINTF ("backbone[%i] = %u, ", idx, ((uint8_t *)l2_buffer)[idx]);
+            printf ("backbone[%i] = %u, ", idx, ((uint8_t *)l2_buffer)[idx]);
         }
-        PRINTF("\n");
+        printf("\n");
 
         #ifdef PERF
         int elapsed_timer_4 = gap_fc_readhwtimer() - start_timer_4;

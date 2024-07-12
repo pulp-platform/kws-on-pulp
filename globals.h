@@ -74,7 +74,6 @@ typedef short int MFCC_IN_TYPE; // Save MFCCs works
 #define N_CLASSES 12
 #define N_TINYTEST 10
 
-
 #define NOISE_LEN_S 1
 
 enum source {
