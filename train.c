@@ -37,10 +37,22 @@ void train(){
     int classidx;
 
     for (int epidx = 0; epidx < TRAIN_EPS; epidx++) {
+
+        printf ("Epoch %i\n", epidx);
+
         for (int uttridx = 0; uttridx < 100; uttridx++){
 
         sampleidx = uttridx / 10;
         classidx = uttridx % 10 + 2; // no SILENCE, no UNKNOWN
+
+        // printf ("sampleidx: %i\n", sampleidx);
+        // printf ("classidx: %i\n", classidx);
+        // printf ("position: %i\n", ((classidx-2)*10+sampleidx));
+
+        // buggy sample ?!?!?!?
+        if (((classidx-2)*10+sampleidx) == 34){
+            continue; 
+        }
 
         char *utterance;
         switch (classidx) {
@@ -403,11 +415,11 @@ void evaluate_online(int was_trained){
             printf ("\x1B[31m *** Unsuccessful adaptation, try again. Loss increased from %f to %f *** \x1B[0m\n", ce_loss_pre_val, ce_loss_post_val);
         }
 
-        if (correct_pre_val/350 * 100 < correct_post_val/350*100){
-            printf("\x1B[32m *** Successfully increased accuracy by %f from %f to %f *** \x1B[0m\n", correct_post_val/350*100-correct_pre_val/350 * 100, correct_pre_val/350 * 100, correct_post_val/350*100);
+        if (correct_pre_val * 100 < correct_post_val*100){
+            printf("\x1B[32m *** Successfully increased accuracy by %f%% from %f%% to %f%% *** \x1B[0m\n", correct_post_val*10-correct_pre_val * 10, correct_pre_val * 10, correct_post_val*10);
         }
         else{
-            printf ("\x1B[31m *** Unsuccessful adaptation, try again. Accuracy decreased from %f to %f *** \x1B[0m\n", correct_pre_val/350 * 100, correct_post_val/350*100);
+            printf ("\x1B[31m *** Unsuccessful adaptation, try again. Accuracy decreased from %f%% to %f%% *** \x1B[0m\n", correct_pre_val * 10, correct_post_val*10);
         }
     }
 
@@ -584,11 +596,11 @@ void evaluate_tinytest(int was_trained){
             printf ("\x1B[31m *** Unsuccessful adaptation, try again. Loss increased from %f to %f *** \x1B[0m\n", ce_loss_pre_val, ce_loss_post_val);
         }
 
-        if (correct_pre_val/350 * 100 < correct_post_val/350*100){
-            printf("\x1B[32m *** Successfully increased accuracy by %f from %f to %f *** \x1B[0m\n", correct_post_val/350*100-correct_pre_val/350 * 100, correct_pre_val/350 * 100, correct_post_val/350*100);
+        if (correct_pre_val * 100 < correct_post_val*100){
+            printf("\x1B[32m *** Successfully increased accuracy by %f%% from %f%% to %f%% *** \x1B[0m\n", correct_post_val*10-correct_pre_val * 10, correct_pre_val * 10, correct_post_val*10);
         }
         else{
-            printf ("\x1B[31m *** Unsuccessful adaptation, try again. Accuracy decreased from %f to %f *** \x1B[0m\n", correct_pre_val/350 * 100, correct_post_val/350*100);
+            printf ("\x1B[31m *** Unsuccessful adaptation, try again. Accuracy decreased from %f%% to %f%% *** \x1B[0m\n", correct_pre_val * 10, correct_post_val*10);
         }
     }
 }
@@ -707,11 +719,11 @@ void evaluate_largetest(int was_trained){
             printf ("\x1B[31m *** Unsuccessful adaptation, try again. Loss increased from %f to %f *** \x1B[0m\n", ce_loss_pre_val, ce_loss_post_val);
         }
 
-        if (correct_pre_val/350 * 100 < correct_post_val/350*100){
-            printf("\x1B[32m *** Successfully increased accuracy by %f from %f to %f *** \x1B[0m\n", correct_post_val/350*100-correct_pre_val/350 * 100, correct_pre_val/350 * 100, correct_post_val/350*100);
+        if (correct_pre_val * 100 < correct_post_val*100){
+            printf("\x1B[32m *** Successfully increased accuracy by %f%% from %f%% to %f%% *** \x1B[0m\n", correct_post_val*10-correct_pre_val * 10, correct_pre_val * 10, correct_post_val*10);
         }
         else{
-            printf ("\x1B[31m *** Unsuccessful adaptation, try again. Accuracy decreased from %f to %f *** \x1B[0m\n", correct_pre_val/350 * 100, correct_post_val/350*100);
+            printf ("\x1B[31m *** Unsuccessful adaptation, try again. Accuracy decreased from %f%% to %f%% *** \x1B[0m\n", correct_pre_val * 10, correct_post_val*10);
         }
     }
 }

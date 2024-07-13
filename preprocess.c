@@ -125,7 +125,7 @@ void preprocess(MFCC_IN_TYPE * input_buffer, uint8_t * output_buffer, int input_
         else {
             // ((uint8_t *)output_buffer)[k] = (char) ((int) floor(MfccOutSig[i] * pow(2, -1) * sqrt(0.05)) + 128);
             ((uint8_t *)output_buffer)[k] = (char) ((int) floor(MfccOutSig[i] * 0.1118) + 128); // Online computed MFCC
-            // ((uint8_t *)output_buffer)[k] = (char) (((int) floor(MfccOutSig[i] * 0.1118) + 128)/0.38179088); // Incl. eps_in division
+            // ((uint8_t *)output_buffer)[k] = (char) (((int) floor(MfccOutSig[i] * 0.1118) + 128) * 0.38179088); // Incl. eps_in division
         }
 
         if (N_MELS == 40){
