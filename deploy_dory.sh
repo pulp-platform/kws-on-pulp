@@ -82,12 +82,12 @@ else
   fi
 fi
 
-mkdir $NETWORK_DIR_SRC
+mkdir -p $NETWORK_DIR_SRC
 mkdir -p $CUR_DIR/$NETWORK_DIR_DEST/
 
-cp $CUR_DIR/quantization/DSCNNS_NEMO_MELS40/input.txt $NETWORK_DIR_SRC/
-cp $CUR_DIR/quantization/DSCNNS_NEMO_MELS40/model_int8.onnx $NETWORK_DIR_SRC/model.onnx
-cp $CUR_DIR/quantization/DSCNNS_NEMO_MELS40/out_layer*.txt $NETWORK_DIR_SRC/
+cp $CUR_DIR/quantization/DSCNNS_NEMO_MELS10/input.txt $NETWORK_DIR_SRC/
+cp $CUR_DIR/quantization/DSCNNS_NEMO_MELS10/model_int8.onnx $NETWORK_DIR_SRC/model.onnx
+cp $CUR_DIR/quantization/DSCNNS_NEMO_MELS10/out_layer*.txt $NETWORK_DIR_SRC/
 cp $CUR_DIR/config_DSCNN_NEMO.json $NETWORK_DIR_SRC/ # TODO: .onnx path in config_DSCNN_QUANTLIB.json
 
 cd dory/
