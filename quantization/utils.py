@@ -101,6 +101,7 @@ def parameter_generation():
         spectrogram_length = 0
     else:
         spectrogram_length = 1 + int(length_minus_window / window_stride_samples)
+    data_processing_parameters['n_mels'] = 40
     data_processing_parameters['desired_samples'] = desired_samples
     data_processing_parameters['sample_rate'] = sample_rate
     data_processing_parameters['spectrogram_length'] = spectrogram_length
@@ -113,7 +114,7 @@ def parameter_generation():
     # 'data_dir':'/usr/scratch/wetterhorn/cioflanc/kws-on-pulp/kws-on-pulp/wavsrc', # GVSOC
     'data_dir':'/usr/scratch/sassauna2/cioflanc/dolphinGSC/speech_commands_v0.02',
     'data_url':'https://storage.googleapis.com/download.tensorflow.org/data/speech_commands_v0.02.tar.gz',
-    'epochs':20,
+    'epochs':40,
     # 'batch_size':1,  # GVSOC # GAP9
     # 'batch_size':64,  # GVSOC # 10 if only a dozen samples are available
     'batch_size':128,

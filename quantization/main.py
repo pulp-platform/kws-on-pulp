@@ -90,7 +90,7 @@ if training_parameters['freezebb']:
       print ("For ", str(name), " we require grad? ", str(param.requires_grad))
 
 start=time.clock_gettime(0)
-# trainining_environment.train(model, mode='training') # TRAIN
+trainining_environment.train(model, mode='training') # TRAIN
 # trainining_environment.train(model, mode='tinytrain') # FINETUNE
 print('Finished Training on GPU in {:.2f} seconds'.format(time.clock_gettime(0)-start))
 
