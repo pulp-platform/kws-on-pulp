@@ -481,7 +481,7 @@ void evaluate_tinytest(int was_trained){
         short int *prepWav = NULL;
         prepWav = (short int *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(short));
 
-        ram_read(prepWav, L3_wavs + (100+tinytestidx)*AUDIO_BUFFER_SIZE*sizeof(short), AUDIO_BUFFER_SIZE*sizeof(short));
+        ram_read(prepWav, L3_wavs + (100 + tinytestidx)*AUDIO_BUFFER_SIZE*sizeof(short), AUDIO_BUFFER_SIZE*sizeof(short));
 
         MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
         if (MfccInSig == NULL){
@@ -564,15 +564,15 @@ void evaluate_tinytest(int was_trained){
         unsigned int args_inference_classifier[6];
         args_inference_classifier[0] = (unsigned int) l2_buffer;
         args_inference_classifier[1] = (unsigned int) l2_buffer_wgt_upd;
-        args_inference_classifier[2] = (unsigned int) 3; // evaluate
-        args_inference_classifier[3] = (unsigned int) tinytestidx + 2; // tinytest already ordered
+        args_inference_classifier[2] = (int) 3; // evaluate
+        args_inference_classifier[3] = (int) 2 + tinytestidx; // tinytest already ordered
         args_inference_classifier[4] = (float *) &ce_loss;
         args_inference_classifier[5] = (int *) &predidx;
 
         pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, args_inference_classifier));
         pi_cluster_close(&cluster_dev);
 
-        printf("EVALUATE loss: %f\n", ce_loss);
+        printf("Loss on tinytest: %f\n", ce_loss);
 
         if (was_trained == 0){
             ce_loss_pre_val += (ce_loss < 0) ? -ce_loss : ce_loss;

@@ -32,6 +32,8 @@ python quantize.py --net DSCNN --fix_channels --word_align_channels --clip_input
 cd ..
 ``` 
 
+During pretraing, the number of MFCCs can be set. They should coincide with the settings in the `MfccConfig.json`. `mfcc_bank_cnt`, `n_mels`, and `n_dct` should have the same value (e.g., 10 and 40 are tested values).
+
 ### [INFERENCE] Generate DORY-based C code for GAP9
 
 ```
