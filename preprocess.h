@@ -24,7 +24,7 @@
 #include "Gap.h"
 
 // Initialize MFCC computation
-void mfcc_kernel(void *args_mfcc);
+void mfcc_kernel();
 
 // Set up MFCC computation
 void mfcc_computation(MFCC_IN_TYPE * MfccInputSignal, OUT_TYPE * MfccOutputSignal);

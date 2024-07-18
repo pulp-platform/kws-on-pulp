@@ -4,12 +4,12 @@
 	"frame_size": 640,
 	"frame_step": 320,
 	"sample_rate": 16000,
-	"mfcc_bank_cnt": 10,
-	"n_mels": 10,
+	"mfcc_bank_cnt": 40,
+	"n_mels": 40,
 	"use_tf_mel": true,
 	"fmin": 20.0,
 	"fmax": 4000.0,
-	"n_dct": 10,
+	"n_dct": 40,
 	"dtype": "float16"
 	
 }
