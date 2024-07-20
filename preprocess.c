@@ -45,10 +45,6 @@ void mfcc_kernel()
         int start = gap_cl_readhwtimer();
     #endif
 
-    // unsigned int * args = (unsigned int *) args_mfcc;
-    // MFCC_IN_TYPE * MfccInputSignal = (MFCC_IN_TYPE *) args[0];
-    // OUT_TYPE * MfccOutputSignal = (OUT_TYPE *) args[1];
-
     // Compute MFCC following Tensorflow settings
     #if (N_DCT == 0)
         #if (DATA_TYPE==2) || (DATA_TYPE==3)
@@ -76,7 +72,7 @@ void mfcc_kernel()
 
 
 // Set up MFCC computation
-void mfcc_computation(MFCC_IN_TYPE * MfccInputSignal, OUT_TYPE * MfccOutputSignal){
+void mfcc_computation(){
    
     struct pi_cluster_task* task_mfcc;
     task_mfcc = pi_l2_malloc(sizeof(struct pi_cluster_task));
@@ -108,16 +104,16 @@ void mfcc_computation(MFCC_IN_TYPE * MfccInputSignal, OUT_TYPE * MfccOutputSigna
 
 void preprocess(MFCC_IN_TYPE * input_buffer, uint8_t * output_buffer, int input_src){
 
-    OUT_TYPE * MfccOutSig = NULL;
-
-    MfccOutSig = (OUT_TYPE *) pi_l2_malloc(N_MFCC_WINS * N_MELS * sizeof(OUT_TYPE)); 
-    if (MfccOutSig==NULL){
-        printf("Error allocating MfccOutSig\n");
+    MfccInputSignal = (MFCC_IN_TYPE *) pi_l2_malloc(16000 * sizeof(MFCC_IN_TYPE)); 
+    if (MfccInputSignal==NULL){
+        printf("Error allocating MfccInputSignal\n");
         pmsis_exit(-1);
     }
-
-    MfccInputSignal = (MFCC_IN_TYPE *) pi_l2_malloc(16000 * sizeof(MFCC_IN_TYPE)); 
     MfccOutputSignal = (OUT_TYPE *) pi_l2_malloc(N_MFCC_WINS * N_MELS * sizeof(OUT_TYPE));
+    if (MfccOutputSignal==NULL){
+        printf("Error allocating MfccOutputSignal\n");
+        pmsis_exit(-1);
+    }
 
     // for (int debugi = 0; debugi < 16000; debugi++){
     //     MfccInputSignal[debugi] = 0;
@@ -125,11 +121,10 @@ void preprocess(MFCC_IN_TYPE * input_buffer, uint8_t * output_buffer, int input_
     for (int debugi = 0; debugi < 16000; debugi++){
         MfccInputSignal[debugi] = input_buffer[debugi];
     }
-    
-    mfcc_computation(input_buffer, MfccOutputSignal);
-    
     pi_l2_free(input_buffer, AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE)); 
 
+    mfcc_computation();
+    
     int k = 0;
     for (int i = 0; i < N_MFCC_WINS * N_MELS; i++){                
         
@@ -138,9 +133,8 @@ void preprocess(MFCC_IN_TYPE * input_buffer, uint8_t * output_buffer, int input_
             ((uint8_t *)output_buffer)[k] = L2_input_h[k]; // Precomputed MFCC
         }
         else {
-            // ((uint8_t *)output_buffer)[k] = (char) ((int) floor(MfccOutSig[i] * pow(2, -1) * sqrt(0.05)) + 128);
+            // ((uint8_t *)output_buffer)[k] = (char) ((int) floor(MfccOutputSignal[i] * pow(2, -1) * sqrt(0.05)) + 128);
             ((uint8_t *)output_buffer)[k] = (char) ((int) floor(MfccOutputSignal[i] * 0.1118) + 128); // Online computed MFCC
-            // ((uint8_t *)output_buffer)[k] = (char) (((int) floor(MfccOutSig[i] * 0.1118) + 128) * 0.38179088); // Incl. eps_in division
         }
 
         if (N_MELS == 40){
@@ -151,7 +145,7 @@ void preprocess(MFCC_IN_TYPE * input_buffer, uint8_t * output_buffer, int input_
         }
         k++;
     } 
-    pi_l2_free(MfccOutSig, N_MFCC_WINS * N_MELS * sizeof(OUT_TYPE));
+
     pi_l2_free(MfccInputSignal, 16000 * sizeof(MFCC_IN_TYPE));
     pi_l2_free(MfccOutputSignal, N_MFCC_WINS * N_MELS * sizeof(OUT_TYPE));
 }
