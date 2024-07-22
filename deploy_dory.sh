@@ -89,7 +89,7 @@ mkdir -p $NETWORK_DIR_DEST
 cp $CUR_DIR/quantization/DSCNNS_NEMO_MELS10_PYTORCH/input.txt $NETWORK_DIR_SRC/
 cp $CUR_DIR/quantization/DSCNNS_NEMO_MELS10_PYTORCH/model_int8.onnx $NETWORK_DIR_SRC/model.onnx
 cp $CUR_DIR/quantization/DSCNNS_NEMO_MELS10_PYTORCH/out_layer*.txt $NETWORK_DIR_SRC/
-cp $CUR_DIR/config_DSCNN_NEMO.json $NETWORK_DIR_SRC/ # TODO: .onnx path in config_DSCNN_QUANTLIB.json
+cp $CUR_DIR/config_DSCNN_NEMO.json $NETWORK_DIR_SRC/ # TODO: .onnx path in config_DSCNN_*.json
 
 cd dory/
 
