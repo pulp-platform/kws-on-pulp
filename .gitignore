@@ -30,7 +30,7 @@ example*
 *.txt
 *.wav
 
-
+config_network.json
 
 
 

@@ -89,7 +89,11 @@ mkdir -p $NETWORK_DIR_DEST
 cp $CUR_DIR/quantization/DSCNNS_NEMO_MELS10_PYTORCH/input.txt $NETWORK_DIR_SRC/
 cp $CUR_DIR/quantization/DSCNNS_NEMO_MELS10_PYTORCH/model_int8.onnx $NETWORK_DIR_SRC/model.onnx
 cp $CUR_DIR/quantization/DSCNNS_NEMO_MELS10_PYTORCH/out_layer*.txt $NETWORK_DIR_SRC/
-cp $CUR_DIR/config_DSCNN_NEMO.json $NETWORK_DIR_SRC/ # TODO: .onnx path in config_DSCNN_*.json
+
+# Generate .json
+JSON_STRING='{"BNRelu_bits": 32, "onnx_file": "'${CUR_DIR}'/'${NETWORK_DIR_SRC}'/model.onnx", "code reserved space": 1320000}'
+echo $JSON_STRING > config_network.json
+cp $CUR_DIR/config_network.json $NETWORK_DIR_SRC/
 
 cd dory/
 
@@ -100,16 +104,16 @@ if [[ $MEMORY == "3" ]]
 then
   if [[ $COMPUTE == "0" ]]
   then
-    python network_generate.py NEMO PULP.PULP_gvsoc $CUR_DIR/$NETWORK_DIR_SRC/config_DSCNN_NEMO.json --app_dir ../$NETWORK_DIR_DEST/ --verbose_level Check_all+Perf_final --perf_layer --n_trainable_layers 1
+    python network_generate.py NEMO PULP.PULP_gvsoc $CUR_DIR/$NETWORK_DIR_SRC/config_network.json --app_dir ../$NETWORK_DIR_DEST/ --verbose_level Check_all+Perf_final --perf_layer --n_trainable_layers 1
   elif [[ $COMPUTE == "1" ]]
   then
-    python network_generate.py NEMO PULP.GAP9 $CUR_DIR/$NETWORK_DIR_SRC/config_DSCNN_NEMO.json --app_dir ../$NETWORK_DIR_DEST/ --verbose_level Check_all+Perf_final --perf_layer --n_trainable_layers 1
+    python network_generate.py NEMO PULP.GAP9 $CUR_DIR/$NETWORK_DIR_SRC/config_network.json --app_dir ../$NETWORK_DIR_DEST/ --verbose_level Check_all+Perf_final --perf_layer --n_trainable_layers 1
   elif [[ $COMPUTE == "2" ]]
   then
-    python network_generate.py NEMO PULP.GAP9_NE16 $CUR_DIR/$NETWORK_DIR_SRC/config_DSCNN_NEMO.json --app_dir ../$NETWORK_DIR_DEST/ --verbose_level Check_all+Perf_final --perf_layer --n_trainable_layers 1
+    python network_generate.py NEMO PULP.GAP9_NE16 $CUR_DIR/$NETWORK_DIR_SRC/config_network.json --app_dir ../$NETWORK_DIR_DEST/ --verbose_level Check_all+Perf_final --perf_layer --n_trainable_layers 1
   fi
 else
-  python network_generate.py NEMO PULP.GAP8_L2 $CUR_DIR/$NETWORK_DIR_SRC/config_DSCNN_NEMO.json --app_dir ../$NETWORK_DIR_DEST/ --verbose_level Check_all+Perf_final --perf_layer --n_trainable_layers 1
+  python network_generate.py NEMO PULP.GAP8_L2 $CUR_DIR/$NETWORK_DIR_SRC/config_network.json --app_dir ../$NETWORK_DIR_DEST/ --verbose_level Check_all+Perf_final --perf_layer --n_trainable_layers 1
 fi
 
 
