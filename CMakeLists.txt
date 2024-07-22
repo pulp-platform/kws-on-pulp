@@ -57,8 +57,6 @@ set (NUM_MATMULS 24)
 
 set(GAP9_SDK_DIR         $ENV{GAP_SDK_HOME})
 set(BUILD_DIR            ${CMAKE_CURRENT_SOURCE_DIR}/build)
-set(TRAINLIB_DIR         ${CMAKE_CURRENT_SOURCE_DIR}/DSCNNS_DIR_DEST_NEMO_FP32_MELS40_PYTORCH)
-set(DORY_DIR             ${CMAKE_CURRENT_SOURCE_DIR}/DSCNNS_DIR_DEST_NEMO_MELS40_PYTORCH)
 set(DSP_DIR              ${GAP9_SDK_DIR}/tools/autotiler_v3/DSP_Libraries/)
 set(DSP_LUT_DIR          ${GAP9_SDK_DIR}/tools/autotiler_v3/DSP_Libraries/LUT_Tables/)
 set(EMUL_DIR             ${GAP9_SDK_DIR}/tools/autotiler_v3/Emulation/)
@@ -72,6 +70,11 @@ set(MFCC_HEAD            ${BUILD_DIR}/MFCC_params.h)
 # set(MFCC_PARAMS_JSON   ${CMAKE_CURRENT_SOURCE_DIR}/MfccConfigLibrosa.json)
 set(MFCC_PARAMS_JSON     ${CMAKE_CURRENT_SOURCE_DIR}/MfccConfigTF.json)
 set(MFCC_SRC_CODE        ${BUILD_DIR}/MfccKernels.c)
+
+
+set (NCHANNELS 172)
+set(TRAINLIB_DIR         ${CMAKE_CURRENT_SOURCE_DIR}/DSCNNM_DIR_DEST_NEMO_FP32)
+set(DORY_DIR             ${CMAKE_CURRENT_SOURCE_DIR}/DSCNNM_DIR_DEST_NEMO)
 
 # Application
 
@@ -201,6 +204,7 @@ list(APPEND TARGET_PREPROCESSOR # -DPERF
                                 -DNOISE_EVAL=${NOISE_EVAL}
                                 -DUTTR_EVAL=${UTTR_EVAL}
                                 -DAPPL=${APPL}
+                                -DNCHANNELS=${NCHANNELS}
                                 # -DPERF
                                 # -DPRINTDEB
                                 # -DPRINT_INOUT

@@ -507,30 +507,29 @@ void evaluate_tinytest(int was_trained){
             MfccInSig[samplepos] = MfccInSig[samplepos]; // CIOFLANC: Add RecordedNoise
         }
 
-        savewav = 0;
-        if (savewav){
-            int16_t *MfccInSig_int16 = (int16_t *) pi_l2_malloc (sizeof(int16_t) * AUDIO_BUFFER_SIZE);
-            int16_t *RecordedNoise_int16 = (int16_t *) pi_l2_malloc (sizeof(int16_t) * AUDIO_BUFFER_SIZE);
-            for (int i = 0; i < AUDIO_BUFFER_SIZE; i++){
-                MfccInSig_int16[i] = (int16_t) (MfccInSig[i] * (1<<15));
-                RecordedNoise_int16[i] = (int16_t) (RecordedNoise[i] * (1<<15));
-            }
-            // Save the noise-augmented recording
-            dump_wav_open("utter.wav", 16, 16000, 1, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
-            dump_wav_write(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
-            dump_wav_close();
-            PRINTF("Writing wav file to utter.wav completed successfully\n");
-            for (int samplepos = 0; samplepos < AUDIO_BUFFER_SIZE; samplepos++){
-                MfccInSig_int16[samplepos] = (int16_t)(MfccInSig[samplepos] * (1<<15)) + 1*RecordedNoise_int16[noisesamplestart+samplepos];
-            }
-            // Save the noise-augmented recording
-            dump_wav_open("utter_noise.wav", 16, 16000, 1, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
-            dump_wav_write(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
-            dump_wav_close();
-            pi_l2_free(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
-            pi_l2_free(RecordedNoise_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
-            PRINTF("Writing wav file to utter_noise.wav completed successfully\n");
-        }
+        // if (savewav){
+        //     int16_t *MfccInSig_int16 = (int16_t *) pi_l2_malloc (sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+        //     int16_t *RecordedNoise_int16 = (int16_t *) pi_l2_malloc (sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+        //     for (int i = 0; i < AUDIO_BUFFER_SIZE; i++){
+        //         MfccInSig_int16[i] = (int16_t) (MfccInSig[i] * (1<<15));
+        //         RecordedNoise_int16[i] = (int16_t) (RecordedNoise[i] * (1<<15));
+        //     }
+        //     // Save the noise-augmented recording
+        //     dump_wav_open("utter.wav", 16, 16000, 1, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+        //     dump_wav_write(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+        //     dump_wav_close();
+        //     PRINTF("Writing wav file to utter.wav completed successfully\n");
+        //     for (int samplepos = 0; samplepos < AUDIO_BUFFER_SIZE; samplepos++){
+        //         MfccInSig_int16[samplepos] = (int16_t)(MfccInSig[samplepos] * (1<<15)) + 1*RecordedNoise_int16[noisesamplestart+samplepos];
+        //     }
+        //     // Save the noise-augmented recording
+        //     dump_wav_open("utter_noise.wav", 16, 16000, 1, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+        //     dump_wav_write(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+        //     dump_wav_close();
+        //     pi_l2_free(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+        //     pi_l2_free(RecordedNoise_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
+        //     PRINTF("Writing wav file to utter_noise.wav completed successfully\n");
+        // }
 
         #ifdef MEASURE
         int end_readeval = pi_time_get_us();
