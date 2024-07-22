@@ -221,7 +221,7 @@ int application(void){
         pi_l2_free(inWav, AUDIO_BUFFER_SIZE*sizeof(short));
 
     }
-    PRINTF("100/110 samples read.\n");
+    printf("100/110 samples read.\n");
 
     for (int i = 0; i < 10; i++) {
 
@@ -241,16 +241,18 @@ int application(void){
     }
 
     int endwavreading = pi_time_get_us();
-    PRINTF("110/110 samples read, WAV reading is complete in %d us.\n", endwavreading - startwavreading);
+    printf("110/110 samples read, WAV reading is complete in %d us.\n", endwavreading - startwavreading);
 
     /* Backbone inference */
     l2_buffer = pi_l2_malloc(L2_MEMORY_SIZE);
     if (l2_buffer == NULL) {
         printf("failed to allocate memory for l2_buffer\n");
     }
-
+    
     void *dump;
     network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &dump, 0, 1); // L2_input_h extra-arg for L2-only
+
+    printf("------------------ MEMALLOC ----------------- \n");
 
     /* Classifier preparation */
     pi_cluster_conf_init(&cl_conf);
@@ -519,7 +521,7 @@ int application(void){
         checkbutton:
         button_pressed = 0;
         read_button(&button_pressed);
-        // button_pressed = 1; // measurement
+        button_pressed = 1; // measurement
 
         if (button_pressed){
             if (noise_train_src == ONLINE){

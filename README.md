@@ -43,6 +43,8 @@ cd kws-on-pulp/dory/
 
 Note that the DORY-generated C code currently allows setting the number of `n_frozen_layers` in `dory/Hardware_targets/PULP/PULP_gvsoc/Templates/network_c_template.c`. This should be passed as external paramater during code generation, also accounting for the number of non-parametrizable operations (e.g., AvgPool, Identity).
 
+Note that Trainlib requires L1 space, which should be taken from Dory. For now you have to manually modify `./dory/Utils/Templates_writer/Network_template_writer.py`. `deploy_dory.sh` also requires manual changes.
+
 
 ### [TRAIN] Generate PULP TrainLib-based C code
 
