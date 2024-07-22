@@ -351,10 +351,10 @@ class AudioProcessor(object):
     if (self.data_processing_parameters['mfcc'] == 'pytorch'):
       # Compute MFCCs - PyTorch
       melkwargs={ 'n_fft':1024, 'win_length':self.data_processing_parameters['window_size_samples'], 'hop_length':self.data_processing_parameters['window_stride_samples'],
-             'f_min':20, 'f_max':4000, 'n_mels':10}
+             'f_min':20, 'f_max':4000, 'n_mels':self.data_processing_parameters['n_mels']}
       mfcc_transformation = torchaudio.transforms.MFCC(n_mfcc=self.data_processing_parameters['feature_bin_count'], sample_rate=self.data_processing_parameters['desired_samples'], melkwargs=melkwargs, log_mels=True, norm='ortho')
       data = mfcc_transformation(background_add)
-      data_placeholder[i] = data[:,:self.data_processing_parameters['spectrogram_length']].numpy().transpose()
+      data_placeholder = data[:,:self.data_processing_parameters['spectrogram_length']].numpy().transpose()
 
     elif (self.data_processing_parameters['mfcc'] == 'tensorflow'):
       # Compute MFCCs - TensorFlow (matching C-based implementation)

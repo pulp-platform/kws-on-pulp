@@ -157,6 +157,13 @@ class Train():
                 if (integer):
 
                     if (save):
+                        f = open('batched_labels.txt', "a")
+                        for elem in torch.flatten(batched_labels).cpu().detach().numpy():
+                            f.write (str(elem) + ",\\\n")
+                        f.write ("--------------------------------------------------"+ "\\\n")
+                        f.close()
+
+                    if (save):
                         f = open('batched_inputs_int_float.txt', "a")
                         for elem in torch.flatten(batched_inputs).cpu().detach().numpy():
                             f.write (str(elem) + ",\\\n")

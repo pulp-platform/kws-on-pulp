@@ -57,7 +57,7 @@ print("Dataset split (Train/valid/test/tinytrain): "+ str(train_size) +"/"+str(v
 
 # Model generation and analysis
 # TODO: Model size/type should parametrize the quantization dictionary
-model = DSCNNS(use_bias = False) # Put to FALSE to reproduce FC layer
+model = DSCNNL(use_bias = False) # Put to FALSE to reproduce FC layer
 # model = DSCNNS(use_bias = True) # Put to TRUE to reproduce model_bias layer
 model.to(device)
 
@@ -185,18 +185,18 @@ precision_8 = {
           "relu9": {
             "x_bits": 8
           },
-          # "conv10": {
-          #   "W_bits": 7
-          # },
-          # "relu10": {
-          #   "x_bits": 8
-          # },
-          # "conv11": {
-          #   "W_bits": 7
-          # },
-          # "relu11": {
-          #   "x_bits": 8
-          # },
+          "conv10": {
+            "W_bits": 7
+          },
+          "relu10": {
+            "x_bits": 8
+          },
+          "conv11": {
+            "W_bits": 7
+          },
+          "relu11": {
+            "x_bits": 8
+          },
           "fc1": {
             "W_bits": 7
           }
@@ -255,14 +255,11 @@ eps = OrderedDict([])
 for i,(n,l) in enumerate(quantized_model.named_modules()):
     eps[n] = quantized_model.get_eps_at(n, eps_in=255./255)
 
-eps_avg = eps['avg'] 
-
 # Save eps
 f = open("epsilons.txt", "w")
 for i,(n,l) in enumerate(quantized_model.named_modules()):
   f.write(str(i)+ ", " + str(n) + ", " + str(l) + ", " + str(eps[n])+ ", " + "\n")
 f.close()
-
 
 # Saving the model
 nemo.utils.export_onnx('model_int8.onnx', quantized_model, quantized_model, (1, 49, 10))

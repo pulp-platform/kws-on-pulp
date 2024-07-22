@@ -101,13 +101,13 @@ def parameter_generation():
         spectrogram_length = 0
     else:
         spectrogram_length = 1 + int(length_minus_window / window_stride_samples)
-    data_processing_parameters['n_mels'] = 40
+    data_processing_parameters['n_mels'] = 10
     data_processing_parameters['desired_samples'] = desired_samples
     data_processing_parameters['sample_rate'] = sample_rate
     data_processing_parameters['spectrogram_length'] = spectrogram_length
     data_processing_parameters['window_stride_samples'] = window_stride_samples
     data_processing_parameters['window_size_samples'] = window_size_samples
-    data_processing_parameters['mfcc'] = 'tensorflow' # tensorflow, pytorch, librosa
+    data_processing_parameters['mfcc'] = 'pytorch' # tensorflow, pytorch, librosa
 
     # Training parameters
     training_parameters = {

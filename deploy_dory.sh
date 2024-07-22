@@ -56,7 +56,6 @@ export CORES=$8
 export CUR_DIR=$PWD
 
 
-
 if [[ $SDK == "pulp_sdk" ]]
 then
   export PULP_RISCV_GCC_TOOLCHAIN=/usr/scratch/wetterhorn/cioflanc/tools/pulp_riscv_toolchain/v1.0.16-pulp-riscv-gcc-centos-7/
@@ -82,12 +81,14 @@ else
   fi
 fi
 
+rm -rf $NETWORK_DIR_SRC
 mkdir -p $NETWORK_DIR_SRC
-mkdir -p $CUR_DIR/$NETWORK_DIR_DEST/
+rm -rf $NETWORK_DIR_DEST
+mkdir -p $NETWORK_DIR_DEST
 
-cp $CUR_DIR/quantization/DSCNNS_NEMO_MELS10/input.txt $NETWORK_DIR_SRC/
-cp $CUR_DIR/quantization/DSCNNS_NEMO_MELS10/model_int8.onnx $NETWORK_DIR_SRC/model.onnx
-cp $CUR_DIR/quantization/DSCNNS_NEMO_MELS10/out_layer*.txt $NETWORK_DIR_SRC/
+cp $CUR_DIR/quantization/DSCNNS_NEMO_MELS10_PYTORCH/input.txt $NETWORK_DIR_SRC/
+cp $CUR_DIR/quantization/DSCNNS_NEMO_MELS10_PYTORCH/model_int8.onnx $NETWORK_DIR_SRC/model.onnx
+cp $CUR_DIR/quantization/DSCNNS_NEMO_MELS10_PYTORCH/out_layer*.txt $NETWORK_DIR_SRC/
 cp $CUR_DIR/config_DSCNN_NEMO.json $NETWORK_DIR_SRC/ # TODO: .onnx path in config_DSCNN_QUANTLIB.json
 
 cd dory/
