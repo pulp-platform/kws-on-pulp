@@ -27,7 +27,7 @@
 void mfcc_kernel();
 
 // Set up MFCC computation
-void mfcc_computation(MFCC_IN_TYPE * MfccInputSignal, OUT_TYPE * MfccOutputSignal);
+void mfcc_computation();
 
 void preprocess(MFCC_IN_TYPE * input_buffer, uint8_t * output_buffer, int input_src);
 
