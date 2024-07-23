@@ -22,7 +22,7 @@
 
 #include "globals.h"
 
-#define TRAIN_EPS 10
+#define TRAIN_EPS 5
 
 static float ce_loss_pre;
 static float ce_loss_post;

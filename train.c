@@ -42,122 +42,124 @@ void train(){
 
         for (int uttridx = 0; uttridx < 100; uttridx++){
 
-        sampleidx = uttridx / 10;
-        classidx = uttridx % 10 + 2; // no SILENCE, no UNKNOWN
+            // printf ("-----------------------------Loop training (iteration %i)-------------------------\n", uttridx);
 
-        // printf ("sampleidx: %i\n", sampleidx);
-        // printf ("classidx: %i\n", classidx);
-        // printf ("position: %i\n", ((classidx-2)*10+sampleidx));
+            sampleidx = uttridx / 10;
+            classidx = uttridx % 10 + 2; // no SILENCE, no UNKNOWN
 
-        // buggy sample ?!?!?!?
-        if (((classidx-2)*10+sampleidx) == 34){
-            continue; 
-        }
+            // printf ("sampleidx: %i\n", sampleidx);
+            // printf ("classidx: %i\n", classidx);
+            // printf ("position: %i\n", ((classidx-2)*10+sampleidx));
 
-        char *utterance;
-        switch (classidx) {
-            case 0: // 0
-                continue; // TODO: Get data 
-                utterance = class_0[sampleidx];
-                break;
-            case 1: // 0
-                continue; // TODO: Get data 
-                utterance = class_1[sampleidx];
-                break;
-            case 2:
-                utterance = class_2[sampleidx];
-                break;
-            case 3:
-                utterance = class_3[sampleidx];
-                break;
-            case 4:
-                utterance = class_4[sampleidx];
-                break;
-            case 5:
-                utterance = class_5[sampleidx];
-                break;
-            case 6:
-                utterance = class_6[sampleidx];
-                break;
-            case 7:
-                utterance = class_7[sampleidx];
-                break;
-            case 8:
-                utterance = class_8[sampleidx];
-                break;
-            case 9:
-                utterance = class_9[sampleidx];
-                break;
-            case 10:
-                utterance = class_10[sampleidx];
-                break;
-            case 11:
-                utterance = class_11[sampleidx];
-                break;
-        }
-
-        // Load utterance directly reading .wav
-        // wav_to_array(utterance, MfccInSig, 0, 0);  // utterance, noise, save
-
-        // Load utterance from RAM
-        short int *prepWav = NULL;
-        prepWav = (short int *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(short));
-        ram_read(prepWav, L3_wavs + ((classidx-2)*10+sampleidx)*AUDIO_BUFFER_SIZE*sizeof(short), AUDIO_BUFFER_SIZE*sizeof(short));
-
-        MFCC_IN_TYPE *MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
-        if (MfccInSig == NULL){
-            printf("Failed allocating MfccInSig.\n");
-            pmsis_exit(-1);
-        }
-    
-        #if (DATA_TYPE==2) || (DATA_TYPE==3)
-            for (int i=0; i<AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
-                MfccInSig[i] = (MFCC_IN_TYPE) prepWav[i] / (1<<15);
+            // buggy sample ?!?!?!?
+            if (((classidx-2)*10+sampleidx) == 34){
+                continue; 
             }
-        #else
-            for (int i=0; i<AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
-                MfccInSig[i]] = (MFCC_IN_TYPE) gap_fcip(((int) prepWav[i]), 15);
+
+            char *utterance;
+            switch (classidx) {
+                case 0: // 0
+                    continue; // TODO: Get data 
+                    utterance = class_0[sampleidx];
+                    break;
+                case 1: // 0
+                    continue; // TODO: Get data 
+                    utterance = class_1[sampleidx];
+                    break;
+                case 2:
+                    utterance = class_2[sampleidx];
+                    break;
+                case 3:
+                    utterance = class_3[sampleidx];
+                    break;
+                case 4:
+                    utterance = class_4[sampleidx];
+                    break;
+                case 5:
+                    utterance = class_5[sampleidx];
+                    break;
+                case 6:
+                    utterance = class_6[sampleidx];
+                    break;
+                case 7:
+                    utterance = class_7[sampleidx];
+                    break;
+                case 8:
+                    utterance = class_8[sampleidx];
+                    break;
+                case 9:
+                    utterance = class_9[sampleidx];
+                    break;
+                case 10:
+                    utterance = class_10[sampleidx];
+                    break;
+                case 11:
+                    utterance = class_11[sampleidx];
+                    break;
             }
-        #endif
 
-        pi_l2_free(prepWav, AUDIO_BUFFER_SIZE * sizeof(short int));
+            // Load utterance directly reading .wav
+            // wav_to_array(utterance, MfccInSig, 0, 0);  // utterance, noise, save
 
-        int noisesamplestart = 0;
-        for (int samplepos = 0; samplepos < AUDIO_BUFFER_SIZE; samplepos++){
-            // MfccInSig[samplepos] = MfccInSig[samplepos] + 1*RecordedNoise[noisesamplestart+samplepos];
-            MfccInSig[samplepos] = MfccInSig[samplepos]; // CIOFLANC: Add RecordedNoise
-        }
+            // Load utterance from RAM
+            short int *prepWav = NULL;
+            prepWav = (short int *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(short));
+            ram_read(prepWav, L3_wavs + ((classidx-2)*10+sampleidx)*AUDIO_BUFFER_SIZE*sizeof(short), AUDIO_BUFFER_SIZE*sizeof(short));
 
-        preprocess(MfccInSig, l2_buffer, 0);
+            MFCC_IN_TYPE *MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
+            if (MfccInSig == NULL){
+                printf("Failed allocating MfccInSig.\n");
+                pmsis_exit(-1);
+            }
+        
+            #if (DATA_TYPE==2) || (DATA_TYPE==3)
+                for (int i=0; i<AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
+                    MfccInSig[i] = (MFCC_IN_TYPE) prepWav[i] / (1<<15);
+                }
+            #else
+                for (int i=0; i<AUDIO_BUFFER_SIZE; i++) { // BUFF_SIZE for MIC, AUDIO_BUFFER_SIZE for WAV
+                    MfccInSig[i]] = (MFCC_IN_TYPE) gap_fcip(((int) prepWav[i]), 15);
+                }
+            #endif
 
-        // Extract backbone features
-        void *dump;
-        network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &dump, 0, 1); // L2_input_h extra-arg for L2-only
+            pi_l2_free(prepWav, AUDIO_BUFFER_SIZE * sizeof(short int));
 
-        pi_cluster_conf_init(&cl_conf);
-        pi_open_from_conf(&cluster_dev, &cl_conf);
-        if (pi_cluster_open(&cluster_dev))
-        {
-          return -1;
-        }
+            int noisesamplestart = 0;
+            for (int samplepos = 0; samplepos < AUDIO_BUFFER_SIZE; samplepos++){
+                // MfccInSig[samplepos] = MfccInSig[samplepos] + 1*RecordedNoise[noisesamplestart+samplepos];
+                MfccInSig[samplepos] = MfccInSig[samplepos]; // CIOFLANC: Add RecordedNoise
+            }
 
-        int predidx = -1;
-        float ce_loss = 0.;
-        unsigned int args_train_classifier[6];
-        args_train_classifier[0] = (unsigned int) l2_buffer;
-        args_train_classifier[1] = (unsigned int) l2_buffer_wgt_upd;
-        args_train_classifier[2] = (unsigned int) 2; // train
-        // CIOFLANC: Should we INITIALIZE the weights again?
-        // if (uttridx == 0 && epidx == 0)
-        //     args_train_classifier[2] = (unsigned int) 1; // init = 1
-        // else
-        //     args_train_classifier[2] = (unsigned int) 0; // init = 0   
-        args_train_classifier[3] = (unsigned int) classidx;
-        args_train_classifier[4] = (float*) &ce_loss;
-        args_train_classifier[5] = (int *) &predidx;
+            preprocess(MfccInSig, l2_buffer, 0);
 
-        pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, args_train_classifier));
-        pi_cluster_close(&cluster_dev);
+            // Extract backbone features
+            void *dump;
+            network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &dump, 0, 1); // L2_input_h extra-arg for L2-only
+
+            pi_cluster_conf_init(&cl_conf);
+            pi_open_from_conf(&cluster_dev, &cl_conf);
+            if (pi_cluster_open(&cluster_dev))
+            {
+              return -1;
+            }
+
+            int predidx = -1;
+            float ce_loss = 0.;
+            unsigned int args_train_classifier[6];
+            args_train_classifier[0] = (unsigned int) l2_buffer;
+            args_train_classifier[1] = (unsigned int) l2_buffer_wgt_upd;
+            args_train_classifier[2] = (unsigned int) 2; // train
+            // CIOFLANC: Should we INITIALIZE the weights again?
+            // if (uttridx == 0 && epidx == 0)
+            //     args_train_classifier[2] = (unsigned int) 1; // init = 1
+            // else
+            //     args_train_classifier[2] = (unsigned int) 0; // init = 0   
+            args_train_classifier[3] = (unsigned int) classidx;
+            args_train_classifier[4] = (float*) &ce_loss;
+            args_train_classifier[5] = (int *) &predidx;
+
+            pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, args_train_classifier));
+            pi_cluster_close(&cluster_dev);
         }
     }
 }
@@ -171,7 +173,7 @@ void evaluate_online(int was_trained){
         }
     }
     for (int tinytestidx = 0; tinytestidx < N_TINYTEST; tinytestidx++){ // only non-unknown
-        // printf ("-----------------------------Loop evaluation (itteration %i)-------------------------\n", tinytestidx);
+        // printf ("-----------------------------Loop evaluation (iteration %i)-------------------------\n", tinytestidx);
 
         #ifdef MEASURE
         int start_readeval = pi_time_get_us();
@@ -430,7 +432,7 @@ void evaluate_online(int was_trained){
 void evaluate_tinytest(int was_trained){
 
     for (int tinytestidx = 0; tinytestidx < N_TINYTEST; tinytestidx++){ // only non-unknown
-        // printf ("-----------------------------Loop evaluation (itteration %i)-------------------------\n", tinytestidx);
+        printf ("-----------------------------Loop evaluation (iteration %i)-------------------------\n", tinytestidx);
 
         #ifdef MEASURE
         int start_readeval = pi_time_get_us();
