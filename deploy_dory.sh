@@ -86,9 +86,9 @@ mkdir -p $NETWORK_DIR_SRC
 rm -rf $NETWORK_DIR_DEST
 mkdir -p $NETWORK_DIR_DEST
 
-cp $CUR_DIR/quantization/DSCNNS_NEMO_MELS10_PYTORCH/input.txt $NETWORK_DIR_SRC/
-cp $CUR_DIR/quantization/DSCNNS_NEMO_MELS10_PYTORCH/model_int8.onnx $NETWORK_DIR_SRC/model.onnx
-cp $CUR_DIR/quantization/DSCNNS_NEMO_MELS10_PYTORCH/out_layer*.txt $NETWORK_DIR_SRC/
+cp $CUR_DIR/quantization/DSCNNL_NEMO_MELS40_PYTORCH/input.txt $NETWORK_DIR_SRC/
+cp $CUR_DIR/quantization/DSCNNL_NEMO_MELS40_PYTORCH/model_int8.onnx $NETWORK_DIR_SRC/model.onnx
+cp $CUR_DIR/quantization/DSCNNL_NEMO_MELS40_PYTORCH/out_layer*.txt $NETWORK_DIR_SRC/
 
 # Generate .json
 JSON_STRING='{"BNRelu_bits": 32, "onnx_file": "'${CUR_DIR}'/'${NETWORK_DIR_SRC}'/model.onnx", "code reserved space": 1320000}'
