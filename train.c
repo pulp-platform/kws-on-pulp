@@ -173,7 +173,7 @@ void evaluate_online(int was_trained){
         }
     }
     for (int tinytestidx = 0; tinytestidx < N_TINYTEST; tinytestidx++){ // only non-unknown
-        // printf ("-----------------------------Loop evaluation (iteration %i)-------------------------\n", tinytestidx);
+        PRINTF ("-----------------------------Loop evaluation (iteration %i)-------------------------\n", tinytestidx);
 
         #ifdef MEASURE
         int start_readeval = pi_time_get_us();
@@ -432,7 +432,7 @@ void evaluate_online(int was_trained){
 void evaluate_tinytest(int was_trained){
 
     for (int tinytestidx = 0; tinytestidx < N_TINYTEST; tinytestidx++){ // only non-unknown
-        printf ("-----------------------------Loop evaluation (iteration %i)-------------------------\n", tinytestidx);
+        PRINTF ("-----------------------------Loop evaluation (iteration %i)-------------------------\n", tinytestidx);
 
         #ifdef MEASURE
         int start_readeval = pi_time_get_us();
