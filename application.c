@@ -243,20 +243,14 @@ int application(void){
     int endwavreading = pi_time_get_us();
     printf("110/110 samples read, WAV reading is complete in %d us.\n", endwavreading - startwavreading);
 
-    printf("L2 memory allocation\n");
-
     /* Backbone inference */
     l2_buffer = pi_l2_malloc(L2_MEMORY_SIZE);
     if (l2_buffer == NULL) {
         printf("failed to allocate memory for l2_buffer\n");
     }
 
-    printf("Preliminary network inference passing\n");
-
     void *dump;
     network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &dump, 0, 1); // L2_input_h extra-arg for L2-only
-
-    printf("Preliminary network inference passing\n");
 
     /* Classifier preparation */
     pi_cluster_conf_init(&cl_conf);
