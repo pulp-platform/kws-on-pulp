@@ -25,11 +25,11 @@ if [ "$1" == "-h" ] ; then
     echo "SDK: pulp_sdk, gap_sdk"
     echo "MEMORY: (L)2, (L)3"
     echo "PLATFORM: gvsoc, fpga, rtl"
-    echo "MFCC computation: 0 (offline), 1 (online)"
     echo "COMPUTE: 0 (PULP GVSOC), 1 (GAP9 multicore), 2 (GAP9 NE16)"
     echo "NETWORK_DIR_DEST: Destination directory"
     echo "NETWORK_DIR_SRC: Source directory"
     echo "CORE: number of inference cores"
+    echo "TRAINABLE_LAYERS: number of trainable layers"
     exit 0
 fi
 
@@ -48,11 +48,11 @@ export AUDIO_SAMPLE=/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser/k
 export SDK=$1 # pulp_sdk, gap_sdk
 export MEMORY=$2 # 2, 3
 export PLATFORM=$3 # gvsoc, fpga, rtl
-export MFCC=$4 # 0 - offline, 1 - online
-export COMPUTE=$5 # 0 - PULP GVSOC, 1 - GAP9 multicore, 2 - GAP9 NE16
-export NETWORK_DIR_DEST=$6
-export NETWORK_DIR_SRC=$7
-export CORES=$8
+export COMPUTE=$4 # 0 - PULP GVSOC, 1 - GAP9 multicore, 2 - GAP9 NE16
+export NETWORK_DIR_DEST=$5
+export NETWORK_DIR_SRC=$6
+export CORES=$7
+export TRAINABLE_LAYERS=$8
 export CUR_DIR=$PWD
 
 
@@ -104,16 +104,16 @@ if [[ $MEMORY == "3" ]]
 then
   if [[ $COMPUTE == "0" ]]
   then
-    python network_generate.py NEMO PULP.PULP_gvsoc $CUR_DIR/$NETWORK_DIR_SRC/config_network.json --app_dir ../$NETWORK_DIR_DEST/ --verbose_level Check_all+Perf_final --perf_layer --n_trainable_layers 1
+    python network_generate.py NEMO PULP.PULP_gvsoc $CUR_DIR/$NETWORK_DIR_SRC/config_network.json --app_dir ../$NETWORK_DIR_DEST/ --verbose_level Check_all+Perf_final --perf_layer --n_trainable_layers $TRAINABLE_LAYERS
   elif [[ $COMPUTE == "1" ]]
   then
-    python network_generate.py NEMO PULP.GAP9 $CUR_DIR/$NETWORK_DIR_SRC/config_network.json --app_dir ../$NETWORK_DIR_DEST/ --verbose_level Check_all+Perf_final --perf_layer --n_trainable_layers 1
+    python network_generate.py NEMO PULP.GAP9 $CUR_DIR/$NETWORK_DIR_SRC/config_network.json --app_dir ../$NETWORK_DIR_DEST/ --verbose_level Check_all+Perf_final --perf_layer --n_trainable_layers $TRAINABLE_LAYERS
   elif [[ $COMPUTE == "2" ]]
   then
-    python network_generate.py NEMO PULP.GAP9_NE16 $CUR_DIR/$NETWORK_DIR_SRC/config_network.json --app_dir ../$NETWORK_DIR_DEST/ --verbose_level Check_all+Perf_final --perf_layer --n_trainable_layers 1
+    python network_generate.py NEMO PULP.GAP9_NE16 $CUR_DIR/$NETWORK_DIR_SRC/config_network.json --app_dir ../$NETWORK_DIR_DEST/ --verbose_level Check_all+Perf_final --perf_layer --n_trainable_layers $TRAINABLE_LAYERS
   fi
 else
-  python network_generate.py NEMO PULP.GAP8_L2 $CUR_DIR/$NETWORK_DIR_SRC/config_network.json --app_dir ../$NETWORK_DIR_DEST/ --verbose_level Check_all+Perf_final --perf_layer --n_trainable_layers 1
+  python network_generate.py NEMO PULP.GAP8_L2 $CUR_DIR/$NETWORK_DIR_SRC/config_network.json --app_dir ../$NETWORK_DIR_DEST/ --verbose_level Check_all+Perf_final --perf_layer --n_trainable_layers $TRAINABLE_LAYERS
 fi
 
 
@@ -126,7 +126,7 @@ fi
 cd $CUR_DIR/$NETWORK_DIR_DEST/
 
 # Parametrized
-make clean all run sample=$AUDIO_SAMPLE sdk=$SDK memory=$MEMORY platform=$PLATFORM mfcc=$MFCC CORE=$CORES # runner_args="--trace=insn"
+make clean all run sample=$AUDIO_SAMPLE sdk=$SDK platform=$PLATFORM CORE=$CORES # runner_args="--trace=insn"
 
 if [[ $PLATFORM == "rtl" ]]
 then
