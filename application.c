@@ -249,8 +249,7 @@ int application(void){
         printf("failed to allocate memory for l2_buffer\n");
     }
 
-    void *dump;
-    network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &dump, 0, 1); // L2_input_h extra-arg for L2-only
+    network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, 0, 1); // L2_input_h extra-arg for L2-only
 
     /* Classifier preparation */
     pi_cluster_conf_init(&cl_conf);
@@ -260,7 +259,6 @@ int application(void){
       return -1;
     }
     
-    // CIOFLANC: Parametrize
     l2_buffer_wgt_upd = pi_l2_malloc (NCHANNELS * N_CLASSES * 4);
     if (l2_buffer_wgt_upd == NULL) {
         printf("failed to allocate memory for l2_buffer_wgt_upd\n");
@@ -446,8 +444,7 @@ int application(void){
         
 
         // Extract backbone features
-        void *dump; // dump to copy FC weights, won't be used; TODO: Parametrize DORY
-        network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &dump, 0, 1); // L2_input_h extra-arg for L2-only
+        network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, 0, 1); // L2_input_h extra-arg for L2-only
 
         for (int idx = 0; idx < 64; idx++){
             PRINTF ("backbone[%i] = %u, ", idx, ((uint8_t *)l2_buffer)[idx]);

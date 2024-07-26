@@ -516,9 +516,5 @@ PI_L2 uint8_t L2_input_h[490] = {
 126,
 };
 
-// Librosa
-// TODO
-
-
 #endif
 

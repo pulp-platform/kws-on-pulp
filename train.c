@@ -133,8 +133,7 @@ void train(){
             preprocess(MfccInSig, l2_buffer, 0);
 
             // Extract backbone features
-            void *dump;
-            network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &dump, 0, 1); // L2_input_h extra-arg for L2-only
+            network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, 0, 1); // L2_input_h extra-arg for L2-only
 
             pi_cluster_conf_init(&cl_conf);
             pi_open_from_conf(&cluster_dev, &cl_conf);
@@ -285,7 +284,7 @@ void evaluate_online(int was_trained){
         preprocess(MfccInSig, l2_buffer, 0);
 
         for (int k = 0; k < N_MFCC_WINS * N_MELS; k++){
-            // Data saving to elude re-recording the evaluation samples. TODO: organize workflow
+            // Data saving to elude re-recording the evaluation samples.
             if (was_trained == 0) {
                 switch (tinytestidx) {
                     case 0:
@@ -357,8 +356,7 @@ void evaluate_online(int was_trained){
         }
 
         // Extract backbone features
-        void *dump; // dump to copy FC weights, won't be used; TODO: Parametrize DORY
-        network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &dump, 0, 1); // L2_input_h extra-arg for L2-only
+        network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, 0, 1); // L2_input_h extra-arg for L2-only
 
         for (int i=0; i < 64; i++){
             PRINTF("%i, ", ((uint8_t *) l2_buffer)[i]);
@@ -541,8 +539,7 @@ void evaluate_tinytest(int was_trained){
         preprocess(MfccInSig, l2_buffer, 0);
 
         // Extract backbone features
-        void *dump; // dump to copy FC weights, won't be used; TODO: Parametrize DORY
-        network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &dump, 0, 1); // L2_input_h extra-arg for L2-only
+        network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, 0, 1); // L2_input_h extra-arg for L2-only
 
         for (int i=0; i < 64; i++){
             PRINTF("%i, ", ((uint8_t *) l2_buffer)[i]);
@@ -669,8 +666,7 @@ void evaluate_largetest(int was_trained){
             preprocess(MfccInSig, l2_buffer, 0);
 
             // Extract backbone features
-            void *dump; // dump to copy FC weights, won't be used; TODO: Parametrize DORY
-            network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, &dump, 0, 1); // L2_input_h extra-arg for L2-only
+            network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, 0, 1); // L2_input_h extra-arg for L2-only
 
             for (int i=0; i < 64; i++){
                 PRINTF("%i, ", ((uint8_t *) l2_buffer)[i]);
