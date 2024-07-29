@@ -87,6 +87,11 @@ For instance, to deploy the model using MFCC inputs on PULP-OPEN using PULP-SDK 
 ./deploy.sh pulp_sdk
 ```
 
+### Projects
+* Huami
+* [EENAKWS](https://www.ai4europe.eu/business-and-industry/case-studies/eenakws-robotics-r2-keyword-spotting)
+* [Towards On-device Domain Adaptation for Noise-Robust Keyword Spotting] (https://ieeexplore.ieee.org/document/9869990)
+
 ### Contributor
 Cristian Cioflan, ETH Zurich, [cioflanc@iis.ee.ethz.ch](cioflanc@iis.ee.ethz.ch)
 
