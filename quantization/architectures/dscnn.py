@@ -35,36 +35,43 @@ class DSCNN(torch.nn.Module):
         self.device = device
 
         self.stem = stem
-        self.padding =  'asym'
-        self.stem_block =  Conv_Stem_Sym(n_channels = self.n_channels, use_bias = self.use_bias).to(self.device)        
+        self.padding =  padding
+        self.stem_block =  Conv_Stem_Sym(n_channels = self.n_channels, use_bias = self.use_bias, block_idx = 0).to(self.device)        
         self.pad_block = nn.ConstantPad2d((1, 1, 1, 0), value=0.)
         self.avg   = torch.nn.AvgPool2d(kernel_size=(20, 5), stride=1)
 
 
         self.conv_blocks_list = [] 
         for block_idx in range (0, self.n_blocks):
-            self.conv_blocks_list.append((DSCNN_block(n_channels = self.n_channels, use_bias = self.use_bias).to(self.device)))
+            self.conv_blocks_list.append((DSCNN_block(n_channels = self.n_channels, use_bias = self.use_bias, block_idx = block_idx).to(self.device)))
 
         self.conv_blocks = nn.ModuleList(self.conv_blocks_list)
 
         self.fc1   = torch.nn.Linear(self.n_channels, self.n_classes, bias=self.use_bias)
 
-        self._initialize_weights(seed=42)
+        # self._initialize_weights(seed=42)
 
 
     def forward(self, x, save=False):
 
         x = self.pad_block(x)
 
-        x = self.stem_block(x)
+        x = self.stem_block(x, save)
 
         for block_idx in range(0, self.n_blocks):
             x = self.pad_block(x)
-            x = self.conv_blocks[block_idx](x)
+            x = self.conv_blocks[block_idx](x, save)
 
         x = self.avg (x)
         x = torch.flatten(x, 1) 
+        if (save):
+            npy_to_txt(9, x.int().cpu().detach().numpy())
+            print ("Sum: ", str(torch.sum(x.int())))
         x = self.fc1 (x)
+        if (save):
+            npy_to_txt(10, x.int().cpu().detach().numpy())
+            print ("Sum: ", str(torch.sum(x.int())))
+
 
         return x
 
@@ -158,20 +165,20 @@ class DSCNN_block(torch.nn.Module):
         x = self.bn_dw(x)    
         x = self.relu_dw(x) 
         if (save):
-            npy_to_txt(self.block_idx, x.int().cpu().detach().numpy())
+            npy_to_txt(2*(self.block_idx+1)-1, x.int().cpu().detach().numpy())
             print ("Sum: ", str(torch.sum(x.int())))
         x = self.conv_pw(x)
         x = self.bn_pw(x)
         x = self.relu_pw(x) 
         if (save):
-            npy_to_txt(self.block_idx+1, x.int().cpu().detach().numpy())
+            npy_to_txt(2*(self.block_idx+1), x.int().cpu().detach().numpy())
             print ("Sum: ", str(torch.sum(x.int())))
 
         return x
 
 
 class DSCNNS(torch.nn.Module):
-    def __init__(self, use_bias=False):
+    def __init__(self, n_channels = 64, n_blocks = 4, n_classes = 12, use_bias = False, stem = 'sym', padding='asym', device = 'cpu'):
         super(DSCNNS, self).__init__()
 
         self.pad1  = nn.ConstantPad2d((1, 1, 1, 0), value=0.0)
@@ -329,7 +336,7 @@ class DSCNNS(torch.nn.Module):
 
 
 class DSCNNM(torch.nn.Module):
-    def __init__(self, use_bias=False):
+    def __init__(self, n_channels = 64, n_blocks = 4, n_classes = 12, use_bias = False, stem = 'sym', padding='asym', device = 'cpu'):
         super(DSCNNM, self).__init__()
 
         self.pad1  = nn.ConstantPad2d((1, 1, 1, 0), value=0.0)
@@ -486,7 +493,7 @@ class DSCNNM(torch.nn.Module):
 
 
 class DSCNNL(torch.nn.Module):
-    def __init__(self, use_bias=False):
+    def __init__(self, n_channels = 64, n_blocks = 4, n_classes = 12, use_bias = False, stem = 'sym', padding='asym', device = 'cpu'):
         super(DSCNNL, self).__init__()
 
         self.pad1  = nn.ConstantPad2d((1, 1, 1, 0), value=0.0)
