@@ -6,8 +6,8 @@
         "clip_duration_ms": 1000,
         "window_size_ms": 40.0,
         "window_stride_ms": 20.0,
-        "n_mels": 10,
-        "library":"tensorflow",
+        "n_mels": 40,
+        "library":"pytorch",
         "noise_seed": 0
     },
     "environment_parameters": {

@@ -42,7 +42,7 @@ from torch.utils.data import DataLoader
 from dataset import DatasetProcessor
 from datagenerator import DatasetCreator
 from utils import parameter_generation
-from dscnn import DSCNN
+from dscnn import DSCNN, DSCNN
 
 # import the DORY backend
 from quantlib.backends.dory import export_net, DORYHarmonizePass, PACT_symbolic_trace
@@ -87,8 +87,9 @@ def get_valid_dataset(key : str, cfg : dict, quantize : str, pad_img : Optional[
     load_dataset_fn = qu.load_dataset_fn
     return mdataset
 
-# _MNIST_EPS = 0.99
-_MNIST_EPS = 0.39 # for 0-255 data
+# CIOFLANC: Remove rescaling in Dory
+_MNIST_EPS = 0.99
+# _MNIST_EPS = 0.39 # for 0-255 data
 # _MNIST_EPS = 0.0328 # for standardized 0-1 data 
 
 # batch size is per device, determined on Nvidia RTX2080. You may have to change
@@ -120,7 +121,7 @@ def get_ckpt(key : str, exp_id : int, ckpt_id : Union[int, str]):
     return torch.load(ckpt_filepath)
 
 def get_network(key : str, exp_id : int, ckpt_id : Union[int, str], quantized=False, pretrained='model.pth'):
-    with open('config_net_tqt_8b.json', 'r') as fp:
+    with open('config_dscnn_tqt_8b.json', 'r') as fp:
         cfg = json.load(fp)
     qu = _QUANT_UTILS[key]
     quant_cfg = cfg['network']['quantize']['kwargs']
@@ -131,11 +132,7 @@ def get_network(key : str, exp_id : int, ckpt_id : Union[int, str], quantized=Fa
         _QUANT_UTILS[key].in_shape = qu.in_shape
 
     net_cfg.update(qu.network_args)
-    # net = qu.network(**net_cfg)
     net = qu.network()
-
-    # print ("Network instantiated.")
-    # print (net)
 
     # Load pretrained network
     net.load_state_dict(torch.load(pretrained, map_location='cpu'))
@@ -185,11 +182,9 @@ def validate(net : nn.Module, dl : torch.utils.data.DataLoader, print_interval :
             
             # import IPython; IPython.embed()
 
+        print (xb[0][0][0])
 
         yn = net(xb.to(device))
-
-
-
         n_tot += xb.shape[0]
 
         n_correct += (yn.to('cpu').argmax(dim=1) == yb).sum()
@@ -289,7 +284,7 @@ def main():
     
     parser = argparse.ArgumentParser()
     parser.add_argument("--net", type=str, default='DSCNN', help='Network to quantize')
-    parser.add_argument("--pretrained", type=str, default='model_uint.pth', help='Path to pretrained model {model_int,model_uint}.pth.')
+    parser.add_argument("--pretrained", type=str, default='model.pth', help='Path to pretrained model.')
     parser.add_argument('--fix_channels', action='store_true', help='Fix channels of conv layers for compatibility with DORY')
     parser.add_argument('--no_dory_harmonize', action='store_true',
                         help='If supplied, don\'t align averagePool nodes\' associated requantization nodes and replace adders with DORYAdders')
@@ -299,7 +294,7 @@ def main():
                         help='Export RequantShift nodes instead of mul-add-div sequences in ONNX graph')
     parser.add_argument('--clip_inputs', action='store_true',
                         help='ghettofix to clip inputs to be unsigned')
-    parser.add_argument('--config_net_file', type=str, default='config_net_tqt_8b.json', help = 'Network configuration file')
+    parser.add_argument('--config_net_file', type=str, default='config_DSCNN_tqt_8b.json', help = 'Network configuration file')
     parser.add_argument('--config_env_file', type=str, default='config_env.json', help = 'Environment configuration file')
 
     args = vars(parser.parse_args())
@@ -330,8 +325,7 @@ def main():
     print("Data range of input data: ", torch.min(mdataset[0][0]), torch.max(mdataset[0][0]))
 
     print("==================================== Loading pre-trained network ====================================")
-    pretrained = 'model_uint.pth'
-    qnet = get_network(key = args['net'], exp_id=0, ckpt_id=0, quantized=True, pretrained = pretrained)
+    qnet = get_network(key = args['net'], exp_id=0, ckpt_id=0, quantized=True, pretrained = args['pretrained'])
 
     print("==================================== Fake Quantizing network ====================================")
     linop_list = [i for i in qnet.modules() if isinstance(i, qa.pact._PACTLinOp)]
@@ -345,8 +339,6 @@ def main():
 
     actController = qa.pact.PACTActController(act_list, actSchedule, init_clip_hi=6., init_clip_lo=-6.)
     linearController = qa.pact.PACTLinearController(linop_list, schedule, init_clip_hi=16., init_clip_lo=-16.)
-    _AnnotateEpsPass = AnnotateEpsPass(0.39, n_levels_in=256)
-    espController = qa.pact.PACTEpsController(qnet, modules = eps_list, schedule = {0:'start'}, tracer = PACT_symbolic_trace, eps_pass = _AnnotateEpsPass)
 
     quantControllers = [actController, linearController]
 
@@ -358,6 +350,9 @@ def main():
     min_val = [torch.min(i) for i in fakeBatch_list]
     min_of_min = min(min_val)
     eps_computed = (max_of_max - min_of_min) / 255
+
+    # CIOFLANC: remove rescaling in Dory
+    eps_computed = 0.99 
 
     print("EPS computed: ", eps_computed)
 

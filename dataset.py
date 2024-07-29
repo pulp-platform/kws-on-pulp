@@ -301,17 +301,11 @@ class DatasetProcessor(torch.utils.data.Dataset):
         if (self.preprocessing_parameters['library'] == "pytorch"):
             import torchaudio
 
-            if (self.device.type == 'cuda'):
-                torch.set_default_tensor_type('torch.cuda.FloatTensor') 
-            else:
-                self.background_add = self.background_add.float()
+            self.background_add = self.background_add.float()
             mfcc_transformation = torchaudio.transforms.MFCC(n_mfcc=self.preprocessing_parameters['feature_bin_count'], sample_rate=self.preprocessing_parameters['desired_samples'], melkwargs=melkwargs, log_mels=True, norm='ortho')
             data = mfcc_transformation(self.background_add)
 
             self.data_placeholder = torch.transpose(data[:,:self.preprocessing_parameters['spectrogram_length']], 0, 1)
-
-            if (self.device.type == 'cuda'):
-                torch.set_default_tensor_type('torch.FloatTensor')
 
         elif (self.preprocessing_parameters['library'] == "tensorflow"):        
             tf_data = tf.convert_to_tensor(self.background_add.numpy(), dtype=tf.float32)
