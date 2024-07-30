@@ -1,3 +1,13 @@
+/*
+ * Copyright (C) 2022 GreenWaves Technologies
+ * All rights reserved.
+ *
+ * This software may be modified and distributed under the terms
+ * of the BSD license.  See the LICENSE file for details.
+ *
+ */
+
+
 #include "dac.h"
 
 #include "pmsis.h"

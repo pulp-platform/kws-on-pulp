@@ -1,3 +1,22 @@
+// Copyright (C) 2023-2024 ETH Zurich
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// SPDX-License-Identifier: Apache-2.0
+// ==============================================================================
+//
+// Author: Cristian Cioflan, ETH (cioflanc@iis.ee.ethz.ch)
+
+
 #include "AutoTilerLib.h"
 #include "AutoTilerLibTypes.h"
 #include "DSP_Generators.h"
@@ -28,27 +47,6 @@ int main(int argc, char **argv)
 
     // Generate code for MFCC applied to 49 of size FRAME_SIZE with FRAME_STEP as stride
     MFCC_Generator("Tensorflow_MFCC",                    &Tensorflow_Settings, 49, FRAME_SIZE, FRAME_STEP, N_FFT, N_MELS, MEL_COEFF_CNT, N_DCT, 0, 0, 0, 1, DATA_TYPE, 1, 0);
-    // MFCC_Generator("Tensorflow_MFCC",                    &Tensorflow_Settings, 49, 640, 320, 1024, 40, 494, 40, 0, 0, 0, 1, DATA_TYPE, 2, 0);
-
-    // // Generate code for MFCC applied to a single frame just for code generation testing
-    // MFCC_Generator("Tensorflow_MFCC_single_Fix16",       &Tensorflow_Settings, 1,  FRAME_SIZE, FRAME_STEP, N_FFT, N_MELS, MEL_COEFF_CNT, N_DCT, 0, 0, 0, USE_POWER, 0, 2, 0);
-    // MFCC_Generator("Tensorflow_MFCC_single_Fix16_FFT",   &Tensorflow_Settings, 1,  FRAME_SIZE, FRAME_STEP, N_FFT, N_MELS, MEL_COEFF_CNT, N_DCT, 0, 0, 0, USE_POWER, 0, 2, 1);
-    // MFCC_Generator("Tensorflow_LogMel_single_Fix16",     &Tensorflow_Settings, 1,  FRAME_SIZE, FRAME_STEP, N_FFT, N_MELS, MEL_COEFF_CNT, 0,     0, 0, 0, USE_POWER, 0, 2, 0);
-    // MFCC_Generator("Tensorflow_LogMel_single_Fix16_FFT", &Tensorflow_Settings, 1,  FRAME_SIZE, FRAME_STEP, N_FFT, N_MELS, MEL_COEFF_CNT, 0,     0, 0, 0, USE_POWER, 0, 2, 1);
-
-    // MFCC_Generator("Tensorflow_MFCC_single_Fix32",       &Tensorflow_Settings, 1,  FRAME_SIZE, FRAME_STEP, N_FFT, N_MELS, MEL_COEFF_CNT, N_DCT, 0, 0, 0, USE_POWER, 1, 2, 0);
-    // MFCC_Generator("Tensorflow_MFCC_single_Fix32_FFT",   &Tensorflow_Settings, 1,  FRAME_SIZE, FRAME_STEP, N_FFT, N_MELS, MEL_COEFF_CNT, N_DCT, 0, 0, 0, USE_POWER, 1, 2, 1);
-    // MFCC_Generator("Tensorflow_LogMel_single_Fix32",     &Tensorflow_Settings, 1,  FRAME_SIZE, FRAME_STEP, N_FFT, N_MELS, MEL_COEFF_CNT, 0,     0, 0, 0, USE_POWER, 1, 2, 0);
-    // MFCC_Generator("Tensorflow_LogMel_single_Fix32_FFT", &Tensorflow_Settings, 1,  FRAME_SIZE, FRAME_STEP, N_FFT, N_MELS, MEL_COEFF_CNT, 0,     0, 0, 0, USE_POWER, 1, 2, 1);
-
-    // MFCC_Generator("Tensorflow_MFCC_single_f16",         &Tensorflow_Settings, 1,  FRAME_SIZE, FRAME_STEP, N_FFT, N_MELS, MEL_COEFF_CNT, N_DCT, 0, 0, 0, USE_POWER, 2, 2, 0);
-    // MFCC_Generator("Tensorflow_MFCC_single_f16_FFT",     &Tensorflow_Settings, 1,  FRAME_SIZE, FRAME_STEP, N_FFT, N_MELS, MEL_COEFF_CNT, N_DCT, 0, 0, 0, USE_POWER, 2, 2, 1);
-    // MFCC_Generator("Tensorflow_LogMel_single_f16",       &Tensorflow_Settings, 1,  FRAME_SIZE, FRAME_STEP, N_FFT, N_MELS, MEL_COEFF_CNT, 0,     0, 0, 0, USE_POWER, 2, 2, 0);
-    // MFCC_Generator("Tensorflow_LogMel_single_f16_FFT",   &Tensorflow_Settings, 1,  FRAME_SIZE, FRAME_STEP, N_FFT, N_MELS, MEL_COEFF_CNT, 0,     0, 0, 0, USE_POWER, 2, 2, 1);
-
-    // MFCC_Generator("Tensorflow_MFCC_single_f32",         &Tensorflow_Settings, 1,  FRAME_SIZE, FRAME_STEP, N_FFT, N_MELS, MEL_COEFF_CNT, N_DCT, 0, 0, 0, USE_POWER, 3, 2, 0);
-    // MFCC_Generator("Tensorflow_MFCC_single_f32_FFT",     &Tensorflow_Settings, 1,  FRAME_SIZE, FRAME_STEP, N_FFT, N_MELS, MEL_COEFF_CNT, N_DCT, 0, 0, 0, USE_POWER, 3, 2, 1);
-    // MFCC_Generator("Tensorflow_LogMel_single_f32",       &Tensorflow_Settings, 1,  FRAME_SIZE, FRAME_STEP, N_FFT, N_MELS, MEL_COEFF_CNT, 0,     0, 0, 0, USE_POWER, 3, 2, 0);
-    // MFCC_Generator("Tensorflow_LogMel_single_f32_FFT",   &Tensorflow_Settings, 1,  FRAME_SIZE, FRAME_STEP, N_FFT, N_MELS, MEL_COEFF_CNT, 0,     0, 0, 0, USE_POWER, 3, 2, 1);
+   
     GenerateTilingCode();
 }
