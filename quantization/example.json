@@ -52,8 +52,8 @@
     "training_parameters": {
         "noise_mode": "noiseless",
         "snr_range": [0],
-        "model": "DSCNNM",
-        "channels": 172,
+        "model": "DSCNN",
+        "channels": 64,
         "blocks": 4,
         "use_pretrained": 0,
         "denoisify": 0,
@@ -79,7 +79,7 @@
                                  "bird", "cat", "dog", "eight", "five", "follow", "forward", "four", "happy", "house", "learn",
                                  "marvin", "nine", "one", "seven", "sheila", "six", "three", "tree", "two", "visual", "wow", "zero"],
         "wanted_frequency_mswc": 5000,
-        "quantization_dictionary": "precision_classic.json"
+        "quantization_dictionary": "precision_hrch.json"
     },
 
     "experimental_parameters": {
@@ -87,7 +87,7 @@
         "select": 0,
         "odda": 0,
         "metatrain": 0,
-        "quantize": 0,
+        "quantize": 1,
         "evaluate": 0,
         "selection_interval_upper": 0.1,
         "selection_interval_lower": 0,

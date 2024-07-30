@@ -78,7 +78,8 @@
         "wanted_wordsgscv2_35w":["yes", "no", "up", "down", "left", "right", "on", "off", "stop", "go", "backward", "bed",
                                  "bird", "cat", "dog", "eight", "five", "follow", "forward", "four", "happy", "house", "learn",
                                  "marvin", "nine", "one", "seven", "sheila", "six", "three", "tree", "two", "visual", "wow", "zero"],
-        "wanted_frequency_mswc": 5000
+        "wanted_frequency_mswc": 5000,
+        "quantization_dictionary": "precision_classic.json"
     },
 
     "experimental_parameters": {
