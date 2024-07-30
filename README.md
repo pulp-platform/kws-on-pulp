@@ -21,14 +21,14 @@ cd ..
 Train the model, export it in FP32, and quantize it to INT8 through Nemo. Note: set the model accordingly in `config_DSCNN.json`.
 ```
 cd kws-on-pulp/quantization
-python main.py
+python main.py --config_file example.json
 cd ../..
 ```
 
 Alternatively, a pretrained model can be exported to FP32 and then quantized to INT8 through Quantlib. Note: set the model accordingly in `config_DSCNN.json`.
 ```
 cd kws-on-gap9/
-python quantize.py --net DSCNN --fix_channels --word_align_channels --clip_inputs
+python quantize.py --net DSCNN --fix_channels --word_align_channels --clip_inputs --pretrained path/to/model.pth --config_net_file config_dscnn_hierarchic_tqt_8b.json
 cd ..
 ``` 
 
@@ -38,7 +38,7 @@ During pretraing, the number of MFCCs can be set. They should coincide with the 
 
 ```
 cd kws-on-pulp/dory/
-./deploy_dory.sh gap_sdk 3 gvsoc 2 DSCNN_DIR_DEST DSCNN_DIR_SRC 8 1
+./deploy_dory.sh gap_sdk 3 gvsoc 2 DSCNN_DIR_DEST DSCNN_DIR_SRC 8 1 Quantlab
 ```
 
 * target sdk: gap_sdk, pulp_sdk
@@ -46,11 +46,10 @@ cd kws-on-pulp/dory/
 * target platform: gvsoc, board
 * computational unit: 0 (PULP GVSOC), 1 (GAP9 single-/multi-core), 2 (GAP9 NE16 accelerator)
 * network destination directory
-* network source directory (note: `deploy_dory.sh` also requires manual changes to indicate the source)
+* network source directory
 * number of cores
 * number of trainable layers, deployed separately with PULP-Trainlib
-
-Note that the DORY-generated C code currently allows setting the number of `n_frozen_layers` in `dory/Hardware_targets/PULP/PULP_gvsoc/Templates/network_c_template.c`. This should be passed as external paramater during code generation, also accounting for the number of non-parametrizable operations (e.g., AvgPool, Identity).
+* quantization tool: NEMO, Quantlab
 
 Note that Trainlib requires L1 space, which should be taken from Dory. For now you have to manually modify the `L1.dimension` in `dory/dory/Hardware_targets/PULP/GAP9/HW_description.json`. 
 
@@ -64,7 +63,7 @@ To generate the FP32 C code for the trainable segment of the network, run:
 
 ```
 cd pulp-trainlib/
-./codegen.sh ./ DSCNNL_DIR_DEST_NEMO_FP32 kws-on-pulp/quantization/DSCNNL_NEMO_MELS40_PYTORCH/model_fp32.onnx MatMul # generates net.{h,c}, initdefines.h, iodata.{h}
+./codegen.sh ./ DSCNN_DIR_DEST DSCNN_DIR_SRC/model_fp32.onnx MatMul # generates net.{h,c}, initdefines.h, iodata.{h}
 ```
 
 * network destination directory path
