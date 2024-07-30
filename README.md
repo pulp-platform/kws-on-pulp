@@ -94,14 +94,24 @@ This currently integrates inference and user-indicated training. An inference-on
 
 =======
 
-### Board configuration
+### Configuration
 
 To use the Vesper microphone on GAP9mod
 * Jumper on J7
 * Connect CN9.1 and CN9.2
 
-Select:
+configmenu:
 * GAP9_EVK_AUDIO
-* GWT Board: Gap9mod V1.0b & Evaluation kit (V2.0) -- only for CMakeList
+* Gap9mod V1.0b
+* Evaluation kit (V1.3)
+
+On-board configurations:
+* GAPmod V2.0
+* EVK v3.1
+
+Host configurations:
+* GAP SDK PRIVATE, release v5.11.0
+* AlmaLinux release 8.8
+* GCC 8.5.0 (locally setting 9.2.0)
 
 
