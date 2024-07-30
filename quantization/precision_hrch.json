@@ -1,0 +1,71 @@
+{
+    "stem_block.conv": {
+        "W_bits": 7
+    },
+    "conv_blocks.0.conv_dw": {
+        "W_bits": 7
+    },
+    "conv_blocks.0.conv_pw": {
+        "W_bits": 7
+    },
+    "conv_blocks.1.conv_dw": {
+        "W_bits": 7
+    },
+    "conv_blocks.1.conv_pw": {
+        "W_bits": 7
+    },
+    "conv_blocks.2.conv_dw": {
+        "W_bits": 7
+    },
+    "conv_blocks.2.conv_pw": {
+        "W_bits": 7
+    },
+    "conv_blocks.3.conv_dw": {
+        "W_bits": 7
+    },
+    "conv_blocks.3.conv_pw": {
+        "W_bits": 7
+    },
+    "conv_blocks.4.conv_dw": {
+        "W_bits": 7
+    },
+    "conv_blocks.4.conv_pw": {
+        "W_bits": 7
+    },
+    "fc1": {
+        "W_bits": 7
+    },
+    "stem_block.relu": {
+        "x_bits": 8
+    },
+    "conv_blocks.0.relu_dw": {
+        "x_bits": 8
+    },
+    "conv_blocks.0.relu_pw": {
+        "x_bits": 8
+    },
+    "conv_blocks.1.relu_dw": {
+        "x_bits": 8
+    },
+    "conv_blocks.1.relu_pw": {
+        "x_bits": 8
+    },
+    "conv_blocks.2.relu_dw": {
+        "x_bits": 8
+    },
+    "conv_blocks.2.relu_pw": {
+        "x_bits": 8
+    },
+    "conv_blocks.3.relu_dw": {
+        "x_bits": 8
+    },
+    "conv_blocks.3.relu_pw": {
+        "x_bits": 8
+    },
+    "conv_blocks.4.relu_dw": {
+        "x_bits": 8
+    },
+    "conv_blocks.4.relu_pw": {
+        "x_bits": 8
+    }
+}

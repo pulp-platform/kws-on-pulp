@@ -9,8 +9,11 @@ logs/
 wavsrc/
 temp/
 tinytest/
-
+DSCNN_*
+application_*
 *gap8_to_gap9/SRC*
+
+example*
 
 *BUILD/
 *BUILD_MFCC/
@@ -22,13 +25,12 @@ tinytest/
 *.onnx
 *.pth
 *.slm
-*.sh
 *vars.mk
 *.npy
 *.txt
+*.wav
 
-
-
+config_network.json
 
 
 

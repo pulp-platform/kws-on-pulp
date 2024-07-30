@@ -1,5 +1,0 @@
-{
-	"BNRelu_bits": 64,
-	"onnx_file": "quantization/model.onnx",
-	"code reserved space": 132000
-}

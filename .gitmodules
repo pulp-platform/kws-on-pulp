@@ -1,6 +1,7 @@
-[submodule "deployment/dory"]
-	path = deployment/dory
-	url = https://github.com/pulp-platform/dory.git
 [submodule "quantization/nemo"]
 	path = quantization/nemo
 	url = https://github.com/pulp-platform/nemo.git
+
+[submodule "dory"]
+	path = dory
+	url = git@iis-git.ee.ethz.ch:kws/dory.git
