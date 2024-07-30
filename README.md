@@ -18,14 +18,14 @@ cd ..
 
 ### Pretrain ONNX model
 
-Train the model, export it in FP32, and quantize it to INT8 through Nemo. Note: set the model accordingly in `config_DSCNN.json`.
+Train the model, export it in FP32, and quantize it to INT8 through Nemo. Note: set the model accordingly in `example.json`.
 ```
 cd kws-on-pulp/quantization
 python main.py --config_file example.json
 cd ../..
 ```
 
-Alternatively, a pretrained model can be exported to FP32 and then quantized to INT8 through Quantlib. Note: set the model accordingly in `config_DSCNN.json`.
+Alternatively, a pretrained model can be exported to FP32 and then quantized to INT8 through Quantlib. Note: set the model accordingly in `config_env.json`.
 ```
 cd kws-on-gap9/
 python quantize.py --net DSCNN --fix_channels --word_align_channels --clip_inputs --pretrained path/to/model.pth --config_net_file config_dscnn_hierarchic_tqt_8b.json
