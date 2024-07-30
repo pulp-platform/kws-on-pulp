@@ -1,7 +1,7 @@
 __pycache__
+DSCNN*
 pretrained/
 export/*
 generate/*
 application/build/
 application/generate/
-pulpdemo*
