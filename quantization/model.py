@@ -14,7 +14,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # ==============================================================================
 #
-# Author: Cristian Cioflan, ETH (cioflanc@iis.ee.ethz.ch)
+# Author: Cristian Cioflan, ETH Zurich (cioflanc@iis.ee.ethz.ch)
 
 
 import torch
