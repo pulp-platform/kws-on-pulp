@@ -1,8 +1,0 @@
-{
-    "BNRelu_bits": 32,
-    "onnx_file": "/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser/kws-on-pulp/DSCNNS_DIR_SRC_QUANTLIB/model.onnx",
-    "code reserved space": 150000,
-    "n_inputs": 1,
-    "input_bits": 8,
-    "input_signed": true
-}
