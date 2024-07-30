@@ -19,6 +19,7 @@
 
 import nemo
 import torch
+import json
 
 from utils import remove_txt
 from copy import deepcopy
@@ -26,7 +27,7 @@ from collections import OrderedDict
 
 
 # TODO: parametrize
-def nemo_quantize(device, model, training_environment, tool = 'nemo', model_path = 'model', precision = 8):
+def nemo_quantize(device, model, training_environment, precision_dict_path, tool = 'nemo', model_path = 'model', precision = 8):
 
     dummy_input = torch.randn(1, 1, 49, 10, requires_grad=True).to(device)
     model_fp32_copy = deepcopy(model).to(device)
@@ -46,126 +47,8 @@ def nemo_quantize(device, model, training_environment, tool = 'nemo', model_path
         # Initiating quantization process: making the model quantization aware
         quantized_model = nemo.transform.quantize_pact(deepcopy(model), dummy_input=torch.randn((1,1,49,10)).to(device))
 
-        # precision_dict = {
-        #                     "conv1": {
-        #                         "W_bits": precision-1
-        #                     },
-        #                     "relu1": {
-        #                         "x_bits": precision
-        #                     },
-        #                     "conv2": {
-        #                         "W_bits": precision-1
-        #                     },
-        #                     "relu2": {
-        #                         "x_bits": precision
-        #                     },
-        #                     "conv3": {
-        #                         "W_bits": precision-1
-        #                     },
-        #                     "relu3": {
-        #                         "x_bits": precision
-        #                     },
-        #                     "conv4": {
-        #                         "W_bits": precision-1
-        #                     },
-        #                     "relu4": {
-        #                         "x_bits": precision
-        #                     },
-        #                     "conv5": {
-        #                         "W_bits": precision-1
-        #                     },
-        #                     "relu5": {
-        #                         "x_bits": precision
-        #                     },
-        #                     "conv6": {
-        #                         "W_bits": precision-1
-        #                     },
-        #                     "relu6": {
-        #                         "x_bits": precision
-        #                     },
-        #                     "conv7": {
-        #                         "W_bits": precision-1
-        #                     },
-        #                     "relu7": {
-        #                         "x_bits": precision
-        #                     },
-        #                     "conv8": {
-        #                         "W_bits": precision-1
-        #                     },
-        #                     "relu8": {
-        #                         "x_bits": precision
-        #                     },
-        #                     "conv9": {
-        #                         "W_bits": precision-1
-        #                     },
-        #                     "relu9": {
-        #                         "x_bits": precision
-        #                     },
-        #                     "fc1": {
-        #                         "W_bits": precision-1
-        #                     }
-        #                 }
-
-        precision_dict = {
-
-                            "stem_block.conv": {
-                                "W_bits": precision-1
-                            },
-                            "conv_blocks.0.conv_dw": {
-                                "W_bits": precision-1
-                            },
-                            "conv_blocks.0.conv_pw": {
-                                "W_bits": precision-1
-                            },
-                            "conv_blocks.1.conv_dw": {
-                                "W_bits": precision-1
-                            },
-                            "conv_blocks.1.conv_pw": {
-                                "W_bits": precision-1
-                            },
-                            "conv_blocks.2.conv_dw": {
-                                "W_bits": precision-1
-                            },
-                            "conv_blocks.2.conv_pw": {
-                                "W_bits": precision-1
-                            },
-                            "conv_blocks.3.conv_dw": {
-                                "W_bits": precision-1
-                            },
-                            "conv_blocks.3.conv_pw": {
-                                "W_bits": precision-1
-                            },
-                            "fc1": {
-                                "W_bits": precision-1
-                            },
-                            "stem_block.relu": {
-                                "x_bits": precision
-                            },
-                            "conv_blocks.0.relu_dw": {
-                                "x_bits": precision
-                            },
-                            "conv_blocks.0.relu_pw": {
-                                "x_bits": precision
-                            },
-                            "conv_blocks.1.relu_dw": {
-                                "x_bits": precision
-                            },
-                            "conv_blocks.1.relu_pw": {
-                                "x_bits": precision
-                            },
-                            "conv_blocks.2.relu_dw": {
-                                "x_bits": precision
-                            },
-                            "conv_blocks.2.relu_pw": {
-                                "x_bits": precision
-                            },
-                            "conv_blocks.3.relu_dw": {
-                                "x_bits": precision
-                            },
-                            "conv_blocks.3.relu_pw": {
-                                "x_bits": precision
-                            }
-                        }
+        with open(precision_dict_path) as precision_dict_file:
+            precision_dict = json.load(precision_dict_file)
 
         print (quantized_model)
 

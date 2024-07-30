@@ -1,0 +1,71 @@
+{
+    "conv1": {
+        "W_bits": 7
+    },
+    "relu1": {
+        "x_bits": 8
+    },
+    "conv2": {
+        "W_bits": 7
+    },
+    "relu2": {
+        "x_bits": 8
+    },
+    "conv3": {
+        "W_bits": 7
+    },
+    "relu3": {
+        "x_bits": 8
+    },
+    "conv4": {
+        "W_bits": 7
+    },
+    "relu4": {
+        "x_bits": 8
+    },
+    "conv5": {
+        "W_bits": 7
+    },
+    "relu5": {
+        "x_bits": 8
+    },
+    "conv6": {
+        "W_bits": 7
+    },
+    "relu6": {
+        "x_bits": 8
+    },
+    "conv7": {
+        "W_bits": 7
+    },
+    "relu7": {
+        "x_bits": 8
+    },
+    "conv8": {
+        "W_bits": 7
+    },
+    "relu8": {
+        "x_bits": 8
+    },
+    "conv9": {
+        "W_bits": 7
+    },
+    "relu9": {
+        "x_bits": 8
+    },
+    "conv10": {
+        "W_bits": 7
+    },
+    "relu10": {
+        "x_bits": 8
+    },
+    "conv11": {
+        "W_bits": 7
+    },
+    "relu11": {
+        "x_bits": 8
+    },
+    "fc1": {
+        "W_bits": 7
+    }
+}
