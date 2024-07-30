@@ -30,6 +30,7 @@ if [ "$1" == "-h" ] ; then
     echo "NETWORK_DIR_SRC: Source directory"
     echo "CORE: number of inference cores"
     echo "TRAINABLE_LAYERS: number of trainable layers"
+    echo "QUANTIZER: quantization tool"
     exit 0
 fi
 
@@ -53,7 +54,10 @@ export NETWORK_DIR_DEST=$5
 export NETWORK_DIR_SRC=$6
 export CORES=$7
 export TRAINABLE_LAYERS=$8
+export QUANTIZER=$9
 export CUR_DIR=$PWD
+
+export TMP_DIR="TMP_DIR"
 
 
 if [[ $SDK == "pulp_sdk" ]]
@@ -84,16 +88,29 @@ fi
 rm -rf $NETWORK_DIR_DEST
 mkdir -p $NETWORK_DIR_DEST
 
-# rm -rf $NETWORK_DIR_SRC
-# mkdir -p $NETWORK_DIR_SRC
-# cp $CUR_DIR/quantization/DSCNN_NEMO_MELS40_PYTORCH/input.txt $NETWORK_DIR_SRC/
-# cp $CUR_DIR/quantization/DSCNN_NEMO_MELS40_PYTORCH/model.onnx $NETWORK_DIR_SRC/model.onnx
-# cp $CUR_DIR/quantization/DSCNN_NEMO_MELS40_PYTORCH/out_layer*.txt $NETWORK_DIR_SRC/
+rm -rf $TMP_DIR
+mkdir -p $TMP_DIR
+cp $CUR_DIR/$NETWORK_DIR_SRC/input.txt $TMP_DIR/
+if [[ $QUANTIZER == "NEMO" ]]
+then
+  cp $CUR_DIR/$NETWORK_DIR_SRC/model.onnx $TMP_DIR/model.onnx
+elif [[ $QUANTIZER == "Quantlab" ]]
+then
+  cp $CUR_DIR/$NETWORK_DIR_SRC/example_quantized_ql_integerized.onnx $TMP_DIR/model.onnx 
+fi
+cp $CUR_DIR/$NETWORK_DIR_SRC/out_layer*.txt $TMP_DIR/
 
-# Generate .json
-JSON_STRING='{"BNRelu_bits": 32, "onnx_file": "'${CUR_DIR}'/'${NETWORK_DIR_SRC}'/model.onnx", "code reserved space": 1320000}'
+if [[ $QUANTIZER == "NEMO" ]]
+then
+  # Generate .json
+  JSON_STRING='{"BNRelu_bits": 32, "onnx_file": "'${CUR_DIR}'/'${TMP_DIR}'/model.onnx", "code reserved space": 1320000}'
+elif [[ $QUANTIZER == "Quantlab" ]]
+then 
+  # Generate .json
+  JSON_STRING='{"BNRelu_bits": 32, "onnx_file": "'${CUR_DIR}'/'${TMP_DIR}'/model.onnx", "code reserved space": 150000, "n_inputs": 1, "input_bits": 8, "input_signed": true}'
+fi
 echo $JSON_STRING > config_network.json
-cp $CUR_DIR/config_network.json $NETWORK_DIR_SRC/
+mv $CUR_DIR/config_network.json $TMP_DIR
 
 cd dory/
 
@@ -104,16 +121,16 @@ if [[ $MEMORY == "3" ]]
 then
   if [[ $COMPUTE == "0" ]]
   then
-    python network_generate.py Quantlab PULP.PULP_gvsoc $CUR_DIR/$NETWORK_DIR_SRC/config_DSCNN_QUANTLIB.json --app_dir ../$NETWORK_DIR_DEST/ --verbose_level None --n_trainable_layers $TRAINABLE_LAYERS
+    python network_generate.py $QUANTIZER PULP.PULP_gvsoc $CUR_DIR/$TMP_DIR/config_network.json --app_dir ../$NETWORK_DIR_DEST/ --verbose_level None --n_trainable_layers $TRAINABLE_LAYERS
   elif [[ $COMPUTE == "1" ]]
   then
-    python network_generate.py Quantlab PULP.GAP9 $CUR_DIR/$NETWORK_DIR_SRC/config_DSCNN_QUANTLIB.json --app_dir ../$NETWORK_DIR_DEST/ --verbose_level None --n_trainable_layers $TRAINABLE_LAYERS
+    python network_generate.py $QUANTIZER PULP.GAP9 $CUR_DIR/$TMP_DIR/config_network.json --app_dir ../$NETWORK_DIR_DEST/ --verbose_level None --n_trainable_layers $TRAINABLE_LAYERS
   elif [[ $COMPUTE == "2" ]]
   then
-    python network_generate.py Quantlab PULP.GAP9_NE16 $CUR_DIR/$NETWORK_DIR_SRC/config_DSCNN_QUANTLIB.json --app_dir ../$NETWORK_DIR_DEST/ --verbose_level None --n_trainable_layers $TRAINABLE_LAYERS
+    python network_generate.py $QUANTIZER PULP.GAP9_NE16 $CUR_DIR/$TMP_DIR/config_network.json --app_dir ../$NETWORK_DIR_DEST/ --verbose_level None --n_trainable_layers $TRAINABLE_LAYERS
   fi
 else
-  python network_generate.py Quantlab PULP.GAP8_L2 $CUR_DIR/$NETWORK_DIR_SRC/config_DSCNN_QUANTLIB.json --app_dir ../$NETWORK_DIR_DEST/ --verbose_level None --n_trainable_layers $TRAINABLE_LAYERS
+  python network_generate.py $QUANTIZER PULP.GAP8_L2 $CUR_DIR/$TMP_DIR/config_network.json --app_dir ../$NETWORK_DIR_DEST/ --verbose_level None --n_trainable_layers $TRAINABLE_LAYERS
 fi
 
 
@@ -140,3 +157,4 @@ cp -r $CUR_DIR/$NETWORK_DIR_DEST/src/ $CUR_DIR/../$NETWORK_DIR_DEST/
 cp -r $CUR_DIR/$NETWORK_DIR_DEST/inc/ $CUR_DIR/../$NETWORK_DIR_DEST/
 cp -r $CUR_DIR/$NETWORK_DIR_DEST/hex/ $CUR_DIR/../$NETWORK_DIR_DEST/
 rm $CUR_DIR/../$NETWORK_DIR_DEST/src/main.c
+rm -rf $CUR_DIR/$NETWORK_DIR_DEST
