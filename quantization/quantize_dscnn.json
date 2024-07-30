@@ -53,13 +53,13 @@
         "noise_mode": "noiseless",
         "snr_range": [0],
         "model": "DSCNN",
-        "channels": 64,
+        "channels": 172,
         "blocks": 4,
         "use_pretrained": 1,
         "denoisify": 0,
         "reverb": "false",
         "reverb_mode": "training_only",
-        "pretrained_directory": "models/v5/nakws/DSCNN_['OMEETING']_2024_07_28_15_21_33/",
+        "pretrained_directory": "models/v5/nakws/DSCNN_['OMEETING']_2024_07_30_13_09_15/",
         "epochs":40,
         "batch_size":128,
         "loss": "crossentropy",
@@ -78,7 +78,8 @@
         "wanted_wordsgscv2_35w":["yes", "no", "up", "down", "left", "right", "on", "off", "stop", "go", "backward", "bed",
                                  "bird", "cat", "dog", "eight", "five", "follow", "forward", "four", "happy", "house", "learn",
                                  "marvin", "nine", "one", "seven", "sheila", "six", "three", "tree", "two", "visual", "wow", "zero"],
-        "wanted_frequency_mswc": 5000
+        "wanted_frequency_mswc": 5000,
+        "quantization_dictionary": "precision_hrch.json"
     },
 
     "experimental_parameters": {

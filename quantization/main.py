@@ -88,7 +88,7 @@ def main():
     parser.add_argument('--wanted_words_gscv2_12w', nargs="*", type=str, default=None, help='List of GSC12 words')
     parser.add_argument('--wanted_words_gscv2_35w', nargs="*", type=str, default=None, help='List of GSC35 words')
     parser.add_argument('--wanted_frequency_mswc', type=str, default=None, help='Threshold in samples/class to select MSWC words')
-    parser.add_argument('--quantization_dictionary', type=str, default='precision_classic.json', help = 'Quantization precision dictionary')
+    parser.add_argument('--quantization_dictionary', type=str, default=None, help = 'Quantization precision dictionary')
 
     parser.add_argument('--train', type=int, default=None, help='Perform (pre)training model')
     parser.add_argument('--metatrain', type=int, default=None, help='Perform metatraining for the model')
@@ -110,7 +110,7 @@ def main():
     parser.add_argument('--base_path', type=str, default = None, help='Path to current directory')
     parser.add_argument('--model_path', type=str, default = None, help='Path where the model will be saved')
 
-    parser.add_argument('--config_file', type=str, default='train_dscnns.json', help = 'Configuration file')
+    parser.add_argument('--config_file', type=str, default=None, help = 'Configuration file')
 
 
     args = vars(parser.parse_args())

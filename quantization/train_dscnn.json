@@ -53,7 +53,7 @@
         "noise_mode": "noiseless",
         "snr_range": [0],
         "model": "DSCNN",
-        "channels": 64,
+        "channels": 276,
         "blocks": 4,
         "use_pretrained": 0,
         "denoisify": 0,
