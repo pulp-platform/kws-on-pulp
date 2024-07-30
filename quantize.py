@@ -42,7 +42,7 @@ from torch.utils.data import DataLoader
 from dataset import DatasetProcessor
 from datagenerator import DatasetCreator
 from utils import parameter_generation
-from dscnn import DSCNN, DSCNN
+from dscnn import DSCNN, DSCNNS, DSCNNM, DSCNNL
 
 # import the DORY backend
 from quantlib.backends.dory import export_net, DORYHarmonizePass, PACT_symbolic_trace
@@ -121,7 +121,7 @@ def get_ckpt(key : str, exp_id : int, ckpt_id : Union[int, str]):
     return torch.load(ckpt_filepath)
 
 def get_network(key : str, exp_id : int, ckpt_id : Union[int, str], quantized=False, pretrained='model.pth'):
-    with open('config_dscnn_tqt_8b.json', 'r') as fp:
+    with open('config_dscnns_tqt_8b.json', 'r') as fp:
         cfg = json.load(fp)
     qu = _QUANT_UTILS[key]
     quant_cfg = cfg['network']['quantize']['kwargs']
@@ -181,8 +181,6 @@ def validate(net : nn.Module, dl : torch.utils.data.DataLoader, print_interval :
             xb = xb.to(torch.int).to(torch.float32) # sufficient if eps==1
             
             # import IPython; IPython.embed()
-
-        print (xb[0][0][0])
 
         yn = net(xb.to(device))
         n_tot += xb.shape[0]
@@ -294,7 +292,7 @@ def main():
                         help='Export RequantShift nodes instead of mul-add-div sequences in ONNX graph')
     parser.add_argument('--clip_inputs', action='store_true',
                         help='ghettofix to clip inputs to be unsigned')
-    parser.add_argument('--config_net_file', type=str, default='config_DSCNN_tqt_8b.json', help = 'Network configuration file')
+    parser.add_argument('--config_net_file', type=str, default='config_dscnn_hierarchic_tqt_8b.json', help = 'Network configuration file')
     parser.add_argument('--config_env_file', type=str, default='config_env.json', help = 'Environment configuration file')
 
     args = vars(parser.parse_args())

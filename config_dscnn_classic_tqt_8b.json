@@ -30,77 +30,70 @@
         }
     },
     "network": {
-        "class": "MobileNetV1",
+        "class": "DSCNN",
         "kwargs": {
-            "pretrained": "/home/georgr/projects/mixed-precision-inference/ql-pact/systems/ILSVRC12/MobileNetV1/pretrained/MNv1_0.75_224_relu6.ckpt",
             "config": "standard",
-            "capacity": 0.75
+            "capacity": 1.0
         },
         "quantize": {
             "function": "pact_recipe",
             "kwargs": {
                 "config": {
-                    "mixed_precision_search": {
-                        "enable": false,
-                        "min_wt_bits": 4,
-                        "min_act_bits": 2,
-                        "in_size": 224,
-                        "delta": 0.05,
-                        "mem_rw": 409600,
-                        "mem_ro": 209700152,
-                        "linear_layer_split_factor": 5,
-                        "method": "pulp"
-                    },
                     "PACTConv2d": {
-                        "stem_block.conv$": {},
-                        "conv_blocks.0.conv_dw$": {},
-                        "conv_blocks.0.conv_pw$": {},
-                        "conv_blocks.1.conv_dw$": {},
-                        "conv_blocks.1.conv_pw$": {},
-                        "conv_blocks.2.conv_dw$": {},
-                        "conv_blocks.2.conv_pw$": {},
-                        "conv_blocks.3.conv_dw$": {},
-                        "conv_blocks.3.conv_pw$": {},
+                        "conv1$": {},
+                        "conv2$": {},
+                        "conv3$": {},
+                        "conv4$": {},
+                        "conv5$": {},
+                        "conv6$": {},
+                        "conv7$": {},
+                        "conv8$": {},
+                        "conv9$": {},
+                        "conv10$": {},
+                        "conv11$": {},
                         "kwargs": {
                             "n_levels": 256,
                             "quantize": "per_channel",
                             "init_clip": "max",
-                            "learn_clip": false,
+                            "learn_clip": true,
                             "symm_wts": true,
-                            "tqt": false
+                            "tqt": true
                         }
                     },
-
                     "PACTLinear": {
                         "fc1$": {},
                         "kwargs": {
                             "n_levels": 256,
                             "quantize": "per_layer",
                             "init_clip": "max",
-                            "learn_clip": false,
+                            "learn_clip": true,
                             "symm_wts": true,
-                            "tqt": false
+                            "tqt": true
                         }
                     },
                     "PACTUnsignedAct": {
-                       "stem_block.relu$": {},
-                        "conv_blocks.0.relu_dw$": {},
-                        "conv_blocks.0.relu_pw$": {},
-                        "conv_blocks.1.relu_dw$": {},
-                        "conv_blocks.1.relu_pw$": {},
-                        "conv_blocks.2.relu_dw$": {},
-                        "conv_blocks.2.relu_pw$": {},
-                        "conv_blocks.3.relu_dw$": {},
-                        "conv_blocks.3.relu_pw$": {},
+                        "relu1$": {},
+                        "relu2$": {},
+                        "relu3$": {},
+                        "relu4$": {},
+                        "relu5$": {},
+                        "relu6$": {},
+                        "relu7$": {},
+                        "relu8$": {},
+                        "relu9$": {},
+                        "relu10$": {},
+                        "relu11$": {},                        
                         "kwargs": {
                             "n_levels": 256,
-                            "init_clip": "const",
-                            "nb_std": 3,
-                            "act_kind": "relu6",
+                            "nb_std": 256,
+                            "init_clip": "max",
                             "noisy": false,
-                            "tqt": false,
+                            "rounding": true,
                             "learn_clip": true,
-                            "rounding": true
+                            "tqt": true,
+                            "upper_percentile": 1.0,
+                            "lower_percentile": 0.0,
+                            "leaky": 0.0
                         }
                     },
                     "harmonize": {
@@ -125,13 +118,13 @@
         },
         "gd": {
             "opt": {
-                "class": "PACTSGD",
+                "class": "SGD",
+                "takes_net": false,
                 "kwargs": {
-                    "pact_decay": 0.001,
-                    "lr": 0.001,
-                    "momentum": 0.9
-                },
-                "takes_net": true
+                    "lr": 0.00075,
+                    "momentum": 0.9,
+                    "weight_decay": 4e-5
+                }
             },
             "lr_sched": {
                 "class": "HandScheduler",
@@ -144,45 +137,34 @@
                 }
             }
         },
-        "n_epochs": 11,
+        "n_epochs": 12,
         "quantize": {
             "function": "get_pact_controllers",
             "kwargs": {
                 "schedules": {
-                    "activation": {
-                        "0": [
-                            "verbose_on",
-                            "start"
-                        ]
-                    },
                     "linear": {
-                        "0": [
-                            "verbose_on",
-                            "start"
-                        ]
+                        "0": ["start", "verbose_on"]
+                    },
+                    "activation": {
+                        "1": ["start", "verbose_on"]
                     }
                 },
                 "kwargs_linear": {
-                    "update_every": "batch"
                 },
                 "kwargs_activation": {
                     "init_clip_hi": 6.0
                 }
             }
+
         }
     },
     "meters": {
         "train": {
             "compute_profiling_statistic": false,
-            "compute_task_statistic": true,
-            "tensor_statistics": [
-            ]
+            "compute_task_statistic": true
         },
         "valid": {
-            "compute_profiling_statistic": false
+            "compute_profiling_statistic": true
         }
-    },
-    "experiment": {
-        "ckpt_period": 1
     }
 }

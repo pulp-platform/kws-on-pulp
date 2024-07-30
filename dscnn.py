@@ -62,122 +62,6 @@ class LinearTester (torch.nn.Module):
         return x
 
 
-
-class DSCNNFlat(torch.nn.Module):
-    def __init__(self, use_bias=False):
-        super(DSCNNFlat, self).__init__()
-
-        self.pad1  = nn.ConstantPad2d((1, 1, 5, 5), value=0.0)
-        self.conv1 = torch.nn.Conv2d(in_channels = 1, out_channels = 64, kernel_size = (10, 4), stride = (2, 2), bias = use_bias)
-        self.bn1   = torch.nn.BatchNorm2d(64)
-        self.relu1 = torch.nn.ReLU()
-
-        self.pad2  = nn.ConstantPad2d((1, 1, 1, 1), value=0.)
-        self.conv2 = torch.nn.Conv2d(in_channels = 64, out_channels = 64, kernel_size = (3, 3), stride = (1, 1), groups = 64, bias = use_bias)
-        self.bn2   = torch.nn.BatchNorm2d(64)
-        self.relu2 = torch.nn.ReLU()
-        self.conv3 = torch.nn.Conv2d(in_channels = 64, out_channels = 64, kernel_size = (1, 1), stride = (1, 1), bias = use_bias)
-        self.bn3   = torch.nn.BatchNorm2d(64)
-        self.relu3 = torch.nn.ReLU()
-
-        self.pad4  = nn.ConstantPad2d((1, 1, 1, 1), value=0.)
-        self.conv4 = torch.nn.Conv2d(in_channels = 64, out_channels = 64, kernel_size = (3, 3), stride = (1, 1), groups = 64, bias = use_bias)
-        self.bn4   = torch.nn.BatchNorm2d(64)
-        self.relu4 = torch.nn.ReLU()
-        self.conv5 = torch.nn.Conv2d(in_channels = 64, out_channels = 64, kernel_size = (1, 1), stride = (1, 1), bias = use_bias)
-        self.bn5   = torch.nn.BatchNorm2d(64)
-        self.relu5 = torch.nn.ReLU()
-
-        self.pad6  = nn.ConstantPad2d((1, 1, 1, 1), value=0.)
-        self.conv6 = torch.nn.Conv2d(in_channels = 64, out_channels = 64, kernel_size = (3, 3), stride = (1, 1), groups = 64, bias = use_bias)
-        self.bn6   = torch.nn.BatchNorm2d(64)
-        self.relu6 = torch.nn.ReLU()
-        self.conv7 = torch.nn.Conv2d(in_channels = 64, out_channels = 64, kernel_size = (1, 1), stride = (1, 1), bias = use_bias)
-        self.bn7   = torch.nn.BatchNorm2d(64)
-        self.relu7 = torch.nn.ReLU()
-
-        self.pad8  = nn.ConstantPad2d((1, 1, 1, 1), value=0.)
-        self.conv8 = torch.nn.Conv2d(in_channels = 64, out_channels = 64, kernel_size = (3, 3), stride = (1, 1), groups = 64, bias = use_bias)
-        self.bn8   = torch.nn.BatchNorm2d(64)
-        self.relu8 = torch.nn.ReLU()
-        self.conv9 = torch.nn.Conv2d(in_channels = 64, out_channels = 64, kernel_size = (1, 1), stride = (1, 1), bias = use_bias)
-        self.bn9   = torch.nn.BatchNorm2d(64)
-        self.relu9 = torch.nn.ReLU()
-
-        self.avg   = torch.nn.AvgPool2d(kernel_size=(25, 5), stride=1)
-        self.fc1   = torch.nn.Linear(64, 12, bias=use_bias)
-
-        self._initialize_weights(seed = 42)
-
-
-    def _initialize_weights(self, seed : int = -1):
-
-        if seed >= 0:
-            torch.manual_seed(seed)
-
-        for m in self.modules():
-
-            if isinstance(m, torch.nn.Conv2d):
-                torch.nn.init.constant_(m.weight, 0.1)
-                if m.bias is not None:
-                    torch.nn.init.constant_(m.bias, 0.1)
-
-            elif isinstance(m, torch.nn.BatchNorm2d):
-                torch.nn.init.constant_(m.weight, 0.1)
-                if m.bias is not None:
-                    torch.nn.init.constant_(m.bias, 0.1)
-
-            elif isinstance(m, torch.nn.Linear):
-                torch.nn.init.constant_(m.weight, 0.1)
-                if m.bias is not None:
-                    torch.nn.init.constant_(m.bias, 0.1)
-
-        
-    def forward(self, x):
-        x = self.pad1 (x)
-        x = self.conv1(x)       
-        x = self.bn1  (x)         
-        x = self.relu1(x)
-        
-        x = self.pad2 (x)
-        x = self.conv2(x)           
-        x = self.bn2  (x)            
-        x = self.relu2(x)            
-        x = self.conv3(x)            
-        x = self.bn3  (x)            
-        x = self.relu3(x)
-        
-        x = self.pad4 (x)
-        x = self.conv4(x)            
-        x = self.bn4  (x)            
-        x = self.relu4(x)            
-        x = self.conv5(x)            
-        x = self.bn5  (x)            
-        x = self.relu5(x)            
-
-        x = self.pad6 (x)
-        x = self.conv6(x)          
-        x = self.bn6  (x)            
-        x = self.relu6(x)          
-        x = self.conv7(x)            
-        x = self.bn7  (x)            
-        x = self.relu7(x)
-        
-        x = self.pad8 (x)            
-        x = self.conv8(x)            
-        x = self.bn8  (x)            
-        x = self.relu8(x)            
-        x = self.conv9(x)            
-        x = self.bn9  (x)            
-        x = self.relu9(x)          
-
-        x = self.avg(x)            
-        x = torch.flatten(x, 1) 
-        x = self.fc1(x)
-            
-        return x
-
-
 class DSCNN(torch.nn.Module):
     def __init__(self, n_channels = 64, n_blocks = 4, n_classes = 12, use_bias = False, stem = 'asym', padding='asym', device = 'cpu'):
         super(DSCNN, self).__init__()
@@ -411,6 +295,206 @@ class DSCNNS(torch.nn.Module):
         x = torch.flatten(x, 1) 
         x = self.fc1(x)
         
+        return x # To be compatible with Dory
+        # return F.log_softmax(x, dim=1)
+        # return F.softmax(x, dim=1) 
+
+
+class DSCNNM(torch.nn.Module):
+    def __init__(self, n_channels = 64, n_blocks = 4, n_classes = 12, use_bias = False, stem = 'sym', padding='asym', device = 'cpu'):
+        super(DSCNNM, self).__init__()
+
+        self.pad1  = nn.ConstantPad2d((1, 1, 1, 0), value=0.0)
+        self.conv1 = torch.nn.Conv2d(in_channels = 1, out_channels = 172, kernel_size = (3, 3), stride = (2, 2), bias = use_bias)
+        self.bn1   = torch.nn.BatchNorm2d(172)
+        self.relu1 = torch.nn.ReLU()
+
+        self.pad2  = nn.ConstantPad2d((1, 1, 1, 0), value=0.)
+        self.conv2 = torch.nn.Conv2d(in_channels = 172, out_channels = 172, kernel_size = (3, 3), stride = (1, 1), groups = 172, bias = use_bias)
+        self.bn2   = torch.nn.BatchNorm2d(172)
+        self.relu2 = torch.nn.ReLU()
+        self.conv3 = torch.nn.Conv2d(in_channels = 172, out_channels = 172, kernel_size = (1, 1), stride = (1, 1), bias = use_bias)
+        self.bn3   = torch.nn.BatchNorm2d(172)
+        self.relu3 = torch.nn.ReLU()
+
+        self.pad4  = nn.ConstantPad2d((1, 1, 1, 0), value=0.)
+        self.conv4 = torch.nn.Conv2d(in_channels = 172, out_channels = 172, kernel_size = (3, 3), stride = (1, 1), groups = 172, bias = use_bias)
+        self.bn4   = torch.nn.BatchNorm2d(172)
+        self.relu4 = torch.nn.ReLU()
+        self.conv5 = torch.nn.Conv2d(in_channels = 172, out_channels = 172, kernel_size = (1, 1), stride = (1, 1), bias = use_bias)
+        self.bn5   = torch.nn.BatchNorm2d(172)
+        self.relu5 = torch.nn.ReLU()
+
+        self.pad6  = nn.ConstantPad2d((1, 1, 1, 0), value=0.)
+        self.conv6 = torch.nn.Conv2d(in_channels = 172, out_channels = 172, kernel_size = (3, 3), stride = (1, 1), groups = 172, bias = use_bias)
+        self.bn6   = torch.nn.BatchNorm2d(172)
+        self.relu6 = torch.nn.ReLU()
+        self.conv7 = torch.nn.Conv2d(in_channels = 172, out_channels = 172, kernel_size = (1, 1), stride = (1, 1), bias = use_bias)
+        self.bn7   = torch.nn.BatchNorm2d(172)
+        self.relu7 = torch.nn.ReLU()
+
+        self.pad8  = nn.ConstantPad2d((1, 1, 1, 0), value=0.)
+        self.conv8 = torch.nn.Conv2d(in_channels = 172, out_channels = 172, kernel_size = (3, 3), stride = (1, 1), groups = 172, bias = use_bias)
+        self.bn8   = torch.nn.BatchNorm2d(172)
+        self.relu8 = torch.nn.ReLU()
+        self.conv9 = torch.nn.Conv2d(in_channels = 172, out_channels = 172, kernel_size = (1, 1), stride = (1, 1), bias = use_bias)
+        self.bn9   = torch.nn.BatchNorm2d(172)
+        self.relu9 = torch.nn.ReLU()
+
+        self.avg   = torch.nn.AvgPool2d(kernel_size=(20, 5), stride=1)
+        self.fc1   = torch.nn.Linear(172, 12, bias=use_bias)
+        
+    def forward(self, x):
+
+        x = self.pad1 (x)
+        x = self.conv1(x)       
+        x = self.bn1  (x)         
+        x = self.relu1(x)
+        
+        x = self.pad2 (x)
+        x = self.conv2(x)           
+        x = self.bn2  (x)            
+        x = self.relu2(x)            
+        x = self.conv3(x)            
+        x = self.bn3  (x)            
+        x = self.relu3(x)
+        
+        x = self.pad4 (x)
+        x = self.conv4(x)            
+        x = self.bn4  (x)            
+        x = self.relu4(x)            
+        x = self.conv5(x)            
+        x = self.bn5  (x)            
+        x = self.relu5(x)            
+
+        x = self.pad6 (x)
+        x = self.conv6(x)          
+        x = self.bn6  (x)            
+        x = self.relu6(x)          
+        x = self.conv7(x)            
+        x = self.bn7  (x)            
+        x = self.relu7(x)
+        
+        x = self.pad8 (x)            
+        x = self.conv8(x)            
+        x = self.bn8  (x)            
+        x = self.relu8(x)            
+        x = self.conv9(x)            
+        x = self.bn9  (x)            
+        x = self.relu9(x)               
+
+        x = self.avg(x)            
+        x = torch.flatten(x, 1) 
+        x = self.fc1(x)
+            
+        return x # To be compatible with Dory
+        # return F.log_softmax(x, dim=1)
+        # return F.softmax(x, dim=1) 
+
+
+class DSCNNL(torch.nn.Module):
+    def __init__(self, n_channels = 64, n_blocks = 4, n_classes = 12, use_bias = False, stem = 'sym', padding='asym', device = 'cpu'):
+        super(DSCNNL, self).__init__()
+
+        self.pad1  = nn.ConstantPad2d((1, 1, 1, 0), value=0.0)
+        self.conv1 = torch.nn.Conv2d(in_channels = 1, out_channels = 276, kernel_size = (3, 3), stride = (2, 2), bias = use_bias)
+        self.bn1   = torch.nn.BatchNorm2d(276)
+        self.relu1 = torch.nn.ReLU()
+
+        self.pad2  = nn.ConstantPad2d((1, 1, 1, 0), value=0.)
+        self.conv2 = torch.nn.Conv2d(in_channels = 276, out_channels = 276, kernel_size = (3, 3), stride = (1, 1), groups = 276, bias = use_bias)
+        self.bn2   = torch.nn.BatchNorm2d(276)
+        self.relu2 = torch.nn.ReLU()
+        self.conv3 = torch.nn.Conv2d(in_channels = 276, out_channels = 276, kernel_size = (1, 1), stride = (1, 1), bias = use_bias)
+        self.bn3   = torch.nn.BatchNorm2d(276)
+        self.relu3 = torch.nn.ReLU()
+
+        self.pad4  = nn.ConstantPad2d((1, 1, 1, 0), value=0.)
+        self.conv4 = torch.nn.Conv2d(in_channels = 276, out_channels = 276, kernel_size = (3, 3), stride = (1, 1), groups = 276, bias = use_bias)
+        self.bn4   = torch.nn.BatchNorm2d(276)
+        self.relu4 = torch.nn.ReLU()
+        self.conv5 = torch.nn.Conv2d(in_channels = 276, out_channels = 276, kernel_size = (1, 1), stride = (1, 1), bias = use_bias)
+        self.bn5   = torch.nn.BatchNorm2d(276)
+        self.relu5 = torch.nn.ReLU()
+
+        self.pad6  = nn.ConstantPad2d((1, 1, 1, 0), value=0.)
+        self.conv6 = torch.nn.Conv2d(in_channels = 276, out_channels = 276, kernel_size = (3, 3), stride = (1, 1), groups = 276, bias = use_bias)
+        self.bn6   = torch.nn.BatchNorm2d(276)
+        self.relu6 = torch.nn.ReLU()
+        self.conv7 = torch.nn.Conv2d(in_channels = 276, out_channels = 276, kernel_size = (1, 1), stride = (1, 1), bias = use_bias)
+        self.bn7   = torch.nn.BatchNorm2d(276)
+        self.relu7 = torch.nn.ReLU()
+
+        self.pad8  = nn.ConstantPad2d((1, 1, 1, 0), value=0.)
+        self.conv8 = torch.nn.Conv2d(in_channels = 276, out_channels = 276, kernel_size = (3, 3), stride = (1, 1), groups = 276, bias = use_bias)
+        self.bn8   = torch.nn.BatchNorm2d(276)
+        self.relu8 = torch.nn.ReLU()
+        self.conv9 = torch.nn.Conv2d(in_channels = 276, out_channels = 276, kernel_size = (1, 1), stride = (1, 1), bias = use_bias)
+        self.bn9   = torch.nn.BatchNorm2d(276)
+        self.relu9 = torch.nn.ReLU()
+
+        self.pad10  = nn.ConstantPad2d((1, 1, 1, 0), value=0.)
+        self.conv10 = torch.nn.Conv2d(in_channels = 276, out_channels = 276, kernel_size = (3, 3), stride = (1, 1), groups = 276, bias = use_bias)
+        self.bn10   = torch.nn.BatchNorm2d(276)
+        self.relu10 = torch.nn.ReLU()
+        self.conv11 = torch.nn.Conv2d(in_channels = 276, out_channels = 276, kernel_size = (1, 1), stride = (1, 1), bias = use_bias)
+        self.bn11   = torch.nn.BatchNorm2d(276)
+        self.relu11 = torch.nn.ReLU()
+
+        self.avg   = torch.nn.AvgPool2d(kernel_size=(19, 5), stride=1)
+        self.fc1   = torch.nn.Linear(276, 12, bias=use_bias)
+        
+    def forward(self, x):
+
+        x = self.pad1 (x)
+        x = self.conv1(x)       
+        x = self.bn1  (x)         
+        x = self.relu1(x)
+        
+        x = self.pad2 (x)
+        x = self.conv2(x)           
+        x = self.bn2  (x)            
+        x = self.relu2(x)            
+        x = self.conv3(x)            
+        x = self.bn3  (x)            
+        x = self.relu3(x)
+        
+        x = self.pad4 (x)
+        x = self.conv4(x)            
+        x = self.bn4  (x)            
+        x = self.relu4(x)            
+        x = self.conv5(x)            
+        x = self.bn5  (x)            
+        x = self.relu5(x)            
+
+        x = self.pad6 (x)
+        x = self.conv6(x)          
+        x = self.bn6  (x)            
+        x = self.relu6(x)          
+        x = self.conv7(x)            
+        x = self.bn7  (x)            
+        x = self.relu7(x)
+        
+        x = self.pad8 (x)            
+        x = self.conv8(x)            
+        x = self.bn8  (x)            
+        x = self.relu8(x)            
+        x = self.conv9(x)            
+        x = self.bn9  (x)            
+        x = self.relu9(x)          
+
+        x = self.pad10 (x)            
+        x = self.conv10(x)            
+        x = self.bn10  (x)            
+        x = self.relu10(x)            
+        x = self.conv11(x)            
+        x = self.bn11  (x)            
+        x = self.relu11(x)          
+
+        x = self.avg(x)            
+        x = torch.flatten(x, 1) 
+        x = self.fc1(x)
+            
         return x # To be compatible with Dory
         # return F.log_softmax(x, dim=1)
         # return F.softmax(x, dim=1) 
