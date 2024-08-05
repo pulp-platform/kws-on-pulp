@@ -95,7 +95,7 @@ _MNIST_EPS = 0.99
 # batch size is per device, determined on Nvidia RTX2080. You may have to change
 # this if you have different GPUs
 _QUANT_UTILS = {
-    'DSCNN':  QuantUtil(problem='MNIST', topo='DSCNN', quantize=quantize_net, get_controllers=controllers_net, network=DSCNN, in_shape=(1,1,49,10), eps_in=_MNIST_EPS, D=2**19, bs=256, get_in_shape=None, load_dataset_fn=DatasetProcessor.get_dataset, transform=None, quant_transform_args={'n_q':256}, n_levels_in=256, export_fn=export_net, code_size=150000)
+    'DSCNNS':  QuantUtil(problem='MNIST', topo='DSCNNS', quantize=quantize_net, get_controllers=controllers_net, network=DSCNNS, in_shape=(1,1,49,10), eps_in=_MNIST_EPS, D=2**19, bs=256, get_in_shape=None, load_dataset_fn=DatasetProcessor.get_dataset, transform=None, quant_transform_args={'n_q':256}, n_levels_in=256, export_fn=export_net, code_size=150000)
 }
 
 
@@ -121,7 +121,7 @@ def get_ckpt(key : str, exp_id : int, ckpt_id : Union[int, str]):
     return torch.load(ckpt_filepath)
 
 def get_network(key : str, exp_id : int, ckpt_id : Union[int, str], quantized=False, pretrained='model.pth'):
-    with open('config_dscnns_tqt_8b.json', 'r') as fp:
+    with open('config_dscnn_classic_tqt_8b.json', 'r') as fp:
         cfg = json.load(fp)
     qu = _QUANT_UTILS[key]
     quant_cfg = cfg['network']['quantize']['kwargs']
@@ -292,7 +292,7 @@ def main():
                         help='Export RequantShift nodes instead of mul-add-div sequences in ONNX graph')
     parser.add_argument('--clip_inputs', action='store_true',
                         help='ghettofix to clip inputs to be unsigned')
-    parser.add_argument('--config_net_file', type=str, default='config_dscnn_hierarchic_tqt_8b.json', help = 'Network configuration file')
+    parser.add_argument('--config_net_file', type=str, default='config_dscnn_classic_tqt_8b.json', help = 'Network configuration file')
     parser.add_argument('--config_env_file', type=str, default='config_env.json', help = 'Environment configuration file')
 
     args = vars(parser.parse_args())
@@ -377,7 +377,7 @@ def main():
     
     print ("==================================== Integerize network ====================================")
 
-    _QUANT_UTILS['DSCNN'].eps_in = eps_computed
+    _QUANT_UTILS['DSCNNS'].eps_in = eps_computed
 
     int_net = integerize_network(qnet, args['net'], args['fix_channels'], not args['no_dory_harmonize'], args['word_align_channels'], args['requant_node'])
 

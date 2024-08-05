@@ -63,7 +63,7 @@ class LinearTester (torch.nn.Module):
 
 
 class DSCNN(torch.nn.Module):
-    def __init__(self, n_channels = 64, n_blocks = 4, n_classes = 12, use_bias = False, stem = 'asym', padding='asym', device = 'cpu'):
+    def __init__(self, n_channels = 64, n_blocks = 4, n_classes = 12, use_bias = False, stem = 'sym', padding = 'asym', device = 'cpu'):
         super(DSCNN, self).__init__()
 
         self.n_channels = n_channels
@@ -72,11 +72,23 @@ class DSCNN(torch.nn.Module):
         self.use_bias = use_bias
         self.device = device
 
-        self.stem = 'sym'
-        self.padding =  'asym'
-        self.stem_block =  Conv_Stem_Sym(n_channels = self.n_channels, use_bias = self.use_bias).to(self.device)        
-        self.pad_block = nn.ConstantPad2d((1, 1, 1, 0), value=0.)
-        self.avg   = torch.nn.AvgPool2d(kernel_size=(20, 5), stride=1)
+        self.stem = stem
+        self.padding =  padding
+
+        if (stem == 'sym'):
+            self.stem_block =  Conv_Stem_Sym(n_channels = self.n_channels, use_bias = self.use_bias).to(self.device)       
+        elif (stem == 'asym'):
+            self.stem_block =  Conv_Stem_Asym(n_channels = self.n_channels, use_bias = self.use_bias).to(self.device)
+
+        if (self.padding == 'asym'):
+            self.pad_block = nn.ConstantPad2d((1, 1, 1, 0), value=0.)
+        elif (self.padding == 'sym'):
+            self.pad_block = nn.ConstantPad2d((1, 1, 1, 1), value=0.)
+
+        if (self.n_blocks == 4):
+            self.avg   = torch.nn.AvgPool2d(kernel_size=(20, 5), stride=1) # DSCNN S/M
+        elif (self.n_blocks == 5):
+            self.avg   = torch.nn.AvgPool2d(kernel_size=(19, 5), stride=1) # DSCNN L
 
 
         self.conv_blocks_list = [] 
