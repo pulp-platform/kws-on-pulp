@@ -54,7 +54,7 @@
         "snr_range": [0],
         "model": "DSCNN",
         "channels": 276,
-        "blocks": 4,
+        "blocks": 5,
         "use_pretrained": 0,
         "denoisify": 0,
         "reverb": "false",

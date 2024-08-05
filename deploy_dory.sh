@@ -38,7 +38,7 @@ fi
 # export LD_LIBRARY_PATH=/usr/pack/gcc-4.9.1-af/x86_64-rhe6-linux/lib64/:$LD_LIBRARY_PATH
 # export LD_LIBRARY_PATH=/usr/pack/gcc-4.9.1-af/x86_64-rhe6-linux/lib/:$LD_LIBRARY_PATH
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/scratch/wetterhorn/cioflanc/miniconda3/pkgs/mpfr-4.0.2-hb69a4c5_1/lib/
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/scratch/wetterhorn/cioflanc/teaching/classes/mlonmcu/mlonmcu_exercise6/exercise6/local_libs/
+# export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/scratch/wetterhorn/cioflanc/teaching/classes/mlonmcu/mlonmcu_exercise6/exercise6/local_libs/ # ???
 
 export CC=gcc-9.2.1
 export CXX=g++-9.2.1
@@ -121,16 +121,16 @@ if [[ $MEMORY == "3" ]]
 then
   if [[ $COMPUTE == "0" ]]
   then
-    python network_generate.py $QUANTIZER PULP.PULP_gvsoc $CUR_DIR/$TMP_DIR/config_network.json --app_dir ../$NETWORK_DIR_DEST/ --verbose_level None --n_trainable_layers $TRAINABLE_LAYERS
+    python network_generate.py $QUANTIZER PULP.PULP_gvsoc $CUR_DIR/$TMP_DIR/config_network.json --app_dir ../$NETWORK_DIR_DEST/ --verbose_level Check_all+Perf_final --n_trainable_layers $TRAINABLE_LAYERS
   elif [[ $COMPUTE == "1" ]]
   then
-    python network_generate.py $QUANTIZER PULP.GAP9 $CUR_DIR/$TMP_DIR/config_network.json --app_dir ../$NETWORK_DIR_DEST/ --verbose_level None --n_trainable_layers $TRAINABLE_LAYERS
+    python network_generate.py $QUANTIZER PULP.GAP9 $CUR_DIR/$TMP_DIR/config_network.json --app_dir ../$NETWORK_DIR_DEST/ --verbose_level Check_all+Perf_final --n_trainable_layers $TRAINABLE_LAYERS
   elif [[ $COMPUTE == "2" ]]
   then
-    python network_generate.py $QUANTIZER PULP.GAP9_NE16 $CUR_DIR/$TMP_DIR/config_network.json --app_dir ../$NETWORK_DIR_DEST/ --verbose_level None --n_trainable_layers $TRAINABLE_LAYERS
+    python network_generate.py $QUANTIZER PULP.GAP9_NE16 $CUR_DIR/$TMP_DIR/config_network.json --app_dir ../$NETWORK_DIR_DEST/ --verbose_level Check_all+Perf_final --n_trainable_layers $TRAINABLE_LAYERS
   fi
 else
-  python network_generate.py $QUANTIZER PULP.GAP8_L2 $CUR_DIR/$TMP_DIR/config_network.json --app_dir ../$NETWORK_DIR_DEST/ --verbose_level None --n_trainable_layers $TRAINABLE_LAYERS
+  python network_generate.py $QUANTIZER PULP.GAP8_L2 $CUR_DIR/$TMP_DIR/config_network.json --app_dir ../$NETWORK_DIR_DEST/ --verbose_level Check_all+Perf_final --n_trainable_layers $TRAINABLE_LAYERS
 fi
 
 
@@ -158,3 +158,5 @@ cp -r $CUR_DIR/$NETWORK_DIR_DEST/inc/ $CUR_DIR/../$NETWORK_DIR_DEST/
 cp -r $CUR_DIR/$NETWORK_DIR_DEST/hex/ $CUR_DIR/../$NETWORK_DIR_DEST/
 rm $CUR_DIR/../$NETWORK_DIR_DEST/src/main.c
 rm -rf $CUR_DIR/$NETWORK_DIR_DEST
+
+rm -rf $CUR_DIR/$TMP_DIR

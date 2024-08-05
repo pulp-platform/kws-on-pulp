@@ -38,7 +38,8 @@ class DSCNN(torch.nn.Module):
         self.padding =  padding
         self.stem_block =  Conv_Stem_Sym(n_channels = self.n_channels, use_bias = self.use_bias, block_idx = 0).to(self.device)        
         self.pad_block = nn.ConstantPad2d((1, 1, 1, 0), value=0.)
-        self.avg   = torch.nn.AvgPool2d(kernel_size=(20, 5), stride=1)
+        self.avg   = torch.nn.AvgPool2d(kernel_size=(20, 5), stride=1) # DSCNN S/M
+        # self.avg   = torch.nn.AvgPool2d(kernel_size=(19, 5), stride=1) # DSCNN L
 
 
         self.conv_blocks_list = [] 
