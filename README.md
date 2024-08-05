@@ -25,7 +25,7 @@ python main.py --config_file example.json
 cd ../..
 ```
 
-Alternatively, a pretrained model can be exported to FP32 and then quantized to INT8 through Quantlib. Note: set the model accordingly in `config_env.json`.
+Alternatively, a pretrained model can be exported to FP32 and then quantized to INT8 through Quantlib. Note: set the model accordingly in `config_env.json`. Moreover, manual changes are required to set the network topology and its dimensions and to select the appropiate config file.
 ```
 cd kws-on-gap9/
 python quantize.py --net DSCNN --fix_channels --word_align_channels --clip_inputs --pretrained path/to/model.pth --config_net_file config_dscnn_hierarchic_tqt_8b.json
@@ -53,8 +53,15 @@ cd kws-on-pulp/dory/
 
 Note that Trainlib requires L1 space, which should be taken from Dory. For now you have to manually modify the `L1.dimension` in `dory/dory/Hardware_targets/PULP/GAP9/HW_description.json`. 
 
+Cluster: 
 * DSCNN S: 110000
 * DSCNN M:  90000
+* DSCNN L:  60000
+
+Accelerator:
+
+* DSCNN S:  ?????
+* DSCNN M:  60000
 * DSCNN L:  60000
 
 ### [TRAIN] Generate PULP TrainLib-based C code
@@ -74,6 +81,8 @@ cd pulp-trainlib/
 The content of `net.{c,h}` needs to be modified using examples in the repo. The value of `eps_in` must be changed and can be found in the network source directory (see `pretrained model path`), in `epsilon.txt` for the `PACT_IntegerAvgPool2d` layer.
 
 ## [INFERENCE] Run on GAP9
+
+First, make sure to modify the `CMakeList.txt` to add the correct Trainlib and DORY directories, together with the number of channels of the deployed network.
 
 To run the network on GVSOC:
 ```

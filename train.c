@@ -42,19 +42,10 @@ void train(){
 
         for (int uttridx = 0; uttridx < 100; uttridx++){
 
-            // printf ("-----------------------------Loop training (iteration %i)-------------------------\n", uttridx);
+            PRINTF ("-----------------------------Loop training (iteration %i)-------------------------\n", uttridx);
 
             sampleidx = uttridx / 10;
             classidx = uttridx % 10 + 2; // no SILENCE, no UNKNOWN
-
-            // printf ("sampleidx: %i\n", sampleidx);
-            // printf ("classidx: %i\n", classidx);
-            // printf ("position: %i\n", ((classidx-2)*10+sampleidx));
-
-            // buggy sample ?!?!?!?
-            if (((classidx-2)*10+sampleidx) == 34){
-                continue; 
-            }
 
             char *utterance;
             switch (classidx) {
