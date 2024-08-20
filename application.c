@@ -39,9 +39,6 @@
 // Noise for testing
 #include "noise.h"
 
-// Measurement
-pi_gpio_e gpio_pin_measurement;
-unsigned int gpio_pin_measurement_id = 89;
 
 // Load args
 char *WavName = NULL;
@@ -59,7 +56,7 @@ void read_button(int * button_pressed){
 
 int application(void){
 
-    printf ("----------------------------- Initializing environment ---------------------------\n");
+    PRINTF ("----------------------------- Initializing environment ---------------------------\n");
 
     // Voltage-Frequency settings
     uint32_t voltage =VOLTAGE;
@@ -72,7 +69,7 @@ int application(void){
 #endif 
 
     //PMU_set_voltage(voltage, 0);
-    printf("Set VDD voltage as %.2f, FC Frequency as %d MHz, CL Frequency = %d MHz\n", 
+    PRINTF("Set VDD voltage as %.2f, FC Frequency as %d MHz, CL Frequency = %d MHz\n", 
         (float)voltage/1000, FREQ_FC, FREQ_CL);
 
     /****
@@ -89,7 +86,7 @@ int application(void){
         printf("Error ram open !\n");
         pmsis_exit(-3);
     }
-    printf("RAM Opened\n");
+    PRINTF("RAM Opened\n");
 
     /****
         Configure And open cluster. 
@@ -109,7 +106,7 @@ int application(void){
         PRINTF("Cluster open failed !\n");
         pmsis_exit(-4);
     }
-    printf("Cluster Opened\n");
+    PRINTF("Cluster Opened\n");
     pi_freq_set(PI_FREQ_DOMAIN_CL, FREQ_CL*1000*1000);
 
 
@@ -122,13 +119,10 @@ int application(void){
 
 
     // Measurement preparation
-    pi_pad_function_set(gpio_pin_measurement_id, 1);
-    pi_gpio_pin_configure(gpio_pin_measurement_id, PI_GPIO_OUTPUT);
-    pi_gpio_pin_write(gpio_pin_measurement_id, 0);
-    pi_gpio_pin_write(gpio_pin_measurement_id, 0);
-
-    // Measurement start
-    pi_gpio_pin_write(gpio_pin_measurement_id, 1);
+    pi_pad_function_set((unsigned int) 89, 1);
+    pi_gpio_pin_configure((unsigned int) 89, PI_GPIO_OUTPUT);
+    pi_gpio_pin_write((unsigned int) 89, 0);
+    WRITE_GPIO(0);
 
     // Dory init
     mem_init();
@@ -138,7 +132,28 @@ int application(void){
     PRINTF ("----------------------------- Read WAVs from filesystem ---------------------------\n");
 
     L3_wavs = ram_malloc(WAVRAM);
-    printf("\nL3_wavs alloc initial\t@ %d:\t%s\n", (unsigned int)L3_wavs, L3_wavs?"Ok":"Failed");
+    PRINTF("\nL3_wavs alloc initial\t@ %d:\t%s\n", (unsigned int)L3_wavs, L3_wavs?"Ok":"Failed");
+
+
+    #ifdef POWER
+
+    int sampleidx = 0;
+
+    short int *inWav = (short int *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(short)); 
+    if (inWav == NULL){
+        printf("Failed allocating inWav.\n");
+        pmsis_exit(-1);
+    }
+    header_struct header_info;
+    if (ReadWavFromFile(tinytestutter[sampleidx], inWav, AUDIO_BUFFER_SIZE*sizeof(short), &header_info)){
+        printf("Error reading wav file\n");
+        pmsis_exit(1);
+    }
+    ram_write(L3_wavs + (sampleidx)*AUDIO_BUFFER_SIZE*sizeof(short), inWav, AUDIO_BUFFER_SIZE*sizeof(short));
+
+    pi_l2_free(inWav, AUDIO_BUFFER_SIZE*sizeof(short));
+
+    #else 
 
     int startwavreading = pi_time_get_us();
     for (int i = 0; i < 100; i++) {
@@ -243,13 +258,13 @@ int application(void){
     int endwavreading = pi_time_get_us();
     printf("110/110 samples read, WAV reading is complete in %d us.\n", endwavreading - startwavreading);
 
+    #endif
+
     /* Backbone inference */
     l2_buffer = pi_l2_malloc(L2_MEMORY_SIZE);
     if (l2_buffer == NULL) {
         printf("failed to allocate memory for l2_buffer\n");
     }
-
-    network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, 0, 1); // L2_input_h extra-arg for L2-only
 
     /* Classifier preparation */
     pi_cluster_conf_init(&cl_conf);
@@ -301,7 +316,7 @@ int application(void){
     // Manually handling silence
     int threshold_counter = 0;
     
-    printf ("----------------------------- Starting application ---------------------------\n");
+    PRINTF ("----------------------------- Starting application ---------------------------\n");
 
     while (1){
     
@@ -489,7 +504,6 @@ int application(void){
         pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, args_inference_classifier));
         pi_cluster_close(&cluster_dev);
 
-        pi_gpio_pin_write(gpio_pin_measurement_id, 0);
 
         PRINTF("***************************** Finished measurements *****************************\n");
        
@@ -504,10 +518,6 @@ int application(void){
             dump_wav_close();
         #endif
 
-        // Measurements
-        // pmsis_exit(-1);
-        // return 0;
-
         pi_l2_free(MfccInSig_int16, sizeof(int16_t) * AUDIO_BUFFER_SIZE);
 
         int end_classif = pi_time_get_us();
@@ -521,7 +531,7 @@ int application(void){
         if (button_pressed){
             if (noise_train_src == ONLINE){
 
-                printf ("----------------------------- Button pressed, recording noise ---------------------------\n");
+                PRINTF ("----------------------------- Button pressed, recording noise ---------------------------\n");
                 
                 // wait 1s (for the previous non-noise content to be cleaned)
                 pi_time_wait_us (1000000);
@@ -542,13 +552,11 @@ int application(void){
             }
             else if (noise_train_src == OFFLINE){
 
-                printf ("----------------------------- Button pressed, loading noise ---------------------------\n");
+                PRINTF ("----------------------------- Button pressed, loading noise ---------------------------\n");
 
                 MFCC_IN_TYPE * RecordedNoise = (MFCC_IN_TYPE *) pi_l2_malloc(NOISE_LEN_S * AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
                 wav_to_array(WavName, RecordedNoise, 1, 0); // NoiseName, noise, save
             }
-
-            pi_gpio_pin_write(gpio_pin_measurement_id, 1);
 
             int evaluationtime = pi_time_get_us();
 
@@ -559,42 +567,39 @@ int application(void){
             correct_pre_val = 0;
             correct_post_val = 0;
 
-            printf ("----------------------------- Pre-ODDA evaluation -----------------------------\n");
-            
-            // TODO: Add online/offline decision
+            PRINTF ("----------------------------- Pre-ODDA evaluation -----------------------------\n");
+
+            #ifndef POWER
             evaluate_tinytest(0);
+            #endif
 
             int endevaluationtime = pi_time_get_us();
             PRINTF("Evaluation time: %i\n", endevaluationtime - evaluationtime);
 
-            printf("***************************** Finished pre-ODDA evaluation, now training... *****************************\n");
+            PRINTF("----------------------------- Finished pre-ODDA evaluation, now training... -----------------------------\n");
 
             int traintime = pi_time_get_us();
             train();
             int endtraintime = pi_time_get_us();
             PRINTF("Train time: %i\n", endtraintime - traintime);
 
-            printf ("----------------------------- Post-ODDA evaluation -----------------------------\n");
+            PRINTF ("----------------------------- Post-ODDA evaluation -----------------------------\n");
 
-            // TODO: Add online/offline decision
+            #ifndef POWER
             evaluate_tinytest(1);
+            #endif
 
             pmsis_exit(0);
             return; // breaking loop early
 
         }
 
-        // // block until next input audio frame is ready
-        // #ifdef  AUDIO_EVK
-        //     pi_gpio_pin_write(gpio_pin_o, 0);
-        // #endif
-
         // TODO: Trigger inference every 250 ms
         pi_time_wait_us(250);
 
     }
 
-    printf ("----------------------------- Application completed ---------------------------\n");
+    PRINTF ("----------------------------- Application completed ---------------------------\n");
 
     pmsis_exit(0);
     return 0;

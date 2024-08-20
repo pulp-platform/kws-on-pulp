@@ -26,15 +26,15 @@ set (MODEL_L3_FLASH   AT_MEM_L3_DEFAULTFLASH)
 set (EXEC_FROM_FLASH true)
 set (MODEL_L3_RAM   AT_MEM_L3_DEFAULTRAM)
 
-set (FREQ_CL 50) # DEMO
-set (FREQ_FC 50) # DEMO
-set (FREQ_SFU 50) # DEMO
-set (VOLTAGE 800) # DEMO
+# set (FREQ_CL 50) # DEMO
+# set (FREQ_FC 50) # DEMO
+# set (FREQ_SFU 50) # DEMO
+# set (VOLTAGE 800) # DEMO
 
-# set (FREQ_CL 370) # MEASUREMENT
-# set (FREQ_FC 370) # MEASUREMENT
-# set (FREQ_SFU 370) # MEASUREMENT
-# set (VOLTAGE 800) # MEASUREMENT
+set (FREQ_CL 370) # MEASUREMENT
+set (FREQ_FC 370) # MEASUREMENT
+set (FREQ_SFU 370) # MEASUREMENT
+set (VOLTAGE 800) # MEASUREMENT
 
 # set (FREQ_CL 240) # MEASUREMENT
 # set (FREQ_FC 240) # MEASUREMENT
@@ -204,9 +204,13 @@ list(APPEND TARGET_CFLAGS   -O2
                             -Wno-incompatible-pointer-types
 )
 
-list(APPEND TARGET_PREPROCESSOR # -DPERF
+list(APPEND TARGET_PREPROCESSOR 
                                 -DNUM_CORES=${NUM_CORES}
                                 -DGAP_SDK=${GAP_SDK}
+                                -DCONFIG_GAP9_EVK
+                                -DTARGET_CHIP_FAMILY_GAP9
+
+                                -DFS_READ_FS
                                 -DFLASH_TYPE=${FLASH_TYPE}
                                 -DUSE_${FLASH_TYPE}
                                 -DUSE_${RAM_TYPE}
@@ -216,32 +220,36 @@ list(APPEND TARGET_PREPROCESSOR # -DPERF
                                 -DFREQ_CL=${FREQ_CL}
                                 -DFREQ_SFU=${FREQ_SFU}
                                 -DVOLTAGE=${VOLTAGE}
+
                                 -DWAV_FILE=${WAV_FILE}
                                 -DMFCC=${MFCC}
                                 -DNOISE_EVAL=${NOISE_EVAL}
                                 -DUTTR_EVAL=${UTTR_EVAL}
                                 -DAPPL=${APPL}
                                 -DNCHANNELS=${NCHANNELS}
+
+                                -DCONFIG_FLASH_LAYOUT_CUSTOM
+                                -DMODEL_L2_MEMORY=${MODEL_L2_MEMORY}
+                                -DFABRIC
+                                -DCLUSTER
+                                -mhwloopalign
+                                -DMATMUL_TYPE_FW_L0=${MATMUL_TYPE_FW_L0}
+                                -DMATMUL_TYPE_WG_L0=${MATMUL_TYPE_WG_L0}
+                                -DMATMUL_TYPE_IG_L0=${MATMUL_TYPE_IG_L0}
+
                                 # -DPERF
                                 # -DPRINTDEB
                                 # -DPRINT_INOUT
                                 # -DCHECKSUM
                                 # -DVERBOSE
-                                -DSILENT
-                                -DCONFIG_GAP9_EVK
-                                -DFS_READ_FS
-                                -DCONFIG_FLASH_LAYOUT_CUSTOM
-                                -DMODEL_L2_MEMORY=${MODEL_L2_MEMORY}
-                                -DTARGET_CHIP_FAMILY_GAP9
-                                -DFABRIC
-                                -DCLUSTER
+                                # -DMEASURE
+                                # -DSTATS
                                 # -DDEBUG
                                 # -DPROF_NET
-                                -mhwloopalign
-                                # -DSTATS
-                                -DMATMUL_TYPE_FW_L0=${MATMUL_TYPE_FW_L0}
-                                -DMATMUL_TYPE_WG_L0=${MATMUL_TYPE_WG_L0}
-                                -DMATMUL_TYPE_IG_L0=${MATMUL_TYPE_IG_L0}
+                                -DPOWER
+                                -DSILENT
+
+
 
 )
 

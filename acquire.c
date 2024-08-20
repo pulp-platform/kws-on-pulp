@@ -101,12 +101,12 @@ void microphone_setup(){
     pi_sfu_conf_t conf = { .sfu_frequency=0 };
     if (pi_sfu_open(&conf))
         printf("SFU device open failed\n");
-    printf("SFU activated\n");
+    PRINTF("SFU activated\n");
 
     sfu_graph = pi_sfu_graph_open(&SFU_RTD(Graph));
     if (sfu_graph == NULL)
         printf("SFU graph open failed\n");
-    printf("Graph opened\n");
+    PRINTF("Graph opened\n");
 
 
     sfu_out_buffer_idx = 0;
@@ -126,7 +126,7 @@ void microphone_setup(){
     int err = configure_pdm();
     if (err != 0)
         printf("PDM interface init failed\n");
-    printf("PDM Rx interface configured\n");
+    PRINTF("PDM Rx interface configured\n");
 
     // Get port refs
     memout_port = pi_sfu_mem_port_get(sfu_graph, SFU_Name(Graph, MemOut1));

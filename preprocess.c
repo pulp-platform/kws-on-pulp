@@ -146,10 +146,6 @@ void preprocess(MFCC_IN_TYPE * input_buffer, uint8_t * output_buffer, int input_
         k++;        
     } 
 
-    // for (int i = 0; i < 490; i++){  
-    //     printf("%i\n", (char) ((int) floor(MfccOutputSignal[i] * 0.1118) + 128)); 
-    // }
-
     pi_l2_free(MfccInputSignal, 16000 * sizeof(MFCC_IN_TYPE));
     pi_l2_free(MfccOutputSignal, N_MFCC_WINS * N_MELS * sizeof(OUT_TYPE));
 }

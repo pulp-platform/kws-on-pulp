@@ -38,7 +38,7 @@ void train(){
 
     for (int epidx = 0; epidx < TRAIN_EPS; epidx++) {
 
-        printf ("Epoch %i\n", epidx);
+        PRINTF ("Epoch %i\n", epidx);
 
         for (int uttridx = 0; uttridx < 100; uttridx++){
 
@@ -95,7 +95,13 @@ void train(){
             // Load utterance from RAM
             short int *prepWav = NULL;
             prepWav = (short int *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(short));
+
+            #ifdef POWER
+            classidx = 2;
+            ram_read(prepWav, L3_wavs + 0 * AUDIO_BUFFER_SIZE*sizeof(short), AUDIO_BUFFER_SIZE*sizeof(short));
+            #else
             ram_read(prepWav, L3_wavs + ((classidx-2)*10+sampleidx)*AUDIO_BUFFER_SIZE*sizeof(short), AUDIO_BUFFER_SIZE*sizeof(short));
+            #endif
 
             MFCC_IN_TYPE *MfccInSig = (MFCC_IN_TYPE *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
             if (MfccInSig == NULL){
@@ -121,10 +127,28 @@ void train(){
                 MfccInSig[samplepos] = MfccInSig[samplepos]; // CIOFLANC: Add RecordedNoise
             }
 
+
+            // #ifdef POWER
+            // WRITE_GPIO(1);
+            // #endif
+
             preprocess(MfccInSig, l2_buffer, 0);
+
+            // #ifdef POWER
+            // WRITE_GPIO(0);
+            // #endif
+
+
+            // #ifdef POWER
+            // WRITE_GPIO(1);
+            // #endif
 
             // Extract backbone features
             network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, 0, 1); // L2_input_h extra-arg for L2-only
+
+            // #ifdef POWER
+            // WRITE_GPIO(0);
+            // #endif
 
             pi_cluster_conf_init(&cl_conf);
             pi_open_from_conf(&cluster_dev, &cl_conf);
@@ -132,6 +156,10 @@ void train(){
             {
               return -1;
             }
+
+            // #if defined MEASURE || defined POWER
+            // pmsis_exit(0);
+            // #endif
 
             int predidx = -1;
             float ce_loss = 0.;
@@ -150,6 +178,10 @@ void train(){
 
             pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, args_train_classifier));
             pi_cluster_close(&cluster_dev);
+
+            #if defined MEASURE || defined POWER
+            pmsis_exit(0);
+            #endif
         }
     }
 }

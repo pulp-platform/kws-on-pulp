@@ -60,6 +60,8 @@ typedef short int MFCC_IN_TYPE; // Save MFCCs works
 // User Push Button
 #define PAD_GPIO_UPB    (PI_PAD_086)
 
+#define WRITE_GPIO(x) pi_gpio_pin_write((unsigned int) 89, x)
+
 #ifdef SILENT
 # define PRINTF(...) ((void) 0)
 #else
@@ -122,7 +124,7 @@ void *l2_buffer_wgt_upd;
 MFCC_IN_TYPE *MfccInSig_buff[N_TINYTEST];
 
 // tinytest samples
-static char tinytestutter[40][200] = {
+static char tinytestutter[10][200] = {
 "/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser/res/tinytest/yes_e49428d9_nohash_3.wav",
 "/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser/res/tinytest/no_e49428d9_nohash_3.wav",
 "/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser/res/tinytest/up_0cb74144_nohash_2.wav",
