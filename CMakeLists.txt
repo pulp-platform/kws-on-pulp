@@ -21,6 +21,7 @@ set (io   host)
 set (DEMO 1)
 
 set (FLASH_TYPE DEFAULT)
+# set (FLASH_TYPE MRAM) # MRAM doesn't respond
 set (RAM_TYPE   DEFAULT)
 set (MODEL_L3_FLASH   AT_MEM_L3_DEFAULTFLASH)
 set (EXEC_FROM_FLASH true)
@@ -29,16 +30,19 @@ set (MODEL_L3_RAM   AT_MEM_L3_DEFAULTRAM)
 # set (FREQ_CL 50) # DEMO
 # set (FREQ_FC 50) # DEMO
 # set (FREQ_SFU 50) # DEMO
+# set (FREQ_PE 50) # DEMO
 # set (VOLTAGE 800) # DEMO
 
 set (FREQ_CL 370) # MEASUREMENT
 set (FREQ_FC 370) # MEASUREMENT
 set (FREQ_SFU 370) # MEASUREMENT
+set (FREQ_PE 370) # MEASUREMENT
 set (VOLTAGE 800) # MEASUREMENT
 
 # set (FREQ_CL 240) # MEASUREMENT
 # set (FREQ_FC 240) # MEASUREMENT
 # set (FREQ_SFU 240) # MEASUREMENT
+# set (FREQ_PE 240) # MEASUREMENT
 # set (VOLTAGE 650) # MEASUREMENT
 
 set (CLUSTER_STACK_SIZE 8192)
@@ -85,9 +89,9 @@ set(MFCC_SRC_CODE        ${BUILD_DIR}/MfccKernels.c)
 # # NOTE: Good accuracy when quantizing DSCNN S (classic) with Dory
 # Failing Quantlib-quantized NE16
 
-set(NCHANNELS 64)
-set(TRAINLIB_DIR         ${CMAKE_CURRENT_SOURCE_DIR}/DSCNNS_FP32_DEST_QL_HIER)
-set(DORY_DIR             ${CMAKE_CURRENT_SOURCE_DIR}/DSCNNS_CL8_DEST_QL_HIER)
+set(NCHANNELS 276)
+set(TRAINLIB_DIR         ${CMAKE_CURRENT_SOURCE_DIR}/DSCNNL_FP32_DEST_QL_HIER)
+set(DORY_DIR             ${CMAKE_CURRENT_SOURCE_DIR}/DSCNNL_CL8_DEST_QL_HIER)
 
 # set(NCHANNELS 64)
 # set(TRAINLIB_DIR         ${CMAKE_CURRENT_SOURCE_DIR}/models/v4/NMELS40/DSCNNS_DIR_DEST_NEMO_FP32)
@@ -219,6 +223,7 @@ list(APPEND TARGET_PREPROCESSOR
                                 -DFREQ_FC=${FREQ_FC}
                                 -DFREQ_CL=${FREQ_CL}
                                 -DFREQ_SFU=${FREQ_SFU}
+                                -DFREQ_PE=${FREQ_PE}
                                 -DVOLTAGE=${VOLTAGE}
 
                                 -DWAV_FILE=${WAV_FILE}
@@ -242,12 +247,14 @@ list(APPEND TARGET_PREPROCESSOR
                                 # -DPRINT_INOUT
                                 # -DCHECKSUM
                                 # -DVERBOSE
-                                # -DMEASURE
                                 # -DSTATS
                                 # -DDEBUG
                                 # -DPROF_NET
+                                # -DMEASURE
                                 -DPOWER
                                 -DSILENT
+
+                                # -DOPTIMIZE
 
 
 
@@ -299,6 +306,9 @@ target_compile_options(${TARGET_NAME} PUBLIC   ${TARGET_CFLAGS}
                                                ${TARGET_PREPROCESSOR}
 
 )
+
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g")
+
 target_link_libraries(${TARGET_NAME} PRIVATE m)
 target_link_libraries(${TARGET_NAME} PRIVATE ${TILER_LIB})
 list(APPEND TABLE_CFLAGS -lm)

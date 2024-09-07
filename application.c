@@ -59,14 +59,16 @@ int application(void){
     PRINTF ("----------------------------- Initializing environment ---------------------------\n");
 
     // Voltage-Frequency settings
-    uint32_t voltage =VOLTAGE;
+    uint32_t voltage = VOLTAGE;
     pi_freq_set(PI_FREQ_DOMAIN_FC,      FREQ_FC*1000*1000);
-    pi_freq_set(PI_FREQ_DOMAIN_PERIPH,  FREQ_FC*1000*1000);
+    pi_freq_set(PI_FREQ_DOMAIN_PERIPH,  FREQ_PE*1000*1000);
+    
 
-#ifdef AUDIO_EVK
-    pi_pmu_voltage_set(PI_PMU_VOLTAGE_DOMAIN_CHIP, VOLTAGE);
-    pi_pmu_voltage_set(PI_PMU_VOLTAGE_DOMAIN_CHIP, VOLTAGE);
-#endif 
+    pi_pmu_voltage_set(PI_PMU_VOLTAGE_DOMAIN_CHIP,VOLTAGE);
+    pi_time_wait_us(100000);
+    pi_pmu_voltage_set(PI_PMU_VOLTAGE_DOMAIN_CHIP,VOLTAGE);
+    pi_time_wait_us(100000);
+
 
     //PMU_set_voltage(voltage, 0);
     PRINTF("Set VDD voltage as %.2f, FC Frequency as %d MHz, CL Frequency = %d MHz\n", 
@@ -274,7 +276,7 @@ int application(void){
       return -1;
     }
     
-    l2_buffer_wgt_upd = pi_l2_malloc (NCHANNELS * N_CLASSES * 4);
+    l2_buffer_wgt_upd = pi_l2_malloc (NCHANNELS * N_CLASSES * sizeof(float));
     if (l2_buffer_wgt_upd == NULL) {
         printf("failed to allocate memory for l2_buffer_wgt_upd\n");
     }
@@ -555,7 +557,9 @@ int application(void){
                 PRINTF ("----------------------------- Button pressed, loading noise ---------------------------\n");
 
                 MFCC_IN_TYPE * RecordedNoise = (MFCC_IN_TYPE *) pi_l2_malloc(NOISE_LEN_S * AUDIO_BUFFER_SIZE * sizeof(MFCC_IN_TYPE));
+                #ifndef POWER
                 wav_to_array(WavName, RecordedNoise, 1, 0); // NoiseName, noise, save
+                #endif
             }
 
             int evaluationtime = pi_time_get_us();
