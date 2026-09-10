@@ -121,16 +121,16 @@ if [[ $MEMORY == "3" ]]
 then
   if [[ $COMPUTE == "0" ]]
   then
-    python network_generate.py $QUANTIZER PULP.PULP_gvsoc $CUR_DIR/$TMP_DIR/config_network.json --app_dir ../$NETWORK_DIR_DEST/ --verbose_level Check_all+Perf_final --n_trainable_layers $TRAINABLE_LAYERS
+    python network_generate.py $QUANTIZER PULP.PULP_gvsoc $CUR_DIR/$TMP_DIR/config_network.json --app_dir ../$NETWORK_DIR_DEST/ --verbose_level Check_all+Perf_final --perf_layer --n_trainable_layers $TRAINABLE_LAYERS
   elif [[ $COMPUTE == "1" ]]
   then
-    python network_generate.py $QUANTIZER PULP.GAP9 $CUR_DIR/$TMP_DIR/config_network.json --app_dir ../$NETWORK_DIR_DEST/ --verbose_level Check_all+Perf_final --n_trainable_layers $TRAINABLE_LAYERS
+    python network_generate.py $QUANTIZER PULP.GAP9 $CUR_DIR/$TMP_DIR/config_network.json --app_dir ../$NETWORK_DIR_DEST/ --verbose_level Check_all+Perf_final --perf_layer --n_trainable_layers $TRAINABLE_LAYERS
   elif [[ $COMPUTE == "2" ]]
   then
-    python network_generate.py $QUANTIZER PULP.GAP9_NE16 $CUR_DIR/$TMP_DIR/config_network.json --app_dir ../$NETWORK_DIR_DEST/ --verbose_level Check_all+Perf_final --n_trainable_layers $TRAINABLE_LAYERS
+    python network_generate.py $QUANTIZER PULP.GAP9_NE16 $CUR_DIR/$TMP_DIR/config_network.json --app_dir ../$NETWORK_DIR_DEST/ --verbose_level Check_all+Perf_final --perf_layer --n_trainable_layers $TRAINABLE_LAYERS
   fi
 else
-  python network_generate.py $QUANTIZER PULP.GAP8_L2 $CUR_DIR/$TMP_DIR/config_network.json --app_dir ../$NETWORK_DIR_DEST/ --verbose_level Check_all+Perf_final --n_trainable_layers $TRAINABLE_LAYERS
+  python network_generate.py $QUANTIZER PULP.GAP8_L2 $CUR_DIR/$TMP_DIR/config_network.json --app_dir ../$NETWORK_DIR_DEST/ --verbose_level Check_all+Perf_final --perf_layer --n_trainable_layers $TRAINABLE_LAYERS
 fi
 
 

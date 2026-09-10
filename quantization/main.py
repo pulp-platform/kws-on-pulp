@@ -29,7 +29,7 @@ import csv
 import glob
 
 from datagenerator import DatasetCreator
-from architectures.dscnn import DSCNN, DSCNNS, DSCNNM, DSCNNL
+from architectures.dscnn import DSCNN, DSCNNS, DSCNNM, DSCNNL, DSCNNS_T, DSCNNM_T, DSCNNL_T
 from train import Train
 from quantize import nemo_quantize
 
