@@ -11,7 +11,7 @@ measurement_energy = []
 measurement_curr = []
 measurement_power = []
 
-file = "classifier_370_800_cl1_s_kw6.csv"
+file = "240_650/240_650_l_bb_cl1.csv"
 
 # Open file  
 with open(file) as file_obj: 
@@ -32,13 +32,13 @@ with open(file) as file_obj:
     # file using reader object 
     for row in reader_obj: 
 
-        if (row[0] == "iteration"):
+        if (row[2] == "iteration"):
             continue
 
-        if (row[0] == "" and prev_idx == -1):
+        if (row[2] == "" and prev_idx == -1):
             continue
 
-        if (row[0] == ""):
+        if (row[2] == ""):
             measurement_sample_len.append(numpy.sum(curr_measurement_sample_len))
             measurement_us_len.append(numpy.sum(curr_measurement_us_len))
             measurement_energy.append(numpy.sum(curr_measurement_energy))
@@ -65,23 +65,23 @@ with open(file) as file_obj:
             curr_measurement_curr = []
             curr_measurement_power = []
 
-            curr_measurement_sample_len.append(float(row[3]))
-            curr_measurement_us_len.append(float(row[4]))
-            curr_measurement_energy.append(float(row[7]))
-            curr_measurement_curr.append(float(row[5]))
-            curr_measurement_power.append(float(row[6]))
+            curr_measurement_sample_len.append(float(row[5]))
+            curr_measurement_us_len.append(float(row[6]))
+            curr_measurement_energy.append(float(row[9]))
+            curr_measurement_curr.append(float(row[7]))
+            curr_measurement_power.append(float(row[8]))
 
         else:
-            curr_measurement_sample_len.append(float(row[3]))
-            curr_measurement_us_len.append(float(row[4]))
-            curr_measurement_energy.append(float(row[7]))
-            curr_measurement_curr.append(float(row[5]))
-            curr_measurement_power.append(float(row[6]))
+            curr_measurement_sample_len.append(float(row[5]))
+            curr_measurement_us_len.append(float(row[6]))
+            curr_measurement_energy.append(float(row[9]))
+            curr_measurement_curr.append(float(row[7]))
+            curr_measurement_power.append(float(row[8]))
 
-        if (row[0] == ""):
+        if (row[2] == ""):
             prev_idx = -1
         else:
-            prev_idx = int(row[0])
+            prev_idx = int(row[2])
 
 average_sample_len = numpy.average(measurement_sample_len)
 average_us_len = numpy.average(measurement_us_len)

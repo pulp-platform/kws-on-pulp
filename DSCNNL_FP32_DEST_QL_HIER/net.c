@@ -365,11 +365,11 @@ void net_step(void *args)
     } 
     LABEL[classidx] = 1.;
 
-    #ifdef POWER
-    WRITE_GPIO(1);
-    #endif
+    // #ifdef POWER
+    // WRITE_GPIO(1);
+    // #endif
 
-    for (int epoch=0; epoch<1; epoch++){
+    for (int epoch=0; epoch<1000; epoch++){
 
       #ifdef MEASURE
       start_us = pi_time_get_us();
@@ -428,13 +428,17 @@ void net_step(void *args)
       printf ("compute_loss,%d,us,%d,cycles\n", end_us - start_us, end_cycles - start_cycles);
       #endif
 
+
+      // printf ("Loss in training: %f\n", loss);
+
+
       // CIOFLANC: threshold should be decided externally
-      // float threshold = 9;
-      float threshold = 3;
+      float threshold = 9;
+      // float threshold = 3;
       if (loss > threshold) {
         continue;
       }
-
+      
       #ifdef VERBOSE
       printf ("Loss in training: %f\n", loss);
       #endif
@@ -471,9 +475,9 @@ void net_step(void *args)
 
     }
 
-    #ifdef POWER
-    WRITE_GPIO(0);
-    #endif
+    // #ifdef POWER
+    // WRITE_GPIO(0);
+    // #endif
 
     // Return updated weights
     for (int i = 0; i < WGT_SIZE_L0; i++) {

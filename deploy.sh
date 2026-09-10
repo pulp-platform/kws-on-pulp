@@ -68,6 +68,7 @@ elif [ "$SYSTEM" = "$WORK" ]
 then
     /usr/scratch/wetterhorn/cioflanc/tools/cmake-3.19.5-Linux-x86_64/bin/cmake -B build
     /usr/scratch/wetterhorn/cioflanc/tools/cmake-3.19.5-Linux-x86_64/bin/cmake --build build --target menuconfig
+    # runner_args="--trace=cluster/pe0/insn:tracer.txt" /usr/scratch/wetterhorn/cioflanc/tools/cmake-3.19.5-Linux-x86_64/bin/cmake --build build --target run
     /usr/scratch/wetterhorn/cioflanc/tools/cmake-3.19.5-Linux-x86_64/bin/cmake --build build --target run
 elif [ "$SYSTEM" = "$FEDERI" ]
 then

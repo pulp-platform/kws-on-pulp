@@ -31,18 +31,35 @@
 #include "net.h"
 
 
+#include "Gap.h"
+
 void train(){
 
     int sampleidx;
     int classidx;
 
+    printf ("0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789\n");
+
+
     for (int epidx = 0; epidx < TRAIN_EPS; epidx++) {
 
-        PRINTF ("Epoch %i\n", epidx);
+        // printf ("Epoch %i\n", epidx);
 
         for (int uttridx = 0; uttridx < 100; uttridx++){
 
-            PRINTF ("-----------------------------Loop training (iteration %i)-------------------------\n", uttridx);
+
+            if (uttridx == 0) {
+                #ifdef POWER
+                WRITE_GPIO(1);
+                #endif
+            }
+            else {
+                #ifdef POWER
+                WRITE_GPIO(1);
+                #endif
+            }
+
+            // printf ("-----------------------------Loop training (iteration %i)-------------------------\n", uttridx);
 
             sampleidx = uttridx / 10;
             classidx = uttridx % 10 + 2; // no SILENCE, no UNKNOWN
@@ -97,8 +114,8 @@ void train(){
             prepWav = (short int *) pi_l2_malloc(AUDIO_BUFFER_SIZE * sizeof(short));
 
             #ifdef POWER
-            classidx = 2;
-            ram_read(prepWav, L3_wavs + 0 * AUDIO_BUFFER_SIZE*sizeof(short), AUDIO_BUFFER_SIZE*sizeof(short));
+            classidx = 5;
+            ram_read(prepWav, L3_wavs + 3 * AUDIO_BUFFER_SIZE*sizeof(short), AUDIO_BUFFER_SIZE*sizeof(short));
             #else
             ram_read(prepWav, L3_wavs + ((classidx-2)*10+sampleidx)*AUDIO_BUFFER_SIZE*sizeof(short), AUDIO_BUFFER_SIZE*sizeof(short));
             #endif
@@ -127,10 +144,18 @@ void train(){
                 MfccInSig[samplepos] = MfccInSig[samplepos]; // CIOFLANC: Add RecordedNoise
             }
 
+            // if (uttridx == 0) {
 
-            // #ifdef POWER
-            // WRITE_GPIO(1);
-            // #endif
+            //     #ifdef POWER
+            //     WRITE_GPIO(0);
+            //     #endif
+            // }
+            // else {
+            //     #ifdef POWER
+            //     WRITE_GPIO(1);
+            //     #endif
+            // }
+
 
             preprocess(MfccInSig, l2_buffer, 0);
 
@@ -138,13 +163,34 @@ void train(){
             // WRITE_GPIO(0);
             // #endif
 
+            // if (uttridx == 0) {
 
-            // #ifdef POWER
-            // WRITE_GPIO(1);
-            // #endif
+            //     #ifdef POWER
+            //     WRITE_GPIO(0);
+            //     #endif
+            // }
+            // else {
+            //     #ifdef POWER
+            //     WRITE_GPIO(1);
+            //     #endif
+            // }
+
+            // gap_fc_starttimer();
+            // gap_fc_resethwtimer();
+            // int start_backbone_cycles = gap_fc_readhwtimer();    
+            // int start_backbone_us = pi_time_get_us();
+
+
 
             // Extract backbone features
             network_run(l2_buffer, L2_MEMORY_SIZE, l2_buffer, 0, 1); // L2_input_h extra-arg for L2-only
+
+
+            // int end_backbone_cycles = gap_fc_readhwtimer();
+            // int end_backbone_us = pi_time_get_us();
+            // printf ("backbone(us): %i\n", end_backbone_us- start_backbone_us);
+            // printf ("backbone(cycles): %i\n", end_backbone_cycles- start_backbone_cycles);
+
 
             // #ifdef POWER
             // WRITE_GPIO(0);
@@ -179,11 +225,36 @@ void train(){
             pi_cluster_send_task_to_cl(&cluster_dev, pi_cluster_task(&cl_task, net_step, args_train_classifier));
             pi_cluster_close(&cluster_dev);
 
-            #if defined MEASURE || defined POWER
-            pmsis_exit(0);
+
+            #ifdef POWER
+            WRITE_GPIO(0);
             #endif
+
+            if (uttridx == 5){
+                break;
+            }
+
+
+            // #if defined MEASURE || defined POWER
+            // pmsis_exit(0);
+            // #endif
+
         }
+
+        printf ("0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789\n");
+
+
+        #if defined MEASURE || defined POWER
+        pmsis_exit(0);
+        #endif
+
+
     }
+
+
+    // for (int i = 0; i < 768; i++){
+    //     printf("l2_buffer_wgt_upd[%i] = %f\n", i, ((float*)l2_buffer_wgt_upd)[i]);  
+    // }
 }
 
 
