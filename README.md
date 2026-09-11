@@ -54,7 +54,7 @@ If you use this work, please make sure to cite
 * *Efficient On-Device Domain Learning for Keyword Spotting on Ultra-Low-Power Platforms* [IEEE IOTJ 2026](https://ieeexplore.ieee.org/abstract/document/11352794)
 * *On-Device Domain Learning for Keyword Spotting on Low-Power Extreme Edge Embedded Systems* [IEEE AICAS 2024](https://ieeexplore.ieee.org/abstract/document/10595987)
 * [EENAKWS](https://www.ai4europe.eu/business-and-industry/case-studies/eenakws-robotics-r2-keyword-spotting)
-* [Towards On-device Domain Adaptation for Noise-Robust Keyword Spotting](https://ieeexplore.ieee.org/document/9869990)
+* *Towards On-device Domain Adaptation for Noise-Robust Keyword Spotting* [IEEE AICAS 2022](https://ieeexplore.ieee.org/document/9869990)
 
 
 ## Keyword Spotting Pipeline
