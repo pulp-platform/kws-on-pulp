@@ -1,6 +1,6 @@
 [submodule "quantization/nemo"]
 	path = quantization/nemo
-	url = https://github.com/pulp-platform/nemo.git
+	url = https://github.com/pulp-platform/nemo/tree/5ea3338ae172f96e996bdf75a5dacdf795282929
 
 [submodule "dory"]
 	path = dory
