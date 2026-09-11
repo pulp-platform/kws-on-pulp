@@ -112,4 +112,4 @@ dependencies:
       - werkzeug==1.0.1
       - wrapt==1.12.1
       - zipp==3.6.0
-prefix: /usr/scratch/wetterhorn/cioflanc/miniconda3/envs/nemo
+prefix: /path/to/cioflanc/miniconda3/envs/nemo

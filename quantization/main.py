@@ -199,7 +199,7 @@ def main():
 
     if (training_parameters['use_pretrained']):
         # Per-epoch analysis
-        model.load_state_dict(torch.load('/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser/kws-on-pulp/quantization/' + training_parameters['pretrained_directory']+'/model.pth', map_location=device))
+        model.load_state_dict(torch.load('/path/to/cioflanc/kws_on_gap9/tiny_denoiser/kws-on-pulp/quantization/' + training_parameters['pretrained_directory']+'/model.pth', map_location=device))
 
 
     if (experimental_parameters['evaluate']):

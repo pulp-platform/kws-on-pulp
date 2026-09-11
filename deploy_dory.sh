@@ -37,15 +37,15 @@ fi
 # export PATH=/usr/pack/gcc-4.9.1-af/x86_64-rhe6-linux/bin:$PATH
 # export LD_LIBRARY_PATH=/usr/pack/gcc-4.9.1-af/x86_64-rhe6-linux/lib64/:$LD_LIBRARY_PATH
 # export LD_LIBRARY_PATH=/usr/pack/gcc-4.9.1-af/x86_64-rhe6-linux/lib/:$LD_LIBRARY_PATH
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/scratch/wetterhorn/cioflanc/miniconda3/pkgs/mpfr-4.0.2-hb69a4c5_1/lib/
-# export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/scratch/wetterhorn/cioflanc/teaching/classes/mlonmcu/mlonmcu_exercise6/exercise6/local_libs/ # ???
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/path/to/cioflanc/miniconda3/pkgs/mpfr-4.0.2-hb69a4c5_1/lib/
+# export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/path/to/cioflanc/teaching/classes/mlonmcu/mlonmcu_exercise6/exercise6/local_libs/ # ???
 
 export CC=gcc-9.2.1
 export CXX=g++-9.2.1
 
-export GAP_SDK_DIR=/usr/scratch/wetterhorn/cioflanc/tools/gap_sdk/
-# export AUDIO_SAMPLE=/usr/scratch/wetterhorn/cioflanc/kws-on-pulp/kws-on-pulp/dataset/train/right/aa48c94a_nohash_2.wav
-export AUDIO_SAMPLE=/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser/kws-on-pulp/aa48c94a_nohash_2.wav
+export GAP_SDK_DIR=/path/to/cioflanc/tools/gap_sdk/
+# export AUDIO_SAMPLE=/path/to/cioflanc/kws-on-pulp/kws-on-pulp/dataset/train/right/aa48c94a_nohash_2.wav
+export AUDIO_SAMPLE=/path/to/cioflanc/kws_on_gap9/tiny_denoiser/kws-on-pulp/aa48c94a_nohash_2.wav
 export SDK=$1 # pulp_sdk, gap_sdk
 export MEMORY=$2 # 2, 3
 export PLATFORM=$3 # gvsoc, fpga, rtl
@@ -62,26 +62,26 @@ export TMP_DIR="TMP_DIR"
 
 if [[ $SDK == "pulp_sdk" ]]
 then
-  export PULP_RISCV_GCC_TOOLCHAIN=/usr/scratch/wetterhorn/cioflanc/tools/pulp_riscv_toolchain/v1.0.16-pulp-riscv-gcc-centos-7/
+  export PULP_RISCV_GCC_TOOLCHAIN=/path/to/cioflanc/tools/pulp_riscv_toolchain/v1.0.16-pulp-riscv-gcc-centos-7/
   # Select target
   if [[ $PLATFORM == "gvsoc" ]]
   then
-    source /usr/scratch/wetterhorn/cioflanc/tools/pulp-sdk/configs/pulp-open.sh
+    source /path/to/cioflanc/tools/pulp-sdk/configs/pulp-open.sh
   elif [[ $PLATFORM == "fpga" ]]
   then
-    source /usr/scratch/wetterhorn/cioflanc/tools/pulp_sdk_fpga/pulp-sdk/configs/pulp-open.sh
+    source /path/to/cioflanc/tools/pulp_sdk_fpga/pulp-sdk/configs/pulp-open.sh
   elif [[ $PLATFORM == "rtl" ]]
   then
-    source /usr/scratch/wetterhorn/cioflanc/tools/pulp_sdk_fpga/pulp-sdk/configs/pulp-open.sh
+    source /path/to/cioflanc/tools/pulp_sdk_fpga/pulp-sdk/configs/pulp-open.sh
   fi
 else
-  export GAP_RISCV_GCC_TOOLCHAIN=/usr/scratch/wetterhorn/cioflanc/tools/gap_riscv_toolchain/
+  export GAP_RISCV_GCC_TOOLCHAIN=/path/to/cioflanc/tools/gap_riscv_toolchain/
   # Select target
   if [[ $COMPUTE == "0" ]]
   then
-    source /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk_mar23/gap_sdk/sourceme.sh #newest GAP8
+    source /path/to/cioflanc/tools/gap_sdk_mar23/gap_sdk/sourceme.sh #newest GAP8
   else
-    source /usr/scratch/wetterhorn/cioflanc/tools/gap_sdk_private/configs/gap9_evk_audio.sh # GAP9
+    source /path/to/cioflanc/tools/gap_sdk_private/configs/gap9_evk_audio.sh # GAP9
   fi
 fi
 

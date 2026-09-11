@@ -13,12 +13,12 @@
     "environment_parameters": {
         "device":"gpu",
         "device_id": "1",
-        "noise_dir_demand": "/usr/scratch/sassauna2/cioflanc/DEMAND",
-        "noise_dir_gscv2": "/usr/scratch/sassauna2/cioflanc/dolphinGSC/speech_commands_v0.02/_background_noise_",
-        "noise_dir_kinem": "/usr/scratch/wetterhorn/cioflanc/kinem_dataset",
-        "data_dir_gscv2":"/usr/scratch/sassauna2/cioflanc/dolphinGSC/speech_commands_v0.02",
-        "data_dir_mswc":"/usr/scratch2/sassauna4/cioflanc/MSWC/en/clips/",
-        "data_dir_kinem": "/usr/scratch/wetterhorn/cioflanc/kinem_dataset/",
+        "noise_dir_demand": "cioflanc/DEMAND",
+        "noise_dir_gscv2": "/path/to/cioflanc/dolphinGSC/speech_commands_v0.02/_background_noise_",
+        "noise_dir_kinem": "/path/to/cioflanc/kinem_dataset",
+        "data_dir_gscv2":"/path/to/cioflanc/dolphinGSC/speech_commands_v0.02",
+        "data_dir_mswc":"/path/to/cioflanc/MSWC/en/clips/",
+        "data_dir_kinem": "/path/to/cioflanc/kinem_dataset/",
         "data_url":"https://storage.googleapis.com/download.tensorflow.org/data/speech_commands_v0.02.tar.gz",
 
         "keywords_dataset": "gscv2",
@@ -93,8 +93,8 @@
         "selection_interval_lower": 0,
         "selection_method": "random",
         "target_noise":["OMEETING"],
-        "base_path":"/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser/kws-on-pulp/quantization/",
-        "model_path": "/usr/scratch/wetterhorn/cioflanc/kws_on_gap9/tiny_denoiser/kws-on-pulp/quantization/models/v5/"
+        "base_path":"/path/to/cioflanc/kws_on_gap9/tiny_denoiser/kws-on-pulp/quantization/",
+        "model_path": "/path/to/cioflanc/kws_on_gap9/tiny_denoiser/kws-on-pulp/quantization/models/v5/"
     }
 
 }

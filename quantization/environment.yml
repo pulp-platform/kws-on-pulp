@@ -106,4 +106,3 @@ dependencies:
     - urllib3==1.26.4
     - werkzeug==1.0.1
     - wrapt==1.12.1
-prefix: /usr/scratch/wetterhorn/cioflanc/miniconda3/envs/kws
