@@ -63,6 +63,7 @@ The application reads an input, computes the MFCCs, then performs inference. The
 - [ ] Create VM Ubuntu 22.04 with preinstalled GAP SDK v5.17.0, the current repository, and (some) keyword spotting data for quantization calibration and validation.
 - [ ] Improve README.
 - [ ] Add student tasks. 
+- [ ] Explain repo evolution from kws-on-pulp for AICAS24, focusing on Pytorch experiments, to AICAS26/IOTJ, which focuses on deployment and lacks Pytorch pretraining
 
 ## Dependencies
 ### Gapmod 1.0 with EVK board 1.2
