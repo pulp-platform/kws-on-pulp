@@ -1,6 +1,6 @@
 [submodule "dory"]
 	path = dory
-	url = git@iis-git.ee.ethz.ch:kws/dory.git
+	url = git@github.com:ccioflan/dory.git
         branch = master
 [submodule "quantlib"]
 	path = quantlib
