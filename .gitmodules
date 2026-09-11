@@ -1,0 +1,7 @@
+[submodule "quantization/nemo"]
+	path = quantization/nemo
+	url = git@github.com:pulp-platform/nemo.git
+
+[submodule "dory"]
+	path = dory
+	url = https://github.com/ccioflan/dory

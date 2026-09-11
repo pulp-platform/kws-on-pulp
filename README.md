@@ -4,13 +4,6 @@
 
 KWS on PULP is a framework for keyword spotting (KWS) targeting PULP platforms, using NEMO for quantizing the models and DORY for deployment. Parallel Ultra-Low Power (PULP) platform is an open-source efficient RISC-V architecture. The objective of keyword spotting (KWS) is to detect a set of predefined keywords within a stream of user utterances. When the goal is to deploy the keyword spotting on an embedded device, the classification accuracy of the system does not represent the only objective anymore, but instead the constrained computational resources and the time limitations have to be taken into account as well. To achieve a three-party trade-off, we developed a KWS system based on a Depthwise Separable Convolutional Neural Network (DS-CNN). The model is quantized using NEMO and deployed on PULP platforms through the usage of DORY.
 
-## Citing
-If you use our methodology in an academic context, please cite the following publication:
-
-Publications:
-
-* *Towards On-device Domain Adaptation for Noise-Robust Keyword Spotting* [IEEE AICAS 2022](https://ieeexplore.ieee.org/document/9869990)
-* *EENAKWS* [https://catalogue.aiodp.eu/resources/case_CLSETtRwM0R4ImFbPX4r8bp1?category=Success%20stories]
 
 ```
 @inproceedings{cioflan2022towards,
@@ -23,90 +16,90 @@ Publications:
   pages={82-85},
   doi={10.1109/AICAS54282.2022.9869990}}
 
-```
+``` 
+
+## Projects
+
+* *Efficient On-Device Domain Learning for Keyword Spotting on Ultra-Low-Power Platforms* [IEEE IOTJ 2026](https://ieeexplore.ieee.org/abstract/document/11352794)
+* *On-Device Domain Learning for Keyword Spotting on Low-Power Extreme Edge Embedded Systems* [IEEE AICAS 2024](https://ieeexplore.ieee.org/abstract/document/10595987)
+* [EENAKWS](https://www.ai4europe.eu/business-and-industry/case-studies/eenakws-robotics-r2-keyword-spotting)
+* [Towards On-device Domain Adaptation for Noise-Robust Keyword Spotting](https://ieeexplore.ieee.org/document/9869990)
+
 
 ## Keyword Spotting Pipeline
 
 ### Project structure 
 
-The project's structure is the following:
+The structure of the project is the following:
 
 ```
 .
 └── kws-on-pulp/
     ├── dory/
-    │   ├── dory_examples/
-    │   ├── images/
-    │   ├── pulp-nn/
-    │   ├── pulp-nn-1d/
-    │   ├── pulp-nn-mixed/
-    │   ├── templates/
-    │   ├── LICENSE.txt
-    │   ├── Model_deployment.py
-    │   ├── ONNX_management.py
-    │   ├── README.md
-    │   ├── template.py
-    │   └── tiling.py
-    ├── nemo/
-    │   ├── doc/
-    │   ├── nemo/
-    │   ├── tests/
-    │   ├── var/
-    │   ├── LICENSE
-    │   ├── README.md
-    │   ├── requirements.txt
-    │   └── setup.py
     ├── quantization/
+    │   ├── nemo/
+    │   ├── architectures/dscnn.py  
+    │   ├── datagenerator.py  
     │   ├── dataset.py
-    │   ├── environment.yml
     │   ├── main.py
     │   ├── model.py
+    │   ├── models/
+    │   ├── nemo.yml
+    │   ├── reverb.py
+    │   ├── wham_room.py
     │   ├── train.py
     │   └── utils.py
-    ├── application/
-    │   ├── main.c
-    │   ├── Makefile
-    │   ├── MfccModel.c
-    │   └── MfccModel.mk
-    ├── deploy.sh
+    ├── deploy_dory.sh
     ├── LICENSE
     └── README.md
 ```
 
-More in detail, [NEMO](https://github.com/pulp-platform/nemo) is a library minimizing Deep Neural Networks, with the goal of deploying on ultra-low power, resource-constrained platforms. [DORY](https://github.com/pulp-platform/dory) is a tool performing automatic deployment of Deep Neural Networks on hardware-constrained devices. The `quantization/` directory contains Python scripts aimed at training and testing the model on Google Speech Commands v2 dataset, followed by quantizing said model. `application/` directory contains the files required to generate the source code to compute the input features (MFCC) on the target platforms, relying on Greenwaves' autotiler; it also contains the source code to test together the MFCC computation and the model inference. `deploy.sh` is a Bash script used to deploy the quantized model on PULP-OPEN using PULP_SDK or on GAPUINO GAP8 using GAP_SDK or and run it on the GVSOC from GreenWaves.
-The framework was tested on CentOS 7.6.1810, using GCC 4.9.1 and Python 3.6.13. 
+More in detail, [NEMO](https://github.com/pulp-platform/nemo) is a library minimizing Deep Neural Networks, with the goal of deploying on ultra-low power, resource-constrained platforms. [DORY](https://github.com/pulp-platform/dory) is a tool performing automatic deployment of Deep Neural Networks on hardware-constrained devices. The `quantization/` directory contains Python scripts aimed at training and testing the model on Google Speech Commands v2 dataset, followed by quantizing said model. `deploy_dory.sh` is a Bash script used to deploy the quantized model on PULP-OPEN using PULP_SDK, on GAPUINO GAP8 using GAP_SDK or on GAP9 using GAP_SDK_PRIVATE and run it on the GVSOC from GreenWaves. 
 
-### Installation
+The framework was tested on AlmaLinux release 8.8, using GCC 8.5.0 and Python 3.6.13. We recommend targetting GAP9 using `release v5.11.0` of GAP_SDK_PRIVATE. 
 
-#### NEMO
+## Installation
+
+### NEMO
 The requirements and installation guide are available [here](https://github.com/pulp-platform/nemo).
 
-#### DORY
-The requirements and installation guide are available [here](https://github.com/pulp-platform/dory). In order to use the MFC coefficients as inputs, use the ```input_features``` branch. Depending on the target platform, you will need to: a) PULP-OPEN: install [PULP SDK](https://github.com/pulp-platform/pulp-sdk): its prerequisites, the full installation, and the virtual platform. ; b) GAPUINO GAP8: install [GAP SDK](https://github.com/GreenWaves-Technologies/gap_sdk): its prerequisites, the full installation, and the virtual platform. 
-
-#### Quantization
-To install the packages required to run the model's training (in PyTorch) and the quantization that follows, a conda environment can be created from `environment.yml` by running:
+### Quantization
+To install the packages required to run the model's training (in PyTorch) and the quantization that follows, a conda environment can be created from `nemo.yml` by running:
 ```
-conda env create -f environment.yml
-```
-#### MFCC computation
-
-The on-device MFCC computation relies on Greenwaves autotiler, which is not part of this distribution. To make use of it, you will need to install [GAP SDK](https://github.com/GreenWaves-Technologies/gap_sdk): its prerequisites and the autotiler (```make autotiler```). The framework has been tested using ```release-v4.0.0```tag.
-
-### Example
-To run the main script, use the command:
-```
-python main.py
+conda env create -f nemo.yml
 ```
 
-To deploy the KWS system on the target device, use the command:
+### DORY
+The requirements and installation guide are available [here](https://github.com/pulp-platform/dory). Depending on the target platform, you will need to: a) PULP-OPEN: install [PULP SDK](https://github.com/pulp-platform/pulp-sdk): its prerequisites, the full installation, and the virtual platform. ; b) GAPUINO GAP8: install [GAP SDK](https://github.com/GreenWaves-Technologies/gap_sdk): its prerequisites, the full installation, and the virtual platform. c) GAP9: install [GAP SDK PRIVATE](https://github.com/GreenWaves-Technologies/gap_sdk_private): its prerequisites, the full installation, and the virtual platform. 
+
+## Example
+
+### Pretrain ONNX model
+
+Train the model, export it in FP32, and quantize it to INT8 through Nemo. Note: set the model accordingly in `example.json`.
 ```
-./deploy.sh sdk
+cd kws-on-pulp/quantization
+python main.py --config_file example.json
+cd ../..
 ```
-For instance, to deploy the model using MFCC inputs on PULP-OPEN using PULP-SDK and to test it on GVSOC, use the command:
+
+### [INFERENCE] Generate DORY-based C code for GAP9
+
 ```
-./deploy.sh pulp_sdk
+cd kws-on-pulp/dory/
+./deploy_dory.sh gap_sdk 3 gvsoc 2 DSCNN_DIR_DEST DSCNN_DIR_SRC 8 1 NEMO
 ```
+
+* target sdk: gap_sdk, pulp_sdk
+* highest memory level: 3, 2
+* target platform: gvsoc, board
+* computational unit: 0 (PULP GVSOC), 1 (GAP9 single-/multi-core), 2 (GAP9 NE16 accelerator)
+* network destination directory
+* network source directory
+* number of cores
+* number of trainable layers, deployed separately with PULP-Trainlib
+* quantization tool: NEMO, Quantlab
+
 
 ### Contributor
 Cristian Cioflan, ETH Zurich, [cioflanc@iis.ee.ethz.ch](cioflanc@iis.ee.ethz.ch)
