@@ -4,6 +4,59 @@
 
 KWS on PULP is a framework for keyword spotting (KWS) targeting PULP platforms, using NEMO for quantizing the models and DORY for deployment. Parallel Ultra-Low Power (PULP) platform is an open-source efficient RISC-V architecture. The objective of keyword spotting (KWS) is to detect a set of predefined keywords within a stream of user utterances. When the goal is to deploy the keyword spotting on an embedded device, the classification accuracy of the system does not represent the only objective anymore, but instead the constrained computational resources and the time limitations have to be taken into account as well. To achieve a three-party trade-off, we developed a KWS system based on a Depthwise Separable Convolutional Neural Network (DS-CNN). The model is quantized using NEMO and deployed on PULP platforms through the usage of DORY.
 
+
+## Citing
+
+If you use this work, please make sure to cite
+
+```
+@ARTICLE{cioflan2026efficientondevice,
+  author={Cioflan, Cristian and Cavigelli, Lukas and Rusci, Manuele and de Prado, Miguel and Benini, Luca},
+  journal={IEEE Internet of Things Journal}, 
+  title={Efficient On-Device Domain Learning for Keyword Spotting on Ultra-Low-Power Platforms}, 
+  year={2026},
+  volume={13},
+  number={6},
+  pages={10301-10316},
+  keywords={Noise;Accuracy;Training;Noise robustness;Adaptation models;Tiny machine learning;Noise measurement;Acoustics;Topology;Network topology;Domain adaptation;extreme edge;keyword spotting (KWS);low-power microcontrollers;noise robustness;on-device learning (ODL);TinyML},
+  doi={10.1109/JIOT.2026.3654437}}
+```
+
+```
+@INPROCEEDINGS{cioflan2024ondevice,
+  author={Cioflan, Cristian and Cavigelli, Lukas and Rusci, Manuele and de Prado, Miguel and Benini, Luca},
+  booktitle={2024 IEEE 6th International Conference on AI Circuits and Systems (AICAS)}, 
+  title={On-Device Domain Learning for Keyword Spotting on Low-Power Extreme Edge Embedded Systems}, 
+  year={2024},
+  volume={},
+  number={},
+  pages={6-10},
+  keywords={Accuracy;Embedded systems;Microcontrollers;Circuits and systems;Noise;Refining;Neural networks;On-Device Learning;Domain Adaptation;Low-Power Microcontrollers;Extreme Edge;TinyML;Noise Robustness;Keyword Spotting},
+  doi={10.1109/AICAS59952.2024.10595987}}
+
+```
+
+```
+@inproceedings{cioflan2022towards,
+  author={Cioflan, Cristian and Cavigelli, Lukas and Rusci, Manuele and De Prado, Miguel and Benini, Luca},
+  booktitle={2022 IEEE 4th International Conference on Artificial Intelligence Circuits and Systems (AICAS)}, 
+  title={Towards On-device Domain Adaptation for Noise-Robust Keyword Spotting}, 
+  year={2022},
+  volume={},
+  number={},
+  pages={82-85},
+  doi={10.1109/AICAS54282.2022.9869990}}
+
+``` 
+
+## Projects
+
+* *Efficient On-Device Domain Learning for Keyword Spotting on Ultra-Low-Power Platforms* [IEEE IOTJ 2026](https://ieeexplore.ieee.org/abstract/document/11352794)
+* *On-Device Domain Learning for Keyword Spotting on Low-Power Extreme Edge Embedded Systems* [IEEE AICAS 2024](https://ieeexplore.ieee.org/abstract/document/10595987)
+* [EENAKWS](https://www.ai4europe.eu/business-and-industry/case-studies/eenakws-robotics-r2-keyword-spotting)
+* [Towards On-device Domain Adaptation for Noise-Robust Keyword Spotting](https://ieeexplore.ieee.org/document/9869990)
+
+
 ## Keyword Spotting Pipeline
 
 ### Project structure 
@@ -78,10 +131,6 @@ cd kws-on-pulp/dory/
 * number of trainable layers, deployed separately with PULP-Trainlib
 * quantization tool: NEMO, Quantlab
 
-### Projects
-* Huami
-* [EENAKWS](https://www.ai4europe.eu/business-and-industry/case-studies/eenakws-robotics-r2-keyword-spotting)
-* [Towards On-device Domain Adaptation for Noise-Robust Keyword Spotting](https://ieeexplore.ieee.org/document/9869990)
 
 ### Contributor
 Cristian Cioflan, ETH Zurich, [cioflanc@iis.ee.ethz.ch](cioflanc@iis.ee.ethz.ch)
