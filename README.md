@@ -4,6 +4,26 @@
 
 KWS on PULP is a framework for keyword spotting (KWS) targeting PULP platforms, using NEMO for quantizing the models and DORY for deployment. Parallel Ultra-Low Power (PULP) platform is an open-source efficient RISC-V architecture. The objective of keyword spotting (KWS) is to detect a set of predefined keywords within a stream of user utterances. When the goal is to deploy the keyword spotting on an embedded device, the classification accuracy of the system does not represent the only objective anymore, but instead the constrained computational resources and the time limitations have to be taken into account as well. To achieve a three-party trade-off, we developed a KWS system based on a Depthwise Separable Convolutional Neural Network (DS-CNN). The model is quantized using NEMO and deployed on PULP platforms through the usage of DORY.
 
+## Citing
+If you use our methodology in an academic context, please cite the following publication:
+
+Publications:
+
+* *Towards On-device Domain Adaptation for Noise-Robust Keyword Spotting* [IEEE AICAS 2022](https://ieeexplore.ieee.org/document/9869990)
+
+```
+@inproceedings{cioflan2022towards,
+  author={Cioflan, Cristian and Cavigelli, Lukas and Rusci, Manuele and De Prado, Miguel and Benini, Luca},
+  booktitle={2022 IEEE 4th International Conference on Artificial Intelligence Circuits and Systems (AICAS)}, 
+  title={Towards On-device Domain Adaptation for Noise-Robust Keyword Spotting}, 
+  year={2022},
+  volume={},
+  number={},
+  pages={82-85},
+  doi={10.1109/AICAS54282.2022.9869990}}
+
+```
+
 ## Keyword Spotting Pipeline
 
 ### Project structure 
