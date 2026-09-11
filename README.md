@@ -10,6 +10,7 @@ If you use our methodology in an academic context, please cite the following pub
 Publications:
 
 * *Towards On-device Domain Adaptation for Noise-Robust Keyword Spotting* [IEEE AICAS 2022](https://ieeexplore.ieee.org/document/9869990)
+* *EENAKWS* [https://catalogue.aiodp.eu/resources/case_CLSETtRwM0R4ImFbPX4r8bp1?category=Success%20stories]
 
 ```
 @inproceedings{cioflan2022towards,
