@@ -1,0 +1,14 @@
+{
+	"n_fft": 1024,
+	"win_func": "hanning",
+	"frame_size": 640,
+	"frame_step": 320,
+	"sample_rate": 16000,
+	"mfcc_bank_cnt": 10,
+	"n_mels": 10,
+	"n_dct": 10,
+	"fmin": 20.0,
+	"fmax": 4000.0,
+	"dtype": "float16",
+	"use_tf_mel": true
+}
