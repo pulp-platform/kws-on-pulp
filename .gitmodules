@@ -5,3 +5,6 @@
 [submodule "quantlib"]
 	path = quantlib
 	url = git@github.com:pulp-platform/quantlib.git
+[submodule "pulp-trainlib"]
+	path = pulp-trainlib
+	url = git@github.com:ccioflan/pulp-trainlib.git
