@@ -1,10 +1,10 @@
 [submodule "dory"]
-	path = dory
+	path = codegen/dory
 	url = git@github.com:ccioflan/dory.git
         branch = master
 [submodule "quantlib"]
-	path = quantlib
+	path = codegen/quantlib
 	url = git@github.com:pulp-platform/quantlib.git
 [submodule "pulp-trainlib"]
-	path = pulp-trainlib
+	path = codegen/pulp-trainlib
 	url = git@github.com:ccioflan/pulp-trainlib.git
