@@ -14,7 +14,7 @@ BUILD*
 build*
 
 pretrained/
-export/*
+*/export/*
 generate/*
 application/build/
 application/generate/
