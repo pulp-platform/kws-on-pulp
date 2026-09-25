@@ -1,4 +1,4 @@
-name: quantlib
+name: test_quantize
 channels:
   - pytorch
   - conda-forge
@@ -209,7 +209,7 @@ dependencies:
       - matplotlib==3.7.5
       - mdurl==0.1.2
       - ml-dtypes==0.2.0
-      - netron==7.6.4
+      - netron
       - numpy==1.23.5
       - oauthlib==3.2.2
       - opt-einsum==3.3.0
@@ -249,4 +249,3 @@ dependencies:
       - werkzeug==2.1.2
       - wrapt==1.14.1
       - xxhash==3.4.1
-prefix: /usr/scratch/wetterhorn/cioflanc/miniconda3/envs/quantlib
