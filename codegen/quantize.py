@@ -88,14 +88,12 @@ def get_valid_dataset(key : str, cfg : dict, quantize : str, pad_img : Optional[
     return mdataset
 
 # CIOFLANC: Remove rescaling in Dory
-_MNIST_EPS = 0.99
-# _MNIST_EPS = 0.39 # for 0-255 data
-# _MNIST_EPS = 0.0328 # for standardized 0-1 data 
+_MNIST_EPS = 0.39 # for 0-255 data
 
 # batch size is per device, determined on Nvidia RTX2080. You may have to change
 # this if you have different GPUs
 _QUANT_UTILS = {
-    'DSCNNS':  QuantUtil(problem='MNIST', topo='DSCNNS', quantize=quantize_net, get_controllers=controllers_net, network=DSCNNS, in_shape=(1,1,49,10), eps_in=_MNIST_EPS, D=2**19, bs=256, get_in_shape=None, load_dataset_fn=DatasetProcessor.get_dataset, transform=None, quant_transform_args={'n_q':256}, n_levels_in=256, export_fn=export_net, code_size=150000)
+    'DSCNN':  QuantUtil(problem='MNIST', topo='DSCNN', quantize=quantize_net, get_controllers=controllers_net, network=DSCNN, in_shape=(1,1,49,10), eps_in=_MNIST_EPS, D=2**19, bs=256, get_in_shape=None, load_dataset_fn=DatasetProcessor.get_dataset, transform=None, quant_transform_args={'n_q':256}, n_levels_in=256, export_fn=export_net, code_size=150000)
 }
 
 
@@ -120,8 +118,8 @@ def get_ckpt(key : str, exp_id : int, ckpt_id : Union[int, str]):
     ckpt_filepath = get_topology_dir(key).joinpath(f'logs/exp{exp_id:04}/fold0/saves/{ckpt_str}.ckpt')
     return torch.load(ckpt_filepath)
 
-def get_network(key : str, exp_id : int, ckpt_id : Union[int, str], quantized=False, pretrained='model.pth'):
-    with open('config_dscnn_classic_tqt_8b.json', 'r') as fp:
+def get_network(key : str, exp_id : int, ckpt_id : Union[int, str], quantized=False, pretrained='model.pth', config = 'config.json'):
+    with open(config, 'r') as fp:
         cfg = json.load(fp)
     qu = _QUANT_UTILS[key]
     quant_cfg = cfg['network']['quantize']['kwargs']
@@ -292,7 +290,7 @@ def main():
                         help='Export RequantShift nodes instead of mul-add-div sequences in ONNX graph')
     parser.add_argument('--clip_inputs', action='store_true',
                         help='ghettofix to clip inputs to be unsigned')
-    parser.add_argument('--config_net_file', type=str, default='config_dscnn_classic_tqt_8b.json', help = 'Network configuration file')
+    parser.add_argument('--config_net_file', type=str, default='config_dscnn_hierarchic_tqt_8b.json', help = 'Network configuration file')
     parser.add_argument('--config_env_file', type=str, default='config_env.json', help = 'Environment configuration file')
 
     args = vars(parser.parse_args())
@@ -323,7 +321,7 @@ def main():
     print("Data range of input data: ", torch.min(mdataset[0][0]), torch.max(mdataset[0][0]))
 
     print("==================================== Loading pre-trained network ====================================")
-    qnet = get_network(key = args['net'], exp_id=0, ckpt_id=0, quantized=True, pretrained = args['pretrained'])
+    qnet = get_network(key = args['net'], exp_id=0, ckpt_id=0, quantized=True, pretrained = args['pretrained'], config = args['config_net_file'])
 
     print("==================================== Fake Quantizing network ====================================")
     linop_list = [i for i in qnet.modules() if isinstance(i, qa.pact._PACTLinOp)]
@@ -377,7 +375,7 @@ def main():
     
     print ("==================================== Integerize network ====================================")
 
-    _QUANT_UTILS['DSCNNS'].eps_in = eps_computed
+    _QUANT_UTILS['DSCNN'].eps_in = eps_computed
 
     int_net = integerize_network(qnet, args['net'], args['fix_channels'], not args['no_dory_harmonize'], args['word_align_channels'], args['requant_node'])
 
